@@ -484,6 +484,21 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 #wpTab input{width:62px;font:inherit;font-size:15px;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink)}#wpTab input[data-k=l]{width:74px}#wpTab .wpz{text-align:right;color:var(--muted);min-width:64px}
 #wpTab tr.near td{background:rgba(255,160,40,.16)}#wpTab button{font:inherit;width:28px;height:28px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--warn);cursor:pointer}
 .wpbtns{display:flex;gap:6px;margin:6px 0}.wpbtns button,#wpUse{font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
+#wpTab td.wpbt{white-space:nowrap}@media (max-width:560px){#wpTab input{width:48px!important;padding:3px 4px!important;font-size:14px!important}#wpTab input[data-k=l]{width:56px!important}#wpTab td{padding:2px 2px!important}#wpTab th{padding:2px 3px!important;font-size:10.5px!important}#wpTab .wpz{min-width:44px!important;font-size:12px}#wpTab button{width:30px!important}#wpTab button.wpfin{margin-right:2px}}#wpTab button.wpfin{color:#2f6fb0;font-weight:800;margin-right:4px;width:34px}
+.wfov{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998}
+.wfs{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(560px,100%);max-height:92vh;overflow:auto;z-index:9999;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-bottom:0;border-radius:14px 14px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.35);padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
+.wfh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.wfh b{font-size:17px}.wfh small{color:var(--muted)}.wfh .sp{flex:1}
+.wfs button{font:inherit;font-size:14px;font-weight:700;min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.wfs button.pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}.wfs button[aria-pressed=true]{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
+.wfb{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.wft{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto 1fr;column-gap:14px;align-items:center;justify-items:center}.wft>.dl{grid-area:1/1}.wft>.wfv{grid-area:2/1}.wft>.wfrow{grid-area:3/1;align-self:start}.wft>.wftw{grid-area:1/2/4/3}
+.wft .wfv{font-size:22px;font-weight:800;color:#c0392b;font-variant-numeric:tabular-nums;margin:2px 0 4px}
+.wfs .dwheel{height:120px}.wfs .dpad{height:40px}.wfs .dsel{top:40px}.wfb{gap:8px 14px}.wfs .wfh{margin-bottom:2px}
+.wftw{display:flex;align-items:center;gap:2px}.wftw .dwheel{width:64px}.wftw .dwheel.dec{width:50px}.wftw .u{font-size:18px;font-weight:700;padding-left:2px}
+.wfw{display:flex;flex-direction:column;align-items:center}.wfw .wfv{font-size:22px;font-weight:800;color:#2f6fb0;font-variant-numeric:tabular-nums;margin:2px 0 4px}
+#wfPad{width:min(250px,72vw);height:min(250px,72vw);touch-action:none;cursor:crosshair;display:block;user-select:none;-webkit-user-select:none}
+.wfrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px}.wfrow button{min-width:44px}
+.wfl{font-size:12px;color:var(--muted);text-align:center;margin-top:4px;max-width:270px}
 #wpUse{background:#2f6fb0;color:#fff;border-color:#2f6fb0;margin:4px 0}.wpout{font-size:13px}.wpv{font-size:18px;color:#2f6fb0}.wpout small{color:var(--muted)}
 </style>
 <style id="eliteCss">
@@ -2990,9 +3005,10 @@ function wpDraw(){ const tb=$('wpTab'); if(!tb) return; const fm=n=>Math.round(n
   document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===WP.base)); $('wpAuto').checked=!!WP.auto;
   const tg=wpTarget();
   if(!tb.dataset.built||tb.dataset.base!==WP.base||+tb.dataset.n!==WP.rows.length){ tb.dataset.built=1; tb.dataset.base=WP.base; tb.dataset.n=WP.rows.length;
-    tb.innerHTML=`<tr><th>${WP.base==='ft'?'海抜 ft':'気圧 hPa'}</th><th>今日の海抜 ft</th><th>気温 ℃</th><th>風向 °（真）</th><th>風速 kt</th><th></th></tr>`+wpOrder().map(i=>[WP.rows[i],i]).map(([r,i])=>`<tr data-i="${i}"><td><input type="number" data-k="l" value="${r.l}" step="any" inputmode="decimal"></td><td class="wpz"></td><td><input type="number" data-k="t" value="${r.t}" min="-80" max="50" step="0.1" inputmode="decimal" placeholder="—"></td><td><input type="number" data-k="d" value="${r.d}" min="0" max="360" step="10" inputmode="numeric" placeholder="—"></td><td><input type="number" data-k="s" value="${r.s}" min="0" step="1" inputmode="numeric" placeholder="—"></td><td><button type="button" data-del="${i}" aria-label="この行を消す">×</button></td></tr>`).join('');
+    tb.innerHTML=`<tr><th>${WP.base==='ft'?'海抜 ft':'気圧 hPa'}</th><th>今日の海抜 ft</th><th>気温 ℃</th><th>風向 °（真）</th><th>風速 kt</th><th><small>◎＝指で</small></th></tr>`+wpOrder().map(i=>[WP.rows[i],i]).map(([r,i])=>`<tr data-i="${i}"><td><input type="number" data-k="l" value="${r.l}" step="any" inputmode="decimal"></td><td class="wpz"></td><td><input type="number" data-k="t" value="${r.t}" min="-80" max="50" step="0.1" inputmode="decimal" placeholder="—"></td><td><input type="number" data-k="d" value="${r.d}" min="0" max="360" step="10" inputmode="numeric" placeholder="—"></td><td><input type="number" data-k="s" value="${r.s}" min="0" step="1" inputmode="numeric" placeholder="—"></td><td class="wpbt"><button type="button" class="wpfin" data-fin="${i}" aria-label="指で入力">◎</button><button type="button" data-del="${i}" aria-label="この行を消す">×</button></td></tr>`).join('');
     tb.querySelectorAll('input').forEach(inp=>{ inp.addEventListener('input',()=>{ const i=+inp.closest('tr').dataset.i; WP.rows[i][inp.dataset.k]=inp.value; wpSave(); WP.lastKey=''; wpDraw(); }); if(inp.dataset.k==='l') inp.addEventListener('change',()=>{ tb.dataset.built=''; wpDraw(); }); });
-    tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ WP.rows.splice(+b.dataset.del,1); wpSave(); wpDraw(); }); }
+    tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ WP.rows.splice(+b.dataset.del,1); wpSave(); wpDraw(); });
+    tb.querySelectorAll('[data-fin]').forEach(b=>b.onclick=()=>wfOpen(+b.dataset.fin)); }
   // altitude column + highlight the layer that brackets the hoist height
   const zs=WP.rows.map(r=>r.l===''?NaN:wpAltFt(r.l));
   tb.querySelectorAll('tr[data-i]').forEach(tr=>{ const i=+tr.dataset.i; tr.querySelector('.wpz').textContent=isFinite(zs[i])?fm(zs[i]):'—'; tr.classList.toggle('near',isFinite(zs[i])&&Math.abs(zs[i]-tg.ft)<1500); });
@@ -3009,6 +3025,80 @@ function wpDraw(){ const tb=$('wpTab'); if(!tb) return; const fm=n=>Math.round(n
   if(WP.auto&&key!==WP.lastKey){ WP.lastKey=key;
     const needW=r&&(+$('wdir').value!==r.d%360||+$('ws').value!==r.s||wmode!=='true'), needT=t&&Math.abs(+$('oat').value-t.T)>0.05;
     if(needW||needT) setTimeout(()=>wpApply(needW?r:null,needT?t:null),0); } }
+// ---- finger input for one level: temperature drum + wind pad (touch where the wind comes FROM, distance = speed)
+const WF={i:-1,max:50};
+try{ const m=+localStorage.getItem('aw139wfmax'); if(m===50||m===100) WF.max=m; }catch(e){}
+const WF_TI=[...Array(61)].map((_,j)=>j);          // |T| 0 … 60
+
+function wfRow(){ return WP.rows[WF.i]; }
+function wfWheel(el,n,fmt,onc){ el.innerHTML='<div class="dpad"></div>'+[...Array(n)].map((_,j)=>`<div class="ditem" data-i="${j}">${fmt(j)}</div>`).join('')+'<div class="dpad"></div>';
+  const idx=()=>Math.max(0,Math.min(n-1,Math.round(el.scrollTop/40)));
+  const mark=()=>{ const i=idx(); el.querySelectorAll('.ditem').forEach((it,j)=>it.classList.toggle('on',j===i)); };
+  let t=0, quiet=false;
+  el.addEventListener('scroll',()=>{ mark(); if(quiet) return; clearTimeout(t); t=setTimeout(()=>{ const i=idx(); if(Math.abs(el.scrollTop-i*40)>1) el.scrollTo({top:i*40,behavior:'smooth'}); onc(i); },110); });
+  el.addEventListener('click',e=>{ const it=e.target.closest('.ditem'); if(it){ el.scrollTo({top:+it.dataset.i*40,behavior:'smooth'}); } });
+  el.addEventListener('keydown',e=>{ const i=idx(); if(e.key==='ArrowUp'||e.key==='ArrowDown'){ el.scrollTo({top:(i+(e.key==='ArrowUp'?-1:1))*40,behavior:'smooth'}); e.preventDefault(); } });
+  return {set:i=>{ quiet=true; el.scrollTop=i*40; mark(); setTimeout(()=>{ quiet=false; },60); }, idx}; }
+function wfOpen(i){ wfClose(); WF.i=i;
+  const ov=document.createElement('div'); ov.className='wfov'; ov.id='wfOv'; ov.onclick=wfClose;
+  const sh=document.createElement('div'); sh.className='wfs'; sh.id='wfSheet'; sh.setAttribute('role','dialog'); sh.setAttribute('aria-label','指で入力');
+  sh.innerHTML=`<div class="wfh"><button type="button" id="wfUp" aria-label="ひとつ上の層">▲</button><div><b id="wfLev"></b><br><small id="wfAlt"></small></div><button type="button" id="wfDn" aria-label="ひとつ下の層">▼</button><span class="sp"></span><button type="button" class="pri" id="wfOk">完了</button></div>
+  <div class="wfb">
+    <div class="wft"><div class="dl">気温</div><div class="wfv" id="wfTv"></div>
+      <div class="wftw"><div class="dwrap"><div class="dwheel dec" id="wfTs" tabindex="0" aria-label="気温 符号"></div><div class="dsel" aria-hidden="true"></div></div><div class="dwrap"><div class="dwheel" id="wfTi" tabindex="0" aria-label="気温 整数"></div><div class="dsel" aria-hidden="true"></div></div><div class="dwrap"><div class="dwheel dec" id="wfTd" tabindex="0" aria-label="気温 小数"></div><div class="dsel" aria-hidden="true"></div></div><span class="u">℃</span></div>
+      <div class="wfrow"><button type="button" id="wfTx">気温なし</button></div></div>
+    <div class="wfw"><div class="dl">風（指で触れた方向から吹く・中心からの距離が風速）</div><div class="wfv" id="wfWv"></div>
+      <svg id="wfPad" viewBox="-125 -125 250 250" role="img" aria-label="風の入力盤"></svg>
+      <div class="wfrow"><button type="button" data-wd="-10">◀10°</button><button type="button" data-wd="10">10°▶</button><button type="button" data-ws="-1">−1kt</button><button type="button" data-ws="1">＋1kt</button></div>
+      <div class="wfrow"><button type="button" data-wm="50">〜50kt</button><button type="button" data-wm="100">〜100kt</button><button type="button" id="wfWx">風なし</button></div></div>
+  </div><div class="wfl">ドラムを上下に回すと気温、盤を指でなぞると風向・風速が入ります（風向は10°刻み・真方位）。キーボードでの入力もそのまま使えます。</div>`;
+  document.body.append(ov,sh);
+  WF.ts=wfWheel($('wfTs'),2,j=>j?'−':'＋',()=>wfTempFromWheel());
+  WF.ti=wfWheel($('wfTi'),WF_TI.length,j=>String(j),()=>wfTempFromWheel());
+  WF.td=wfWheel($('wfTd'),10,j=>'.'+j,()=>wfTempFromWheel());
+  $('wfOk').onclick=wfClose; $('wfUp').onclick=()=>wfStep(-1); $('wfDn').onclick=()=>wfStep(1);
+  $('wfTx').onclick=()=>{ wfRow().t=''; wfCommit(); wfShow(); };
+  $('wfWx').onclick=()=>{ const r=wfRow(); r.d=''; r.s=''; wfCommit(); wfShow(); };
+  sh.querySelectorAll('[data-wd]').forEach(b=>b.onclick=()=>{ const r=wfRow(); const d=((+r.d||360)+(+b.dataset.wd)+360)%360||360; r.d=String(d); if(r.s==='') r.s='0'; wfCommit(); wfShow(); });
+  sh.querySelectorAll('[data-ws]').forEach(b=>b.onclick=()=>{ const r=wfRow(); r.s=String(Math.max(0,Math.min(150,(+r.s||0)+(+b.dataset.ws)))); if(r.d==='') r.d='360'; wfCommit(); wfShow(); });
+  sh.querySelectorAll('[data-wm]').forEach(b=>b.onclick=()=>{ WF.max=+b.dataset.wm; try{localStorage.setItem('aw139wfmax',WF.max);}catch(e){} wfShow(); });
+  const pad=$('wfPad'); let drag=false;
+  const at=e=>{ const b=pad.getBoundingClientRect(), x=(e.clientX-b.left)/b.width*250-125, y=(e.clientY-b.top)/b.height*250-125, R=Math.hypot(x,y);
+    const r=wfRow(); const sp=Math.round(Math.min(1,R/110)*WF.max); let d=Math.round(((Math.atan2(x,-y)/RAD+360)%360)/10)*10%360||360;
+    r.s=String(sp); r.d=String(d); wfCommit(); wfShow(true); };
+  pad.addEventListener('pointerdown',e=>{ drag=true; pad.setPointerCapture(e.pointerId); at(e); e.preventDefault(); });
+  pad.addEventListener('pointermove',e=>{ if(drag) at(e); });
+  const up=()=>{ drag=false; }; pad.addEventListener('pointerup',up); pad.addEventListener('pointercancel',up);
+  document.addEventListener('keydown',wfKey);
+  wfShow(); }
+function wfKey(e){ if(e.key==='Escape') wfClose(); }
+function wfClose(){ const a=$('wfOv'), b=$('wfSheet'); if(a) a.remove(); if(b) b.remove(); document.removeEventListener('keydown',wfKey); WF.i=-1; }
+function wfStep(k){ const ord=wpOrder(); const p=ord.indexOf(WF.i)+k; if(p<0||p>=ord.length) return; WF.i=ord[p]; wfShow(); }
+function wfTempFromWheel(){ if(WF.i<0) return; const T=(WF.ts.idx()?-1:1)*(WF_TI[WF.ti.idx()]+WF.td.idx()/10);
+  wfRow().t=String(Math.round(T*10)/10); wfCommit(); wfShow(true,true); }
+function wfCommit(){ const tb=$('wpTab'); if(tb) tb.dataset.built=''; wpSave(); WP.lastKey=''; wpDraw(); }
+function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; } const fm=n=>Math.round(n).toLocaleString();
+  $('wfLev').textContent=r.l===''?'（高さ未入力の行）':wpLab(r.l);
+  const z=r.l===''?NaN:wpAltFt(r.l); $('wfAlt').textContent=isFinite(z)?`今日の海抜 約 ${fm(z)} ft`:'';
+  const ord=wpOrder(), p=ord.indexOf(WF.i); $('wfUp').disabled=p<=0; $('wfDn').disabled=p>=ord.length-1;
+  // temperature
+  const has=r.t!==''&&isFinite(+r.t); $('wfTv').textContent=has?`${(+r.t>0?'+':'')}${(+r.t).toFixed(1)} ℃`:'— ℃';
+  if(!fromWheel){ let T=has?+r.t:(isFinite(z)?Math.round(15-1.98*z/1000):0); const a=Math.abs(T), ip=Math.trunc(a), dp=Math.round((a-ip)*10)%10, sg=T<0?-1:1;
+    WF.ts.set(sg<0?1:0); WF.ti.set(Math.min(60,ip)); WF.td.set(dp); }
+  // wind
+  const hw=r.d!==''&&r.s!==''; $('wfWv').textContent=hw?`${String(+r.d%360||360).padStart(3,'0')}° / ${+r.s} kt`:'— ° / — kt';
+  document.querySelectorAll('#wfSheet [data-wm]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.wm===WF.max));
+  const M=WF.max, R=110, rr=v=>v/M*R; let h='';
+  const step=M===50?10:20; for(let v=step;v<=M;v+=step) h+=`<circle r="${rr(v)}" fill="none" stroke="currentColor" stroke-opacity="${v===M?.5:.22}"/><text x="3" y="${-rr(v)+11}" font-size="9" fill="currentColor" fill-opacity=".6">${v}</text>`;
+  for(let a=0;a<360;a+=30){ const s=Math.sin(a*RAD), c=-Math.cos(a*RAD); h+=`<line x1="${s*18}" y1="${c*18}" x2="${s*R}" y2="${c*R}" stroke="currentColor" stroke-opacity=".14"/>`;
+    const L={0:'N',90:'E',180:'S',270:'W'}[a]||String(a/10).padStart(2,'0'); h+=`<text x="${s*119}" y="${c*119+4}" text-anchor="middle" font-size="${a%90?9:12}" font-weight="${a%90?400:800}" fill="currentColor" fill-opacity="${a%90?.6:.9}">${L}</text>`; }
+  if(hw){ const d=(+r.d)*RAD, sp=Math.min(+r.s,M), x=Math.sin(d)*rr(sp), y=-Math.cos(d)*rr(sp), L=Math.hypot(x,y);
+    if(L>4){ const ux=-x/L, uy=-y/L, ex=x+ux*(L-6), ey=y+uy*(L-6); h+=`<line x1="${x}" y1="${y}" x2="${ex}" y2="${ey}" stroke="#2f6fb0" stroke-width="3"/><path d="M${ex+ux*8},${ey+uy*8} L${ex-uy*6},${ey+ux*6} L${ex+uy*6},${ey-ux*6}Z" fill="#2f6fb0"/>`; }
+    h+=`<circle cx="${x}" cy="${y}" r="11" fill="#2f6fb0" fill-opacity=".25" stroke="#2f6fb0" stroke-width="2"/>`;
+    if(+r.s>M) h+=`<text x="${x}" y="${y-15}" text-anchor="middle" font-size="10" fill="#c0392b">${M}kt超</text>`; }
+  h+=`<circle r="3" fill="currentColor"/>`;
+  $('wfPad').innerHTML=h; }
+
 (function(){ if(!$('wprof')) return;
   document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.onclick=()=>{ if(WP.base===b.dataset.b) return; WP.base=b.dataset.b;
     WP.rows=(WP.base==='ft'?[3000,5000,7000,9000,10000,12000,14000]:[1000,925,850,800,700,600,500]).map(wpBlank); wpSave(); wpDraw(); });
