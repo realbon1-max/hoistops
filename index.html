@@ -380,6 +380,8 @@ html{scroll-padding-top:52px}
 .mlegend[hidden],.mpane[hidden]{display:none!important}.msnap{position:absolute;right:10px;top:104px;z-index:7;width:40px;height:40px;border-radius:6px;border:1px solid #9aa7b4;background:#fff;color:#1d3b5c;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:manipulation}.msnap.busy{opacity:.5}
 .snapov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px}.snapbox{background:var(--panel);color:var(--ink);border-radius:12px;max-width:min(720px,100%);max-height:94vh;overflow:auto;padding:10px 12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
 .snaph{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.snapx{font:inherit;font-size:20px;width:36px;height:36px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.snaptxt{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;margin:6px 0 0;max-height:24vh;overflow:auto;user-select:text;-webkit-user-select:text}
+.dlist button.dshare{border-color:#d62828;color:#b71c1c}
 .snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
 .mctr{position:absolute;right:56px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}@media (max-width:560px){.mctr{right:8px;bottom:94px;font-size:10px;max-width:calc(100% - 16px)}}
 .mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
@@ -2377,16 +2379,16 @@ async function snapTiles(ctx,layer,alpha){ if(!layer||getComputedStyle(layer).di
       ctx.save(); ctx.beginPath(); ctx.rect(L,T,256,256); ctx.clip(); ctx.globalAlpha=a; ctx.drawImage(bm,L+(parseFloat(im.style.left)||0),T+(parseFloat(im.style.top)||0),parseFloat(im.style.width)||256,parseFloat(im.style.height)||256); ctx.restore(); continue; }
     if(t.tagName==='IMG'&&t.src&&t.complete&&t.naturalWidth){ const bm=await snapBitmap(t.src); if(bm){ ctx.globalAlpha=a; ctx.drawImage(bm,L,T,256,256); } } }
   ctx.globalAlpha=1; }
-async function mapSnapshot(){ const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
+async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
-  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=pk?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=pk&&!opt.place?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
   g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
   await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
   for(const id of ['mWindF','mGrid','mIfr','mRoute','mDraw','mRet']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
-  if(DISP.ret==='none'){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
-  const mk=$('mMark'); if(mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
+  if(DISP.ret==='none'&&!opt.place){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
+  const mk=$('mMark'); if(!opt.place&&mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
   // scale bar + north arrow
   const mpp=mpxNow(), nd=niceDist(mpp*Math.min(140,W*0.3)), px=nd.m/mpp;
   g.font=`700 12px ${FONT}`; const lw=g.measureText(nd.lab).width; g.fillStyle='rgba(255,255,255,.88)'; g.fillRect(8,H-34,px+lw+24,26); g.fillStyle='#111'; g.fillRect(16,H-26,px,5); g.fillRect(16,H-30,2,12); g.fillRect(16+px-2,H-30,2,12);
@@ -2400,29 +2402,48 @@ async function mapSnapshot(){ const el=$('map'), W=el.clientWidth, H=el.clientHe
   g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5'; fit(ts,104,20,W-114,'600',12);
   fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}`,10,41,W-20,'600',12.5);
   const p=pk; let y=64;
-  if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
+  if(opt.place){ const it=opt.place, r=roleOf(it); g.fillStyle=ROLES[r].col; g.beginPath(); g.arc(17,y-4,6.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; fit(`${it.label||ROLES[r].n}　${fmtLL(it.lat,it.lon)}${it.h!=null&&isFinite(it.h)?`　標高 ${DISP.alt==='ft'?Math.round(it.h*FT).toLocaleString()+' ft':Math.round(it.h).toLocaleString()+' m'}`:''}　${mbeFix(it.lat,it.lon).str}`,28,y,W-38,'800',13.5); }
+  else { if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
   g.strokeStyle='#ff5a5a'; g.lineWidth=2; g.beginPath(); g.moveTo(11,y-4); g.lineTo(23,y-4); g.moveTo(17,y-10); g.lineTo(17,y+2); g.stroke();
-  g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13);
+  g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13); }
   // footer
   g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
   return await new Promise(r=>cv.toBlob(r,'image/png')); }
+function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`;
+  const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`, `座標 ${fmtAny(la,lo,'dm')}（WGS84）`];
+  if(DISP.coord!=='dm'&&DISP.coord!=='mgrs') L.push(`${COORDN[DISP.coord]} ${fmtAny(la,lo,DISP.coord)}`);
+  L.push(`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`, `MGRS ${fmtMGRS(la,lo)}`);
+  if(it.h!=null&&isFinite(it.h)) L.push(`標高 ${Math.round(it.h).toLocaleString()} m（${Math.round(it.h*FT).toLocaleString()} ft）`);
+  L.push(`${mbeFix(la,lo).str}（松本VOR/DMEから 磁方位/NM）`); if(it.at) L.push(`記録 ${it.at}`);
+  L.push(`Googleマップ ${g}`);
+  return {title:it.label||ROLES[r].n, text:L.join('\n'), gmap:g}; }
+async function placeShare(it,btn){ if(!it) return; const old=btn&&btn.textContent; if(btn){ btn.disabled=true; btn.textContent='作成中…'; }
+  try{ mapSetView(it.lat,it.lon,Math.max(MAP.z,14)); mapPick(it.lat,it.lon); pickSync(it.lat,it.lon);
+    // wait for the map tiles of the new view (max ~3 s)
+    for(let k=0;k<30;k++){ await new Promise(r=>setTimeout(r,100)); const ims=[...document.querySelectorAll('#mBaseL img')]; if(k>4&&ims.every(im=>im.complete)) break; }
+    const blob=await mapSnapshot({place:it}); snapSheet(blob,placeText(it)); }
+  catch(e){ mapMsg('共有の準備ができませんでした：'+(e&&e.message||e)); }
+  if(btn){ btn.disabled=false; btn.textContent=old; } }
 function snapUI(){ if($('mSnap')) return; const b=document.createElement('button'); b.type='button'; b.id='mSnap'; b.className='msnap'; b.setAttribute('aria-label','地図を画像で共有'); b.title='地図を画像で共有';
   b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
   $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',async e=>{ e.stopPropagation(); if(b.disabled) return; b.disabled=true; b.classList.add('busy');
     try{ const blob=await mapSnapshot(); snapSheet(blob); }catch(err){ mapMsg('地図の画像を作れませんでした：'+(err&&err.message||err)); } b.disabled=false; b.classList.remove('busy'); }); }
-function snapSheet(blob){ const old=$('snapOv'); if(old) old.remove(); const now=new Date(), P=n=>String(n).padStart(2,'0');
+function snapSheet(blob,extra){ const old=$('snapOv'); if(old) old.remove(); const now=new Date(), P=n=>String(n).padStart(2,'0');
   const name=`HOISTOPS_${now.getFullYear()}${P(now.getMonth()+1)}${P(now.getDate())}_${P(now.getHours())}${P(now.getMinutes())}.png`;
   const file=new File([blob],name,{type:'image/png'}), url=URL.createObjectURL(blob);
   const ov=document.createElement('div'); ov.id='snapOv'; ov.className='snapov';
   const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
-  ov.innerHTML=`<div class="snapbox" role="dialog" aria-label="地図の画像"><div class="snaph"><b>地図の画像</b><button type="button" class="snapx" aria-label="閉じる">×</button></div>
-    <img src="${url}" alt="地図の画像">
-    <div class="snapbtns">${canShare?'<button type="button" class="pri" id="snapShare">共有する（LINE・メール・Signal など）</button>':''}<a class="snapdl" id="snapDl" href="${url}" download="${name}">画像を保存</a><button type="button" id="snapCopy">コピー</button></div>
+  ov.innerHTML=`<div class="snapbox" role="dialog" aria-label="地図の画像"><div class="snaph"><b>${extra?extra.title+' の共有':'地図の画像'}</b><button type="button" class="snapx" aria-label="閉じる">×</button></div>
+    <img src="${url}" alt="地図の画像"${extra?' style="max-height:42vh"':''}>
+    <div class="snapbtns">${canShare?`<button type="button" class="pri" id="snapShare">${extra?'画像と位置を共有':'共有する'}（LINE・メール・Signal など）</button>`:''}<a class="snapdl" id="snapDl" href="${url}" download="${name}">画像を保存</a><button type="button" id="snapCopy">画像をコピー</button></div>
+    ${extra?`<pre class="snaptxt" id="snapTxt">${extra.text.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre><div class="snapbtns">${navigator.share?'<button type="button" id="snapShareT">位置（文字とリンク）だけ共有</button>':''}<button type="button" id="snapCopyT">位置の文字をコピー</button><a class="snapdl" href="${extra.gmap}" target="_blank" rel="noopener">Googleマップで開く ↗</a></div>`:''}
     <div class="hint">${canShare?'「共有する」で、端末の共有メニュー（LINE・メール・Signal・メッセージなど）が開きます。':'このブラウザは画像の直接共有に対応していません。「画像を保存」してから、LINE・メールなどに添付してください。'}電波のない所では、地図の画像がない部分は空白になります。</div></div>`;
   document.body.appendChild(ov);
   const close=()=>{ ov.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); };
-  ov.querySelector('.snapx').onclick=close; ov.onclick=e=>{ if(e.target===ov) close(); };
-  if(canShare) $('snapShare').onclick=async()=>{ try{ await navigator.share({files:[file],title:'HOIST OPS 地図',text:'HOIST OPS 地図'}); }catch(e){ if(e&&e.name!=='AbortError') mapMsg('共有できませんでした。「画像を保存」してから添付してください。'); } };
+  ov.querySelector('.snapx').onclick=close;
+  if(extra){ const st=$('snapShareT'); if(st) st.onclick=async()=>{ try{ await navigator.share({title:extra.title,text:extra.text}); }catch(e){} };
+    $('snapCopyT').onclick=async()=>{ try{ await navigator.clipboard.writeText(extra.text); $('snapCopyT').textContent='コピーしました'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('snapTxt')); const sl=getSelection(); sl.removeAllRanges(); sl.addRange(r); $('snapCopyT').textContent='選択しました（コピーしてください）'; } }; } ov.onclick=e=>{ if(e.target===ov) close(); };
+  if(canShare) $('snapShare').onclick=async()=>{ try{ await navigator.share(extra?{files:[file],title:extra.title,text:extra.text}:{files:[file],title:'HOIST OPS 地図',text:'HOIST OPS 地図'}); }catch(e){ if(e&&e.name!=='AbortError') mapMsg('共有できませんでした。「画像を保存」してから添付してください。'); } };
   $('snapCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); $('snapCopy').textContent='コピーしました'; }catch(e){ $('snapCopy').textContent='コピーできません'; } }; }
 setTimeout(snapUI,300);
 
@@ -2457,7 +2478,7 @@ function itemInfo(it){
   if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
   if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）`;
   if(it.t==='meas'){ const m=measTxt(it.pts[0],it.pts[1]); return `<b>距離 ${m.d}</b>　<b>${m.t}</b>（${m.back}）`; }
-  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}</div>`; }
+  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}</div>`; }
   if(it.t==='route') return routeInfo(it);
   if(it.t==='area') return `<b>面積 ${fmtArea(polyArea(it.pts))}</b>　周囲 ${fmtDist(polyPerim(it.pts))}　${it.pts.length}点`;
   return ''; }
@@ -2650,6 +2671,7 @@ function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mo
       else pts=[A,B];
       const it={t:'route',pts,name:`${a.label}→${b.label}（${m==='contour'?(pts.trailFrac>0.15?`等高線沿い・登山道 約${Math.round(pts.trailFrac*100)}%`:'等高線沿い'):'ダイレクト'}）`,col:m==='contour'?'#7d3c98':'#1e8449',dash:m!=='contour',off:m==='contour'?Math.max(0,1-(pts.trailFrac||0)):1};
       DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); routeStats(it); }; }
+  box.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>placeShare(DRAW.items[+b.dataset.share],b));
   box.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const it=DRAW.items[+b.dataset.go]; if(!it) return; mapSetView(it.lat,it.lon,Math.max(MAP.z,14)); mapPick(it.lat,it.lon); pickSync(it.lat,it.lon); $('map').scrollIntoView({behavior:'smooth',block:'center'}); });
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ DRAW.items.splice(+b.dataset.del,1); drawSave(); drawLayer(); drawPanel(); });
   if($('dUndo')) $('dUndo').onclick=()=>{ DRAW.items.pop(); drawSave(); drawLayer(); drawPanel(); };
