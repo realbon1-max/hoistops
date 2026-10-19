@@ -49,6 +49,14 @@ h2{font-size:15.5px;margin:0 0 8px}
 .inputs .row{display:flex;align-items:center;gap:8px}
 .inputs input[type=number]{width:100%;font:inherit;font-size:20px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink)}
 .inputs input[type=range]{width:100%}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:0 10px}.qgrid>div{min-width:0}.qgrid label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qsm{font-size:11px;color:var(--muted);font-weight:400}.qgrid .row{display:flex!important;align-items:center;gap:4px}.qgrid .row input{flex:1;min-width:0!important;width:auto!important;font-size:20px!important;padding:6px 8px!important}.qgrid .row .unit{flex:0 0 auto}.qgrid .row select{flex:0 0 auto;width:auto!important;min-width:0;padding-left:4px;padding-right:4px}
+.hhbox{margin:12px 0 8px;padding:10px 12px 8px;border-radius:10px;background:var(--paper);border:2px solid #2f6fb0}.hhbox>label{font-weight:800;color:#2f6fb0;margin-top:0}
+.hhrow{display:flex;align-items:baseline;gap:6px}.hhrow input{font-size:30px!important;font-weight:800;width:130px!important;padding:4px 10px!important}.hhrow .unit{font-size:16px;font-weight:700}.hhm{font-size:13px;color:var(--muted);margin-left:6px}
+#hhR{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:2px 0 0;touch-action:pan-y;cursor:pointer;--hp:37.5%}
+#hhR::-webkit-slider-runnable-track{height:14px;border-radius:7px;background:linear-gradient(90deg,#2f6fb0 0,#2f6fb0 var(--hp),#d9dee5 var(--hp));border:1px solid rgba(0,0,0,.15)}
+#hhR::-moz-range-track{height:14px;border-radius:7px;background:#d9dee5;border:1px solid rgba(0,0,0,.15)}#hhR::-moz-range-progress{height:14px;border-radius:7px;background:#2f6fb0}
+#hhR::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-12px;border-radius:50%;background:#fff;border:3px solid #2f6fb0;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+#hhR::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid #2f6fb0;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 .fuelsl{grid-column:1/-1;width:100%;margin:2px 0 10px;padding:8px 10px 6px;border-radius:10px;background:var(--paper);border:1px solid var(--rule)}
 #w_fuelR{-webkit-appearance:none;appearance:none;width:100%;height:40px;background:transparent;margin:0;touch-action:pan-y;cursor:pointer;--fp:0%}
 #w_fuelR::-webkit-slider-runnable-track{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--c-fuel) 0,var(--c-fuel) var(--fp),#d9dee5 var(--fp));border:1px solid rgba(0,0,0,.15)}
@@ -674,8 +682,8 @@ a{color:#7cc4ff}
       <div class="qnh">
         <div class="qhead">気圧高度を高度計規正値（QNH）から求める</div>
         <label class="chk"><input type="checkbox" id="qnhLink" checked> 標高とQNHから気圧高度を計算する</label>
-        <label for="elev">標高（または高度計の指示）</label><div class="row"><input id="elev" type="number" step="10" value="3000"><span class="unit">ft</span></div>
-        <label for="qnh">高度計規正値（QNH）</label><div class="row"><input id="qnh" type="number" step="0.01" value="29.92"><select id="qnhU" aria-label="単位"><option value="inHg">inHg</option><option value="hPa">hPa</option></select></div>
+        <div class="qgrid"><div><label for="elev">標高<small class="qsm">（高度計の指示）</small></label><div class="row"><input id="elev" type="number" step="10" value="3000"><span class="unit">ft</span></div></div>
+        <div><label for="qnh">QNH<small class="qsm">（高度計規正値）</small></label><div class="row"><input id="qnh" type="number" step="0.01" value="29.92"><select id="qnhU" aria-label="単位"><option value="inHg">inHg</option><option value="hPa">hPa</option></select></div></div></div>
         <div class="hint" id="qnhOut"></div>
         <div class="hint"><a href="#ptab" style="color:var(--curve)">QNH換算表・気圧と高度の対照表（下）を見る</a></div>
       </div>
@@ -683,9 +691,11 @@ a{color:#7cc4ff}
       <div class="gwtotal" id="gwTotal"></div>
       <input id="gw" type="hidden" value="6000">
       <p class="legend" style="margin:4px 0 0">内訳は右の「全備重量の内訳」で設定します。</p>
-      <label for="hh">ホバリング高度（対地・障害物上）</label>
-      <div class="row"><input id="hh" type="number" step="10" value="150"><span class="unit">ft</span></div>
+      <div class="hhbox"><label for="hh">ホバリング高度（対地・障害物上）</label>
+      <div class="hhrow"><input id="hh" type="number" step="10" value="150" inputmode="numeric"><span class="unit">ft</span><span class="hhm" id="hhM"></span></div>
       <input id="hhR" type="range" min="0" max="400" step="5" value="150" aria-label="ホバリング高度スライダー">
+      <div class="fuelticks" aria-hidden="true"><span>0</span><span>100</span><span>200</span><span>300</span><span>400 ft</span></div>
+      <div class="fuelbtns hhbtns"><button type="button" data-hd="-50">−50</button><button type="button" data-hd="-10">−10</button><button type="button" data-hd="10">＋10</button><button type="button" data-hd="50">＋50</button></div></div>
       <label>ホバリングの出力（風の制限の基準）</label>
       <div class="seg" id="pwr"><button aria-pressed="false" data-m="top">離陸出力（TOP）</button><button aria-pressed="true" data-m="mcp">連続最大（MCP）</button></div>
       <label>風の入力方法</label>
@@ -1404,6 +1414,8 @@ function drawRel(Happ,T){
 const inputs=['hp','oat'];
 inputs.forEach(id=>{const n=$(id),r=$(id+'R');n.addEventListener('input',()=>{r.value=n.value;update()});r.addEventListener('input',()=>{n.value=r.value;update()});});
 $('hh').addEventListener('input',()=>{$('hhR').value=$('hh').value;update()});$('hhR').addEventListener('input',()=>{$('hh').value=$('hhR').value;update()});
+function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; r.style.setProperty('--hp',(Math.max(0,Math.min(1,v/(+r.max||400)))*100).toFixed(1)+'%'); const m=$('hhM'); if(m) m.textContent=`約 ${Math.round(v/3.28084)} m`; }
+document.querySelectorAll('.hhbtns [data-hd]').forEach(b=>b.onclick=()=>{ const v=Math.max(0,Math.min(400,Math.round(((+$('hh').value||0)+(+b.dataset.hd))/5)*5)); $('hh').value=v; $('hhR').value=v; update(); });
 const TAPES=[
  {key:'p917',name:'離陸出力・双発（AEO）',sub:'第9-117図 NR102%｜航空局承認対象外の追加データ',chart:'c917',cap:14000,hdc:true,main:true,lab:'離陸出力',lab2:'双発・第9-117図',cn:'離陸出力（TOP）・双発'},
  {key:'p918',name:'連続最大出力・双発（AEO）',sub:'第9-118図 NR102%｜航空局承認対象外の追加データ',chart:'c918',cap:14000,hdc:true,main:true,lab:'連続最大',lab2:'双発・第9-118図',cn:'連続最大（MCP）・双発'},
@@ -1469,7 +1481,7 @@ function drawCeil(H,T,W,wind){
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
-function update(){ try{ fuelFill(); }catch(e){}
+function update(){ try{ fuelFill(); hhFill(); }catch(e){}
   $('gw').value=Math.round(totalGW()); $('gwTotal').textContent=Math.round(totalGW()).toLocaleString()+' kg'+(totalGW()>MTOW()?`（最大 ${MTOW().toLocaleString()} kg 超過）`:totalGW()>CHW?'（6,400 kg超：性能図の範囲外）':'');
   const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW(), hh=+$('hh').value;
   const isa=ISA(H), dev=T-isa;
