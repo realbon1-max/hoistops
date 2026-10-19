@@ -2616,7 +2616,7 @@ setTimeout(rdrUI,330);
 const GT={on:false,watch:null,last:null,lastT:0,hold:0,acc:null,first:true};
 function gtFix(p){ if(!GT.on) return; const la=p.coords.latitude, lo=p.coords.longitude, now=Date.now(); GT.acc=p.coords.accuracy; GT.got=true;
   const moved=GT.last?gc(GT.last[0],GT.last[1],la,lo).nm*1852:1e9;
-  if(GT.first||moved>15||now-GT.lastT>8000){ GT.last=[la,lo]; GT.lastT=now;
+  if(GT.first||moved>15||now-GT.lastT>3000){ GT.last=[la,lo]; GT.lastT=now;
     if(GT.first){ mapSetView(la,lo,Math.max(MAP.z,13)); $('mBaseL').innerHTML=''; $('mOvL').innerHTML=''; GT.first=false; }
     else if(now-GT.hold>10000) mapSetView(la,lo);
     mapPick(la,lo); pickSync(la,lo); }
