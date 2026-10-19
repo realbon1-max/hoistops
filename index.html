@@ -609,6 +609,7 @@ a{color:#7cc4ff}
           <div class="mrow"><label class="chk"><input type="checkbox" id="dMgrs"> MGRSグリッドを表示</label></div>
           <div class="mrow"><span class="mlab">距離単位</span><span class="mseg" id="dDist"><button type="button" data-v="m">メートル</button><button type="button" data-v="mi">マイル</button><button type="button" data-v="NM">海里</button></span></div>
           <div class="mrow"><span class="mlab">高度単位</span><span class="mseg" id="dAlt"><button type="button" data-v="m">メートル</button><button type="button" data-v="ft">フィート</button></span></div>
+          <div class="mrow"><span class="mlab">レーダー</span>円 <select id="dRdrRing"><option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="1852">1 NM</option><option value="2000">2 km</option></select>　扇（±40°）<select id="dRdrFan"><option value="1000">1 km</option><option value="2000">2 km</option><option value="3000">3 km</option><option value="3704">2 NM</option><option value="5000">5 km</option><option value="9260">5 NM</option></select><span class="hint" style="margin:0 0 0 6px">この中に入ると赤で点滅</span></div>
           <div class="mrow"><span class="mlab">スケール</span><span class="mseg" id="dRet"><button type="button" data-v="none">なし</button><button type="button" data-v="cross">十字</button><button type="button" data-v="box">四角</button><button type="button" data-v="circle">円</button><button type="button" data-v="line">単線</button><button type="button" data-v="ticks">目盛円</button></span></div>
           <p class="legend">座標形式は、選んだ地点・作図の一覧・検索欄の表示に使います（検索欄には度・度分・度分秒・UTM・MGRSのどれでも入力できます）。距離単位は地図の縮尺・作図の距離・スケール、高度単位は選んだ地点の標高の表示に使います（性能計算は今までどおりフィート）。スケールは地図の中心に、縮尺に合わせた区切りのよい長さで表示します。</p>
         </div>
@@ -2357,6 +2358,7 @@ function dispPanel(){ const set=(id,key,after)=>{ document.querySelectorAll(`#${
   set('dDist','dist',()=>{ mapScale(); retDraw(); if(typeof drawPanel==='function') drawPanel(); mapReq(); });
   set('dAlt','alt',()=>{ mapInfo(); });
   set('dRet','ret',()=>retDraw());
+  [['dRdrRing','ring'],['dRdrFan','fan']].forEach(([id,k])=>{ const e=$(id); if(!e) return; e.value=String(RDR[k]); e.onchange=()=>{ RDR[k]=+e.value; try{ localStorage.setItem('aw139rdrd',JSON.stringify({ring:RDR.ring,fan:RDR.fan})); }catch(_){} try{ radarDraw(); }catch(_){} }; });
   $('dMgrs').checked=!!DISP.mgrs; $('dMgrs').onchange=e=>{ DISP.mgrs=e.target.checked; dispSave(); mgrsDraw(); };
   llHint(); }
 function llHint(){ const h=$('llHint'); if(h) h.textContent=`表示は${COORDN[DISP.coord]}${DISP.coord==='dm'?'（DD°MM.mmm′）':''}・UTM／MGRSでも入力できます`; }
@@ -2568,17 +2570,17 @@ function hfUI(){ if($('mHdgF')) return; const b=document.createElement('button')
 setTimeout(hfUI,320);
 
 // ==== radar overlay around the helicopter (heading-up wedge, range rings) + edge markers for off-screen rescue points ====
-const RDR={on:false}; try{ RDR.on=localStorage.getItem('aw139rdr')==='1'; }catch(e){}
+const RDR={on:false,ring:1000,fan:3000}; try{ RDR.on=localStorage.getItem('aw139rdr')==='1'; const v=JSON.parse(localStorage.getItem('aw139rdrd')||'{}'); if(v.ring>0) RDR.ring=+v.ring; if(v.fan>0) RDR.fan=+v.fan; }catch(e){}
 const isTgt=it=>it.tgt!=null?!!it.tgt:roleOf(it)==='vic';   // default: casualties are targets
 function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight; sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, mpp=mpxNow(); let h='';
   const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, ref=p?[p.lat,p.lon]:[y2lat(MAP.cy,z),x2lon(MAP.cx,z)];
   const G='#39ff6a', halo='stroke="#06210f" stroke-opacity=".55"';
   if(RDR.on&&p){ const cx=lon2x(p.lon,z)-x0, cy=lat2y(p.lat,z)-y0, hd=((+$('hdg').value%360)+360)%360, R=Math.hypot(W,H);
-    const nd=niceDist(mpp*Math.min(W,H)*0.16), r=nd.m/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L], FAN=40, FR=2*r;
+    const nd={m:RDR.ring}, r=RDR.ring/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L], FAN=40, FR=RDR.fan/mpp;
     // targets: inside the fan (±40°, out to 2 rings) or inside the inner ring → red alert; else within ±5° → yellow on-course
     const T=(typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest'&&isTgt(it)).map(it=>{ const g=gc(p.lat,p.lon,it.lat,it.lon), dm=g.nm*1852; return {it,g,dm,off:((g.crs-hd+540)%360)-180}; }).sort((x,y)=>x.dm-y.dm);
-    const hit=T.find(o=>o.dm<=nd.m||(o.dm<=2*nd.m&&Math.abs(o.off)<=FAN)), oc=hit?null:T.find(o=>o.dm>30&&Math.abs(o.off)<=5);
+    const hit=T.find(o=>o.dm<=RDR.ring||(o.dm<=RDR.fan&&Math.abs(o.off)<=FAN)), oc=hit?null:T.find(o=>o.dm>30&&Math.abs(o.off)<=5);
     const GC=hit?'#ff2d2d':oc?'#ffd400':G, cls=hit||oc?' class="rdron"':'';
     const [l1x,l1y]=A(-FAN,FR), [l2x,l2y]=A(FAN,FR), [fx,fy]=A(0,R), [bx,by]=A(180,R), [w1x,w1y]=A(-FAN,R), [w2x,w2y]=A(FAN,R);
     let d=`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0M${bx},${by}L${fx},${fy}M${cx},${cy}L${w1x},${w1y}M${cx},${cy}L${w2x},${w2y}`;
