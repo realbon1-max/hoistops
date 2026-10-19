@@ -2575,22 +2575,24 @@ function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; co
   const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, ref=p?[p.lat,p.lon]:[y2lat(MAP.cy,z),x2lon(MAP.cx,z)];
   const G='#39ff6a', halo='stroke="#06210f" stroke-opacity=".55"';
   if(RDR.on&&p){ const cx=lon2x(p.lon,z)-x0, cy=lat2y(p.lat,z)-y0, hd=((+$('hdg').value%360)+360)%360, R=Math.hypot(W,H);
-    // on-course check: any casualty within ±5° of the heading
-    const oc=(typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest'&&isTgt(it)).map(it=>{ const g=gc(p.lat,p.lon,it.lat,it.lon); return {it,g,off:((g.crs-hd+540)%360)-180}; }).filter(o=>o.g.nm*1852>30&&Math.abs(o.off)<=5).sort((a,b)=>a.g.nm-b.g.nm)[0];
-    const GC=oc?'#ffd400':G, cls=oc?' class="rdron"':'';
-    const nd=niceDist(mpp*Math.min(W,H)*0.16), r=nd.m/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L];
-    let d=''; for(let k=1;k<=4;k++) d+=`M${cx-r*k},${cy}a${r*k},${r*k} 0 1,0 ${2*r*k},0a${r*k},${r*k} 0 1,0 ${-2*r*k},0`;
-    for(const a of [0,90,180,270]){ const [x,y]=A(a,R); d+=`M${cx},${cy}L${x},${y}`; }
-    for(const a of [-40,40]){ const [x,y]=A(a,R); d+=`M${cx},${cy}L${x},${y}`; }
-    h+=`<g${cls}><path d="${d}" fill="none" ${halo} stroke-width="3.2"/><path d="${d}" fill="none" stroke="${GC}" stroke-width="${oc?2.2:1.4}" stroke-opacity=".95"/></g>`;
-    if(oc){ const vx=lon2x(oc.it.lon,z)-x0, vy=lat2y(oc.it.lat,z)-y0; h+=`<g class="rdron"><path d="M${cx},${cy}L${vx},${vy}" stroke="#06210f" stroke-opacity=".6" stroke-width="5"/><path d="M${cx},${cy}L${vx},${vy}" stroke="#ffd400" stroke-width="2.6" stroke-dasharray="10 6"/></g>`;
-      const lab=`ON COURSE  ${esc(oc.it.label||ROLES[roleOf(oc.it)].n)}  ${fmtDist2(oc.g.nm*1852).split('（')[0]}  ${oc.off>=0?'右':'左'}${Math.abs(oc.off).toFixed(0)}°`;
-      h+=`<g class="rdron"><rect x="${W/2-130}" y="10" width="260" height="26" rx="5" fill="rgba(6,33,15,.82)" stroke="#ffd400" stroke-width="1.5"/><text x="${W/2}" y="28" font-size="13" font-weight="900" fill="#ffd400" text-anchor="middle" letter-spacing=".04em">${lab}</text></g>`; }
-    const [fx,fy]=A(0,r*4.6); h+=`<path d="${d.slice(0,0)}M${cx},${cy}" />`;
-    for(let k=1;k<=4;k++){ const [lx,ly]=A(180+12,r*k); const v=nd.m*k, lab=DISP.dist==='m'?(v>=1000?`${+(v/1000).toFixed(1)}km`:`${v}m`):`${+(v/(DISP.dist==='mi'?1609.344:1852)).toFixed(2)}${DISP.dist==='mi'?'mi':'NM'}`;
+    const nd=niceDist(mpp*Math.min(W,H)*0.16), r=nd.m/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L], FAN=40, FR=2*r;
+    // targets: inside the fan (±40°, out to 2 rings) or inside the inner ring → red alert; else within ±5° → yellow on-course
+    const T=(typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest'&&isTgt(it)).map(it=>{ const g=gc(p.lat,p.lon,it.lat,it.lon), dm=g.nm*1852; return {it,g,dm,off:((g.crs-hd+540)%360)-180}; }).sort((x,y)=>x.dm-y.dm);
+    const hit=T.find(o=>o.dm<=nd.m||(o.dm<=2*nd.m&&Math.abs(o.off)<=FAN)), oc=hit?null:T.find(o=>o.dm>30&&Math.abs(o.off)<=5);
+    const GC=hit?'#ff2d2d':oc?'#ffd400':G, cls=hit||oc?' class="rdron"':'';
+    const [l1x,l1y]=A(-FAN,FR), [l2x,l2y]=A(FAN,FR), [fx,fy]=A(0,R), [bx,by]=A(180,R), [w1x,w1y]=A(-FAN,R), [w2x,w2y]=A(FAN,R);
+    let d=`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0M${bx},${by}L${fx},${fy}M${cx},${cy}L${w1x},${w1y}M${cx},${cy}L${w2x},${w2y}`;
+    h+=`<path d="M${cx},${cy}L${l1x},${l1y}A${FR},${FR} 0 0,1 ${l2x},${l2y}Z" fill="${hit?'rgba(255,45,45,.22)':'rgba(57,255,106,.10)'}"${cls}/>`;
+    h+=`<path d="M${l1x},${l1y}A${FR},${FR} 0 0,1 ${l2x},${l2y}" fill="none" stroke="${GC}" stroke-width="1.2" stroke-dasharray="4 4" stroke-opacity=".8"/>`;
+    h+=`<g${cls}><path d="${d}" fill="none" ${halo} stroke-width="3.2"/><path d="${d}" fill="none" stroke="${GC}" stroke-width="${hit||oc?2.2:1.4}" stroke-opacity=".95"/></g>`;
+    { const [lx,ly]=A(180+14,r); const v=nd.m, lab=DISP.dist==='m'?(v>=1000?`${+(v/1000).toFixed(1)}km`:`${v}m`):`${+(v/(DISP.dist==='mi'?1609.344:1852)).toFixed(2)}${DISP.dist==='mi'?'mi':'NM'}`;
       h+=`<text x="${lx}" y="${ly}" font-size="10.5" font-weight="700" fill="${GC}" stroke="#06210f" stroke-width="2.6" paint-order="stroke" text-anchor="middle">${lab}</text>`; }
-    for(const [a,t] of [[0,'N'],[90,'E'],[180,'S'],[270,'W']]){ const x=cx+Math.sin(a*RAD)*(r*4+12), y=cy-Math.cos(a*RAD)*(r*4+12)+4; h+=`<text x="${x}" y="${y}" font-size="12" font-weight="800" fill="${GC}" stroke="#06210f" stroke-width="2.6" paint-order="stroke" text-anchor="middle">${t}</text>`; }
-    const [tx,ty]=A(0,r*4); h+=`<path d="M${tx},${ty}L${A(-4,r*4-12).join(',')}L${A(4,r*4-12).join(',')}Z" fill="${GC}" ${halo} stroke-width="1"/>`; }
+    const tg=hit||oc; if(tg){ const vx=lon2x(tg.it.lon,z)-x0, vy=lat2y(tg.it.lat,z)-y0, c2=hit?'#ff2d2d':'#ffd400';
+      h+=`<g class="rdron"><path d="M${cx},${cy}L${vx},${vy}" stroke="#06210f" stroke-opacity=".6" stroke-width="5"/><path d="M${cx},${cy}L${vx},${vy}" stroke="${c2}" stroke-width="2.6" stroke-dasharray="10 6"/></g>`;
+      const lab=`${hit?(tg.dm<=nd.m?'IN RANGE':'IN SECTOR'):'ON COURSE'}  ${esc(tg.it.label||ROLES[roleOf(tg.it)].n)}  ${fmtDist2(tg.dm).split('（')[0]}  ${tg.off>=0?'右':'左'}${Math.abs(tg.off).toFixed(0)}°`;
+      const bw=Math.min(W-20,280), by2=H-78;
+      h+=`<g class="rdron"><rect x="${W/2-bw/2}" y="${by2}" width="${bw}" height="26" rx="5" fill="rgba(20,6,6,.84)" stroke="${c2}" stroke-width="1.5"/><text x="${W/2}" y="${by2+18}" font-size="13" font-weight="900" fill="${c2}" text-anchor="middle" letter-spacing=".04em">${lab}</text></g>`; }
+  }
   sv.innerHTML=h; h=''; const se=$('mEdge'); if(se) se.setAttribute('viewBox',`0 0 ${W} ${H}`);
   // edge markers for rescue points outside the view
   const M=18; (typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest').forEach(it=>{ const px=lon2x(it.lon,z)-x0, py=lat2y(it.lat,z)-y0;
