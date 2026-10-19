@@ -1983,7 +1983,7 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
 function mapInfo(){ mapInfo0(); destBtn(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
 // rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下点), hoist-up point (吊り上げ点)
-const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#0b63ce'},drop:{n:'降下点',ic:'🧗',col:'#1e8449'},lift:{n:'吊り上げ点',ic:'⬆',col:'#d35400'}};
+const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#d62828'},drop:{n:'降下点',ic:'🧗',col:'#1e8449'},lift:{n:'吊り上げ点',ic:'⬆',col:'#1565c0'}};
 // map pins for rescue roles: a person calling for help / a mountain rescuer on the hoist cable / lift point
 function roleIcon(r){ const c=ROLES[r].col, W='stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"';
   const disc=`<circle r="11" fill="rgba(0,0,0,.25)" transform="translate(.6,1.2)"/><circle r="10.5" fill="${c}" stroke="#fff" stroke-width="1.8"/>`;
