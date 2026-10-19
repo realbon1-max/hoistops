@@ -2354,12 +2354,13 @@ async function snapTiles(ctx,layer,alpha){ if(!layer||getComputedStyle(layer).di
   ctx.globalAlpha=1; }
 async function mapSnapshot(){ const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
-  const hdr=76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=pk?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
   g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
   await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
   for(const id of ['mWindF','mGrid','mIfr','mRoute','mDraw','mRet']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
+  if(DISP.ret==='none'){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
   const mk=$('mMark'); if(mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
   // scale bar + north arrow
   const mpp=mpxNow(), nd=niceDist(mpp*Math.min(140,W*0.3)), px=nd.m/mpp;
@@ -2370,11 +2371,13 @@ async function mapSnapshot(){ const el=$('map'), W=el.clientWidth, H=el.clientHe
   // header
   const now=new Date(), P=n=>String(n).padStart(2,'0'), ts=`${now.getFullYear()}-${P(now.getMonth()+1)}-${P(now.getDate())} ${P(now.getHours())}:${P(now.getMinutes())}`;
   const {wd,ws}=mwVals(), hd=((+$('hdg').value%360)+360)%360, c=[y2lat(MAP.cy,MAP.z),x2lon(MAP.cx,MAP.z)];
-  const fit=(t,x,y,max,wt,sz)=>{ let z=sz; do{ g.font=`${wt} ${z}px ${FONT}`; z-=0.5; }while(g.measureText(t).width>max&&z>8); g.fillText(t,x,y); };
+  const fit=(t,x,y,max,wt,sz)=>{ let z=sz; do{ g.font=`${wt} ${z}px ${FONT}`; z-=0.5; }while(g.measureText(t).width>max&&z>8); g.fillText(t,x,y,max); };
   g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5'; fit(ts,104,20,W-114,'600',12);
   fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}`,10,41,W-20,'600',12.5);
-  const p=MAP.pick; let l2=p&&!p.loading?`地点 ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`:`中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}`;
-  g.fillStyle='#fff'; fit(l2,10,64,W-20,'700',13);
+  const p=pk; let y=64;
+  if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
+  g.strokeStyle='#ff5a5a'; g.lineWidth=2; g.beginPath(); g.moveTo(11,y-4); g.lineTo(23,y-4); g.moveTo(17,y-10); g.lineTo(17,y+2); g.stroke();
+  g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13);
   // footer
   g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
   return await new Promise(r=>cv.toBlob(r,'image/png')); }
