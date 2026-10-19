@@ -69,7 +69,7 @@ h2{font-size:15.5px;margin:0 0 8px}
 .bar{position:relative;height:30px;background:var(--tape);border-radius:3px}
 .bar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px 0 0 3px}
 .bar .cur{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--ink)}
-.blab{position:absolute;top:-17px;font-size:10.5px;line-height:1;white-space:nowrap;pointer-events:none;font-weight:700}.blab.l{transform:translateX(calc(-100% - 5px))}.blab.r{transform:translateX(5px)}.bcur{color:var(--ink)}.bmax{color:var(--muted)}.bcur::before{content:"│";display:none}
+.blab{position:absolute;top:-17px;font-size:10.5px;line-height:1;white-space:nowrap;pointer-events:none;font-weight:700}.blab.l{transform:translateX(calc(-100% + 2px))}.blab.r{transform:translateX(0)}.blab.c{transform:translateX(-50%)}.bcur{color:var(--ink)}.bmax{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:800;line-height:1;white-space:nowrap;pointer-events:none}.bmax.in{color:#fff;padding-right:6px;text-shadow:0 0 3px rgba(0,0,0,.45)}.bmax.out{color:var(--ink);padding-left:6px}.bcur::before{content:"│";display:none}
 .tape .bar{margin-top:14px}.blegend{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:11.5px;color:var(--muted);margin:0 0 6px}.blegend i{display:inline-block;vertical-align:-2px;margin-right:4px}.blegend .lcur{width:3px;height:13px;background:var(--ink)}.blegend .lmax{width:16px;height:10px;border-right:3px solid var(--ink);background:var(--ok,#2ecc71);opacity:.8}
 .bar .tick{position:absolute;bottom:-18px;font-size:11px;color:var(--muted);transform:translateX(-50%)}
 .val{font-size:20px;font-weight:700;text-align:right}
@@ -1498,8 +1498,8 @@ function update(){ try{ fuelFill(); }catch(e){}
     if(r.err){barHTML=`<div class="bar"></div>`;valHTML=`<div class="val caution" style="font-size:14px">${r.err}</div>`;}
     else{
       const m=r.W-W; const c=colorFor(m);
-      barHTML=`<div class="bar" role="img" aria-label="最大${Math.round(r.W)}kg"><div class="fill" style="width:${Math.max(0,Math.min(100,pct(r.W)))}%;background:${c}"></div><div class="cur" style="left:calc(${Math.max(0,Math.min(100,pct(W)))}% - 1px)"></div>${(()=>{ const pc=Math.max(0,Math.min(100,pct(W))), pf=Math.max(0,Math.min(100,pct(r.W))), curL=pf>=pc?(pc>18):(pc>80), maxR=pf>=pc?(pf<82):(pf<18);
-        return `<span class="blab bcur ${curL?'l':'r'}" style="left:${pc}%">全備 ${Math.round(W).toLocaleString()}</span><span class="blab bmax ${maxR?'r':'l'}" style="left:${pf}%">限界 ${Math.round(r.W).toLocaleString()}</span>`; })()}${[4400,4800,5200,5600,6000,6400,6800,7200].filter(v=>v<=MTOW()).map(v=>`<span class="tick" style="left:${pct(v)}%">${v}</span>`).join('')}</div>`;
+      barHTML=`<div class="bar" role="img" aria-label="最大${Math.round(r.W)}kg"><div class="fill" style="width:${Math.max(0,Math.min(100,pct(r.W)))}%;background:${c}"></div><div class="cur" style="left:calc(${Math.max(0,Math.min(100,pct(W)))}% - 1px)"></div>${(()=>{ const pc=Math.max(0,Math.min(100,pct(W))), pf=Math.max(0,Math.min(100,pct(r.W))), cs=pc>88?'l':pc<12?'r':'c', inF=pf>=22;
+        return `<span class="blab bcur ${cs}" style="left:${pc}%">全備 ${Math.round(W).toLocaleString()}</span><span class="bmax ${inF?'in':'out'}" style="${inF?`right:${100-pf}%`:`left:${pf}%`}">限界 ${Math.round(r.W).toLocaleString()}</span>`; })()}${[4400,4800,5200,5600,6000,6400,6800,7200].filter(v=>v<=MTOW()).map(v=>`<span class="tick" style="left:${pct(v)}%">${v}</span>`).join('')}</div>`;
       valHTML=`<div class="val" style="color:${c}">${Math.round(r.W).toLocaleString()} kg<small>余裕 ${m>=0?'+':''}${Math.round(m)} kg</small></div>`;
     }
     el.innerHTML=`<div class="name">${tp.name}<small>${tp.sub}</small></div>${barHTML}${valHTML}${flags.length?`<div class="flags">注意：${flags.join('／')}</div>`:''}`;
