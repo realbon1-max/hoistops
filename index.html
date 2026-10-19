@@ -382,6 +382,7 @@ html{scroll-padding-top:52px}
 .snaph{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.snapx{font:inherit;font-size:20px;width:36px;height:36px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .snaptxt{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;margin:6px 0 0;max-height:24vh;overflow:auto;user-select:text;-webkit-user-select:text}
 .dsun{color:#b45309}.dsun b{font-weight:700}
+.dlist button.dtgt{border-color:#5b6b7a;color:var(--muted)}.dlist button.dtgt[aria-pressed=true]{background:#0b2414;border-color:#39ff6a;color:#39ff6a}
 .dlist button.dshare{border-color:#d62828;color:#b71c1c}
 .snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
 .mctr{position:absolute;right:8px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}.msun{bottom:52px}.msun i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px;border-radius:50%;background:radial-gradient(circle at 50% 100%,#ffb300 0 45%,transparent 47%);border-bottom:1.6px solid #c77700;border-radius:0}.msun i.set{background:radial-gradient(circle at 50% 100%,#ff7043 0 45%,transparent 47%);border-bottom-color:#8e3b1f}
@@ -2568,13 +2569,14 @@ setTimeout(hfUI,320);
 
 // ==== radar overlay around the helicopter (heading-up wedge, range rings) + edge markers for off-screen rescue points ====
 const RDR={on:false}; try{ RDR.on=localStorage.getItem('aw139rdr')==='1'; }catch(e){}
+const isTgt=it=>it.tgt!=null?!!it.tgt:roleOf(it)==='vic';   // default: casualties are targets
 function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight; sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, mpp=mpxNow(); let h='';
   const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, ref=p?[p.lat,p.lon]:[y2lat(MAP.cy,z),x2lon(MAP.cx,z)];
   const G='#39ff6a', halo='stroke="#06210f" stroke-opacity=".55"';
   if(RDR.on&&p){ const cx=lon2x(p.lon,z)-x0, cy=lat2y(p.lat,z)-y0, hd=((+$('hdg').value%360)+360)%360, R=Math.hypot(W,H);
     // on-course check: any casualty within ±5° of the heading
-    const oc=(typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest'&&roleOf(it)==='vic').map(it=>{ const g=gc(p.lat,p.lon,it.lat,it.lon); return {it,g,off:((g.crs-hd+540)%360)-180}; }).filter(o=>o.g.nm*1852>30&&Math.abs(o.off)<=5).sort((a,b)=>a.g.nm-b.g.nm)[0];
+    const oc=(typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest'&&isTgt(it)).map(it=>{ const g=gc(p.lat,p.lon,it.lat,it.lon); return {it,g,off:((g.crs-hd+540)%360)-180}; }).filter(o=>o.g.nm*1852>30&&Math.abs(o.off)<=5).sort((a,b)=>a.g.nm-b.g.nm)[0];
     const GC=oc?'#ffd400':G, cls=oc?' class="rdron"':'';
     const nd=niceDist(mpp*Math.min(W,H)*0.16), r=nd.m/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L];
     let d=''; for(let k=1;k<=4;k++) d+=`M${cx-r*k},${cy}a${r*k},${r*k} 0 1,0 ${2*r*k},0a${r*k},${r*k} 0 1,0 ${-2*r*k},0`;
@@ -2582,7 +2584,7 @@ function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; co
     for(const a of [-40,40]){ const [x,y]=A(a,R); d+=`M${cx},${cy}L${x},${y}`; }
     h+=`<g${cls}><path d="${d}" fill="none" ${halo} stroke-width="3.2"/><path d="${d}" fill="none" stroke="${GC}" stroke-width="${oc?2.2:1.4}" stroke-opacity=".95"/></g>`;
     if(oc){ const vx=lon2x(oc.it.lon,z)-x0, vy=lat2y(oc.it.lat,z)-y0; h+=`<g class="rdron"><path d="M${cx},${cy}L${vx},${vy}" stroke="#06210f" stroke-opacity=".6" stroke-width="5"/><path d="M${cx},${cy}L${vx},${vy}" stroke="#ffd400" stroke-width="2.6" stroke-dasharray="10 6"/></g>`;
-      const lab=`ON COURSE  ${esc(oc.it.label||'要救助者')}  ${fmtDist2(oc.g.nm*1852).split('（')[0]}  ${oc.off>=0?'右':'左'}${Math.abs(oc.off).toFixed(0)}°`;
+      const lab=`ON COURSE  ${esc(oc.it.label||ROLES[roleOf(oc.it)].n)}  ${fmtDist2(oc.g.nm*1852).split('（')[0]}  ${oc.off>=0?'右':'左'}${Math.abs(oc.off).toFixed(0)}°`;
       h+=`<g class="rdron"><rect x="${W/2-130}" y="10" width="260" height="26" rx="5" fill="rgba(6,33,15,.82)" stroke="#ffd400" stroke-width="1.5"/><text x="${W/2}" y="28" font-size="13" font-weight="900" fill="#ffd400" text-anchor="middle" letter-spacing=".04em">${lab}</text></g>`; }
     const [fx,fy]=A(0,r*4.6); h+=`<path d="${d.slice(0,0)}M${cx},${cy}" />`;
     for(let k=1;k<=4;k++){ const [lx,ly]=A(180+12,r*k); const v=nd.m*k, lab=DISP.dist==='m'?(v>=1000?`${+(v/1000).toFixed(1)}km`:`${v}m`):`${+(v/(DISP.dist==='mi'?1609.344:1852)).toFixed(2)}${DISP.dist==='mi'?'mi':'NM'}`;
@@ -2637,7 +2639,7 @@ function itemInfo(it){
   if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
   if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）`;
   if(it.t==='meas'){ const m=measTxt(it.pts[0],it.pts[1]); return `<b>距離 ${m.d}</b>　<b>${m.t}</b>（${m.back}）`; }
-  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}${r==='vic'?(()=>{ const t=SUN.times(jstDay(new Date()),it.lat,it.lon); return `<br><span class="dsun">日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}　<b data-sunla="${it.lat}" data-sunlo="${it.lon}">${sunText(it.lat,it.lon)}</b></span>`; })():''}</div>`; }
+  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dtgt" data-tgt="${i}" aria-pressed="${isTgt(it)}" title="レーダーのオンコース判定（針路±5°で点滅）の対象にする">◎ ターゲット</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}${r==='vic'?(()=>{ const t=SUN.times(jstDay(new Date()),it.lat,it.lon); return `<br><span class="dsun">日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}　<b data-sunla="${it.lat}" data-sunlo="${it.lon}">${sunText(it.lat,it.lon)}</b></span>`; })():''}</div>`; }
   if(it.t==='route') return routeInfo(it);
   if(it.t==='area') return `<b>面積 ${fmtArea(polyArea(it.pts))}</b>　周囲 ${fmtDist(polyPerim(it.pts))}　${it.pts.length}点`;
   return ''; }
@@ -2831,6 +2833,7 @@ function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mo
       const it={t:'route',pts,name:`${a.label}→${b.label}（${m==='contour'?(pts.trailFrac>0.15?`等高線沿い・登山道 約${Math.round(pts.trailFrac*100)}%`:'等高線沿い'):'ダイレクト'}）`,col:m==='contour'?'#7d3c98':'#1e8449',dash:m!=='contour',off:m==='contour'?Math.max(0,1-(pts.trailFrac||0)):1};
       DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); routeStats(it); }; }
   box.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>placeShare(DRAW.items[+b.dataset.share],b));
+  box.querySelectorAll('[data-tgt]').forEach(b=>b.onclick=()=>{ const it=DRAW.items[+b.dataset.tgt]; if(!it) return; it.tgt=!isTgt(it); b.setAttribute('aria-pressed',it.tgt); drawSave(); try{ radarDraw(); }catch(e){} });
   box.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const it=DRAW.items[+b.dataset.go]; if(!it) return; mapSetView(it.lat,it.lon,Math.max(MAP.z,14)); mapPick(it.lat,it.lon); pickSync(it.lat,it.lon); $('map').scrollIntoView({behavior:'smooth',block:'center'}); });
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ DRAW.items.splice(+b.dataset.del,1); drawSave(); drawLayer(); drawPanel(); });
   if($('dUndo')) $('dUndo').onclick=()=>{ DRAW.items.pop(); drawSave(); drawLayer(); drawPanel(); };
