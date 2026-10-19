@@ -367,6 +367,8 @@ html{scroll-padding-top:52px}
 .msearch input#mLL{flex:1 1 260px;min-width:0;font-size:16px;padding:8px 10px}
 .msearch button{font-size:14px;padding:8px 12px}
 .mlayers{margin-top:2px}.mlab{font-size:13px;color:var(--muted)}
+.mlegend[hidden],.mpane[hidden]{display:none!important}.mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
+.mpane{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);margin-top:6px;font-size:13px}.mpane .mrow{margin:4px 0}
 .msets{display:grid;gap:8px;margin-top:10px}
 .mset{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);min-width:0}
 .msh{font-size:13px;font-weight:800;margin-bottom:2px;cursor:default}
@@ -596,26 +598,24 @@ a{color:#7cc4ff}
         </div>
       </div>
       <div class="mlegend" id="mLegend"></div>
-      <div class="mbelow">
-        <details class="ifrbox govbox"><summary>重ねる地図（色別標高図・雪崩傾斜・赤色立体・傾斜量・地質）</summary>
+      <div class="mtabs" role="tablist" aria-label="地図の設定"><button type="button" role="tab" data-mt="gov" aria-selected="false">重ねる地図</button><button type="button" role="tab" data-mt="disp" aria-selected="false">表示の設定</button><button type="button" role="tab" data-mt="ifr" aria-selected="false">航空図 RJAF</button><button type="button" role="tab" data-mt="site" aria-selected="false">現場の設定</button><button type="button" role="tab" data-mt="fp" aria-selected="false">出発地・飛行条件</button></div>
+      <div class="mpane govbox" data-mp="gov" role="tabpanel" hidden>
           <div id="govList" class="govlist"></div>
           <div class="mrow govop"><span class="mlab">濃さ</span><input type="range" id="govOp" min="15" max="100" step="5" value="65" aria-label="重ねる地図の濃さ"></div>
           <div id="govLeg" class="govleg"></div>
           <p class="legend">色別標高図・雪崩傾斜（全国傾斜量区分図）・陰影起伏図・赤色立体地図・傾斜量図は国土地理院の地理院タイル、シームレス地質図は産総研 地質調査総合センターの地図をそのまま重ねます。雪崩傾斜タイプB・色別傾斜区分図・高精度赤色立体地図は、このアプリが地理院の標高タイル（ズーム15以上は5 mメッシュ、ない所と14以下は10 mメッシュ）から傾斜と凹凸を計算して色を付けたもので、地理院の公式の地図ではありません。どれも電波が必要で、「地図を端末に保存」の対象外です。雪崩の危険の判断には、積雪・気象・地形の情報を合わせて使ってください。</p>
-        </details>
-        <details class="ifrbox dispbox"><summary>表示の設定（座標形式・MGRSグリッド・距離と高度の単位・スケール）</summary>
+        </div>
+      <div class="mpane dispbox" data-mp="disp" role="tabpanel" hidden>
           <div class="mrow"><span class="mlab">座標形式</span><span class="mseg" id="dCoord"><button type="button" data-v="d">度</button><button type="button" data-v="dms">度分秒</button><button type="button" data-v="utm">UTM</button><button type="button" data-v="mgrs">MGRS</button><button type="button" data-v="dm">度分</button></span></div>
           <div class="mrow"><label class="chk"><input type="checkbox" id="dMgrs"> MGRSグリッドを表示</label></div>
           <div class="mrow"><span class="mlab">距離単位</span><span class="mseg" id="dDist"><button type="button" data-v="m">メートル</button><button type="button" data-v="mi">マイル</button><button type="button" data-v="NM">海里</button></span></div>
           <div class="mrow"><span class="mlab">高度単位</span><span class="mseg" id="dAlt"><button type="button" data-v="m">メートル</button><button type="button" data-v="ft">フィート</button></span></div>
           <div class="mrow"><span class="mlab">スケール</span><span class="mseg" id="dRet"><button type="button" data-v="none">なし</button><button type="button" data-v="cross">十字</button><button type="button" data-v="box">四角</button><button type="button" data-v="circle">円</button><button type="button" data-v="line">単線</button><button type="button" data-v="ticks">目盛円</button></span></div>
           <p class="legend">座標形式は、選んだ地点・作図の一覧・検索欄の表示に使います（検索欄には度・度分・度分秒・UTM・MGRSのどれでも入力できます）。距離単位は地図の縮尺・作図の距離・スケール、高度単位は選んだ地点の標高の表示に使います（性能計算は今までどおりフィート）。スケールは地図の中心に、縮尺に合わせた区切りのよい長さで表示します。</p>
-        </details>
-        <details class="ifrbox"><summary>航空図（松本空港 RJAF）：計器飛行方式の経路・MVA・VFR報告点</summary><div id="ifrChips" class="ifrchips"></div>
-        <div class="ifrnote">AIP Japan RJAF AD2（2026年6月11日有効分）の座標・経路から作成。RNAV/RNP の経路と RF 旋回は公示座標どおり、従来型の出発・進入の旋回部分と待機経路は形を示す概略です。真方位＝磁方位−8°。実際の飛行には最新の AIP・NOTAM を使ってください。</div></details>
-      </div>
-      <div class="msets">
-        <div class="mset"><div class="msh">現場の設定</div>
+        </div>
+      <div class="mpane" data-mp="ifr" role="tabpanel" hidden><div id="ifrChips" class="ifrchips"></div>
+        <div class="ifrnote">AIP Japan RJAF AD2（2026年6月11日有効分）の座標・経路から作成。RNAV/RNP の経路と RF 旋回は公示座標どおり、従来型の出発・進入の旋回部分と待機経路は形を示す概略です。真方位＝磁方位−8°。実際の飛行には最新の AIP・NOTAM を使ってください。</div></div>
+      <div class="mpane" data-mp="site" role="tabpanel" hidden>
         <div class="mrow">
           <label for="mObs">樹木・障害物の高さ</label><input id="mObs" type="number" step="1" value="20" min="0"><span class="unit">m</span>
           <label class="chk"><input type="checkbox" id="mRefOn" checked> 基準点の気温から現場の気温を推定</label>
@@ -623,12 +623,12 @@ a{color:#7cc4ff}
           <label for="mRefT">気温</label><input id="mRefT" type="number" step="1" value="15"><span class="unit">℃</span>
         </div>
         <div class="mrow">
-          <label class="chk"><input type="checkbox" id="mOvOn" checked> ホバリングの可否を色で塗る</label>
+          <label class="chk"><input type="checkbox" id="mOvOn"> ホバリングの可否を色で塗る</label>
           <label for="mOvA">濃さ</label><input id="mOvA" type="range" min="10" max="90" value="45" step="5">
           <label class="chk"><input type="checkbox" id="mApply" checked> クリックした地点を現場に反映</label>
         </div>
         </div>
-        <details class="mset" open><summary class="msh">出発地・飛行条件（飛行時間・燃料・到着予定）</summary>
+      <div class="mpane" data-mp="fp" role="tabpanel" hidden>
         <div class="mrow frow">
           <span style="font-weight:700">出発地：</span><b id="fromName" class="fromname"></b>
           <input id="fromQ" type="text" list="peakList" placeholder="山名・場外離着陸場の緯度経度など" aria-label="出発地の山名または緯度経度"><button type="button" id="fromGo">出発地にする</button>
@@ -639,7 +639,8 @@ a{color:#7cc4ff}
         <div class="mrow">
           <span style="font-weight:700">飛行条件：</span><span class="fpi"><label for="fpGs">対地速度（無風）</label> <input id="fpGs" type="number" step="5"> kt</span><span class="fpi"><label for="fpRoc">上昇率</label> <input id="fpRoc" type="number" step="100"> fpm</span><span class="fpi"><label for="fpRod">降下率</label> <input id="fpRod" type="number" step="100"> fpm</span><span class="fpi"><label for="fpFf">巡航の燃料消費</label> <input id="fpFf" type="number" step="10"> kg/h</span><span class="fpi"><label for="fpSu">始動〜離陸</label> <input id="fpSu" type="number" step="1"> 分</span>
         </div>
-        </details>
+        </div>
+      <div class="msets">
         <details class="mset explain"><summary class="msh">地図の使い方・データの説明</summary>
         <p class="legend">地図をクリック（タップ）するか、検索欄に山名または緯度経度を入れると、その地点の地表の標高を読み取ります。緯度経度は世界測地系（WGS84。地理院地図のJGD2011とは実用上同じ）で、度・度分・度分秒のどれで入れても読み取れます（入れた形式にかかわらず度分で表示。「ダイヤルで入力」で指で回して入力もできます）。右の欄には、出発地（初期値は松本空港。山名・緯度経度や「選択中の地点を出発地に」で、場外離着陸場や別の現場からにも変えられます）からの距離・飛行時間・燃料、離陸予定時刻を入れると到着予定時刻と現場を離れる最終時刻（帰投は松本空港へ）、到着時の重量でのホバリングの余裕も出ます（風は考えていません。速度・燃料消費の初期値は仮の値なので自隊の値に変えてください）。長野県と周辺（北緯34.67〜37.33°、東経137〜139°）は、国土地理院の10 mメッシュ標高（基盤地図情報）をアプリに内蔵しているので、ネット接続なしで使えます。内蔵データは約50 m四方ごとの最高点で、安全側（高め）の値です。範囲の外は地理院の標高タイルをネットから読みます。「内蔵の地形」は内蔵データから描いた地形図で、電波がないときは自動でこちらに切り替わります。性能は、地表に樹木・障害物の高さを足した「現場」の気圧高度で計算します（ほかの欄と同じ考え方）。「基準点」には、麓の空港やアメダスなど気温がわかる地点の標高と気温を入れます。現場の気温は、基準点から1,000 ftごとに約2℃（標準大気の減率）下がるとして推定します。色分けは今の全備重量・QNH・気温で、その地点の上でOGEホバリングができるかを示します。地理院の地図（標準・淡色・陰影・写真）は、上の「地図を端末に保存」で保存した範囲ならネット接続なしで表示され、保存していない所は内蔵の地形図で埋めます。</p>
         </details>
@@ -2325,6 +2326,12 @@ function dispPanel(){ const set=(id,key,after)=>{ document.querySelectorAll(`#${
 function llHint(){ const h=$('llHint'); if(h) h.textContent=`表示は${COORDN[DISP.coord]}${DISP.coord==='dm'?'（DD°MM.mmm′）':''}・UTM／MGRSでも入力できます`; }
 setTimeout(()=>{ try{ govPanel(); dispPanel(); mapReq(); }catch(e){ console.error(e); } },300);
 
+
+// ---- map settings as one row of tabs (one pane open at a time)
+(function(){ const bs=[...document.querySelectorAll('.mtabs [data-mt]')]; let cur=''; try{ cur=localStorage.getItem('aw139mtab')||''; }catch(e){}
+  const show=k=>{ cur=k; bs.forEach(b=>b.setAttribute('aria-selected',b.dataset.mt===k)); document.querySelectorAll('.mpane[data-mp]').forEach(p=>p.hidden=p.dataset.mp!==k); try{ localStorage.setItem('aw139mtab',k); }catch(e){} };
+  bs.forEach(b=>b.onclick=()=>show(cur===b.dataset.mt?'':b.dataset.mt)); show(cur);
+  const lg=()=>{ const l=$('mLegend'); if(l) l.hidden=!$('mOvOn').checked; }; $('mOvOn').addEventListener('change',lg); lg(); })();
 // map tap / current position -> search box and dial follow the picked point
 function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
