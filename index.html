@@ -1500,7 +1500,7 @@ function drawCeil(H,T,W,wind){
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
-function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ hlimRender(); }catch(e){}
+function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ wfCheck(); }catch(e){} try{ hlimRender(); }catch(e){}
   $('gw').value=Math.round(totalGW()); $('gwTotal').textContent=Math.round(totalGW()).toLocaleString()+' kg'+(totalGW()>MTOW()?`（最大 ${MTOW().toLocaleString()} kg 超過）`:totalGW()>CHW?'（6,400 kg超：性能図の範囲外）':'');
   const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW(), hh=+$('hh').value;
   const isa=ISA(H), dev=T-isa;
@@ -2301,6 +2301,7 @@ const GOVL=[
   {k:'rrim',n:'高精度赤色立体地図',g:'国土地理院',calc:'rrim',note:'5 m／10 mメッシュ標高から計算'},
   {k:'slopemap',n:'傾斜量図',g:'国土地理院',url:(z,x,y)=>`${GSI}slopemap/${z}/${x}/${y}.png`,min:3,max:15},
   {k:'slopecls',n:'色別傾斜区分図',g:'国土地理院',calc:'cls',note:'地理院の標高タイルから傾斜を計算'},
+  {k:'wflow',n:'局所気流（推定）',g:'気流（地形と風からの推定）',calc:'wflow',note:'入力した風向・風速と地形から推定'},
   {k:'kokuarea',n:'空港等の周辺空域',g:'空域（国土交通省航空局）',geo:'kokuarea',col:'#2e7d32',note:'制限表面など'},
   {k:'kokuarea_kanseikentou',n:'管制圏・情報圏',g:'空域（国土交通省航空局）',geo:'kokuarea_kanseikentou',col:'#1565c0'},
   {k:'kokuarea_tokubetsukanseiku',n:'特別管制区',g:'空域（国土交通省航空局）',geo:'kokuarea_tokubetsukanseiku',col:'#0d47a1'},
@@ -2331,7 +2332,29 @@ async function demGrid(z,tx,ty,P){ const N=256+2*P, out=new Float32Array(N*N).fi
       for(let i=0;i<N;i++){ const o=j*N+i; if(!isNaN(out[o])) continue; const gx=(tx*256-P+i+0.5)/f-0.5, x0=Math.floor(gx), fx=gx-x0;
         const a=at(x0,y0), b=at(x0+1,y0), c=at(x0,y0+1), d=at(x0+1,y0+1); let v=(a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy; if(isNaN(v)) v=at(Math.round(gx),Math.round(gy)); out[o]=v; } } }
   return out; }
-async function govCalc(cv,L,z,tx,ty){ const P=6, N=256+2*P; const Z=await demGrid(z,tx,ty,P);
+const WFC={up:[40,120,230],dn:[230,70,40],lee:[150,60,200],edge:[255,200,0]};
+const wfSig=()=>{ try{ const {wd,ws}=mwVals(); return Math.round(wd/5)*5+'_'+Math.round(ws); }catch(e){ return '0_0'; } };
+let WFS=''; function wfCheck(){ const g=wfSig(); if(g!==WFS){ WFS=g; if(GOV.on.wflow) govRender(); } }
+// heuristic airflow over terrain: windward upslope / leeward downslope / lee shadow (upwind terrain higher) / crest & cliff edge separation
+async function wflowCalc(cv,z,tx,ty){ const {wd,ws}=mwVals(); const g=cv.getContext('2d'); if(ws<5){ g.clearRect(0,0,256,256); return; }
+  const lat=y2lat(ty*256+128,z), mpp=156543.03*Math.cos(lat*RAD)/Math.pow(2,z), P=Math.max(8,Math.min(192,Math.ceil(1000/mpp))), N=256+2*P; const Z=await demGrid(z,tx,ty,P);
+  const im=g.createImageData(256,256), d=im.data, ux=Math.sin(wd*RAD), uy=-Math.cos(wd*RAD); // unit vector toward upwind (pixel coords, y down)
+  const kI=Math.max(0.35,Math.min(1,(ws-5)/20)), Dmax=Math.min(P*mpp,1200), K=24, de=Math.max(30,3*mpp), dp=de/mpp;
+  const at=(o,x,y)=>Z[(Math.round(y)+P)*N+Math.round(x)+P];
+  const t10=Math.tan(10*RAD), t5=Math.tan(5*RAD), t20=Math.tan(20*RAD);
+  for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const o=(y+P)*N+(x+P), i=(y*256+x)*4, h=Z[o];
+    const zx=(Z[o+1]-Z[o-1])/(2*mpp), zy=(Z[o+N]-Z[o-N])/(2*mpp); if(isNaN(h)||isNaN(zx)||isNaN(zy)){ d[i+3]=0; continue; }
+    const sdn=-(zx*ux+zy*uy); // rise per metre going downwind
+    const hu=at(o,x+ux*dp,y+uy*dp), hd=at(o,x-ux*dp,y-uy*dp);
+    let th=-1; for(let k=1;k<=K;k++){ const dist=Math.max(2*mpp,Dmax*k/K), q=at(o,x+ux*dist/mpp,y+uy*dist/mpp); if(!isNaN(q)){ const a=(q-h)/dist; if(a>th) th=a; } }
+    let c=null, a=0;
+    if(!isNaN(hd)&&!isNaN(hu)&&(h-hd)/de>t20&&(h-hu)/de>-t10){ c=WFC.edge; a=0.85; }
+    else if(th>Math.tan(12*RAD)&&sdn<=t5){ c=WFC.lee; a=Math.min(1,0.45+(Math.atan(th)/RAD-12)/20); }
+    else if(sdn<-t10){ c=WFC.dn; a=Math.min(1,0.3+(Math.atan(-sdn)/RAD-10)/30); }
+    else if(sdn>t10){ c=WFC.up; a=Math.min(1,0.25+(Math.atan(sdn)/RAD-10)/35); }
+    if(!c){ d[i+3]=0; continue; } d[i]=c[0]; d[i+1]=c[1]; d[i+2]=c[2]; d[i+3]=Math.round(255*a*kI); }
+  g.putImageData(im,0,0); }
+async function govCalc(cv,L,z,tx,ty){ if(L.calc==='wflow') return wflowCalc(cv,z,tx,ty); const P=6, N=256+2*P; const Z=await demGrid(z,tx,ty,P);
   const lat=y2lat(ty*256+128,z), mpp=156543.03*Math.cos(lat*RAD)/Math.pow(2,z);
   const g=cv.getContext('2d'), im=g.createImageData(256,256), d=im.data;
   for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const o=(y+P)*N+(x+P), i=(y*256+x)*4, h=Z[o];
@@ -2348,9 +2371,9 @@ function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; co
   box.querySelectorAll(':scope>div[data-l]').forEach(dv=>{ if(!GOV.on[dv.dataset.l]) dv.remove(); });
   act.forEach((L,li)=>{ let lay=box.querySelector(`:scope>div[data-l="${L.k}"]`); if(!lay){ lay=document.createElement('div'); lay.className='mlayer'; lay.dataset.l=L.k; box.appendChild(lay); }
     lay.style.opacity=GOV.op/100; lay.style.zIndex=li; const want=new Set();
-    if(L.calc&&z<9){ lay.innerHTML=''; return; }
+    if(L.calc&&z<(L.calc==='wflow'?12:9)){ lay.innerHTML=''; return; }
     if(!L.calc&&z<L.min){ lay.innerHTML=''; return; }
-    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty; want.add(k);
+    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty+(L.calc==='wflow'?'/'+wfSig():''); want.add(k);
       let t=lay.querySelector(`[data-k="${k}"]`);
       if(!t){ if(L.calc){ t=document.createElement('canvas'); t.width=t.height=256; t.dataset.k=k; lay.appendChild(t); govCalc(t,L,z,tx,ty).catch(()=>{}); }
         else { const zs=Math.min(z,L.max), f=Math.pow(2,z-zs), ptx=Math.floor(tx/f), pty=Math.floor(ty/f); t=document.createElement('div'); t.className='govt'; t.dataset.k=k;
@@ -2386,7 +2409,8 @@ function govLegend(){ const lg=$('govLeg'); if(!lg) return; const z=MAP.z; const
     if(L.calc==='avy') out.push(`<div><b>${L.n}</b>：${AVYC.map(([t,c],i)=>sw(c,i<AVYC.length-1?`${t}〜${AVYC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
     else if(L.calc==='cls') out.push(`<div><b>${L.n}</b>：${CLSC.map(([t,c],i)=>sw(c,i<CLSC.length-1?`${t}〜${CLSC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
     else if(L.calc==='rrim') out.push(`<div><b>${L.n}</b>：赤いほど急傾斜、明るいほど尾根・凸、暗いほど谷・凹（ズーム15以上で5 mメッシュ）</div>`);
-    if(L.calc&&z<9) out.push(`<div class="caution">${L.n}は、ズーム9以上で表示します</div>`);
+    else if(L.calc==='wflow'){ const {wd,ws}=mwVals(); out.push(`<div><b>${L.n}</b>（風 ${String(Math.round(wd)).padStart(3,'0')}°／${Math.round(ws)} kt）：${sw(WFC.up,'風上斜面・上昇気流')}${sw(WFC.dn,'風下斜面・下降気流')}${sw(WFC.lee,'風下の陰・ローター／下降気流')}${sw(WFC.edge,'稜線・崖の縁・剥離と乱流')}<br><small>地形と入力した風だけから出した目安です（濃いほど強い）。気温減率・日射・谷風・上空の風の変化は含みません。実際の気流は偵察・パワーチェックで確かめてください。${ws<5?'<b>風速5 kt未満のため表示しません。</b>':''}</small></div>`); }
+    if(L.calc&&z<(L.calc==='wflow'?12:9)) out.push(`<div class="caution">${L.n}は、ズーム${L.calc==='wflow'?12:9}以上で表示します</div>`);
     if(L.geo){ if(z<7) out.push(`<div class="caution">${L.n}は、ズーム7以上で表示します</div>`); return; }
     if(!L.calc&&z<L.min) out.push(`<div class="caution">${L.n}は、ズーム${L.min}以上で表示します</div>`);
     if(!L.calc&&z>L.max) out.push(`<div style="color:var(--muted)">${L.n}：ズーム${L.max}の画像を拡大して表示中</div>`); });
@@ -3468,7 +3492,7 @@ function mwSetHd(a){ a=((a%360)+360)%360; if(wmode==='true'){ $('hdg').value=a; 
 function mwBind(box){ box.querySelectorAll('.mwv [data-k],.mwv2 [data-k]').forEach(b=>b.onclick=()=>{ const d=+b.dataset.d, v=mwVals();
   if(b.dataset.k==='ws'){ const k=Math.max(0,Math.min(60,v.ws+d)); $('ws').value=k; if($('wsR')) $('wsR').value=k; }
   else if(b.dataset.k==='wd') mwSetWd(Math.round((v.wd+d)/5)*5); else mwSetHd(Math.round((v.hd+d)/5)*5); update(); }); }
-function mapWindField(){ const sv=$('mWindF'), el=$('map'); if(!sv||!el) return; const {wd,ws}=mwVals(); if(!MW.show){ sv.innerHTML=''; return; }
+function mapWindField(){ try{ wfCheck(); }catch(e){} const sv=$('mWindF'), el=$('map'); if(!sv||!el) return; const {wd,ws}=mwVals(); if(!MW.show){ sv.innerHTML=''; return; }
   const W=el.clientWidth, H=el.clientHeight, gap=Math.max(120,Math.min(170,W/4)); sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
   // one wind barb (meteorological): staff points to where the wind blows FROM; pennant 50 kt, long barb 10 kt, short barb 5 kt
   const barb=(x,y)=>{ if(ws<2.5) return `<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#123" stroke-width="2.2"/><circle cx="${x}" cy="${y}" r="7" fill="none" stroke="#fff" stroke-width="1" opacity=".0"/>`;
