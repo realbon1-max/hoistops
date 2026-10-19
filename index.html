@@ -3063,7 +3063,7 @@ function mapWindField(){ const sv=$('mWindF'), el=$('map'); if(!sv||!el) return;
     while(rest>=10){ f+=`<line x1="0" y1="${-L+k*step}" x2="14" y2="${-L+k*step-5}"/>`; k++; rest-=10; }
     if(rest>=5){ if(k===0) k=0.8; f+=`<line x1="0" y1="${-L+k*step}" x2="7" y2="${-L+k*step-2.5}"/>`; }
     return `<g transform="translate(${x},${y}) rotate(${wd})"><g stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".75"><line x1="0" y1="0" x2="0" y2="${-L}"/>${f.replace(/fill="#123"/g,'fill="#fff" stroke="#fff"')}</g><g stroke="#123" stroke-width="2.2" stroke-linecap="round"><line x1="0" y1="0" x2="0" y2="${-L}"/>${f}</g><circle r="3" fill="#123"/></g>`; };
-  let g=''; for(let y=gap*0.75;y<H-30;y+=gap) for(let x=gap*0.6+((Math.round(y/gap))%2)*gap/2;x<W-20;x+=gap) g+=barb(x,y);
+  let g=''; for(let y=gap*0.75;y<H-30;y+=gap) for(let x=gap*0.6+((Math.round(y/gap))%2)*gap/2;x<W-20;x+=gap){ const tx=x+Math.sin(wd*Math.PI/180)*17, ty=y-Math.cos(wd*Math.PI/180)*17; if(Math.hypot(tx-W/2,ty-H/2)<58) continue; g+=barb(x,y); }
   sv.innerHTML=`<g opacity=".8">${g}</g>`; }
 // ---- RJAF (Matsumoto) aeronautical overlay: instrument procedures (SID / IAP), MVA, visual reporting points. Source: AIP Japan RJAF AD2 (AIRAC 11 JUN 2026 set)
 const IFR={on:{mva:false,vrp:true,happo:false,rev:false,niigata:false,mbe1:false,vor18:false,rnpy18:false,rnpz18:false,rnpy36:false,rnpz36:false}};
