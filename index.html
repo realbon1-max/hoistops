@@ -2590,7 +2590,7 @@ function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; co
     const tg=hit||oc; if(tg){ const vx=lon2x(tg.it.lon,z)-x0, vy=lat2y(tg.it.lat,z)-y0, c2=hit?'#ff2d2d':'#ffd400';
       h+=`<g class="rdron"><path d="M${cx},${cy}L${vx},${vy}" stroke="#06210f" stroke-opacity=".6" stroke-width="5"/><path d="M${cx},${cy}L${vx},${vy}" stroke="${c2}" stroke-width="2.6" stroke-dasharray="10 6"/></g>`;
       const lab=`${hit?(tg.dm<=nd.m?'IN RANGE':'IN SECTOR'):'ON COURSE'}  ${esc(tg.it.label||ROLES[roleOf(tg.it)].n)}  ${fmtDist2(tg.dm).split('（')[0]}  ${tg.off>=0?'右':'左'}${Math.abs(tg.off).toFixed(0)}°`;
-      const bw=Math.min(W-20,280), by2=Math.max(50,Math.min(H-120,cy+36)), bx=Math.max(10,Math.min(W-bw-10,cx-bw/2));
+      const bw=Math.min(W-20,280), up=vy>cy, by2=Math.max(50,Math.min(H-120,up?cy-62:cy+36)), bx=Math.max(10,Math.min(W-bw-10,cx-bw/2));
       h+=`<g class="rdron"><rect x="${bx}" y="${by2}" width="${bw}" height="26" rx="5" fill="rgba(20,6,6,.84)" stroke="${c2}" stroke-width="1.5"/><text x="${bx+bw/2}" y="${by2+18}" font-size="13" font-weight="900" fill="${c2}" text-anchor="middle" letter-spacing=".04em">${lab}</text></g>`; }
   }
   sv.innerHTML=h; h=''; const se=$('mEdge'); if(se) se.setAttribute('viewBox',`0 0 ${W} ${H}`);
