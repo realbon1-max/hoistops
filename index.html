@@ -338,6 +338,16 @@ button.armed{background:var(--warn)!important;color:#fff!important;border-color:
 .pend{margin:6px 0;padding:6px 8px;background:var(--paper);border-radius:4px;font-size:12.5px}.pendtop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pendtop>div{flex:1 1 220px;line-height:1.6}
 @media (min-width:700px){.pendsv{width:170px!important;flex-basis:170px!important}.pendsum .wrow b{font-size:20px}.pendsum .wrow{padding:6px 0}}
 .pendsv{width:140px;flex:0 0 140px;align-self:stretch;height:auto;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25)}.pendtop{flex-wrap:nowrap!important;align-items:flex-start!important}.pendsum{flex:1;min-width:0}
+.hlim{margin:4px 0 10px;padding:8px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);font-size:12.5px}
+.hlim h3{margin:0 0 6px;font-size:13.5px}.hlim h3 small{font-weight:400;color:var(--muted)}
+.hlrows{display:grid;grid-template-columns:auto 1fr 76px;gap:4px 6px;align-items:center}.hlrows input[type=text]{min-width:0}.hlrows input[type=number]{width:76px;text-align:right}
+.hlcab{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}.hlcab select{max-width:100%}
+.hlsum{margin-top:8px}.hlbar{position:relative;height:16px;background:var(--rule);border-radius:3px;overflow:hidden;margin:4px 0}
+.hlbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}.hlbar i.ok{background:#2c7a4b}.hlbar i.cau{background:#d9a400}.hlbar i.bad{background:#c0392b}
+.hlbig{font-size:20px;font-weight:800}.hlalert{margin:6px 0;padding:6px 8px;border-radius:4px;font-weight:800;color:#fff;background:#c0392b;animation:hlbl 1s steps(2) infinite}
+.hlalert.cau{background:#b07d00;animation:none}@keyframes hlbl{50%{opacity:.55}}
+.hlbtn{margin-top:6px}.hlmssh{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}.hlmssh input{width:76px;text-align:right}
+.hllim{margin:6px 0 0;padding-left:18px}.hllim li{margin:2px 0}
 .wrow{display:grid;grid-template-columns:1fr auto;column-gap:8px;align-items:baseline;border-bottom:1px solid var(--rule);padding:2px 0}.wrow span{font-size:12px;color:var(--muted)}.wrow b{font-size:17px;text-align:right}.wrow b.pendT{color:#c25a00}.wrow small{grid-column:1/-1;text-align:right;font-size:11px;color:var(--muted);margin-top:-3px}
 .wdet{margin-top:4px}.wdet>summary{list-style:none;cursor:pointer;display:inline-flex;gap:4px;align-items:center;font-size:12px;font-weight:700;color:#2f6fb0;padding:3px 10px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);touch-action:manipulation}.wdet>summary::-webkit-details-marker{display:none}.wdet>summary::before{content:'▼';font-size:9px}.wdet[open]>summary::before{content:'▲'}
 .pendins{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12px;margin:4px 0}.pendins input{width:56px}.pendnote{margin:4px 0 0;padding-left:18px;font-size:12px;color:var(--muted)}.pendhit .pwire{stroke:#ff2d55;stroke-width:3.6}.pendhit .pbob{filter:drop-shadow(0 0 6px #ffd23f) drop-shadow(0 0 4px #ff2d55)}.pendhit .pwire{stroke:#ff2d55!important;stroke-width:6!important}
@@ -777,6 +787,7 @@ a{color:#7cc4ff}
     </section>
     <section class="box" id="wireSec" aria-label="ホイストワイヤー">
       <h2>ホイストワイヤー（必要な長さ・吊り下げ中の揺れ）</h2>
+      <div id="hlim" class="hlim"></div>
       <div id="wireBody"><div class="hint">上の地図でホイスト地点をタップすると、その地点の樹木・障害物の高さから、ワイヤーに要る長さと吊り下げ中の揺れを出します。</div></div>
     </section>
     <div class="grph" id="g_fuel">⑥ 重量・燃料</div>
@@ -1489,7 +1500,7 @@ function drawCeil(H,T,W,wind){
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
-function update(){ try{ fuelFill(); hhFill(); }catch(e){}
+function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ hlimRender(); }catch(e){}
   $('gw').value=Math.round(totalGW()); $('gwTotal').textContent=Math.round(totalGW()).toLocaleString()+' kg'+(totalGW()>MTOW()?`（最大 ${MTOW().toLocaleString()} kg 超過）`:totalGW()>CHW?'（6,400 kg超：性能図の範囲外）':'');
   const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW(), hh=+$('hh').value;
   const isa=ISA(H), dev=T-isa;
@@ -3223,7 +3234,7 @@ function pendHTML(wft){ const L=Math.max(1,wft/FT+RC.pc), d=RC.po, P=pendCalc(L,
    <text x="${Q.px+16}" y="${(Q.py+Q.hy)/2+34}" font-size="26" fill="#dfe9f5">${Math.round(wft)} ft</text>
    <text x="16" y="${Q.H-18}" font-size="32" fill="#ffd23f">±${f1(deg)}°</text>
    <text x="${Q.W-16}" y="${Q.H-18}" font-size="32" fill="#fff" text-anchor="end">${f1(P.T)} 秒</text></g></svg>`;
-  const need=Math.round(wft), ok=need<=RC.cable;
+  const need=Math.round(wft), ok=need<=RC.cable; XS.need=need; setTimeout(()=>{ try{ hlimRender(); }catch(e){} },0);
   return `<div class="pend"><div class="pendtop">${svg}<div class="pendsum">
    <div class="wrow"><span>ワイヤーに要る長さ</span><b class="${ok?'ok':'warn'}">${need} ft</b><small>／${RC.cable} ft ${ok?'✓':'✗ 足りない'}</small></div>
    <div class="wrow"><span>揺れの周期（1往復）</span><b class="pendT">${f1(P.T)} 秒</b><small>真下まで ${f1(P.q)} 秒</small></div>
@@ -3346,7 +3357,45 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const rr=$('rcReset'); if(rr) rr.onclick=()=>{ Object.assign(RC,RC0); try{localStorage.removeItem('aw139rc');}catch(e){} drawXsec(XS.H,XS.T,XS.W); const d2=box.querySelector('.rcset'); if(d2) d2.open=true; };
   { const wb=$('wireBody'), w=box.querySelector('.wirebox'); if(wb&&w){ wb.innerHTML=''; wb.appendChild(w); } }
 }
-function wireHint(t){ const wb=$('wireBody'); if(wb) wb.innerHTML=`<div class="hint">${t}</div>`; }
+// ---- hoist load / limits (追加飛行規程No.11 §1.6・§1.7・§1.9〜1.11) ----
+const HL0={rows:[[1,'救助隊員',''],[1,'要救助者',''],[0,'担架・バスケット',''],[0,'ストロップ・器材',''],[0,'その他','']],mshh:''};
+let HLD; try{ HLD=JSON.parse(localStorage.getItem('aw139hl'))||null; }catch(e){ HLD=null; } if(!HLD||!Array.isArray(HLD.rows)) HLD=JSON.parse(JSON.stringify(HL0));
+const HLMAX=272, hlSave=()=>{ try{ localStorage.setItem('aw139hl',JSON.stringify(HLD)); }catch(e){} };
+const hlSum=()=>HLD.rows.reduce((a,r)=>a+(r[0]?(+r[2]||0):0),0);
+function hlimBuild(){ const b=$('hlim'); if(!b) return;
+  const cab=RC.cable<=245?'245':'295';
+  b.innerHTML=`<h3>吊り荷重量とホイスト限界 <small>追加飛行規程No.11 §1.10</small></h3>
+  <div class="hlcab"><label for="hlCab">ケーブル</label><select id="hlCab"><option value="245"${cab==='245'?' selected':''}>P/N 3G2591F00111・00112：75 m（245 ft）</option><option value="295"${cab==='295'?' selected':''}>P/N 3G2591F00113：90 m（295 ft）</option></select></div>
+  <div class="hlrows">${HLD.rows.map((r,i)=>`<input type="checkbox" data-hl="${i}" data-k="0" ${r[0]?'checked':''} aria-label="吊る"><input type="text" data-hl="${i}" data-k="1" value="${String(r[1]).replace(/"/g,'&quot;')}"><input type="number" inputmode="decimal" min="0" step="1" data-hl="${i}" data-k="2" value="${r[2]}" placeholder="kg">`).join('')}</div>
+  <div id="hlSum" class="hlsum"></div>
+  <div class="hlmssh"><label for="hlMs">部隊基準の最低ホバリング高度（MSHH）</label><input id="hlMs" type="number" inputmode="decimal" min="0" step="5" value="${HLD.mshh}" placeholder="未設定"><span>ft</span></div>
+  <details class="nfold hldet"><summary>その他のホイスト運用限界（RFM）</summary><ul class="hllim">
+   <li>荷物の上げ下げ：安定したホバー、または前進飛行 <b>80 KIAS</b> まで（§1.7.1）</li>
+   <li>機体の姿勢：ピッチ <b>−9°〜＋21°</b>、ロール <b>±15°</b></li>
+   <li>NR／NF：<b>101〜103%</b>（最大103%）（§1.9）</li>
+   <li>ホイストに荷物を吊り下げた状態での<b>離着陸は禁止</b></li>
+   <li>ホイストの荷重を含めた最大重量 <b>6,400 kg</b>（超える場合は追加飛行規程No.50）（§1.6.1）</li>
+   <li>オートパイロット：手動操縦、またはFD（4軸改良型）装備でHOV・RHT（又はALT）をエンゲージ（§1.11.1）</li>
+   <li>HOはハーネス装着・ケーブルをガイド・手動カッター（BQRS）を常に使用可能に（§1.4.1）</li>
+   <li>HEC運用ではPCDSの使用が必要。リフト回数はログ・ブックに記録（§1.1・§1.2）</li></ul></details>`;
+  b.querySelectorAll('[data-hl]').forEach(inp=>{ const ev=inp.type==='checkbox'?'change':'input'; inp.addEventListener(ev,()=>{ const r=HLD.rows[+inp.dataset.hl], k=+inp.dataset.k; r[k]=k===0?(inp.checked?1:0):inp.value; hlSave(); hlimRender(); }); });
+  $('hlCab').onchange=e=>{ RC.cable=+e.target.value; try{localStorage.setItem('aw139rc',JSON.stringify(RC));}catch(_){} if(XS&&XS.H!=null){ try{ drawXsec(XS.H,XS.T,XS.W); }catch(_){} } hlimRender(); };
+  $('hlMs').addEventListener('input',e=>{ HLD.mshh=e.target.value; hlSave(); hlimRender(); });
+  hlimRender(); }
+function hlimRender(){ const el=$('hlSum'); if(!el) return; const L=hlSum(), pct=L/HLMAX*100, cls=L>HLMAX?'bad':pct>=90?'cau':'ok';
+  const lim=MTOW()>=6800?6800:6400, gw=totalGW(), gwl=gw-(+CFG.load||0)+L, hh=+($('hh')&&$('hh').value)||0, ms=+HLD.mshh||0;
+  const al=[]; if(L>HLMAX) al.push(['','⚠ 最大ホイスト荷重 272 kg を '+Math.round(L-HLMAX)+' kg 超過']); else if(pct>=90) al.push(['cau','最大ホイスト荷重まで残り '+Math.round(HLMAX-L)+' kg']);
+  if(gwl>lim) al.push(['','⚠ 吊り荷を含めた全備重量 '+Math.round(gwl).toLocaleString()+' kg が '+lim.toLocaleString()+' kg を超過']);
+  if(ms&&hh&&hh<ms) al.push(['','⚠ ホバリング高度 '+hh+' ft が部隊基準 MSHH '+ms+' ft 未満']);
+  const nd=XS&&XS.need; if(nd&&nd>RC.cable) al.push(['','⚠ ワイヤーに要る長さ '+nd+' ft がケーブル '+RC.cable+' ft を超過']);
+  el.innerHTML=`<div class="wrow"><span>1回で吊る重量（チェックした行の合計）</span><b class="hlbig ${cls==='bad'?'warn':''}">${Math.round(L)} kg</b><small>／${HLMAX} kg（600 lb）</small></div>
+   <div class="hlbar" role="img" aria-label="最大ホイスト荷重に対する割合 ${Math.round(pct)}%"><i class="${cls}" style="width:${Math.min(100,pct)}%"></i></div>
+   ${al.map(a=>`<div class="hlalert ${a[0]}" role="alert">${a[1]}</div>`).join('')}
+   <div class="wrow"><span>吊り荷を含めた全備重量</span><b>${Math.round(gwl).toLocaleString()} kg</b><small>／${lim.toLocaleString()} kg</small></div>
+   ${Math.round(L)!==Math.round(+CFG.load||0)?`<button type="button" class="small hlbtn" id="hlToLoad">この合計 ${Math.round(L)} kg を全備重量の「吊荷」に入れる（今 ${Math.round(+CFG.load||0)} kg）</button>`:''}`;
+  const tb=$('hlToLoad'); if(tb) tb.onclick=()=>{ CFG.load=Math.round(L); const w=$('w_load'); if(w) w.value=CFG.load; save(); update(); }; }
+setTimeout(()=>{ try{ hlimBuild(); }catch(e){} },0);
+function wireHint(t){ try{ XS.need=0; }catch(e){} const wb=$('wireBody'); if(wb) wb.innerHTML=`<div class="hint">${t}</div>`; }
 (function(){ if(!$('xsRange')) return;
   $('xsRange').value=XS.range; $('xsVx').value=XS.vx; $('xsAa').value=XS.aa?'1':'0';
   $('xsAa').onchange=e=>{ XS.aa=e.target.value==='1'; try{localStorage.setItem('aw139xaa',XS.aa?'1':'0');}catch(_){} xsRedraw(); };
