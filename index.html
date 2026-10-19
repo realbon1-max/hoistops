@@ -307,7 +307,7 @@ button.armed{background:var(--warn)!important;color:#fff!important;border-color:
 #map.tracing{cursor:crosshair;outline-color:#e8590c}
 .mbe{margin-top:3px;font-size:12.5px}.mbe b{font-size:15px;color:#7a3fd0;margin-right:6px;letter-spacing:.5px}.mbe span{color:var(--ink)}.mbeu{color:var(--warn);font-weight:700;font-size:12px;margin-top:2px}
 .destbar{margin:0 0 6px}.destlab{font-size:11.5px;color:var(--muted);margin-bottom:3px}.destbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.destb{font:inherit;font-size:13.5px;font-weight:800;padding:9px 4px;border-radius:8px;border:2px solid var(--rc);background:var(--paper);color:var(--rc);cursor:pointer;touch-action:manipulation;min-width:0}.destb.on{background:var(--rc);color:#fff}
-.drole{font:inherit;font-size:12.5px;font-weight:700;color:var(--rc);border:1.5px solid var(--rc);border-radius:4px;padding:2px 2px;background:var(--paper);max-width:118px}
+.drole{font:inherit;font-size:12.5px;font-weight:700;color:var(--rc);border:1.5px solid var(--rc);border-radius:4px;padding:2px 2px;background:var(--paper);max-width:160px}
 .gwalk{border:1.5px solid #7d3c98;border-radius:8px;padding:6px 8px;margin:6px 0;background:var(--paper)}.gwalk .mrow{gap:6px;flex-wrap:wrap}.trlbox{border:1.5px solid #5d4037;border-radius:8px;padding:6px 8px;margin:6px 0;background:var(--paper)}.trlfile{display:inline-flex;flex-direction:column;gap:3px;font-size:12.5px;font-weight:700;color:#5d4037}.trlfile input{font-size:12px;max-width:100%}
 .trailck{display:block;font-size:12px;color:#5d4037;font-weight:700;margin-bottom:2px}
 .rname{font-weight:800;font-size:12.5px}
@@ -1987,7 +1987,7 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
 function mapInfo(){ mapInfo0(); destBtn(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
 // rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下地点), hoist recovery point (ホイスト揚収地点)
-const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#d62828'},drop:{n:'降下地点',ic:'🧗',col:'#1e8449'},lift:{n:'ホイスト揚収地点',ic:'⬆',col:'#1565c0'}};
+const ROLES={vic:{n:'要救助者',ic:'✕',col:'#d62828'},drop:{n:'降下地点',ic:'↓',col:'#1e8449'},lift:{n:'ホイスト揚収地点',ic:'↑',col:'#1565c0'}};
 // map pins for rescue roles: a person calling for help / a mountain rescuer on the hoist cable / lift point
 function roleIcon(r){ const c=ROLES[r].col, W='stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"';
   const disc=`<circle r="11" fill="rgba(0,0,0,.25)" transform="translate(.6,1.2)"/><circle r="10.5" fill="${c}" stroke="#fff" stroke-width="1.8"/>`;
