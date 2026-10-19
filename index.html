@@ -2520,7 +2520,12 @@ setInterval(()=>{ try{ sunDraw(); document.querySelectorAll('[data-sunla]').forE
 // ==== heading follow: device compass (iPhone / iPad / Android), GPS track when moving ====
 const HF={on:false,src:'',last:0,sm:null,gpsAt:0,watch:null,got:false,off:0,acc:null,raw:null};
 try{ HF.off=+localStorage.getItem('aw139hfoff')||0; }catch(e){}
-function hfScreenAngle(){ try{ return (screen.orientation&&typeof screen.orientation.angle==='number')?screen.orientation.angle:(+window.orientation||0); }catch(e){ return 0; } }
+function hfScreenAngle(){ // rotation of the screen's "up" from the device top, judged from the real viewport shape (some iPads report angle 90 while upright)
+  const w=window.innerWidth, h=window.innerHeight; let type='', ang=0;
+  try{ type=(screen.orientation&&screen.orientation.type)||''; ang=(screen.orientation&&typeof screen.orientation.angle==='number')?screen.orientation.angle:(+window.orientation||0); }catch(e){}
+  if(h>=w) return /secondary/.test(type)&&/portrait/.test(type)?180:0;            // portrait (upside-down only if the browser says so explicitly)
+  if(/landscape-secondary/.test(type)) return 270; if(/landscape-primary/.test(type)) return 90;
+  return ang===-90||ang===270?270:90; }
 function hfSet(h,src){ if(!HF.on||!isFinite(h)) return; h=((h%360)+360)%360; HF.got=true;
   // smooth on the circle
   if(HF.sm==null) HF.sm=h; else { let d=((h-HF.sm+540)%360)-180; HF.sm=((HF.sm+d*0.35)+360)%360; }
