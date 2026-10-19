@@ -383,7 +383,8 @@ html{scroll-padding-top:52px}
 .snaptxt{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;margin:6px 0 0;max-height:24vh;overflow:auto;user-select:text;-webkit-user-select:text}
 .dlist button.dshare{border-color:#d62828;color:#b71c1c}
 .snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
-.mctr{position:absolute;right:56px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}@media (max-width:560px){.mctr{right:8px;bottom:94px;font-size:10px;max-width:calc(100% - 16px)}}
+.mctr{position:absolute;right:56px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}.msun{bottom:52px}.msun i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px;border-radius:50%;background:radial-gradient(circle at 50% 100%,#ffb300 0 45%,transparent 47%);border-bottom:1.6px solid #c77700;border-radius:0}.msun i.set{background:radial-gradient(circle at 50% 100%,#ff7043 0 45%,transparent 47%);border-bottom-color:#8e3b1f}
+@media (max-width:560px){.mctr{right:8px;bottom:94px;font-size:10px;max-width:calc(100% - 16px)}.msun{bottom:116px}}
 .mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
 .mpane{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);margin:6px 0 2px;font-size:13px}.mpane .mrow{margin:4px 0}
 .msets{display:grid;gap:8px;margin-top:10px}
@@ -640,7 +641,7 @@ a{color:#7cc4ff}
         <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
           <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><button type="button" id="mZout" aria-label="縮小">−</button></div>
           <div class="mattr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院（地理院タイル・標高タイル）</a></div>
-          <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mctr" id="mCtr" aria-label="画面中心の座標"></div><div class="mwind" id="mWind"></div><div class="mnorth" aria-label="北は上"><svg viewBox="0 0 40 52" width="34" height="44"><path d="M20,4 L30,30 L20,25 L10,30 Z" fill="#d62828" stroke="#fff" stroke-width="1.5"/><path d="M20,25 L30,30 L20,48 L10,30 Z" fill="#fff" stroke="#555" stroke-width="1"/><text x="20" y="46" font-size="0"></text></svg><b>N</b></div>
+          <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mctr" id="mCtr" aria-label="画面中心の座標"></div><div class="mctr msun" id="mSun" aria-label="日の出・日没"></div><div class="mwind" id="mWind"></div><div class="mnorth" aria-label="北は上"><svg viewBox="0 0 40 52" width="34" height="44"><path d="M20,4 L30,30 L20,25 L10,30 Z" fill="#d62828" stroke="#fff" stroke-width="1.5"/><path d="M20,25 L30,30 L20,48 L10,30 Z" fill="#fff" stroke="#555" stroke-width="1"/><text x="20" y="46" font-size="0"></text></svg><b>N</b></div>
         </div>
         <div class="mside">
         <div id="drawPanel" class="drawpanel"></div>
@@ -1854,7 +1855,7 @@ function mapRender(){
   ol.querySelectorAll('canvas').forEach(cv=>{if(!wantO.has(cv.dataset.k)) cv.remove();});
   ol.style.display=$('mOvOn').checked?'':'none'; ol.style.opacity=(+$('mOvA').value)/100;
   try{ govRender(); mgrsDraw(); retDraw(); }catch(e){ console.error(e); }
-  try{ const ce=$('mCtr'); if(ce){ const cl=y2lat(MAP.cy,MAP.z), co=x2lon(MAP.cx,MAP.z); const t=fmtLL(cl,co); if(ce.dataset.t!==t){ ce.dataset.t=t; ce.innerHTML=`<i></i>${t}`; } } }catch(e){} drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
+  try{ const ce=$('mCtr'); if(ce){ const cl=y2lat(MAP.cy,MAP.z), co=x2lon(MAP.cx,MAP.z); const t=fmtLL(cl,co); if(ce.dataset.t!==t){ ce.dataset.t=t; ce.innerHTML=`<i></i>${t}`; } } }catch(e){} try{ sunDraw(); }catch(e){} drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
   const mk=$('mMark'); mkHeli(); if(MAP.pick){ mk.hidden=false; mk.style.left=(lon2x(MAP.pick.lon,z)-x0)+'px'; mk.style.top=(lat2y(MAP.pick.lat,z)-y0)+'px'; } else mk.hidden=true;
 }
 let mapRAF=0; const mapReq=()=>{ if(!mapRAF) mapRAF=requestAnimationFrame(()=>{mapRAF=0; mapRender();}); };
@@ -2400,7 +2401,7 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   const {wd,ws}=mwVals(), hd=((+$('hdg').value%360)+360)%360, c=[y2lat(MAP.cy,MAP.z),x2lon(MAP.cx,MAP.z)];
   const fit=(t,x,y,max,wt,sz)=>{ let z=sz; do{ g.font=`${wt} ${z}px ${FONT}`; z-=0.5; }while(g.measureText(t).width>max&&z>8); g.fillText(t,x,y,max); };
   g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5'; fit(ts,104,20,W-114,'600',12);
-  fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}`,10,41,W-20,'600',12.5);
+  { const sp=opt.place?[opt.place.lat,opt.place.lon]:sunPos(); fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}　${(()=>{ const t=SUN.times(jstDay(new Date()),sp[0],sp[1]); return `日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}`; })()}`,10,41,W-20,'600',12.5); }
   const p=pk; let y=64;
   if(opt.place){ const it=opt.place, r=roleOf(it); g.fillStyle=ROLES[r].col; g.beginPath(); g.arc(17,y-4,6.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; fit(`${it.label||ROLES[r].n}　${fmtLL(it.lat,it.lon)}${it.h!=null&&isFinite(it.h)?`　標高 ${DISP.alt==='ft'?Math.round(it.h*FT).toLocaleString()+' ft':Math.round(it.h).toLocaleString()+' m'}`:''}　${mbeFix(it.lat,it.lon).str}`,28,y,W-38,'800',13.5); }
   else { if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
@@ -2447,6 +2448,31 @@ function snapSheet(blob,extra){ const old=$('snapOv'); if(old) old.remove(); con
   $('snapCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); $('snapCopy').textContent='コピーしました'; }catch(e){ $('snapCopy').textContent='コピーできません'; } }; }
 setTimeout(snapUI,300);
 
+
+// ==== sunrise / sunset at the picked point (or map centre), shown subtly on the map ====
+const SUN=(()=>{ const R=Math.PI/180, DAY=864e5, J1970=2440588, J2000=2451545, E=R*23.4397, J0=0.0009;
+  const toDays=d=>d.valueOf()/DAY-0.5+J1970-J2000, fromJ=j=>new Date((j+0.5-J1970)*DAY);
+  const M=d=>R*(357.5291+0.98560028*d), L=m=>m+R*(1.9148*Math.sin(m)+0.02*Math.sin(2*m)+0.0003*Math.sin(3*m))+R*102.9372+Math.PI;
+  const dec=l=>Math.asin(Math.sin(E)*Math.sin(l)), trJ=(ds,m,l)=>J2000+ds+0.0053*Math.sin(m)-0.0069*Math.sin(2*l);
+  function times(date,lat,lon){ const lw=R*-lon, phi=R*lat, d=toDays(date), n=Math.round(d-J0-lw/(2*Math.PI)), ds=J0+lw/(2*Math.PI)+n, m=M(ds), l=L(m), de=dec(l), jn=trJ(ds,m,l);
+    const at=h=>{ const c=(Math.sin(h*R)-Math.sin(phi)*Math.sin(de))/(Math.cos(phi)*Math.cos(de)); if(c<-1||c>1) return null; const w=Math.acos(c), js=trJ(J0+(w+lw)/(2*Math.PI)+n,m,l); return [fromJ(jn-(js-jn)),fromJ(js)]; };
+    const s=at(-0.833), c=at(-6); return {rise:s&&s[0], set:s&&s[1], dawn:c&&c[0], dusk:c&&c[1], noon:fromJ(jn)}; }
+  return {times}; })();
+function jstDay(t,off){ const j=new Date(t.getTime()+9*3600e3); return new Date(Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate()+(off||0),3,0)); }  // noon JST of that day
+const sunHM=d=>d?d.toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hour12:false}):'--:--';
+function sunNext(lat,lon,now){ now=now||new Date(); const t=SUN.times(jstDay(now),lat,lon);
+  if(t.rise&&now<t.rise) return {k:'rise',at:t.rise,t};
+  if(t.set&&now<t.set) return {k:'set',at:t.set,t};
+  const t2=SUN.times(jstDay(now,1),lat,lon); return {k:'rise',at:t2.rise,t:t2,tomorrow:true,dusk:t.dusk,now:t}; }
+function sunText(lat,lon,short){ const now=new Date(), r=sunNext(lat,lon,now); if(!r.at) return '';
+  const mins=Math.round((r.at-now)/60000), left=mins<60?`${mins}分`:`${Math.floor(mins/60)}時間${String(mins%60).padStart(2,'0')}分`;
+  if(r.k==='rise') return `${r.tomorrow?'明日の':''}日の出 ${sunHM(r.at)}${short?'':`（あと${left}）`}`;
+  return `日没 ${sunHM(r.at)}${short?'':`（あと${left}）・薄明終了 ${sunHM(r.t.dusk)}`}`; }
+function sunPos(){ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null; return p?[p.lat,p.lon,true]:[y2lat(MAP.cy,MAP.z),x2lon(MAP.cx,MAP.z),false]; }
+function sunDraw(){ const el=$('mSun'); if(!el) return; const [la,lo,pk]=sunPos(); const r=sunNext(la,lo); const t=sunText(la,lo);
+  const key=t+pk; if(el.dataset.k===key) return; el.dataset.k=key;
+  el.innerHTML=`<i class="${r.k}"></i>${t}`; el.title=`${pk?'選んだ地点':'地図の中心'}の日の出 ${sunHM(r.t.rise)}・日没 ${sunHM(r.t.set)}（平地の値。山の陰や稜線では見かけの日の出・日没がずれます）`; }
+setInterval(()=>{ try{ sunDraw(); }catch(e){} },30000);
 // map tap / current position -> search box and dial follow the picked point
 function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
