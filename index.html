@@ -493,7 +493,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 @media (max-width:700px){#map{height:72vh!important;min-height:380px}}
 
 
-#mGrid,#mRet{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}#mGrid{z-index:2}#mRet{z-index:4}
+#mGeo{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}#mGrid,#mRet{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}#mGrid{z-index:2}#mRet{z-index:4}
 .govt{position:absolute;width:256px;height:256px;overflow:hidden}.govlist{display:flex;flex-wrap:wrap;gap:4px 18px;margin:4px 0}.govg{min-width:220px}.govh{font-weight:700;color:var(--muted);margin:2px 0}.govlist .chk{display:block;margin:2px 0;font-size:13px}.govlist small{color:var(--muted);font-size:11px}.govop input{width:180px}.govleg{font-size:12px;margin:4px 0}.govleg>div{margin:2px 0}.govsw{display:inline-flex;align-items:center;gap:3px;margin:0 8px 0 0;white-space:nowrap}.govsw i{display:inline-block;width:14px;height:10px;border:1px solid rgba(0,0,0,.25)}.dispbox .mrow{margin:4px 0}.dispbox .mlab{min-width:64px;display:inline-block}
 #mIfr{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
 .ifrbox{margin:4px 0 2px;font-size:12.5px}.mbelow{margin:6px 0 4px}.mbelow>.ifrbox{padding:2px 0;border-bottom:1px solid var(--rule)}.ifrbox>summary{cursor:pointer;font-weight:700;color:#7b1fa2;padding:3px 0}
@@ -602,7 +602,7 @@ a{color:#7cc4ff}
           <div id="govList" class="govlist"></div>
           <div class="mrow govop"><span class="mlab">濃さ</span><input type="range" id="govOp" min="15" max="100" step="5" value="65" aria-label="重ねる地図の濃さ"></div>
           <div id="govLeg" class="govleg"></div>
-          <p class="legend">色別標高図・雪崩傾斜（全国傾斜量区分図）・陰影起伏図・赤色立体地図・傾斜量図は国土地理院の地理院タイル、シームレス地質図は産総研 地質調査総合センターの地図をそのまま重ねます。雪崩傾斜タイプB・色別傾斜区分図・高精度赤色立体地図は、このアプリが地理院の標高タイル（ズーム15以上は5 mメッシュ、ない所と14以下は10 mメッシュ）から傾斜と凹凸を計算して色を付けたもので、地理院の公式の地図ではありません。どれも電波が必要で、「地図を端末に保存」の対象外です。雪崩の危険の判断には、積雪・気象・地形の情報を合わせて使ってください。</p>
+          <p class="legend">色別標高図・雪崩傾斜（全国傾斜量区分図）・陰影起伏図・赤色立体地図・傾斜量図は国土地理院の地理院タイル、シームレス地質図は産総研 地質調査総合センターの地図をそのまま重ねます。空域（空港等の周辺空域・管制圏・情報圏・特別管制区・進入管制区・民間訓練試験空域）は、国土交通省航空局が地理院地図に提供している無人航空機向けの区域データで、ズーム7以上で表示します。高度の上限・下限は表示しないので、有人機の運航には最新の AIP・航空図を使ってください。雪崩傾斜タイプB・色別傾斜区分図・高精度赤色立体地図は、このアプリが地理院の標高タイル（ズーム15以上は5 mメッシュ、ない所と14以下は10 mメッシュ）から傾斜と凹凸を計算して色を付けたもので、地理院の公式の地図ではありません。どれも電波が必要で、「地図を端末に保存」の対象外です。雪崩の危険の判断には、積雪・気象・地形の情報を合わせて使ってください。</p>
         </div>
       <div class="mpane dispbox" data-mp="disp" role="tabpanel" hidden>
           <div class="mrow"><span class="mlab">座標形式</span><span class="mseg" id="dCoord"><button type="button" data-v="d">度</button><button type="button" data-v="dms">度分秒</button><button type="button" data-v="utm">UTM</button><button type="button" data-v="mgrs">MGRS</button><button type="button" data-v="dm">度分</button></span></div>
@@ -643,7 +643,7 @@ a{color:#7cc4ff}
         </div>
       <div class="drawbar"><div class="drawh">地図に描く・測る</div><div id="drawModes" class="drawmodes" role="toolbar" aria-label="地図の作図ツール"></div></div>
       <div class="mapwrap">
-        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mRadar" aria-hidden="true"></svg><svg id="mEdge" aria-hidden="true"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
+        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><svg id="mGeo" aria-hidden="true"></svg><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mRadar" aria-hidden="true"></svg><svg id="mEdge" aria-hidden="true"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
           <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><button type="button" id="mZout" aria-label="縮小">−</button></div>
           <div class="mattr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院（地理院タイル・標高タイル）</a></div>
           <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mctr" id="mCtr" aria-label="画面中心の座標"></div><div class="mctr msun" id="mSun" aria-label="日の出・日没"></div><div class="mwind" id="mWind"></div>
@@ -2288,6 +2288,11 @@ const GOVL=[
   {k:'rrim',n:'高精度赤色立体地図',g:'国土地理院',calc:'rrim',note:'5 m／10 mメッシュ標高から計算'},
   {k:'slopemap',n:'傾斜量図',g:'国土地理院',url:(z,x,y)=>`${GSI}slopemap/${z}/${x}/${y}.png`,min:3,max:15},
   {k:'slopecls',n:'色別傾斜区分図',g:'国土地理院',calc:'cls',note:'地理院の標高タイルから傾斜を計算'},
+  {k:'kokuarea',n:'空港等の周辺空域',g:'空域（国土交通省航空局）',geo:'kokuarea',col:'#2e7d32',note:'制限表面など'},
+  {k:'kokuarea_kanseikentou',n:'管制圏・情報圏',g:'空域（国土交通省航空局）',geo:'kokuarea_kanseikentou',col:'#1565c0'},
+  {k:'kokuarea_tokubetsukanseiku',n:'特別管制区',g:'空域（国土交通省航空局）',geo:'kokuarea_tokubetsukanseiku',col:'#0d47a1'},
+  {k:'kokuarea_shinnyuukanseiku',n:'進入管制区',g:'空域（国土交通省航空局）',geo:'kokuarea_shinnyuukanseiku',col:'#1e88e5'},
+  {k:'kokuarea_minkankunren',n:'民間訓練試験空域',g:'空域（国土交通省航空局）',geo:'kokuarea_minkankunren',col:'#8e24aa'},
   {k:'geo',n:'シームレス地質図',g:'地質',url:(z,x,y)=>`https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/${z}/${y}/${x}.png`,min:3,max:13,note:'産総研 地質調査総合センター'}];
 const GOV={on:{},op:65};
 try{ Object.assign(GOV,JSON.parse(localStorage.getItem('aw139gov')||'{}')); }catch(e){}
@@ -2326,7 +2331,7 @@ async function govCalc(cv,L,z,tx,ty){ const P=6, N=256+2*P; const Z=await demGri
   g.putImageData(im,0,0); }
 function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, n=Math.pow(2,z), x0=MAP.cx-W/2, y0=MAP.cy-H/2;
   const tx0=Math.floor(x0/256), tx1=Math.floor((x0+W)/256), ty0=Math.max(0,Math.floor(y0/256)), ty1=Math.min(n-1,Math.floor((y0+H)/256));
-  const act=GOVL.filter(L=>GOV.on[L.k]);
+  const act=GOVL.filter(L=>GOV.on[L.k]&&!L.geo); try{ geoRender(); }catch(e){ console.error(e); }
   box.querySelectorAll(':scope>div[data-l]').forEach(dv=>{ if(!GOV.on[dv.dataset.l]) dv.remove(); });
   act.forEach((L,li)=>{ let lay=box.querySelector(`:scope>div[data-l="${L.k}"]`); if(!lay){ lay=document.createElement('div'); lay.className='mlayer'; lay.dataset.l=L.k; box.appendChild(lay); }
     lay.style.opacity=GOV.op/100; lay.style.zIndex=li; const want=new Set();
@@ -2341,19 +2346,42 @@ function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; co
       t.style.left=(tx*256-x0)+'px'; t.style.top=(ty*256-y0)+'px'; }
     lay.querySelectorAll('[data-k]').forEach(t=>{ if(!want.has(t.dataset.k)) t.remove(); }); });
   govLegend(); }
+// ---- airspace layers (GSI-hosted GeoJSON tiles from the Civil Aviation Bureau, native zoom 8) drawn as vectors
+const GEOC=new Map();
+function geoTile(lay,x,y){ const k=lay+'/'+x+'/'+y; if(GEOC.has(k)) return GEOC.get(k);
+  const p=fetch(`https://maps.gsi.go.jp/xyz/${lay}/8/${x}/${y}.geojson`).then(r=>r.status===404?{features:[]}:r.ok?r.json():Promise.reject(r.status)).then(j=>(j&&j.features)||[]).catch(e=>{ GEOC.delete(k); return []; });
+  GEOC.set(k,p); if(GEOC.size>400) GEOC.delete(GEOC.keys().next().value); return p; }
+let geoReq=0;
+function geoRender(){ const sv=$('mGeo'), el=$('map'); if(!sv||!el) return; const act=GOVL.filter(L=>L.geo&&GOV.on[L.k]); const W=el.clientWidth, H=el.clientHeight;
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`); sv.style.opacity=GOV.op/100; if(!act.length||MAP.z<7){ sv.innerHTML=''; return; }
+  const b=viewBounds(), X0=Math.floor(lon2x(b.w,8)/256), X1=Math.floor(lon2x(b.e,8)/256), Y0=Math.floor(lat2y(b.n,8)/256), Y1=Math.floor(lat2y(b.s,8)/256);
+  const my=++geoReq, jobs=[];
+  act.forEach(L=>{ for(let x=X0;x<=X1;x++) for(let y=Y0;y<=Y1;y++) jobs.push(geoTile(L.geo,x,y).then(fs=>[L,fs])); });
+  Promise.all(jobs).then(res=>{ if(my!==geoReq) return; const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, P=c=>(lon2x(c[0],z)-x0).toFixed(1)+','+(lat2y(c[1],z)-y0).toFixed(1);
+    const ring=r=>'M'+r.map(P).join('L')+'Z', line=r=>'M'+r.map(P).join('L'); let h=''; const seen=new Set();
+    res.forEach(([L,fs])=>fs.forEach(f=>{ const g=f.geometry; if(!g) return; const id=L.k+JSON.stringify(g.coordinates).length+':'+JSON.stringify(g.coordinates).slice(0,60); if(seen.has(id)) return; seen.add(id);
+      const pr=f.properties||{}, st=pr._color||L.col, fc=pr._fillColor||L.col, fo=pr._fillOpacity!=null?Math.min(.45,+pr._fillOpacity):.16, sw=pr._weight!=null?Math.max(1,+pr._weight):1.6;
+      let d=''; if(g.type==='Polygon') d=g.coordinates.map(ring).join(''); else if(g.type==='MultiPolygon') d=g.coordinates.map(p=>p.map(ring).join('')).join('');
+      else if(g.type==='LineString') d=line(g.coordinates); else if(g.type==='MultiLineString') d=g.coordinates.map(line).join('');
+      if(!d) return; const poly=/Polygon/.test(g.type);
+      h+=`<path d="${d}" fill="${poly?fc:'none'}" fill-opacity="${fo}" fill-rule="evenodd" stroke="${st}" stroke-width="${sw}" stroke-opacity=".9"/>`;
+      if(poly&&(pr.name||pr.名称)&&z>=9){ const c=g.type==='Polygon'?g.coordinates[0]:g.coordinates[0][0]; const mx=c.reduce((s,q)=>s+q[0],0)/c.length, mym=c.reduce((s,q)=>s+q[1],0)/c.length; const [tx,ty]=P([mx,mym]).split(',');
+        h+=`<text x="${tx}" y="${ty}" font-size="11" font-weight="800" fill="${st}" stroke="#fff" stroke-width="3" paint-order="stroke" text-anchor="middle">${esc(String(pr.name||pr.名称)).slice(0,24)}</text>`; } }));
+    sv.innerHTML=h; }); }
 function govLegend(){ const lg=$('govLeg'); if(!lg) return; const z=MAP.z; const sw=(c,t)=>`<span class="govsw"><i style="background:rgb(${c.join(',')})"></i>${t}</span>`; const out=[];
   GOVL.filter(L=>GOV.on[L.k]).forEach(L=>{
     if(L.calc==='avy') out.push(`<div><b>${L.n}</b>：${AVYC.map(([t,c],i)=>sw(c,i<AVYC.length-1?`${t}〜${AVYC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
     else if(L.calc==='cls') out.push(`<div><b>${L.n}</b>：${CLSC.map(([t,c],i)=>sw(c,i<CLSC.length-1?`${t}〜${CLSC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
     else if(L.calc==='rrim') out.push(`<div><b>${L.n}</b>：赤いほど急傾斜、明るいほど尾根・凸、暗いほど谷・凹（ズーム15以上で5 mメッシュ）</div>`);
     if(L.calc&&z<9) out.push(`<div class="caution">${L.n}は、ズーム9以上で表示します</div>`);
+    if(L.geo){ if(z<7) out.push(`<div class="caution">${L.n}は、ズーム7以上で表示します</div>`); return; }
     if(!L.calc&&z<L.min) out.push(`<div class="caution">${L.n}は、ズーム${L.min}以上で表示します</div>`);
     if(!L.calc&&z>L.max) out.push(`<div style="color:var(--muted)">${L.n}：ズーム${L.max}の画像を拡大して表示中</div>`); });
   lg.innerHTML=out.join(''); }
 function govPanel(){ const box=$('govList'); if(!box) return; const grp={}; GOVL.forEach(L=>{ (grp[L.g]=grp[L.g]||[]).push(L); });
   box.innerHTML=Object.entries(grp).map(([g,a])=>`<div class="govg"><div class="govh">${g}</div>${a.map(L=>`<label class="chk"><input type="checkbox" data-gov="${L.k}"${GOV.on[L.k]?' checked':''}> ${L.n}${L.note?`<small>（${L.note}）</small>`:''}</label>`).join('')}</div>`).join('');
   box.querySelectorAll('[data-gov]').forEach(c=>c.onchange=()=>{ GOV.on[c.dataset.gov]=c.checked; govSave(); govRender(); });
-  $('govOp').value=GOV.op; $('govOp').oninput=e=>{ GOV.op=+e.target.value; govSave(); $('mGOv').querySelectorAll(':scope>div[data-l]').forEach(d=>d.style.opacity=GOV.op/100); }; }
+  $('govOp').value=GOV.op; $('govOp').oninput=e=>{ GOV.op=+e.target.value; govSave(); $('mGOv').querySelectorAll(':scope>div[data-l]').forEach(d=>d.style.opacity=GOV.op/100); const g=$('mGeo'); if(g) g.style.opacity=GOV.op/100; }; }
 function dispPanel(){ const set=(id,key,after)=>{ document.querySelectorAll(`#${id} [data-v]`).forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.v===DISP[key]); b.onclick=()=>{ DISP[key]=b.dataset.v; dispSave(); document.querySelectorAll(`#${id} [data-v]`).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===DISP[key])); after&&after(); }; }); };
   set('dCoord','coord',()=>{ LLF.f=DISP.coord; llHint(); if(MAP.pick){ $('mLL').value=fmtLL(MAP.pick.lat,MAP.pick.lon); } mapInfo(); if(typeof drawPanel==='function') drawPanel(); });
   set('dDist','dist',()=>{ mapScale(); retDraw(); if(typeof drawPanel==='function') drawPanel(); mapReq(); });
@@ -2419,7 +2447,7 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
   await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
-  for(const id of ['mWindF','mGrid','mIfr','mRoute','mRadar','mDraw','mRet','mEdge']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
+  for(const id of ['mGeo','mWindF','mGrid','mIfr','mRoute','mRadar','mDraw','mRet','mEdge']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
   if(DISP.ret==='none'&&!opt.place){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
   const mk=$('mMark'); if(!opt.place&&mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
   // scale bar + north arrow
