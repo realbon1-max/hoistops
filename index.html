@@ -481,7 +481,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 .wpctl{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:12.5px;margin-bottom:6px}
 .wpctl .seg button{font:inherit;font-size:12px;font-weight:700;padding:4px 10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}.wpctl .seg button[aria-pressed=true]{background:#2f6fb0;color:#fff;border-color:#2f6fb0}
 .wpscroll{overflow-x:auto}#wpTab{border-collapse:collapse;font-size:13px}#wpTab th{font-size:11.5px;color:var(--muted);font-weight:600;text-align:left;padding:2px 6px}#wpTab td{padding:2px 4px;border-bottom:1px solid var(--rule)}
-#wpTab input{width:66px;font:inherit;font-size:15px;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink)}#wpTab input[data-k=l]{width:74px}#wpTab .wpz{text-align:right;color:var(--muted);min-width:64px}
+#wpTab input{width:62px;font:inherit;font-size:15px;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink)}#wpTab input[data-k=l]{width:74px}#wpTab .wpz{text-align:right;color:var(--muted);min-width:64px}
 #wpTab tr.near td{background:rgba(255,160,40,.16)}#wpTab button{font:inherit;width:28px;height:28px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--warn);cursor:pointer}
 .wpbtns{display:flex;gap:6px;margin:6px 0}.wpbtns button,#wpUse{font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
 #wpUse{background:#2f6fb0;color:#fff;border-color:#2f6fb0;margin:4px 0}.wpout{font-size:13px}.wpv{font-size:18px;color:#2f6fb0}.wpout small{color:var(--muted)}
@@ -793,9 +793,9 @@ a{color:#7cc4ff}
           <div class="pscroll" id="psc"><table id="pTab"></table></div>
           <p class="legend">気圧高度とISA気温は標準大気の値（どの日も同じ）。「今日の海抜」は、今のQNHと気温（ISA偏差 <b id="pDev"></b>）で、その気圧の面が海抜何ftにあるかの概算。黄色＝現場の気圧、青＝航空機の高さの気圧。</p>
           <div class="wprof" id="wprof">
-            <h3>高度ごとの風（エマグラム・高層天気図などから入力）</h3>
+            <h3>高度ごとの気温と風（エマグラム・高層天気図などから入力）</h3>
             <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
-              <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの風を自動で反映</label></div>
+              <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
             <div class="wpscroll"><table id="wpTab"></table></div>
             <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
             <div class="wpres" id="wpRes"></div>
@@ -2939,48 +2939,71 @@ function ifrPanel(){ const box=$('ifrChips'); if(!box) return; const pr=ifrProcs
 setTimeout(()=>{ ifrPanel(); ifrLayer(); },350);
 
 
-// ---- wind profile entered from an emagram / upper-air chart, interpolated to the hoist height
+// ---- wind & temperature profile entered from an emagram / upper-air chart, interpolated to the hoist height
 const WP={base:'hpa',auto:true,rows:null,lastKey:''};
 try{ const v=JSON.parse(localStorage.getItem('aw139wp')||'{}'); if(v.v2!==1) delete v.auto; Object.assign(WP,v); }catch(e){}
-if(!Array.isArray(WP.rows)) WP.rows=[1000,925,850,800,700,600,500].map(l=>({l,d:'',s:''}));
+const wpBlank=l=>({l,t:'',d:'',s:''});
+if(!Array.isArray(WP.rows)) WP.rows=[1000,925,850,800,700,600,500].map(wpBlank);
+WP.rows.forEach(r=>{ if(r.t===undefined) r.t=''; });
 function wpSave(){ try{ localStorage.setItem('aw139wp',JSON.stringify({v2:1,base:WP.base,auto:WP.auto,rows:WP.rows})); }catch(e){} }
-function wpAltFt(l){ // level → true altitude above MSL (ft) for today's QNH and temperature (same as the table's 今日の海抜)
-  if(WP.base==='ft') return +l; const H=+$('hp').value, T=+$('oat').value, k=1+(T-ISA(H))/288; return (HstdP(+l)-HstdP(qnhHpa()))*k; }
-function wpTarget(){ const el=+$('elev').value||0, obs=(+(($('mObs')||{}).value)||0)*FT, hh=+$('hh').value||0; return {el,obs,hh,ft:el+obs+hh}; }
+// temperature points entered on pressure levels → ISA deviation as a function of standard height
+function wpDevPts(){ return WP.rows.filter(r=>r.l!==''&&r.t!=='').map(r=>{ const h=HstdP(+r.l); return {h,dev:(+r.t)-ISA(h)}; }).filter(p=>isFinite(p.h)&&isFinite(p.dev)).sort((a,b)=>a.h-b.h); }
+function wpDevAt(P,h){ if(h<=P[0].h) return P[0].dev; if(h>=P[P.length-1].h) return P[P.length-1].dev; let i=0; while(P[i+1].h<h) i++; const a=P[i],b=P[i+1]; return a.dev+(b.dev-a.dev)*(h-a.h)/(b.h-a.h); }
+function wpAltFt(l){ // level → true altitude above MSL (ft) for today's QNH; uses the entered temperatures (column mean ISA deviation) when given, otherwise today's OAT
+  if(WP.base==='ft') return +l; const h0=HstdP(qnhHpa()), h1=HstdP(+l), P=wpDevPts(); let dev;
+  if(P.length){ let sum=0; const n=24; for(let i=0;i<n;i++) sum+=wpDevAt(P,h0+(h1-h0)*(i+.5)/n); dev=sum/n; }
+  else { const H=+$('hp').value; dev=(+$('oat').value)-ISA(H); }
+  return (h1-h0)*(1+dev/288); }
+function wpTarget(){ const el=+$('elev').value||0, obs=(+(($('mObs')||{}).value)||0)*FT, hh=+$('hh').value||0; return {el,obs,gnd:Math.max(0,el-obs),hh,ft:el+hh}; }
 function wpInterp(ft){ const pts=WP.rows.filter(r=>r.d!==''&&r.s!==''&&r.l!=='').map(r=>{ const a=(+r.d)*RAD, sp=+r.s; return {z:wpAltFt(r.l),u:-sp*Math.sin(a),v:-sp*Math.cos(a),l:r.l}; }).filter(p=>isFinite(p.z)).sort((a,b)=>a.z-b.z);
   if(!pts.length) return null; let u,v,info;
   if(ft<=pts[0].z){ u=pts[0].u; v=pts[0].v; info=pts.length>1?`いちばん低い層（${wpLab(pts[0].l)}）より下なので、その値を使用`:'1層だけの入力'; }
   else if(ft>=pts[pts.length-1].z){ const q=pts[pts.length-1]; u=q.u; v=q.v; info=`いちばん高い層（${wpLab(q.l)}）より上なので、その値を使用`; }
   else { let i=0; while(pts[i+1].z<ft) i++; const a=pts[i], b=pts[i+1], t=(ft-a.z)/(b.z-a.z); u=a.u+(b.u-a.u)*t; v=a.v+(b.v-a.v)*t; info=`${wpLab(a.l)} と ${wpLab(b.l)} の間を高さで内挿`; }
   const sp=Math.hypot(u,v), d=(Math.atan2(-u,-v)/RAD+360)%360; return {d:Math.round(d/5)*5%360||360,s:Math.round(sp),info,n:pts.length}; }
+// temperature at a true altitude: linear between entered levels, standard lapse (1.98 ℃/1000 ft) outside them
+function wpTemp(ft){ const pts=WP.rows.filter(r=>r.t!==''&&r.l!=='').map(r=>({z:wpAltFt(r.l),T:+r.t,l:r.l})).filter(p=>isFinite(p.z)&&isFinite(p.T)).sort((a,b)=>a.z-b.z);
+  if(!pts.length) return null; let T,info;
+  if(pts.length===1){ T=pts[0].T-1.98*(ft-pts[0].z)/1000; info=`1層（${wpLab(pts[0].l)}）だけの入力。標準の減率 2℃/1000 ft で換算`; }
+  else if(ft<=pts[0].z){ T=pts[0].T-1.98*(ft-pts[0].z)/1000; info=`いちばん低い層（${wpLab(pts[0].l)}）より下なので、標準の減率で延長（地表付近の逆転層は表せません）`; }
+  else if(ft>=pts[pts.length-1].z){ const q=pts[pts.length-1]; T=q.T-1.98*(ft-q.z)/1000; info=`いちばん高い層（${wpLab(q.l)}）より上なので、標準の減率で延長`; }
+  else { let i=0; while(pts[i+1].z<ft) i++; const a=pts[i], b=pts[i+1]; T=a.T+(b.T-a.T)*(ft-a.z)/(b.z-a.z); info=`${wpLab(a.l)} と ${wpLab(b.l)} の間を高さで内挿`; }
+  return {T:Math.round(T*10)/10,info,n:pts.length}; }
 // display order like an emagram: highest level at the top (empty new rows first)
 function wpOrder(){ return WP.rows.map((r,i)=>i).sort((a,b)=>{ const la=WP.rows[a].l, lb=WP.rows[b].l; if(la==='') return -1; if(lb==='') return 1; return WP.base==='ft'?(+lb)-(+la):(+la)-(+lb); }); }
 const wpLab=l=>WP.base==='ft'?`${(+l).toLocaleString()} ft`:`${l} hPa`;
-function wpApply(r){ document.querySelector('#wmode [data-m="true"]').click(); $('wdir').value=r.d%360; $('ws').value=r.s; if($('wsR')) $('wsR').value=r.s; update(); }
+function wpApply(r,t){ if(t){ $('oat').value=t.T.toFixed(1); $('oatR').value=Math.round(t.T); }
+  if(r){ document.querySelector('#wmode [data-m="true"]').click(); $('wdir').value=r.d%360; $('ws').value=r.s; if($('wsR')) $('wsR').value=r.s; }
+  update(); }
 function wpDraw(){ const tb=$('wpTab'); if(!tb) return; const fm=n=>Math.round(n).toLocaleString();
   document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===WP.base)); $('wpAuto').checked=!!WP.auto;
   const tg=wpTarget();
   if(!tb.dataset.built||tb.dataset.base!==WP.base||+tb.dataset.n!==WP.rows.length){ tb.dataset.built=1; tb.dataset.base=WP.base; tb.dataset.n=WP.rows.length;
-    tb.innerHTML=`<tr><th>${WP.base==='ft'?'海抜 ft':'気圧 hPa'}</th><th>今日の海抜 ft</th><th>風向 °（真）</th><th>風速 kt</th><th></th></tr>`+wpOrder().map(i=>[WP.rows[i],i]).map(([r,i])=>`<tr data-i="${i}"><td><input type="number" data-k="l" value="${r.l}" step="any" inputmode="decimal"></td><td class="wpz"></td><td><input type="number" data-k="d" value="${r.d}" min="0" max="360" step="10" inputmode="numeric" placeholder="—"></td><td><input type="number" data-k="s" value="${r.s}" min="0" step="1" inputmode="numeric" placeholder="—"></td><td><button type="button" data-del="${i}" aria-label="この行を消す">×</button></td></tr>`).join('');
+    tb.innerHTML=`<tr><th>${WP.base==='ft'?'海抜 ft':'気圧 hPa'}</th><th>今日の海抜 ft</th><th>気温 ℃</th><th>風向 °（真）</th><th>風速 kt</th><th></th></tr>`+wpOrder().map(i=>[WP.rows[i],i]).map(([r,i])=>`<tr data-i="${i}"><td><input type="number" data-k="l" value="${r.l}" step="any" inputmode="decimal"></td><td class="wpz"></td><td><input type="number" data-k="t" value="${r.t}" min="-80" max="50" step="0.1" inputmode="decimal" placeholder="—"></td><td><input type="number" data-k="d" value="${r.d}" min="0" max="360" step="10" inputmode="numeric" placeholder="—"></td><td><input type="number" data-k="s" value="${r.s}" min="0" step="1" inputmode="numeric" placeholder="—"></td><td><button type="button" data-del="${i}" aria-label="この行を消す">×</button></td></tr>`).join('');
     tb.querySelectorAll('input').forEach(inp=>{ inp.addEventListener('input',()=>{ const i=+inp.closest('tr').dataset.i; WP.rows[i][inp.dataset.k]=inp.value; wpSave(); WP.lastKey=''; wpDraw(); }); if(inp.dataset.k==='l') inp.addEventListener('change',()=>{ tb.dataset.built=''; wpDraw(); }); });
     tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ WP.rows.splice(+b.dataset.del,1); wpSave(); wpDraw(); }); }
   // altitude column + highlight the layer that brackets the hoist height
   const zs=WP.rows.map(r=>r.l===''?NaN:wpAltFt(r.l));
   tb.querySelectorAll('tr[data-i]').forEach(tr=>{ const i=+tr.dataset.i; tr.querySelector('.wpz').textContent=isFinite(zs[i])?fm(zs[i]):'—'; tr.classList.toggle('near',isFinite(zs[i])&&Math.abs(zs[i]-tg.ft)<1500); });
-  const r=wpInterp(tg.ft), box=$('wpRes');
-  if(!r){ box.innerHTML=`<span class="hint">各層の風向・風速を入れると、ホイスト地点の高さ（標高 ${fm(tg.el)} ft＋障害物 ${fm(tg.obs)} ft＋ホバリング ${fm(tg.hh)} ft ＝ 海抜 <b>${fm(tg.ft)} ft</b>）の風を推定して、風の欄に反映できます。</span>`; return; }
-  box.innerHTML=`<div class="wpout">ホイスト地点の高さ 海抜 <b>${fm(tg.ft)} ft</b>（標高 ${fm(tg.el)}＋障害物 ${fm(tg.obs)}＋ホバリング ${fm(tg.hh)}）の推定風：<b class="wpv">${String(r.d).padStart(3,'0')}° / ${r.s} kt</b> <small>${r.info}</small></div>
-    <button type="button" id="wpUse">この風を「風・HDG」に反映</button><span class="hint"> 今の設定：${String(+$('wdir').value).padStart(3,'0')}° / ${$('ws').value} kt</span>
-    <div class="hint">高層の風は自由大気の値です。山の稜線・谷では地形で向きと強さが大きく変わり、地表付近は摩擦で弱まります。現場の吹き流し・煙・木の揺れで必ず確かめてください。</div>`;
-  $('wpUse').onclick=()=>wpApply(r);
-  const key=[Math.round(tg.ft/50),r.d,r.s].join(',');
-  if(WP.auto&&key!==WP.lastKey){ WP.lastKey=key; if(+$('wdir').value!==r.d%360||+$('ws').value!==r.s||wmode!=='true') setTimeout(()=>wpApply(r),0); } }
+  const r=wpInterp(tg.ft), t=wpTemp(tg.el), box=$('wpRes');
+  const hgt=`標高 ${fm(tg.el)} ft${tg.obs>0?`（地表 ${fm(tg.gnd)}＋障害物 ${fm(tg.obs)}）`:''}`;
+  if(!r&&!t){ box.innerHTML=`<span class="hint">各層の気温・風向・風速を入れると、ホイスト地点（${hgt}、ホバリング ${fm(tg.hh)} ft）の気温と風を推定して、条件の欄に反映できます。</span>`; return; }
+  const dev=t?t.T-ISA(+$('hp').value):0;
+  box.innerHTML=(t?`<div class="wpout">現場（${hgt}）の推定気温：<b class="wpv">${t.T.toFixed(1)} ℃</b> <small>ISA${dev>=0?'+':''}${dev.toFixed(1)}℃・${t.info}</small></div>`:'')
+    +(r?`<div class="wpout">ホバリング中の機体の高さ 海抜 <b>${fm(tg.ft)} ft</b>（標高＋ホバリング ${fm(tg.hh)}）の推定風：<b class="wpv">${String(r.d).padStart(3,'0')}° / ${r.s} kt</b> <small>${r.info}</small></div>`:'')
+    +`<button type="button" id="wpUse">この${t&&r?'気温と風':t?'気温':'風'}を条件に反映</button><span class="hint"> 今の設定：${t?`OAT ${(+$('oat').value).toFixed(1)}℃`:''}${t&&r?'・':''}${r?`${String(+$('wdir').value).padStart(3,'0')}° / ${$('ws').value} kt`:''}</span>
+    <p class="legend">気温は性能計算の外気温度（OAT）として、気圧高度と同じ現場の標高で読んでいます。気温を入れた層があれば、各層の「今日の海抜」もその気温で計算します。高層の値は自由大気の値です。山の稜線・谷では地形で風向と強さが大きく変わり、地表付近は摩擦で弱まり、晴れた朝は放射冷却で地面近くだけ冷えることがあります。現場の吹き流し・煙・木の揺れ・外気温計で必ず確かめてください。</p>`;
+  $('wpUse').onclick=()=>wpApply(r,t);
+  const key=[Math.round(tg.ft/50),r?r.d:'',r?r.s:'',t?t.T:''].join(',');
+  if(WP.auto&&key!==WP.lastKey){ WP.lastKey=key;
+    const needW=r&&(+$('wdir').value!==r.d%360||+$('ws').value!==r.s||wmode!=='true'), needT=t&&Math.abs(+$('oat').value-t.T)>0.05;
+    if(needW||needT) setTimeout(()=>wpApply(needW?r:null,needT?t:null),0); } }
 (function(){ if(!$('wprof')) return;
   document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.onclick=()=>{ if(WP.base===b.dataset.b) return; WP.base=b.dataset.b;
-    WP.rows=WP.base==='ft'?[3000,5000,7000,9000,10000,12000,14000].map(l=>({l,d:'',s:''})):[1000,925,850,800,700,600,500].map(l=>({l,d:'',s:''})); wpSave(); wpDraw(); });
+    WP.rows=(WP.base==='ft'?[3000,5000,7000,9000,10000,12000,14000]:[1000,925,850,800,700,600,500]).map(wpBlank); wpSave(); wpDraw(); });
   $('wpAuto').onchange=e=>{ WP.auto=e.target.checked; WP.lastKey=''; wpSave(); wpDraw(); };
-  $('wpAdd').onclick=()=>{ WP.rows.push({l:'',d:'',s:''}); wpSave(); wpDraw(); };
-  $('wpClr').onclick=()=>{ WP.rows.forEach(r=>{ r.d=''; r.s=''; }); const tb=$('wpTab'); tb.dataset.built=''; wpSave(); wpDraw(); };
+  $('wpAdd').onclick=()=>{ WP.rows.push(wpBlank('')); wpSave(); wpDraw(); };
+  $('wpClr').onclick=()=>{ WP.rows.forEach(r=>{ r.t=''; r.d=''; r.s=''; }); const tb=$('wpTab'); tb.dataset.built=''; wpSave(); wpDraw(); };
   wpDraw(); })();
 
 setTimeout(()=>mapWind(),400);
