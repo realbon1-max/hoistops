@@ -386,7 +386,7 @@ html{scroll-padding-top:52px}
 .snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
 .mctr{position:absolute;right:8px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}.msun{bottom:52px}.msun i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px;border-radius:50%;background:radial-gradient(circle at 50% 100%,#ffb300 0 45%,transparent 47%);border-bottom:1.6px solid #c77700;border-radius:0}.msun i.set{background:radial-gradient(circle at 50% 100%,#ff7043 0 45%,transparent 47%);border-bottom-color:#8e3b1f}
 @media (max-width:560px){.mctr{right:8px;bottom:62px;font-size:10px;max-width:calc(100% - 16px)}.msun{bottom:84px}}
-.mhdgf{top:152px!important}.mhdgf[aria-pressed=true]{background:#ff8a1f;border-color:#ff8a1f;color:#fff}.mhdgt{position:absolute;right:8px;top:198px;z-index:7;font-size:11px;font-weight:700;background:rgba(255,138,31,.94);color:#fff;border-radius:6px;padding:3px 7px;max-width:min(300px,calc(100% - 16px))}.mhdgt.bad:not(.open){background:rgba(214,40,40,.92)}.mhdgt:not(.open) .hfb,.mhdgt:not(.open) .hfn,.mhdgt:not(.open) .hfw{display:none}.hfh{white-space:nowrap;cursor:pointer;padding:2px 0}.hfw{margin-top:3px;font-weight:600;background:rgba(0,0,0,.25);border-radius:4px;padding:2px 4px}.hfb{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}.hfb span{margin-right:2px}.hfb button{font:inherit;font-size:12px;font-weight:800;min-width:32px;height:28px;border-radius:5px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.18);color:#fff;cursor:pointer;touch-action:manipulation}.hfn{margin-top:3px;font-weight:500;font-size:10.5px;opacity:.95;white-space:normal}
+.mhdgf{top:152px!important}.mrdrb{top:200px!important}.mrdrb[aria-pressed=true]{background:#0b2414;border-color:#39ff6a;color:#39ff6a}#mEdge{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9;overflow:hidden}#mRadar{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}.mhdgf[aria-pressed=true]{background:#ff8a1f;border-color:#ff8a1f;color:#fff}.mhdgt{position:absolute;right:8px;top:246px;z-index:7;font-size:11px;font-weight:700;background:rgba(255,138,31,.94);color:#fff;border-radius:6px;padding:3px 7px;max-width:min(300px,calc(100% - 16px))}.mhdgt.bad:not(.open){background:rgba(214,40,40,.92)}.mhdgt:not(.open) .hfb,.mhdgt:not(.open) .hfn,.mhdgt:not(.open) .hfw{display:none}.hfh{white-space:nowrap;cursor:pointer;padding:2px 0}.hfw{margin-top:3px;font-weight:600;background:rgba(0,0,0,.25);border-radius:4px;padding:2px 4px}.hfb{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}.hfb span{margin-right:2px}.hfb button{font:inherit;font-size:12px;font-weight:800;min-width:32px;height:28px;border-radius:5px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.18);color:#fff;cursor:pointer;touch-action:manipulation}.hfn{margin-top:3px;font-weight:500;font-size:10.5px;opacity:.95;white-space:normal}
 .mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
 .mpane{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);margin:6px 0 2px;font-size:13px}.mpane .mrow{margin:4px 0}
 .msets{display:grid;gap:8px;margin-top:10px}
@@ -640,7 +640,7 @@ a{color:#7cc4ff}
         </div>
       <div class="drawbar"><div class="drawh">地図に描く・測る</div><div id="drawModes" class="drawmodes" role="toolbar" aria-label="地図の作図ツール"></div></div>
       <div class="mapwrap">
-        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
+        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mRadar" aria-hidden="true"></svg><svg id="mEdge" aria-hidden="true"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
           <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><button type="button" id="mZout" aria-label="縮小">−</button></div>
           <div class="mattr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院（地理院タイル・標高タイル）</a></div>
           <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mctr" id="mCtr" aria-label="画面中心の座標"></div><div class="mctr msun" id="mSun" aria-label="日の出・日没"></div><div class="mwind" id="mWind"></div>
@@ -1857,6 +1857,7 @@ function mapRender(){
   ol.querySelectorAll('canvas').forEach(cv=>{if(!wantO.has(cv.dataset.k)) cv.remove();});
   ol.style.display=$('mOvOn').checked?'':'none'; ol.style.opacity=(+$('mOvA').value)/100;
   try{ govRender(); mgrsDraw(); retDraw(); }catch(e){ console.error(e); }
+  try{ radarDraw(); }catch(e){ console.error(e); }
   try{ const ce=$('mCtr'); if(ce){ const cl=y2lat(MAP.cy,MAP.z), co=x2lon(MAP.cx,MAP.z); const t=fmtLL(cl,co); if(ce.dataset.t!==t){ ce.dataset.t=t; ce.innerHTML=`<i></i>${t}`; } } }catch(e){} try{ sunDraw(); }catch(e){} drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
   const mk=$('mMark'); mkHeli(); if(MAP.pick){ mk.hidden=false; mk.style.left=(lon2x(MAP.pick.lon,z)-x0)+'px'; mk.style.top=(lat2y(MAP.pick.lat,z)-y0)+'px'; } else mk.hidden=true;
 }
@@ -1869,7 +1870,7 @@ function mapSetBase(k){ MAP.base=k; document.querySelectorAll('#mBase button').f
 // picked point drawn as a small top-view helicopter whose nose follows the heading (HDG)
 function mkHeli(){ const mk=$('mMark'); if(!mk) return; if(!mk.firstChild||mk.dataset.v!=='h'){ mk.dataset.v='h';
     mk.innerHTML=`<svg viewBox="-26 -26 52 52" aria-hidden="true"><circle r="21" fill="rgba(176,38,140,.18)" stroke="#b0268c" stroke-width="2.2"/><circle r="22.5" fill="none" stroke="#fff" stroke-width="1.2"/><g class="mkh"><path d="M0,-25 L4.5,-18 L-4.5,-18 Z" fill="#b0268c" stroke="#fff" stroke-width="1"/><g stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><g stroke="#15253a" stroke-width="1.6" stroke-linecap="round">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><path d="M0,-13 C4.5,-13 5.5,-6 5,1 C4.6,6 2.5,8 1.6,9 L1.2,19 L5,20.5 L5,22.5 L-5,22.5 L-5,20.5 L-1.2,19 L-1.6,9 C-2.5,8 -4.6,6 -5,1 C-5.5,-6 -4.5,-13 0,-13 Z" fill="#1d4d9a" stroke="#fff" stroke-width="1.3"/><path d="M-2.6,-9.5 Q0,-12 2.6,-9.5 L2.2,-6.5 L-2.2,-6.5 Z" fill="#9fd0ff"/><circle r="2" fill="#fff" stroke="#15253a" stroke-width="1"/></g></svg>`; }
-  const hd=((+$('hdg').value%360)+360)%360; const g=mk.querySelector('.mkh'); if(g) g.setAttribute('transform',`rotate(${hd})`); mk.title='機首 '+String(Math.round(hd)).padStart(3,'0')+'°'; }
+  const hd=((+$('hdg').value%360)+360)%360; const g=mk.querySelector('.mkh'); if(g) g.setAttribute('transform',`rotate(${hd})`); try{ radarDraw(); }catch(e){} mk.title='機首 '+String(Math.round(hd)).padStart(3,'0')+'°'; }
 function mapScale(){ const el=$('mScale'), m=$('map'); if(!el||!m) return; const la=y2lat(MAP.cy,MAP.z), mpp=40075016.686*Math.cos(la*Math.PI/180)/(256*Math.pow(2,MAP.z));
   const nd=niceDist(mpp*Math.min(140,m.clientWidth*0.3)), d=nd.m, px=d/mpp;
   const sub=DISP.dist==='m'?(()=>{ const nm=d/1852; return nm>=1?nm.toFixed(nm<10?1:0)+' NM':nm.toFixed(2)+' NM'; })():fmtMetric(d);
@@ -2413,7 +2414,7 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
   await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
-  for(const id of ['mWindF','mGrid','mIfr','mRoute','mDraw','mRet']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
+  for(const id of ['mWindF','mGrid','mIfr','mRoute','mRadar','mDraw','mRet','mEdge']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
   if(DISP.ret==='none'&&!opt.place){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
   const mk=$('mMark'); if(!opt.place&&mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
   // scale bar + north arrow
@@ -2564,6 +2565,40 @@ function hfUI(){ if($('mHdgF')) return; const b=document.createElement('button')
   const t=document.createElement('div'); t.id='mHdgT'; t.className='mhdgt'; t.hidden=true;
   $('map').append(b,t); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',e=>{ e.stopPropagation(); if(HF.on) hfStop(); else hfStart(); }); }
 setTimeout(hfUI,320);
+
+// ==== radar overlay around the helicopter (heading-up wedge, range rings) + edge markers for off-screen rescue points ====
+const RDR={on:false}; try{ RDR.on=localStorage.getItem('aw139rdr')==='1'; }catch(e){}
+function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight; sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, mpp=mpxNow(); let h='';
+  const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, ref=p?[p.lat,p.lon]:[y2lat(MAP.cy,z),x2lon(MAP.cx,z)];
+  const G='#39ff6a', halo='stroke="#06210f" stroke-opacity=".55"';
+  if(RDR.on&&p){ const cx=lon2x(p.lon,z)-x0, cy=lat2y(p.lat,z)-y0, hd=((+$('hdg').value%360)+360)%360, R=Math.hypot(W,H);
+    const nd=niceDist(mpp*Math.min(W,H)*0.16), r=nd.m/mpp, A=(a,L)=>[cx+Math.sin((hd+a)*RAD)*L, cy-Math.cos((hd+a)*RAD)*L];
+    let d=''; for(let k=1;k<=4;k++) d+=`M${cx-r*k},${cy}a${r*k},${r*k} 0 1,0 ${2*r*k},0a${r*k},${r*k} 0 1,0 ${-2*r*k},0`;
+    for(const a of [0,90,180,270]){ const [x,y]=A(a,R); d+=`M${cx},${cy}L${x},${y}`; }
+    for(const a of [-40,40]){ const [x,y]=A(a,R); d+=`M${cx},${cy}L${x},${y}`; }
+    h+=`<path d="${d}" fill="none" ${halo} stroke-width="3.2"/><path d="${d}" fill="none" stroke="${G}" stroke-width="1.4" stroke-opacity=".9"/>`;
+    const [fx,fy]=A(0,r*4.6); h+=`<path d="${d.slice(0,0)}M${cx},${cy}" />`;
+    for(let k=1;k<=4;k++){ const [lx,ly]=A(180+12,r*k); const v=nd.m*k, lab=DISP.dist==='m'?(v>=1000?`${+(v/1000).toFixed(1)}km`:`${v}m`):`${+(v/(DISP.dist==='mi'?1609.344:1852)).toFixed(2)}${DISP.dist==='mi'?'mi':'NM'}`;
+      h+=`<text x="${lx}" y="${ly}" font-size="10.5" font-weight="700" fill="${G}" stroke="#06210f" stroke-width="2.6" paint-order="stroke" text-anchor="middle">${lab}</text>`; }
+    for(const [a,t] of [[0,'N'],[90,'E'],[180,'S'],[270,'W']]){ const x=cx+Math.sin(a*RAD)*(r*4+12), y=cy-Math.cos(a*RAD)*(r*4+12)+4; h+=`<text x="${x}" y="${y}" font-size="12" font-weight="800" fill="${G}" stroke="#06210f" stroke-width="2.6" paint-order="stroke" text-anchor="middle">${t}</text>`; }
+    const [tx,ty]=A(0,r*4); h+=`<path d="M${tx},${ty}L${A(-4,r*4-12).join(',')}L${A(4,r*4-12).join(',')}Z" fill="${G}" ${halo} stroke-width="1"/>`; }
+  sv.innerHTML=h; h=''; const se=$('mEdge'); if(se) se.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  // edge markers for rescue points outside the view
+  const M=18; (typeof DRAW!=='undefined'?DRAW.items:[]).filter(it=>it.t==='dest').forEach(it=>{ const px=lon2x(it.lon,z)-x0, py=lat2y(it.lat,z)-y0;
+    if(px>=6&&px<=W-6&&py>=6&&py<=H-6) return; const ccx=W/2, ccy=H/2, dx=px-ccx, dy=py-ccy;
+    const k=Math.min(Math.abs((W/2-M)/(dx||1e-9)),Math.abs((H/2-M)/(dy||1e-9))), ex=ccx+dx*k, ey=ccy+dy*k, ang=Math.atan2(dy,dx);
+    const r=roleOf(it), c=ROLES[r].col, g=gc(ref[0],ref[1],it.lat,it.lon), dist=fmtDist2(g.nm*1852).split('（')[0];
+    const ax=Math.cos(ang), ay=Math.sin(ang), tip=[ex+ax*14,ey+ay*14], b1=[ex+ax*4-ay*8,ey+ay*4+ax*8], b2=[ex+ax*4+ay*8,ey+ay*4-ax*8];
+    const right=ex>W/2, tx2=right?ex-14:ex+14, ty2=Math.max(26,Math.min(H-14,ey+(ey<H/2?22:-14)));
+    h+=`<g><path d="M${tip}L${b1}L${b2}Z" fill="${c}" stroke="#fff" stroke-width="1.5"/><circle cx="${ex}" cy="${ey}" r="8.5" fill="${c}" stroke="#fff" stroke-width="2"/><text x="${ex}" y="${ey+4}" font-size="11" font-weight="900" fill="#fff" text-anchor="middle">${ROLES[r].ic}</text>
+      <text x="${tx2}" y="${ty2}" font-size="11" font-weight="800" fill="${c}" stroke="#fff" stroke-width="3" paint-order="stroke" text-anchor="${right?'end':'start'}">${esc(it.label||ROLES[r].n)} ${dist}</text></g>`; });
+  if(se) se.innerHTML=h; }
+function rdrUI(){ if($('mRdrB')) return; const b=document.createElement('button'); b.type='button'; b.id='mRdrB'; b.className='msnap mrdrb'; b.title='ヘリ中心のレーダー表示'; b.setAttribute('aria-label','レーダー表示'); b.setAttribute('aria-pressed',RDR.on);
+  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 2.5V21.5M2.5 12H21.5M12 12L6.5 4.5M12 12L17.5 4.5" stroke="currentColor" stroke-width="1.3"/></svg>';
+  $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',e=>{ e.stopPropagation(); RDR.on=!RDR.on; b.setAttribute('aria-pressed',RDR.on); try{ localStorage.setItem('aw139rdr',RDR.on?'1':'0'); }catch(_){}
+    if(RDR.on&&!(MAP.pick&&!MAP.pick.loading)) mapMsg('レーダーはヘリ（選んだ地点）を中心に描きます。地図をタップしてヘリを置いてください。'); radarDraw(); }); }
+setTimeout(rdrUI,330);
 // map tap / current position -> search box and dial follow the picked point
 function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
