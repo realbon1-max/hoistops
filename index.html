@@ -1986,8 +1986,8 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
   return `<div class="llall"><div class="ll1">${alt[f]()}<span>${COORDN[f]}</span></div>${['dm','d','dms','utm','mgrs'].filter(k=>k!==f).map(k=>`<div class="ll2">${alt[k]()}<span>${COORDN[k]}</span></div>`).join('')}${mbeHTML(la,lo,altFt)}</div>`; }
 function mapInfo(){ mapInfo0(); destBtn(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
-// rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下点), hoist-up point (吊り上げ点)
-const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#d62828'},drop:{n:'降下点',ic:'🧗',col:'#1e8449'},lift:{n:'吊り上げ点',ic:'⬆',col:'#1565c0'}};
+// rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下地点), hoist recovery point (ホイスト揚収地点)
+const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#d62828'},drop:{n:'降下地点',ic:'🧗',col:'#1e8449'},lift:{n:'ホイスト揚収地点',ic:'⬆',col:'#1565c0'}};
 // map pins for rescue roles: a person calling for help / a mountain rescuer on the hoist cable / lift point
 function roleIcon(r){ const c=ROLES[r].col, W='stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"';
   const disc=`<circle r="11" fill="rgba(0,0,0,.25)" transform="translate(.6,1.2)"/><circle r="10.5" fill="${c}" stroke="#fff" stroke-width="1.8"/>`;
@@ -2525,6 +2525,7 @@ function twoStep(btn,fn){ const label=btn.textContent; let t=0;
 // ---- map drawing tools: points, text, range rings, grid, distance/bearing, area
 const DRAW={mode:'pick',items:[],tmp:[],unit:'m',cStep:500,cN:4,cRose:true,gStep:500,gN:6,pace:1,trace:false};
 try{ const v=JSON.parse(localStorage.getItem('aw139draw')||'null'); if(v){ DRAW.items=Array.isArray(v.items)?v.items:[]; ['unit','cStep','cN','cRose','gStep','gN','pace'].forEach(k=>{ if(v[k]!=null) DRAW[k]=v[k]; }); } }catch(e){}
+DRAW.items.forEach(it=>{ if(it&&typeof it.label==='string') it.label=it.label.replace(/^降下点(?=\d*$)/,'降下地点').replace(/^吊り上げ点(?=\d*$)/,'ホイスト揚収地点'); });
 function drawSave(){ try{ localStorage.setItem('aw139draw',JSON.stringify({items:DRAW.items.map(({_busy,...x})=>x),unit:DRAW.unit,cStep:DRAW.cStep,cN:DRAW.cN,cRose:DRAW.cRose,gStep:DRAW.gStep,gN:DRAW.gN,pace:DRAW.pace})); }catch(e){} }
 const UNITM={m:1,km:1000,NM:1852}, RE=6371008.8, RAD=Math.PI/180;
 function destLL(la,lo,brg,d){ const p1=la*RAD,l1=lo*RAD,b=brg*RAD,dr=d/RE; const p2=Math.asin(Math.sin(p1)*Math.cos(dr)+Math.cos(p1)*Math.sin(dr)*Math.cos(b));
