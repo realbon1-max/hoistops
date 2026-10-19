@@ -1983,7 +1983,16 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
 function mapInfo(){ mapInfo0(); destBtn(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
 // rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下点), hoist-up point (吊り上げ点)
-const ROLES={vic:{n:'要救助者',ic:'🏁',col:'#0b63ce'},drop:{n:'降下点',ic:'⬇',col:'#1e8449'},lift:{n:'吊り上げ点',ic:'⬆',col:'#d35400'}};
+const ROLES={vic:{n:'要救助者',ic:'🙋',col:'#0b63ce'},drop:{n:'降下点',ic:'🧗',col:'#1e8449'},lift:{n:'吊り上げ点',ic:'⬆',col:'#d35400'}};
+// map pins for rescue roles: a person calling for help / a mountain rescuer on the hoist cable / lift point
+function roleIcon(r){ const c=ROLES[r].col, W='stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const pin=`<ellipse cx="0" cy="0" rx="5.5" ry="2.2" fill="rgba(0,0,0,.28)"/><path d="M0,0 C-4,-8 -15,-14 -15,-27 A15,15 0 1,1 15,-27 C15,-14 4,-8 0,0Z" fill="${c}" stroke="#fff" stroke-width="2"/>`;
+  let g;
+  if(r==='vic') g=`<circle cx="0" cy="-33.5" r="3.1" fill="#fff"/><path d="M0,-30 V-22 M0,-22 L-4.5,-15 M0,-22 L4.5,-15 M0,-28 L-7.5,-37 M0,-28 L7.5,-37" ${W}/><path d="M-10.5,-37 l-1.8,-2.2 M10.5,-37 l1.8,-2.2 M-11.2,-33.4 l-2.4,-.5 M11.2,-33.4 l2.4,-.5" stroke="#ffd400" stroke-width="1.7" stroke-linecap="round"/>`;
+  else if(r==='drop') g=`<path d="M0,-43 V-36.5" stroke="#fff" stroke-width="1.7"/><path d="M-3.4,-25.5 L-1.1,-36.5 M3.4,-25.5 L1.1,-36.5" ${W}/><circle cx="0" cy="-29.2" r="2.7" fill="#fff"/><path d="M-3.7,-29.6 A3.8,3.8 0 0 1 3.7,-29.6 Z" fill="#ffb300" stroke="#ffb300" stroke-width=".8"/><path d="M0,-26 V-19 M0,-19 L-4.6,-13 M0,-19 L4.6,-13" ${W}/><path d="M-3.4,-21 H3.4 M0,-21 V-24" stroke="#ffb300" stroke-width="2" stroke-linecap="round"/>`;
+  else g=`<path d="M0,-37 L7,-28 L2.5,-28 L2.5,-18 L-2.5,-18 L-2.5,-28 L-7,-28 Z" fill="#fff"/>`;
+  return `<g transform="scale(1.2)">${pin}${g}</g>`; }
+
 const roleOf=x=>x.role||'vic';
 function roleLabel(r,self){ return ROLES[r].n+(DRAW.items.filter(x=>x!==self&&x.t==='dest'&&roleOf(x)===r).length+1); }
 function setRole(it,r){ if(new RegExp('^('+Object.values(ROLES).map(v=>v.n).join('|')+'|目的地)\\d*$').test(it.label||'')){ it.role=r; it.label=roleLabel(r,it); } else it.role=r; }
@@ -2582,8 +2591,7 @@ function drawLayer(){ const sv=$('mDraw'), el=$('map'); if(!sv) return; const z=
   DRAW.items.forEach(it=>{ const [x,y]=it.t==='pt'||it.t==='txt'?P(it.lat,it.lon):[0,0];
     if(it.t==='pt') h+=`<g transform="translate(${x},${y})"><path d="M0,0 C-3,-8 -9,-11 -9,-17 A9,9 0 1 1 9,-17 C9,-11 3,-8 0,0Z" fill="${C}" stroke="#fff" stroke-width="2"/><circle cy="-17" r="3.5" fill="#fff"/>${it.label?`<text x="11" y="-14" font-size="12.5" font-weight="700" fill="${C}" ${halo}>${esc(it.label)}</text>`:''}</g>`;
     if(it.t==='dest'){ const [dx2,dy2]=P(it.lat,it.lon), r=roleOf(it), c=ROLES[r].col;
-      if(r==='vic') h+=`<g transform="translate(${dx2},${dy2})"><circle r="5" fill="${c}" stroke="#fff" stroke-width="2"/><line x1="0" y1="0" x2="0" y2="-30" stroke="#0b2e5c" stroke-width="2.5"/><path d="M0,-30 L20,-24 L0,-17 Z" fill="${c}" stroke="#fff" stroke-width="1.5"/><text x="23" y="-20" font-size="12.5" font-weight="800" fill="${c}" ${halo}>${esc(it.label||'')}</text></g>`;
-      else h+=`<g transform="translate(${dx2},${dy2})"><circle r="11" fill="${c}" stroke="#fff" stroke-width="2.5"/><path d="${r==='drop'?'M0,6 L-6,-1 L-2,-1 L-2,-7 L2,-7 L2,-1 L6,-1 Z':'M0,-7 L6,0 L2,0 L2,6 L-2,6 L-2,0 L-6,0 Z'}" fill="#fff"/><text x="14" y="4" font-size="12.5" font-weight="800" fill="${c}" ${halo}>${esc(it.label||'')}</text></g>`; }
+      h+=`<g transform="translate(${dx2},${dy2})">${roleIcon(r)}<text x="21" y="-28" font-size="12.5" font-weight="800" fill="${c}" ${halo}>${esc(it.label||'')}</text></g>`; }
     if(it.t==='txt') h+=`<text x="${x}" y="${y}" font-size="15" font-weight="800" fill="#111" text-anchor="middle" ${halo}>${esc(it.text)}</text>`; });
   if(DRAW.tmp.length){ const q=DRAW.tmp, rt=DRAW.mode==='route'; if(q.length>1) h+=`<polyline points="${pp(DRAW.mode==='area'&&q.length>2?[...q,q[0]]:q)}" fill="${DRAW.mode==='area'?'#7a3fd022':'none'}" stroke="${rt?'#e8590c':'#7a3fd0'}" stroke-width="${rt?3:2}" stroke-dasharray="${rt?'':'5 4'}" stroke-linejoin="round"/>`;
     (rt?q.filter((p,i)=>i===0||i===q.length-1||q.length<60):q).forEach(p=>{ const [x,y]=P(...p); h+=`<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${DRAW.mode==='area'?'#7a3fd0':'#111'}" stroke-width="2.5"/>`; }); }
