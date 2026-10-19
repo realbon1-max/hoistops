@@ -367,7 +367,11 @@ html{scroll-padding-top:52px}
 .msearch input#mLL{flex:1 1 260px;min-width:0;font-size:16px;padding:8px 10px}
 .msearch button{font-size:14px;padding:8px 12px}
 .mlayers{margin-top:2px}.mlab{font-size:13px;color:var(--muted)}
-.mlegend[hidden],.mpane[hidden]{display:none!important}.mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
+.mlegend[hidden],.mpane[hidden]{display:none!important}.msnap{position:absolute;right:10px;top:104px;z-index:7;width:40px;height:40px;border-radius:6px;border:1px solid #9aa7b4;background:#fff;color:#1d3b5c;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:manipulation}.msnap.busy{opacity:.5}
+.snapov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px}.snapbox{background:var(--panel);color:var(--ink);border-radius:12px;max-width:min(720px,100%);max-height:94vh;overflow:auto;padding:10px 12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.snaph{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.snapx{font:inherit;font-size:20px;width:36px;height:36px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
+.mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
 .mpane{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);margin:6px 0 2px;font-size:13px}.mpane .mrow{margin:4px 0}
 .msets{display:grid;gap:8px;margin-top:10px}
 .mset{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);min-width:0}
@@ -2332,6 +2336,68 @@ setTimeout(()=>{ try{ govPanel(); dispPanel(); mapReq(); }catch(e){ console.erro
   const show=k=>{ cur=k; bs.forEach(b=>b.setAttribute('aria-selected',b.dataset.mt===k)); document.querySelectorAll('.mpane[data-mp]').forEach(p=>p.hidden=p.dataset.mp!==k); try{ localStorage.setItem('aw139mtab',k); }catch(e){} };
   bs.forEach(b=>b.onclick=()=>show(cur===b.dataset.mt?'':b.dataset.mt)); show(cur);
   const lg=()=>{ const l=$('mLegend'); if(l) l.hidden=!$('mOvOn').checked; }; $('mOvOn').addEventListener('change',lg); lg(); })();
+// ==== map snapshot → share (LINE / mail / Signal …) or save as PNG ====
+async function snapBitmap(src){ try{ const r=await fetch(src,{mode:'cors'}); if(!r.ok) return null; return await createImageBitmap(await r.blob()); }catch(e){ return null; } }
+function snapVars(str){ const cs=getComputedStyle(document.documentElement); return str.replace(/var\((--[a-z0-9-]+)(?:,[^)]*)?\)/gi,(m,v)=>cs.getPropertyValue(v).trim()||'#333'); }
+function snapSvg(sv,W,H){ return new Promise(res=>{ if(!sv||!sv.innerHTML.trim()||getComputedStyle(sv).display==='none') return res(null);
+  const c=sv.cloneNode(true); c.setAttribute('xmlns','http://www.w3.org/2000/svg'); c.setAttribute('width',W); c.setAttribute('height',H); if(!c.getAttribute('viewBox')) c.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  c.setAttribute('font-family','-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif'); c.style.cssText='';
+  const op=getComputedStyle(sv).opacity; const txt=snapVars(new XMLSerializer().serializeToString(c));
+  const im=new Image(); const u=URL.createObjectURL(new Blob([txt],{type:'image/svg+xml;charset=utf-8'})); im.onload=()=>{ URL.revokeObjectURL(u); res({im,op:+op||1}); }; im.onerror=()=>{ URL.revokeObjectURL(u); res(null); }; im.src=u; }); }
+async function snapTiles(ctx,layer,alpha){ if(!layer||getComputedStyle(layer).display==='none') return; const a=alpha*(+getComputedStyle(layer).opacity||1);
+  for(const t of [...layer.children]){ const L=parseFloat(t.style.left)||0, T=parseFloat(t.style.top)||0;
+    if(t.tagName==='CANVAS'){ ctx.globalAlpha=a; ctx.drawImage(t,L,T,256,256); continue; }
+    if(t.tagName==='DIV'&&t.dataset.l){ await snapTiles(ctx,t,a); continue; }   // overlay sub-layer
+    if(t.tagName==='DIV'){ const im=t.querySelector('img'); if(!im||!im.src) continue; const bm=await snapBitmap(im.src); if(!bm) continue;
+      ctx.save(); ctx.beginPath(); ctx.rect(L,T,256,256); ctx.clip(); ctx.globalAlpha=a; ctx.drawImage(bm,L+(parseFloat(im.style.left)||0),T+(parseFloat(im.style.top)||0),parseFloat(im.style.width)||256,parseFloat(im.style.height)||256); ctx.restore(); continue; }
+    if(t.tagName==='IMG'&&t.src&&t.complete&&t.naturalWidth){ const bm=await snapBitmap(t.src); if(bm){ ctx.globalAlpha=a; ctx.drawImage(bm,L,T,256,256); } } }
+  ctx.globalAlpha=1; }
+async function mapSnapshot(){ const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
+  const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
+  const hdr=76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
+  // map body
+  g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
+  await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
+  for(const id of ['mWindF','mGrid','mIfr','mRoute','mDraw','mRet']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
+  const mk=$('mMark'); if(mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
+  // scale bar + north arrow
+  const mpp=mpxNow(), nd=niceDist(mpp*Math.min(140,W*0.3)), px=nd.m/mpp;
+  g.font=`700 12px ${FONT}`; const lw=g.measureText(nd.lab).width; g.fillStyle='rgba(255,255,255,.88)'; g.fillRect(8,H-34,px+lw+24,26); g.fillStyle='#111'; g.fillRect(16,H-26,px,5); g.fillRect(16,H-30,2,12); g.fillRect(16+px-2,H-30,2,12);
+  g.fillText(nd.lab,22+px,H-17);
+  g.fillStyle='rgba(255,255,255,.88)'; g.fillRect(W-38,H-60,28,46); g.fillStyle='#d62828'; g.beginPath(); g.moveTo(W-24,H-56); g.lineTo(W-17,H-36); g.lineTo(W-24,H-40); g.lineTo(W-31,H-36); g.closePath(); g.fill(); g.font=`800 12px ${FONT}`; g.textAlign='center'; g.fillText('N',W-24,H-20); g.textAlign='left';
+  g.restore();
+  // header
+  const now=new Date(), P=n=>String(n).padStart(2,'0'), ts=`${now.getFullYear()}-${P(now.getMonth()+1)}-${P(now.getDate())} ${P(now.getHours())}:${P(now.getMinutes())}`;
+  const {wd,ws}=mwVals(), hd=((+$('hdg').value%360)+360)%360, c=[y2lat(MAP.cy,MAP.z),x2lon(MAP.cx,MAP.z)];
+  const fit=(t,x,y,max,wt,sz)=>{ let z=sz; do{ g.font=`${wt} ${z}px ${FONT}`; z-=0.5; }while(g.measureText(t).width>max&&z>8); g.fillText(t,x,y); };
+  g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5'; fit(ts,104,20,W-114,'600',12);
+  fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}`,10,41,W-20,'600',12.5);
+  const p=MAP.pick; let l2=p&&!p.loading?`地点 ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`:`中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}`;
+  g.fillStyle='#fff'; fit(l2,10,64,W-20,'700',13);
+  // footer
+  g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
+  return await new Promise(r=>cv.toBlob(r,'image/png')); }
+function snapUI(){ if($('mSnap')) return; const b=document.createElement('button'); b.type='button'; b.id='mSnap'; b.className='msnap'; b.setAttribute('aria-label','地図を画像で共有'); b.title='地図を画像で共有';
+  b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',async e=>{ e.stopPropagation(); if(b.disabled) return; b.disabled=true; b.classList.add('busy');
+    try{ const blob=await mapSnapshot(); snapSheet(blob); }catch(err){ mapMsg('地図の画像を作れませんでした：'+(err&&err.message||err)); } b.disabled=false; b.classList.remove('busy'); }); }
+function snapSheet(blob){ const old=$('snapOv'); if(old) old.remove(); const now=new Date(), P=n=>String(n).padStart(2,'0');
+  const name=`HOISTOPS_${now.getFullYear()}${P(now.getMonth()+1)}${P(now.getDate())}_${P(now.getHours())}${P(now.getMinutes())}.png`;
+  const file=new File([blob],name,{type:'image/png'}), url=URL.createObjectURL(blob);
+  const ov=document.createElement('div'); ov.id='snapOv'; ov.className='snapov';
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+  ov.innerHTML=`<div class="snapbox" role="dialog" aria-label="地図の画像"><div class="snaph"><b>地図の画像</b><button type="button" class="snapx" aria-label="閉じる">×</button></div>
+    <img src="${url}" alt="地図の画像">
+    <div class="snapbtns">${canShare?'<button type="button" class="pri" id="snapShare">共有する（LINE・メール・Signal など）</button>':''}<a class="snapdl" id="snapDl" href="${url}" download="${name}">画像を保存</a><button type="button" id="snapCopy">コピー</button></div>
+    <div class="hint">${canShare?'「共有する」で、端末の共有メニュー（LINE・メール・Signal・メッセージなど）が開きます。':'このブラウザは画像の直接共有に対応していません。「画像を保存」してから、LINE・メールなどに添付してください。'}電波のない所では、地図の画像がない部分は空白になります。</div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ ov.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); };
+  ov.querySelector('.snapx').onclick=close; ov.onclick=e=>{ if(e.target===ov) close(); };
+  if(canShare) $('snapShare').onclick=async()=>{ try{ await navigator.share({files:[file],title:'HOIST OPS 地図',text:'HOIST OPS 地図'}); }catch(e){ if(e&&e.name!=='AbortError') mapMsg('共有できませんでした。「画像を保存」してから添付してください。'); } };
+  $('snapCopy').onclick=async()=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); $('snapCopy').textContent='コピーしました'; }catch(e){ $('snapCopy').textContent='コピーできません'; } }; }
+setTimeout(snapUI,300);
+
 // map tap / current position -> search box and dial follow the picked point
 function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
