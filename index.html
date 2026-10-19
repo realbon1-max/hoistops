@@ -2381,9 +2381,33 @@ async function snapTiles(ctx,layer,alpha){ if(!layer||getComputedStyle(layer).di
       ctx.save(); ctx.beginPath(); ctx.rect(L,T,256,256); ctx.clip(); ctx.globalAlpha=a; ctx.drawImage(bm,L+(parseFloat(im.style.left)||0),T+(parseFloat(im.style.top)||0),parseFloat(im.style.width)||256,parseFloat(im.style.height)||256); ctx.restore(); continue; }
     if(t.tagName==='IMG'&&t.src&&t.complete&&t.naturalWidth){ const bm=await snapBitmap(t.src); if(bm){ ctx.globalAlpha=a; ctx.drawImage(bm,L,T,256,256); } } }
   ctx.globalAlpha=1; }
+// small overview map (top-left) showing the departure base, the site and the extent of the main map
+async function snapInset(g,W,H,it,FONT){ const iw=Math.round(Math.min(W*0.44,230)), ih=Math.round(iw*0.78), ox=8, oy=8, pad=26;
+  const pts=[[FROM.lat,FROM.lon],[it.lat,it.lon]]; let zi=Math.min(13,MAP.z-2);
+  for(;zi>5;zi--){ const xs=pts.map(p=>lon2x(p[1],zi)), ys=pts.map(p=>lat2y(p[0],zi)); if(Math.max(...xs)-Math.min(...xs)<iw-2*pad&&Math.max(...ys)-Math.min(...ys)<ih-2*pad) break; }
+  const cx=(lon2x(FROM.lon,zi)+lon2x(it.lon,zi))/2, cy=(lat2y(FROM.lat,zi)+lat2y(it.lat,zi))/2, x0=cx-iw/2, y0=cy-ih/2;
+  g.save(); g.shadowColor='rgba(0,0,0,.45)'; g.shadowBlur=8; g.fillStyle='#e9ece4'; g.fillRect(ox,oy,iw,ih); g.restore();
+  g.save(); g.beginPath(); g.rect(ox,oy,iw,ih); g.clip(); g.translate(ox,oy);
+  const jobs=[]; for(let tx=Math.floor(x0/256);tx<=Math.floor((x0+iw)/256);tx++) for(let ty=Math.floor(y0/256);ty<=Math.floor((y0+ih)/256);ty++)
+    jobs.push(snapBitmap(`${GSI}pale/${zi}/${tx}/${ty}.png`).then(bm=>{ if(bm) g.drawImage(bm,tx*256-x0,ty*256-y0,256,256); }));
+  await Promise.all(jobs);
+  const P=(la,lo)=>[lon2x(lo,zi)-x0,lat2y(la,zi)-y0];
+  // main-map extent
+  const b=viewBounds(), [a1,b1]=P(b.n,b.w), [a2,b2]=P(b.s,b.e); g.fillStyle='rgba(214,40,40,.12)'; g.fillRect(a1,b1,Math.max(3,a2-a1),Math.max(3,b2-b1)); g.strokeStyle='#d62828'; g.lineWidth=1.5; g.strokeRect(a1,b1,Math.max(3,a2-a1),Math.max(3,b2-b1));
+  const [fx,fy]=P(FROM.lat,FROM.lon), [sx,sy]=P(it.lat,it.lon);
+  g.setLineDash([5,4]); g.strokeStyle='#b0268c'; g.lineWidth=2; g.beginPath(); g.moveTo(fx,fy); g.lineTo(sx,sy); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#1b2733'; g.strokeStyle='#fff'; g.lineWidth=2; g.beginPath(); g.arc(fx,fy,5,0,7); g.fill(); g.stroke();
+  g.fillStyle=ROLES[roleOf(it)].col; g.beginPath(); g.arc(sx,sy,5.5,0,7); g.fill(); g.stroke();
+  const lab=(t,x,y,c)=>{ g.font=`800 11px ${FONT}`; const w=g.measureText(t).width, lx=Math.max(3,Math.min(iw-w-3,x+8)); g.lineWidth=3; g.strokeStyle='rgba(255,255,255,.95)'; g.strokeText(t,lx,y+4); g.fillStyle=c; g.fillText(t,lx,y+4); };
+  lab(FROM.name,fx,fy,'#1b2733'); lab(it.label||ROLES[roleOf(it)].n,sx,sy,ROLES[roleOf(it)].col);
+  // scale + north
+  const mpp=40075016.686*Math.cos(((it.lat+FROM.lat)/2)*RAD)/(256*Math.pow(2,zi)), c=[1,2,5,10,20,50,100]; let km=1; for(const k of c) if(k*1000/mpp<iw*0.35) km=k;
+  const sl=km*1000/mpp; g.fillStyle='rgba(255,255,255,.85)'; g.fillRect(4,ih-17,sl+44,13); g.fillStyle='#111'; g.fillRect(8,ih-12,sl,3); g.font=`700 9.5px ${FONT}`; g.fillText(`${km} km`,12+sl,ih-7);
+  g.fillStyle='#d62828'; g.beginPath(); g.moveTo(iw-11,6); g.lineTo(iw-6,17); g.lineTo(iw-11,14.5); g.lineTo(iw-16,17); g.closePath(); g.fill();
+  g.restore(); g.strokeStyle='#fff'; g.lineWidth=2; g.strokeRect(ox,oy,iw,ih); g.font=`700 9.5px ${FONT}`; g.fillStyle='#fff'; g.strokeStyle='rgba(0,0,0,.6)'; g.lineWidth=2.5; g.strokeText('広域図',ox+5,oy+ih+12); g.fillText('広域図',ox+5,oy+ih+12); }
 async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
-  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=pk&&!opt.place?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=opt.place?104:pk?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
   g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
@@ -2396,27 +2420,43 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   g.font=`700 12px ${FONT}`; const lw=g.measureText(nd.lab).width; g.fillStyle='rgba(255,255,255,.88)'; g.fillRect(8,H-34,px+lw+24,26); g.fillStyle='#111'; g.fillRect(16,H-26,px,5); g.fillRect(16,H-30,2,12); g.fillRect(16+px-2,H-30,2,12);
   g.fillText(nd.lab,22+px,H-17);
   g.fillStyle='rgba(255,255,255,.88)'; g.fillRect(W-38,H-60,28,46); g.fillStyle='#d62828'; g.beginPath(); g.moveTo(W-24,H-56); g.lineTo(W-17,H-36); g.lineTo(W-24,H-40); g.lineTo(W-31,H-36); g.closePath(); g.fill(); g.font=`800 12px ${FONT}`; g.textAlign='center'; g.fillText('N',W-24,H-20); g.textAlign='left';
+  if(opt.place) await snapInset(g,W,H,opt.place,FONT);
   g.restore();
   // header
   const now=new Date(), P=n=>String(n).padStart(2,'0'), ts=`${now.getFullYear()}-${P(now.getMonth()+1)}-${P(now.getDate())} ${P(now.getHours())}:${P(now.getMinutes())}`;
   const {wd,ws}=mwVals(), hd=((+$('hdg').value%360)+360)%360, c=[y2lat(MAP.cy,MAP.z),x2lon(MAP.cx,MAP.z)];
   const fit=(t,x,y,max,wt,sz)=>{ let z=sz; do{ g.font=`${wt} ${z}px ${FONT}`; z-=0.5; }while(g.measureText(t).width>max&&z>8); g.fillText(t,x,y,max); };
-  g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5'; fit(ts,104,20,W-114,'600',12);
-  { const sp=opt.place?[opt.place.lat,opt.place.lon]:sunPos(); fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}　${(()=>{ const t=SUN.times(jstDay(new Date()),sp[0],sp[1]); return `日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}`; })()}`,10,41,W-20,'600',12.5); }
-  const p=pk; let y=64;
+  g.fillStyle='#ff8a1f'; g.font=`800 15px ${FONT}`; g.fillText('HOIST OPS',10,20); g.fillStyle='#e8eef5';
+  if(opt.place){ const t=SUN.times(jstDay(new Date()),opt.place.lat,opt.place.lon); fit(`${ts}　日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}`,104,20,W-114,'600',12); }
+  else fit(ts,104,20,W-114,'600',12);
+  if(opt.place){ const fl=placeFlightTxt(flightNums(opt.place.lat,opt.place.lon,opt.place.h),true); g.fillStyle='#9fd0ff'; fit('✈ '+fl[0],10,41,W-20,'600',12.5); g.fillStyle='#ffd27a'; fit('⛽ '+fl[1],10,62,W-20,'600',12.5); g.fillStyle='#e8eef5'; }
+  else { const sp=sunPos(); fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}　${(()=>{ const t=SUN.times(jstDay(new Date()),sp[0],sp[1]); return `日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}`; })()}`,10,41,W-20,'600',12.5); }
+  const p=pk; let y=opt.place?86:64;
   if(opt.place){ const it=opt.place, r=roleOf(it); g.fillStyle=ROLES[r].col; g.beginPath(); g.arc(17,y-4,6.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; fit(`${it.label||ROLES[r].n}　${fmtLL(it.lat,it.lon)}${it.h!=null&&isFinite(it.h)?`　標高 ${DISP.alt==='ft'?Math.round(it.h*FT).toLocaleString()+' ft':Math.round(it.h).toLocaleString()+' m'}`:''}　${mbeFix(it.lat,it.lon).str}`,28,y,W-38,'800',13.5); }
   else { if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
   g.strokeStyle='#ff5a5a'; g.lineWidth=2; g.beginPath(); g.moveTo(11,y-4); g.lineTo(23,y-4); g.moveTo(17,y-10); g.lineTo(17,y+2); g.stroke();
   g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13); }
   // footer
-  g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
+  g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}${opt.place?'　時間・燃料は無風での計算':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
   return await new Promise(r=>cv.toBlob(r,'image/png')); }
+function flightNums(la,lo,hM){ const site=(isFinite(hM)?hM:0)*FT+(+$('mObs').value||0)*FT, hov=site+(+$('hh').value||0);
+  const g=gc(FROM.lat,FROM.lon,la,lo), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, out=fpLeg(g.nm,hov-fromFt), su=+FP.su||0, tOut=out.t+su, burn=(+FP.ff)*tOut/60;
+  const gb=gc(la,lo,BASE.lat,BASE.lon), back=fpLeg(gb.nm,BASE.elev*FT-hov), burnBack=(+FP.ff)*back.t/60;
+  const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
+  const fArr=fuel-burn, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0; let eta='';
+  const tv=$('fpTo').value; if(tv){ const [a,b]=tv.split(':').map(Number); const m=((Math.round(a*60+b+out.t)%1440)+1440)%1440; eta=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
+  return {from:FROM.name,nm:g.nm,mag:((Math.round(g.crs+MAGVAR)%360)+360)%360||360,tAir:out.t,tOut,su,burn,fuel,fArr,GW,gwArr:GW-burn,hovMin,eta}; }
+function placeFlightTxt(f,short){ const fm=n=>Math.round(n).toLocaleString(), mm=t=>`${Math.round(t)}分`;
+  if(short) return [`${f.from}→現場 ${f.nm.toFixed(1)} NM・${String(f.mag).padStart(3,'0')}°M・離陸から約${mm(f.tAir)}${f.eta?`（${f.eta}着）`:''}`, `燃料 ${fm(f.fuel)}→${fm(f.fArr)} kg（−${fm(f.burn)}）・全備 ${fm(f.gwArr)} kg で臨場・現場 約${f.hovMin>0?mm(f.hovMin):'0分'}`];
+  return [`${f.from}→現場 ${f.nm.toFixed(1)} NM・磁方位 ${String(f.mag).padStart(3,'0')}°・離陸から約${mm(f.tAir)}（始動〜離陸${f.su}分を含め約${mm(f.tOut)}）${f.eta?`・到着予定 ${f.eta}`:''}`,
+    `燃料 ${fm(f.fuel)}→${fm(f.fArr)} kg（−${fm(f.burn)} kg）・全備 ${fm(f.GW)}→${fm(f.gwArr)} kg で臨場・現場で使える時間 約${f.hovMin>0?mm(f.hovMin):'0分'}（帰投・予備を残して）`]; }
 function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`;
   const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`, `座標 ${fmtAny(la,lo,'dm')}（WGS84）`];
   if(DISP.coord!=='dm'&&DISP.coord!=='mgrs') L.push(`${COORDN[DISP.coord]} ${fmtAny(la,lo,DISP.coord)}`);
   L.push(`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`, `MGRS ${fmtMGRS(la,lo)}`);
   if(it.h!=null&&isFinite(it.h)) L.push(`標高 ${Math.round(it.h).toLocaleString()} m（${Math.round(it.h*FT).toLocaleString()} ft）`);
   L.push(`${mbeFix(la,lo).str}（松本VOR/DMEから 磁方位/NM）`); if(it.at) L.push(`記録 ${it.at}`);
+  { const fl=placeFlightTxt(flightNums(la,lo,it.h)); L.push(...fl, '（時間・燃料は無風での計算）'); }
   { const t=SUN.times(jstDay(new Date()),la,lo); L.push(`日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}（今日・平地の値）`, `→ ${sunText(la,lo)}`); }
   L.push(`Googleマップ ${g}`);
   return {title:it.label||ROLES[r].n, text:L.join('\n'), gmap:g}; }
