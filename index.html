@@ -470,6 +470,8 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 @media (max-width:700px){#map{height:72vh!important;min-height:380px}}
 
 
+#mGrid,#mRet{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}#mGrid{z-index:2}#mRet{z-index:4}
+.govt{position:absolute;width:256px;height:256px;overflow:hidden}.govlist{display:flex;flex-wrap:wrap;gap:4px 18px;margin:4px 0}.govg{min-width:220px}.govh{font-weight:700;color:var(--muted);margin:2px 0}.govlist .chk{display:block;margin:2px 0;font-size:13px}.govlist small{color:var(--muted);font-size:11px}.govop input{width:180px}.govleg{font-size:12px;margin:4px 0}.govleg>div{margin:2px 0}.govsw{display:inline-flex;align-items:center;gap:3px;margin:0 8px 0 0;white-space:nowrap}.govsw i{display:inline-block;width:14px;height:10px;border:1px solid rgba(0,0,0,.25)}.dispbox .mrow{margin:4px 0}.dispbox .mlab{min-width:64px;display:inline-block}
 #mIfr{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
 .ifrbox{margin:4px 0 2px;font-size:12.5px}.ifrbox>summary{cursor:pointer;font-weight:700;color:#7b1fa2;padding:3px 0}
 .ifrchips{display:grid;gap:4px;margin:4px 0}.ifrg{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.ifrg>span{font-size:11.5px;color:var(--muted);min-width:5.5em}
@@ -562,7 +564,7 @@ a{color:#7cc4ff}
           <input id="mLL" type="text" list="peakList" placeholder="山名・緯度経度・MBE/ラジアル/距離（例 奥穂高岳／N36°17.352′ E137°38.886′／MBE/350/12）" aria-label="山名または緯度経度"><datalist id="peakList"></datalist>
           <button type="button" id="mGo">移動</button>
           <button type="button" id="mHere">現在地</button>
-          <button type="button" id="dialBtn" aria-expanded="false">ダイヤルで入力</button><span class="hint" style="margin:0">表示は度分（DD°MM.mmm′）</span>
+          <button type="button" id="dialBtn" aria-expanded="false">ダイヤルで入力</button><span class="hint" id="llHint" style="margin:0">表示は度分（DD°MM.mmm′）</span>
         </div>
         <div id="dialPanel" class="dialp" hidden>
           <div class="dmode" id="dialMode">ダイヤル：<button type="button" data-m="d">度（小数5桁）</button><button type="button" data-m="dm">度・分（小数3桁）</button><button type="button" data-m="dms">度・分・秒（小数2桁）</button></div>
@@ -570,12 +572,26 @@ a{color:#7cc4ff}
           <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
         </div>
         <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen">Googleマップで開く ↗</button></div>
+        <details class="ifrbox govbox"><summary>重ねる地図（色別標高図・雪崩傾斜・赤色立体・傾斜量・地質）</summary>
+          <div id="govList" class="govlist"></div>
+          <div class="mrow govop"><span class="mlab">濃さ</span><input type="range" id="govOp" min="15" max="100" step="5" value="65" aria-label="重ねる地図の濃さ"></div>
+          <div id="govLeg" class="govleg"></div>
+          <p class="legend">色別標高図・雪崩傾斜（全国傾斜量区分図）・陰影起伏図・赤色立体地図・傾斜量図は国土地理院の地理院タイル、シームレス地質図は産総研 地質調査総合センターの地図をそのまま重ねます。雪崩傾斜タイプB・色別傾斜区分図・高精度赤色立体地図は、このアプリが地理院の標高タイル（ズーム15以上は5 mメッシュ、ない所と14以下は10 mメッシュ）から傾斜と凹凸を計算して色を付けたもので、地理院の公式の地図ではありません。どれも電波が必要で、「地図を端末に保存」の対象外です。雪崩の危険の判断には、積雪・気象・地形の情報を合わせて使ってください。</p>
+        </details>
+        <details class="ifrbox dispbox"><summary>表示の設定（座標形式・MGRSグリッド・距離と高度の単位・スケール）</summary>
+          <div class="mrow"><span class="mlab">座標形式</span><span class="mseg" id="dCoord"><button type="button" data-v="d">度</button><button type="button" data-v="dms">度分秒</button><button type="button" data-v="utm">UTM</button><button type="button" data-v="mgrs">MGRS</button><button type="button" data-v="dm">度分</button></span></div>
+          <div class="mrow"><label class="chk"><input type="checkbox" id="dMgrs"> MGRSグリッドを表示</label></div>
+          <div class="mrow"><span class="mlab">距離単位</span><span class="mseg" id="dDist"><button type="button" data-v="m">メートル</button><button type="button" data-v="mi">マイル</button><button type="button" data-v="NM">海里</button></span></div>
+          <div class="mrow"><span class="mlab">高度単位</span><span class="mseg" id="dAlt"><button type="button" data-v="m">メートル</button><button type="button" data-v="ft">フィート</button></span></div>
+          <div class="mrow"><span class="mlab">スケール</span><span class="mseg" id="dRet"><button type="button" data-v="none">なし</button><button type="button" data-v="cross">十字</button><button type="button" data-v="box">四角</button><button type="button" data-v="circle">円</button><button type="button" data-v="line">単線</button><button type="button" data-v="ticks">目盛円</button></span></div>
+          <p class="legend">座標形式は、選んだ地点・作図の一覧・検索欄の表示に使います（検索欄には度・度分・度分秒・UTM・MGRSのどれでも入力できます）。距離単位は地図の縮尺・作図の距離・スケール、高度単位は選んだ地点の標高の表示に使います（性能計算は今までどおりフィート）。スケールは地図の中心に、縮尺に合わせた区切りのよい長さで表示します。</p>
+        </details>
         <details class="ifrbox"><summary>航空図（松本空港 RJAF）：計器飛行方式の経路・MVA・VFR報告点</summary><div id="ifrChips" class="ifrchips"></div>
         <div class="ifrnote">AIP Japan RJAF AD2（2026年6月11日有効分）の座標・経路から作成。RNAV/RNP の経路と RF 旋回は公示座標どおり、従来型の出発・進入の旋回部分と待機経路は形を示す概略です。真方位＝磁方位−8°。実際の飛行には最新の AIP・NOTAM を使ってください。</div></details>
       </div>
       <div class="drawbar"><div class="drawh">地図に描く・測る</div><div id="drawModes" class="drawmodes" role="toolbar" aria-label="地図の作図ツール"></div></div>
       <div class="mapwrap">
-        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mOvL"></div><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mDraw"></svg><div id="mMark" hidden></div>
+        <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mDraw"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
           <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><button type="button" id="mZout" aria-label="縮小">−</button></div>
           <div class="mattr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院（地理院タイル・標高タイル）</a></div>
           <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mwind" id="mWind"></div><div class="mnorth" aria-label="北は上"><svg viewBox="0 0 40 52" width="34" height="44"><path d="M20,4 L30,30 L20,25 L10,30 Z" fill="#d62828" stroke="#fff" stroke-width="1.5"/><path d="M20,25 L30,30 L20,48 L10,30 Z" fill="#fff" stroke="#555" stroke-width="1"/><text x="20" y="46" font-size="0"></text></svg><b>N</b></div>
@@ -1810,7 +1826,7 @@ function mapRender(){
   bl.querySelectorAll('[data-k]').forEach(im=>{if(!want.has(im.dataset.k)) im.remove();});
   ol.querySelectorAll('canvas').forEach(cv=>{if(!wantO.has(cv.dataset.k)) cv.remove();});
   ol.style.display=$('mOvOn').checked?'':'none'; ol.style.opacity=(+$('mOvA').value)/100;
-  drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
+  try{ govRender(); mgrsDraw(); retDraw(); }catch(e){ console.error(e); } drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
   const mk=$('mMark'); mkHeli(); if(MAP.pick){ mk.hidden=false; mk.style.left=(lon2x(MAP.pick.lon,z)-x0)+'px'; mk.style.top=(lat2y(MAP.pick.lat,z)-y0)+'px'; } else mk.hidden=true;
 }
 let mapRAF=0; const mapReq=()=>{ if(!mapRAF) mapRAF=requestAnimationFrame(()=>{mapRAF=0; mapRender();}); };
@@ -1824,9 +1840,9 @@ function mkHeli(){ const mk=$('mMark'); if(!mk) return; if(!mk.firstChild||mk.da
     mk.innerHTML=`<svg viewBox="-26 -26 52 52" aria-hidden="true"><circle r="21" fill="rgba(176,38,140,.18)" stroke="#b0268c" stroke-width="2.2"/><circle r="22.5" fill="none" stroke="#fff" stroke-width="1.2"/><g class="mkh"><path d="M0,-25 L4.5,-18 L-4.5,-18 Z" fill="#b0268c" stroke="#fff" stroke-width="1"/><g stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><g stroke="#15253a" stroke-width="1.6" stroke-linecap="round">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><path d="M0,-13 C4.5,-13 5.5,-6 5,1 C4.6,6 2.5,8 1.6,9 L1.2,19 L5,20.5 L5,22.5 L-5,22.5 L-5,20.5 L-1.2,19 L-1.6,9 C-2.5,8 -4.6,6 -5,1 C-5.5,-6 -4.5,-13 0,-13 Z" fill="#1d4d9a" stroke="#fff" stroke-width="1.3"/><path d="M-2.6,-9.5 Q0,-12 2.6,-9.5 L2.2,-6.5 L-2.2,-6.5 Z" fill="#9fd0ff"/><circle r="2" fill="#fff" stroke="#15253a" stroke-width="1"/></g></svg>`; }
   const hd=((+$('hdg').value%360)+360)%360; const g=mk.querySelector('.mkh'); if(g) g.setAttribute('transform',`rotate(${hd})`); mk.title='機首 '+String(Math.round(hd)).padStart(3,'0')+'°'; }
 function mapScale(){ const el=$('mScale'), m=$('map'); if(!el||!m) return; const la=y2lat(MAP.cy,MAP.z), mpp=40075016.686*Math.cos(la*Math.PI/180)/(256*Math.pow(2,MAP.z));
-  const tgt=mpp*Math.min(140,m.clientWidth*0.3), cand=[10,20,50,100,200,500,1000,2000,5000,10000,20000,50000,100000]; let d=cand[0]; for(const c of cand) if(c<=tgt) d=c; const px=d/mpp;
-  const nm=d/1852, nmTxt=nm>=1?nm.toFixed(nm<10?1:0)+' NM':(nm).toFixed(2)+' NM';
-  el.innerHTML=`<div class="msbar" style="width:${px.toFixed(0)}px"><i></i><i></i></div><div class="mstx">${d>=1000?(d/1000)+' km':d+' m'}（${nmTxt}）・ズーム${MAP.z}</div>`; }
+  const nd=niceDist(mpp*Math.min(140,m.clientWidth*0.3)), d=nd.m, px=d/mpp;
+  const sub=DISP.dist==='m'?(()=>{ const nm=d/1852; return nm>=1?nm.toFixed(nm<10?1:0)+' NM':nm.toFixed(2)+' NM'; })():fmtMetric(d);
+  el.innerHTML=`<div class="msbar" style="width:${px.toFixed(0)}px"><i></i><i></i></div><div class="mstx">${nd.lab}（${sub}）・ズーム${MAP.z}</div>`; }
 function mapSetView(lat,lon,z){ if(z!=null) MAP.z=Math.max(MAP.minZ,Math.min(MAP.maxZ,z)); MAP.cx=lon2x(lon,MAP.z); MAP.cy=lat2y(lat,MAP.z); mapReq(); }
 function mapZoom(dz,px,py){ const el=$('map'); const Wd=el.clientWidth,Hd=el.clientHeight; if(px==null){px=Wd/2;py=Hd/2;}
   const nz=Math.max(MAP.minZ,Math.min(MAP.maxZ,MAP.z+dz)); if(nz===MAP.z) return; const s=Math.pow(2,nz-MAP.z);
@@ -1856,7 +1872,7 @@ function fmtCoord(v,isLat,f){ const h=isLat?(v>=0?'N':'S'):(v>=0?'E':'W'); const
   if(f==='dm'){ if(+m.toFixed(3)>=60){return fmtCoord((d+1)*(v<0?-1:1),isLat,f);} return `${h}${String(d).padStart(dw,'0')}°${m.toFixed(3).padStart(6,'0')}′`; }
   let mi=Math.floor(m), s=(m-mi)*60; if(+s.toFixed(1)>=60){s=0;mi++;} let dd=d; if(mi>=60){mi=0;dd++;}
   return `${h}${String(dd).padStart(dw,'0')}°${String(mi).padStart(2,'0')}′${s.toFixed(1).padStart(4,'0')}″`; }
-const fmtLL=(la,lo,f)=>fmtCoord(la,true,f||LLF.f)+' '+fmtCoord(lo,false,f||LLF.f);
+const fmtLL=(la,lo,f)=>fmtAny(la,lo,f||LLF.f);
 function partToDeg(t){ const neg=/[SWsw南西]|^-/.test(t); const n=(t.match(/\d+(?:\.\d+)?/g)||[]).map(Number); if(!n.length) return null;
   const v=n[0]+(n[1]||0)/60+(n[2]||0)/3600; return neg?-v:v; }
 // ---- Matsumoto VOR/DME (AIP Japan RJAF AD 2.19, EFF 2026-06-11 package): 360921.51N 1375511.34E, declination 8°W (2024), DME antenna 2,260 ft
@@ -1871,7 +1887,7 @@ function mbeHTML(la,lo,altFt){ const f=mbeFix(la,lo,altFt), u=[];
   if(f.vorU) u.push(`VOR使用不可区域（${f.vorU[0]}°〜${f.vorU[1]}°・${f.vorU[2]} NM以遠・${f.vorU[3].toLocaleString()} ft未満）`);
   if(f.dmeU) u.push(`DME使用不可区域（${f.dmeU[0]}°〜${f.dmeU[1]}°・${f.dmeU[2]} NM以遠・${f.dmeU[3].toLocaleString()} ft未満）`);
   return `<div class="mbe"><b>${f.str}</b><span>松本VOR/DMEから ラジアル ${String(f.rad).padStart(3,'0')}°（磁方位）・${f.nm.toFixed(1)} NM${f.slant!=null?`（DMEの斜距離 ${f.slant.toFixed(1)} NM）`:''}</span>${u.length?`<div class="mbeu">⚠ ${u.join('／')}${altFt!=null?`：この地点のホバリング高度 ${Math.round(altFt).toLocaleString()} ft では受信できないおそれ`:''}</div>`:''}</div>`; }
-function parseLL(s){ { const m=String(s).trim().match(/^MBE\s*[\/／,、\s]\s*(\d{1,3}(?:\.\d+)?)\s*[\/／,、\s]\s*(\d+(?:\.\d+)?)\s*$/i); if(m){ return destLL(MBE.lat,MBE.lon,(+m[1])-MBE.dec,(+m[2])*1852); } }
+function parseLL(s){ { const um=parseUTMMGRS(s); if(um) return um; } { const m=String(s).trim().match(/^MBE\s*[\/／,、\s]\s*(\d{1,3}(?:\.\d+)?)\s*[\/／,、\s]\s*(\d+(?:\.\d+)?)\s*$/i); if(m){ return destLL(MBE.lat,MBE.lon,(+m[1])-MBE.dec,(+m[2])*1852); } }
   s=s.trim().replace(/[，、／]/g,',').replace(/[：]/g,':').replace(/[　]/g,' ');
   if(!s) return null;
   // compact aviation form: 361721N1373853E or 3617.35N13738.88E
@@ -1936,7 +1952,8 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
   if(!same) h+=`<g transform="translate(${fx},${fy})"><rect x="-8" y="-8" width="16" height="16" rx="3" fill="#b0268c" stroke="#fff" stroke-width="2.5"/><text x="0" y="4.5" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">H</text><text x="12" y="4" font-size="12" font-weight="700" fill="#b0268c" paint-order="stroke" stroke="#fff" stroke-width="3">出発：${FROM.name}</text></g>`;
   sv.innerHTML=h; }
 
-function llAll(la,lo,altFt){ return `<div class="llall"><div class="ll1">${fmtLL(la,lo,'dm')}<span>度分</span></div><div class="ll2">N${la.toFixed(5)}° E${lo.toFixed(5)}°<span>度</span></div><div class="ll2">${dmsTxt(la,true)} ${dmsTxt(lo,false)}<span>度分秒</span></div>${mbeHTML(la,lo,altFt)}</div>`; }
+function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),d:()=>`N${la.toFixed(5)}° E${lo.toFixed(5)}°`,dms:()=>`${dmsTxt(la,true)} ${dmsTxt(lo,false)}`,utm:()=>fmtUTM(la,lo),mgrs:()=>fmtMGRS(la,lo)};
+  return `<div class="llall"><div class="ll1">${alt[f]()}<span>${COORDN[f]}</span></div>${['dm','d','dms','utm','mgrs'].filter(k=>k!==f).map(k=>`<div class="ll2">${alt[k]()}<span>${COORDN[k]}</span></div>`).join('')}${mbeHTML(la,lo,altFt)}</div>`; }
 function mapInfo(){ mapInfo0(); destBtn(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
 // rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下点), hoist-up point (吊り上げ点)
@@ -1967,7 +1984,7 @@ function mapInfo0(){
     return `<tr><td>${nm}</td><td class="r">${fm(r.W)} kg</td><td class="r" style="color:${c}">${m>=0?'+':''}${fm(m)}</td></tr>`;}).join('');
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
-  box.innerHTML=`<div class="mi" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="big">地表 ${fm(p.h)} m</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${fm(p.h*FT)} ft／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div style="margin-top:4px;font-weight:700;color:${col}">${cls<0?'':OVN[cls]}</div></div>
+  box.innerHTML=`<div class="mi" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="big">地表 ${DISP.alt==='ft'?fm(p.h*FT)+' ft':fm(p.h)+' m'}</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div style="margin-top:4px;font-weight:700;color:${col}">${cls<0?'':OVN[cls]}</div></div>
   <div class="mi"><table><tr><td>気圧高度（障害物の上面）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table></div>
   <div class="mi"><div style="color:var(--muted);margin-bottom:2px">OGEホバリングできる最大重量（全備重量 ${fm(W)} kgとの差）</div><table>${rows}</table></div>
   ${flightHTML(p,site,hov,Hp,T)}
@@ -2132,8 +2149,181 @@ function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
   $('dialFrom').onclick=()=>{ const [la,lo]=dialVal(); setFromLL(fmtLL(la,lo,'dm'),la,lo); };
 })();
 
+// ==== display settings: coordinate format, MGRS grid, distance / altitude units, centre scale ====
+const DISP={coord:'dm',mgrs:false,dist:'m',alt:'m',ret:'none'};
+try{ Object.assign(DISP,JSON.parse(localStorage.getItem('aw139disp')||'{}')); }catch(e){}
+LLF.f=DISP.coord;
+function dispSave(){ try{ localStorage.setItem('aw139disp',JSON.stringify(DISP)); }catch(e){} }
+// --- UTM / MGRS (WGS84)
+const UTMA=6378137, UTMF=1/298.257223563, UTMK0=0.9996, UTME2=UTMF*(2-UTMF), UTMEP2=UTME2/(1-UTME2);
+const UTMBANDS='CDEFGHJKLMNPQRSTUVWX';
+function ll2utm(lat,lon,zone){ zone=zone||Math.floor((lon+180)/6)+1; const lam0=((zone-1)*6-180+3)*RAD, phi=lat*RAD, lam=lon*RAD;
+  const N=UTMA/Math.sqrt(1-UTME2*Math.sin(phi)**2), T=Math.tan(phi)**2, C=UTMEP2*Math.cos(phi)**2, A=Math.cos(phi)*(lam-lam0);
+  const e4=UTME2*UTME2, e6=e4*UTME2;
+  const M=UTMA*((1-UTME2/4-3*e4/64-5*e6/256)*phi-(3*UTME2/8+3*e4/32+45*e6/1024)*Math.sin(2*phi)+(15*e4/256+45*e6/1024)*Math.sin(4*phi)-(35*e6/3072)*Math.sin(6*phi));
+  const E=UTMK0*N*(A+(1-T+C)*A**3/6+(5-18*T+T*T+72*C-58*UTMEP2)*A**5/120)+500000;
+  let No=UTMK0*(M+N*Math.tan(phi)*(A*A/2+(5-T+9*C+4*C*C)*A**4/24+(61-58*T+T*T+600*C-330*UTMEP2)*A**6/720)); if(lat<0) No+=10000000;
+  const band=UTMBANDS[Math.max(0,Math.min(19,Math.floor((lat+80)/8)))]; return {zone,band,E,N:No}; }
+function utm2ll(zone,E,N,south){ const x=E-500000, y=south?N-10000000:N, lam0=((zone-1)*6-180+3)*RAD;
+  const M=y/UTMK0, e4=UTME2*UTME2, e6=e4*UTME2, mu=M/(UTMA*(1-UTME2/4-3*e4/64-5*e6/256)), e1=(1-Math.sqrt(1-UTME2))/(1+Math.sqrt(1-UTME2));
+  const p1=mu+(3*e1/2-27*e1**3/32)*Math.sin(2*mu)+(21*e1*e1/16-55*e1**4/32)*Math.sin(4*mu)+(151*e1**3/96)*Math.sin(6*mu)+(1097*e1**4/512)*Math.sin(8*mu);
+  const N1=UTMA/Math.sqrt(1-UTME2*Math.sin(p1)**2), T1=Math.tan(p1)**2, C1=UTMEP2*Math.cos(p1)**2, R1=UTMA*(1-UTME2)/Math.pow(1-UTME2*Math.sin(p1)**2,1.5), D=x/(N1*UTMK0);
+  const lat=p1-(N1*Math.tan(p1)/R1)*(D*D/2-(5+3*T1+10*C1-4*C1*C1-9*UTMEP2)*D**4/24+(61+90*T1+298*C1+45*T1*T1-252*UTMEP2-3*C1*C1)*D**6/720);
+  const lon=lam0+(D-(1+2*T1+C1)*D**3/6+(5-2*C1+28*T1-3*C1*C1+8*UTMEP2+24*T1*T1)*D**5/120)/Math.cos(p1);
+  return [lat/RAD,lon/RAD]; }
+const MGC=['STUVWXYZ','ABCDEFGH','JKLMNPQR'], MGR='ABCDEFGHJKLMNPQRSTUV';
+function mgrsSq(zone,E,N){ const col=MGC[zone%3][Math.floor(E/100000)-1]||'?', row=MGR[(Math.floor(N/100000)+(zone%2===0?5:0))%20]; return col+row; }
+function fmtUTM(la,lo){ const u=ll2utm(la,lo); return `${u.zone}${u.band} ${Math.round(u.E)}E ${Math.round(u.N)}N`; }
+function fmtMGRS(la,lo){ const u=ll2utm(la,lo); const e=Math.floor(u.E)%100000, n=Math.floor(u.N)%100000; return `${u.zone}${u.band} ${mgrsSq(u.zone,u.E,u.N)} ${String(e).padStart(5,'0')} ${String(n).padStart(5,'0')}`; }
+function parseUTMMGRS(s){ s=String(s).trim().toUpperCase().replace(/[　]/g,' ');
+  let m=s.match(/^(\d{1,2})\s*([C-HJ-NP-X])\s*([A-HJ-NP-Z])\s*([A-HJ-NP-V])\s*(\d{2,10}|\d{1,5}\s+\d{1,5})$/);
+  if(m){ const zone=+m[1], band=m[2]; let dg=m[5].trim(); let es,ns; if(/\s/.test(dg)){ [es,ns]=dg.split(/\s+/); } else { if(dg.length%2) return null; es=dg.slice(0,dg.length/2); ns=dg.slice(dg.length/2); }
+    const pr=Math.pow(10,5-es.length), e=(+es)*pr+pr/2, n=(+ns)*pr+pr/2;
+    const ci=MGC[zone%3].indexOf(m[3]); const ri=MGR.indexOf(m[4]); if(ci<0||ri<0) return null;
+    const E=(ci+1)*100000+e; let N=(((ri-(zone%2===0?5:0))%20+20)%20)*100000+n;
+    const bLat=-80+UTMBANDS.indexOf(band)*8, minN=ll2utm(bLat,(zone-1)*6-180+3,zone).N-100000; const south=band<'N';
+    while(N<(south?minN:Math.max(0,minN))) N+=2000000; return utm2ll(zone,E,N,south); }
+  m=s.match(/^(\d{1,2})\s*([C-HJ-NP-X])\s+(\d{5,7}(?:\.\d+)?)\s*M?E?\s+(\d{6,8}(?:\.\d+)?)\s*M?N?$/);
+  if(m){ return utm2ll(+m[1],+m[3],+m[4],m[2]<'N'); }
+  return null; }
+const COORDN={d:'度',dms:'度分秒',utm:'UTM',mgrs:'MGRS',dm:'度分'};
+function fmtAny(la,lo,f){ return f==='utm'?fmtUTM(la,lo):f==='mgrs'?fmtMGRS(la,lo):fmtCoord(la,true,f)+' '+fmtCoord(lo,false,f); }
+// --- distance & altitude units
+const DUNIT={m:{n:'メートル'},mi:{n:'マイル'},NM:{n:'海里'}};
+function fmtMetric(m){ return m<1000?`${Math.round(m).toLocaleString()} m`:`${(m/1000).toFixed(m<10000?2:1)} km`; }
+function fmtDist2(m){ if(DISP.dist==='mi') return `${(m/1609.344).toFixed(2)} mi（${fmtMetric(m)}）`; if(DISP.dist==='NM') return `${(m/1852).toFixed(2)} NM（${fmtMetric(m)}）`; return `${fmtMetric(m)}（${(m/1852).toFixed(2)} NM）`; }
+function niceDist(maxM){ const U=DISP.dist==='mi'?1609.344:DISP.dist==='NM'?1852:1, c=DISP.dist==='m'?[10,20,50,100,200,250,500,1000,2000,5000,10000,20000,50000,100000]:[0.05,0.1,0.2,0.25,0.5,1,2,5,10,20,50];
+  let v=c[0]; for(const x of c) if(x*U<=maxM) v=x; const m=v*U, lab=DISP.dist==='m'?(m>=1000?`${m/1000} km`:`${m} m`):`${v} ${DISP.dist==='mi'?'mi':'NM'}`; return {m,lab}; }
+function mpxNow(){ const la=y2lat(MAP.cy,MAP.z); return 40075016.686*Math.cos(la*RAD)/(256*Math.pow(2,MAP.z)); }
+// --- centre scale (reticle)
+function retDraw(){ const sv=$('mRet'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight; if(DISP.ret==='none'||!W){ sv.innerHTML=''; return; }
+  const cx=W/2, cy=H/2, mpp=mpxNow(), d=niceDist(mpp*Math.min(W,H)*0.3), r=d.m/mpp, col='#d62828', halo='stroke="#fff" stroke-width="4" stroke-opacity=".85"';
+  const T=(x,y,t,a='middle')=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="11.5" font-weight="700" fill="${col}" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+  const both=(p)=>`<path d="${p}" fill="none" ${halo}/><path d="${p}" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+  let h='';
+  if(DISP.ret==='cross') h=both(`M${cx-22},${cy}H${cx-5}M${cx+5},${cy}H${cx+22}M${cx},${cy-22}V${cy-5}M${cx},${cy+5}V${cy+22}`);
+  if(DISP.ret==='box') h=both(`M${cx-r/2},${cy-r/2}h${r}v${r}h${-r}Z M${cx-6},${cy}h12M${cx},${cy-6}v12`)+T(cx,cy-r/2-5,`一辺 ${d.lab}`);
+  if(DISP.ret==='circle') h=both(`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0 M${cx-6},${cy}h12M${cx},${cy-6}v12`)+T(cx,cy-r-5,`半径 ${d.lab}`);
+  if(DISP.ret==='line') h=both(`M${cx-r/2},${cy}h${r}M${cx-r/2},${cy-7}v14M${cx+r/2},${cy-7}v14M${cx},${cy-4}v8`)+T(cx,cy-10,d.lab);
+  if(DISP.ret==='ticks'){ let p=`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0 M${cx-r/2},${cy}a${r/2},${r/2} 0 1,0 ${r},0a${r/2},${r/2} 0 1,0 ${-r},0 M${cx-6},${cy}h12M${cx},${cy-6}v12`;
+    for(let a=0;a<360;a+=10){ const L=a%90===0?12:a%30===0?8:4, s=Math.sin(a*RAD), c=-Math.cos(a*RAD); p+=`M${cx+s*r},${cy+c*r}L${cx+s*(r-L)},${cy+c*(r-L)}`; }
+    h=both(p)+[0,90,180,270].map(a=>{ const s=Math.sin(a*RAD), c=-Math.cos(a*RAD); return T(cx+s*(r+12),cy+c*(r+12)+4,{0:'N',90:'E',180:'S',270:'W'}[a]); }).join('')
+      +T(cx+r*0.71+4,cy-r*0.71-4,`半径 ${d.lab}`,'start')+T(cx+r*0.35+2,cy-r*0.35-2,'½','start'); }
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`); sv.innerHTML=h; }
+// --- MGRS grid
+function mgrsDraw(){ const sv=$('mGrid'), el=$('map'); if(!sv||!el) return; if(!DISP.mgrs){ sv.innerHTML=''; return; }
+  const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, b=viewBounds();
+  const step=z>=13?1000:z>=9?10000:100000; const px=(la,lo)=>[(lon2x(lo,z)-x0).toFixed(1),(lat2y(la,z)-y0).toFixed(1)];
+  let lines='', labs='', clips='', zones=''; const pathP=(d,st)=>`<path d="${d}" fill="none" stroke="#fff" stroke-width="2.6" stroke-opacity=".7"/><path d="${d}" fill="none" stroke="#1b4f9c" stroke-width="${st===100000?1.6:1}" stroke-opacity=".9"/>`; const z0=Math.floor((b.w+180)/6)+1, z1=Math.floor((b.e+180)/6)+1;
+  const lab=(x,y,t,a='start',sz=11)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="${sz}" font-weight="700" fill="#1b4f9c" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+  for(let zn=z0;zn<=z1;zn++){ const L0=(zn-1)*6-180, L1=L0+6, w=Math.max(b.w,L0), e=Math.min(b.e,L1); if(w>=e) continue;
+    const cs=[[b.n,w],[b.n,e],[b.s,w],[b.s,e],[(b.n+b.s)/2,w],[(b.n+b.s)/2,e]].map(([la,lo])=>ll2utm(la,lo,zn));
+    const E0=Math.min(...cs.map(c=>c.E))-step, E1=Math.max(...cs.map(c=>c.E))+step, N0=Math.min(...cs.map(c=>c.N))-step, N1=Math.max(...cs.map(c=>c.N))+step;
+    if((E1-E0)/step>80||(N1-N0)/step>80) continue;
+    const seg=(pts)=>pts.map(([la,lo],i)=>{ const [x,y]=px(la,lo); return (i?'L':'M')+x+','+y; }).join(''); let zl='';
+    const cx0=Math.max(-5,lon2x(L0,z)-x0), cx1=Math.min(W+5,lon2x(L1,z)-x0);
+    const ns=24;
+    for(let E=Math.ceil(E0/step)*step;E<=E1;E+=step){ const pts=[]; for(let i=0;i<=ns;i++) pts.push(utm2ll(zn,E,N0+(N1-N0)*i/ns)); zl+=seg(pts);
+      if(step<100000){ const top=utm2ll(zn,E,ll2utm(b.n,(w+e)/2,zn).N-0); const [x]=px(top[0],top[1]); if(top[1]>=L0&&top[1]<=L1&&x>2&&x<W-14) labs+=lab(+x+2,12,String(Math.round(E/step)%(100000/step)).padStart(step===1000?2:1,'0')); } }
+    for(let N=Math.ceil(N0/step)*step;N<=N1;N+=step){ const pts=[]; for(let i=0;i<=ns;i++) pts.push(utm2ll(zn,E0+(E1-E0)*i/ns,N)); zl+=seg(pts);
+      if(step<100000){ const lft=utm2ll(zn,ll2utm((b.n+b.s)/2,w,zn).E,N); const [lx,y]=px(lft[0],lft[1]); if(lft[1]>=L0&&lft[1]<=L1&&y>18&&y<H-4) labs+=lab(Math.max(3,+lx+3),+y-2,String(Math.round(N/step)%(100000/step)).padStart(step===1000?2:1,'0')); } }
+    // 100 km square IDs
+    for(let E=Math.floor(E0/100000)*100000;E<=E1;E+=100000) for(let N=Math.floor(N0/100000)*100000;N<=N1;N+=100000){ const c=utm2ll(zn,E+50000,N+50000); if(c[1]<L0||c[1]>L1) continue; const [x,y]=px(c[0],c[1]); if(x<0||y<0||x>W||y>H) continue;
+      if(step===100000||z<=11) labs+=lab(x,y,`${zn}${UTMBANDS[Math.floor((c[0]+80)/8)]} ${mgrsSq(zn,E+50000,N+50000)}`,'middle',13); }
+    clips+=`<clipPath id="mgz${zn}"><rect x="${cx0}" y="-5" width="${Math.max(0,cx1-cx0)}" height="${H+10}"/></clipPath>`; zones+=`<g clip-path="url(#mgz${zn})">${pathP(zl,step)}</g>`;
+    if(L0>b.w&&L0<b.e){ const [x]=px(b.n,L0); lines+=`M${x},0V${H}`; } }
+  const cornerSq=(()=>{ const c=[y2lat(MAP.cy,z),x2lon(MAP.cx,z)]; const u=ll2utm(c[0],c[1]); return `${u.zone}${u.band} ${mgrsSq(u.zone,u.E,u.N)}`; })();
+  sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  sv.innerHTML=`<defs>${clips}</defs>${zones}${lines?`<path d="${lines}" fill="none" stroke="#fff" stroke-width="3.5" stroke-opacity=".8"/><path d="${lines}" fill="none" stroke="#1b4f9c" stroke-width="2" stroke-dasharray="8 4"/>`:''}${labs}${lab(W-62,H-12,`MGRS ${cornerSq}・${step>=1000?step/1000+' km':step+' m'}方眼`,'end',11.5)}`; }
+
+// ==== overlay maps (GSI / GSJ tiles + slope maps computed from the GSI DEM) ====
+const GOVL=[
+  {k:'relief',n:'色別標高図',g:'国土地理院',url:(z,x,y)=>`${GSI}relief/${z}/${x}/${y}.png`,min:5,max:15},
+  {k:'slopezone1map',n:'雪崩傾斜',g:'国土地理院',url:(z,x,y)=>`${GSI}slopezone1map/${z}/${x}/${y}.png`,min:3,max:15,note:'地理院「全国傾斜量区分図（雪崩関連）」'},
+  {k:'avyB',n:'雪崩傾斜タイプB',g:'国土地理院',calc:'avy',note:'地理院の標高タイルから傾斜を計算'},
+  {k:'hillshademap',n:'陰影起伏図',g:'国土地理院',url:(z,x,y)=>`${GSI}hillshademap/${z}/${x}/${y}.png`,min:2,max:16},
+  {k:'sekishoku',n:'赤色立体地図',g:'国土地理院',url:(z,x,y)=>`${GSI}sekishoku/${z}/${x}/${y}.png`,min:2,max:14},
+  {k:'rrim',n:'高精度赤色立体地図',g:'国土地理院',calc:'rrim',note:'5 m／10 mメッシュ標高から計算'},
+  {k:'slopemap',n:'傾斜量図',g:'国土地理院',url:(z,x,y)=>`${GSI}slopemap/${z}/${x}/${y}.png`,min:3,max:15},
+  {k:'slopecls',n:'色別傾斜区分図',g:'国土地理院',calc:'cls',note:'地理院の標高タイルから傾斜を計算'},
+  {k:'geo',n:'シームレス地質図',g:'地質',url:(z,x,y)=>`https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/${z}/${y}/${x}.png`,min:3,max:13,note:'産総研 地質調査総合センター'}];
+const GOV={on:{},op:65};
+try{ Object.assign(GOV,JSON.parse(localStorage.getItem('aw139gov')||'{}')); }catch(e){}
+function govSave(){ try{ localStorage.setItem('aw139gov',JSON.stringify({on:GOV.on,op:GOV.op})); }catch(e){} }
+const AVYC=[[27,[150,220,80]],[30,[255,225,60]],[35,[255,150,40]],[40,[235,45,45]],[45,[180,50,190]],[50,[50,90,230]],[60,[30,30,30]]];
+const CLSC=[[5,[217,240,163]],[10,[173,221,142]],[15,[120,198,121]],[20,[254,227,145]],[25,[254,196,79]],[30,[254,153,41]],[35,[236,112,20]],[40,[204,76,2]],[45,[140,45,4]],[55,[80,20,40]]];
+const DEML=new Map();
+function getDemL(lay,z,x,y){ if(lay==='dem_png') return getDem(z,x,y); const k=lay+'/'+z+'/'+x+'/'+y; if(DEML.has(k)) return DEML.get(k);
+  const p=fetch(GSI+k+'.png').then(r=>{ if(r.status===404) return null; if(!r.ok) throw new Error('http '+r.status); return r.blob(); })
+   .then(b=>{ const a=new Float32Array(65536); if(!b){a.fill(NaN); return a;}
+     return createImageBitmap(b).then(bmp=>{ const c=document.createElement('canvas'); c.width=c.height=256; const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(bmp,0,0);
+       const d=g.getImageData(0,0,256,256).data; for(let i=0;i<65536;i++){const v=d[i*4]*65536+d[i*4+1]*256+d[i*4+2]; a[i]=(v===8388608||d[i*4+3]===0)?NaN:(v<8388608?v*0.01:(v-16777216)*0.01);} return a; }); });
+  p.catch(()=>DEML.delete(k)); DEML.set(k,p); if(DEML.size>200){ DEML.delete(DEML.keys().next().value); } return p; }
+// elevation grid for one web-mercator tile with a P-pixel margin, bilinear from the finest GSI DEM available (5 m at z≥15, else 10 m)
+async function demGrid(z,tx,ty,P){ const N=256+2*P, out=new Float32Array(N*N).fill(NaN);
+  const plan=z>=15?[['dem5a_png',15],['dem_png',14]]:[['dem_png',Math.min(z,14)]];
+  for(const [lay,zs] of plan){ const f=Math.pow(2,z-zs), gx0=(tx*256-P)/f, gy0=(ty*256-P)/f, gx1=(tx*256+256+P)/f, gy1=(ty*256+256+P)/f;
+    const X0=Math.floor((gx0-1)/256), X1=Math.floor((gx1+1)/256), Y0=Math.floor((gy0-1)/256), Y1=Math.floor((gy1+1)/256); const T=new Map(), jobs=[];
+    for(let X=X0;X<=X1;X++) for(let Y=Y0;Y<=Y1;Y++) jobs.push(getDemL(lay,zs,X,Y).then(a=>T.set(X+','+Y,a)).catch(()=>T.set(X+','+Y,null)));
+    await Promise.all(jobs);
+    const at=(gx,gy)=>{ const X=Math.floor(gx/256), Y=Math.floor(gy/256), a=T.get(X+','+Y); if(!a) return NaN; return a[(gy-Y*256)*256+(gx-X*256)]; };
+    for(let j=0;j<N;j++){ const gy=(ty*256-P+j+0.5)/f-0.5, y0=Math.floor(gy), fy=gy-y0;
+      for(let i=0;i<N;i++){ const o=j*N+i; if(!isNaN(out[o])) continue; const gx=(tx*256-P+i+0.5)/f-0.5, x0=Math.floor(gx), fx=gx-x0;
+        const a=at(x0,y0), b=at(x0+1,y0), c=at(x0,y0+1), d=at(x0+1,y0+1); let v=(a*(1-fx)+b*fx)*(1-fy)+(c*(1-fx)+d*fx)*fy; if(isNaN(v)) v=at(Math.round(gx),Math.round(gy)); out[o]=v; } } }
+  return out; }
+async function govCalc(cv,L,z,tx,ty){ const P=6, N=256+2*P; const Z=await demGrid(z,tx,ty,P);
+  const lat=y2lat(ty*256+128,z), mpp=156543.03*Math.cos(lat*RAD)/Math.pow(2,z);
+  const g=cv.getContext('2d'), im=g.createImageData(256,256), d=im.data;
+  for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const o=(y+P)*N+(x+P), i=(y*256+x)*4, h=Z[o];
+    const zx=(Z[o+1]-Z[o-1])/(2*mpp), zy=(Z[o+N]-Z[o-N])/(2*mpp); if(isNaN(h)||isNaN(zx)||isNaN(zy)){ d[i+3]=0; continue; }
+    const s=Math.atan(Math.hypot(zx,zy))/RAD;
+    if(L.calc==='avy'||L.calc==='cls'){ const tab=L.calc==='avy'?AVYC:CLSC; let c=null; for(const [t,col] of tab) if(s>=t) c=col; if(!c){ d[i+3]=0; continue; } d[i]=c[0]; d[i+1]=c[1]; d[i+2]=c[2]; d[i+3]=255; }
+    else { let m=0,n=0; for(let k=0;k<8;k++){ const a=k*Math.PI/4, v=Z[o+Math.round(Math.sin(a)*P)*N+Math.round(Math.cos(a)*P)]; if(!isNaN(v)){ m+=v; n++; } }
+      const conv=n?(h-m/n)/(P*mpp):0, v=Math.max(0.12,Math.min(1,0.66+2.2*conv)), sat=Math.min(1,s/48);
+      d[i]=255*v; d[i+1]=255*v*(1-0.88*sat); d[i+2]=255*v*(1-0.92*sat); d[i+3]=255; } }
+  g.putImageData(im,0,0); }
+function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, n=Math.pow(2,z), x0=MAP.cx-W/2, y0=MAP.cy-H/2;
+  const tx0=Math.floor(x0/256), tx1=Math.floor((x0+W)/256), ty0=Math.max(0,Math.floor(y0/256)), ty1=Math.min(n-1,Math.floor((y0+H)/256));
+  const act=GOVL.filter(L=>GOV.on[L.k]);
+  box.querySelectorAll(':scope>div[data-l]').forEach(dv=>{ if(!GOV.on[dv.dataset.l]) dv.remove(); });
+  act.forEach((L,li)=>{ let lay=box.querySelector(`:scope>div[data-l="${L.k}"]`); if(!lay){ lay=document.createElement('div'); lay.className='mlayer'; lay.dataset.l=L.k; box.appendChild(lay); }
+    lay.style.opacity=GOV.op/100; lay.style.zIndex=li; const want=new Set();
+    if(L.calc&&z<9){ lay.innerHTML=''; return; }
+    if(!L.calc&&z<L.min){ lay.innerHTML=''; return; }
+    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty; want.add(k);
+      let t=lay.querySelector(`[data-k="${k}"]`);
+      if(!t){ if(L.calc){ t=document.createElement('canvas'); t.width=t.height=256; t.dataset.k=k; lay.appendChild(t); govCalc(t,L,z,tx,ty).catch(()=>{}); }
+        else { const zs=Math.min(z,L.max), f=Math.pow(2,z-zs), ptx=Math.floor(tx/f), pty=Math.floor(ty/f); t=document.createElement('div'); t.className='govt'; t.dataset.k=k;
+          const im=document.createElement('img'); im.alt=''; im.draggable=false; im.style.cssText=`position:absolute;width:${256*f}px;height:${256*f}px;left:${-(tx-ptx*f)*256}px;top:${-(ty-pty*f)*256}px;max-width:none`;
+          im.onerror=()=>{ im.remove(); }; im.src=L.url(zs,ptx,pty); t.appendChild(im); lay.appendChild(t); } }
+      t.style.left=(tx*256-x0)+'px'; t.style.top=(ty*256-y0)+'px'; }
+    lay.querySelectorAll('[data-k]').forEach(t=>{ if(!want.has(t.dataset.k)) t.remove(); }); });
+  govLegend(); }
+function govLegend(){ const lg=$('govLeg'); if(!lg) return; const z=MAP.z; const sw=(c,t)=>`<span class="govsw"><i style="background:rgb(${c.join(',')})"></i>${t}</span>`; const out=[];
+  GOVL.filter(L=>GOV.on[L.k]).forEach(L=>{
+    if(L.calc==='avy') out.push(`<div><b>${L.n}</b>：${AVYC.map(([t,c],i)=>sw(c,i<AVYC.length-1?`${t}〜${AVYC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
+    else if(L.calc==='cls') out.push(`<div><b>${L.n}</b>：${CLSC.map(([t,c],i)=>sw(c,i<CLSC.length-1?`${t}〜${CLSC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
+    else if(L.calc==='rrim') out.push(`<div><b>${L.n}</b>：赤いほど急傾斜、明るいほど尾根・凸、暗いほど谷・凹（ズーム15以上で5 mメッシュ）</div>`);
+    if(L.calc&&z<9) out.push(`<div class="caution">${L.n}は、ズーム9以上で表示します</div>`);
+    if(!L.calc&&z<L.min) out.push(`<div class="caution">${L.n}は、ズーム${L.min}以上で表示します</div>`);
+    if(!L.calc&&z>L.max) out.push(`<div style="color:var(--muted)">${L.n}：ズーム${L.max}の画像を拡大して表示中</div>`); });
+  lg.innerHTML=out.join(''); }
+function govPanel(){ const box=$('govList'); if(!box) return; const grp={}; GOVL.forEach(L=>{ (grp[L.g]=grp[L.g]||[]).push(L); });
+  box.innerHTML=Object.entries(grp).map(([g,a])=>`<div class="govg"><div class="govh">${g}</div>${a.map(L=>`<label class="chk"><input type="checkbox" data-gov="${L.k}"${GOV.on[L.k]?' checked':''}> ${L.n}${L.note?`<small>（${L.note}）</small>`:''}</label>`).join('')}</div>`).join('');
+  box.querySelectorAll('[data-gov]').forEach(c=>c.onchange=()=>{ GOV.on[c.dataset.gov]=c.checked; govSave(); govRender(); });
+  $('govOp').value=GOV.op; $('govOp').oninput=e=>{ GOV.op=+e.target.value; govSave(); $('mGOv').querySelectorAll(':scope>div[data-l]').forEach(d=>d.style.opacity=GOV.op/100); }; }
+function dispPanel(){ const set=(id,key,after)=>{ document.querySelectorAll(`#${id} [data-v]`).forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.v===DISP[key]); b.onclick=()=>{ DISP[key]=b.dataset.v; dispSave(); document.querySelectorAll(`#${id} [data-v]`).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===DISP[key])); after&&after(); }; }); };
+  set('dCoord','coord',()=>{ LLF.f=DISP.coord; llHint(); if(MAP.pick){ $('mLL').value=fmtLL(MAP.pick.lat,MAP.pick.lon); } mapInfo(); if(typeof drawPanel==='function') drawPanel(); });
+  set('dDist','dist',()=>{ mapScale(); retDraw(); if(typeof drawPanel==='function') drawPanel(); mapReq(); });
+  set('dAlt','alt',()=>{ mapInfo(); });
+  set('dRet','ret',()=>retDraw());
+  $('dMgrs').checked=!!DISP.mgrs; $('dMgrs').onchange=e=>{ DISP.mgrs=e.target.checked; dispSave(); mgrsDraw(); };
+  llHint(); }
+function llHint(){ const h=$('llHint'); if(h) h.textContent=`表示は${COORDN[DISP.coord]}${DISP.coord==='dm'?'（DD°MM.mmm′）':''}・UTM／MGRSでも入力できます`; }
+setTimeout(()=>{ try{ govPanel(); dispPanel(); mapReq(); }catch(e){ console.error(e); } },300);
+
 // map tap / current position -> search box and dial follow the picked point
-function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo,'dm'); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
+function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
 // confirm() / prompt() are blocked inside the hosted page, so destructive buttons ask for a second press instead
 function twoStep(btn,fn){ const label=btn.textContent; let t=0;
@@ -2148,7 +2338,7 @@ function destLL(la,lo,brg,d){ const p1=la*RAD,l1=lo*RAD,b=brg*RAD,dr=d/RE; const
   const l2=l1+Math.atan2(Math.sin(b)*Math.sin(dr)*Math.cos(p1),Math.cos(dr)-Math.sin(p1)*Math.sin(p2)); return [p2/RAD,l2/RAD]; }
 function offLL(la,lo,dx,dy){ return [la+dy/RE/RAD, lo+dx/(RE*Math.cos(la*RAD))/RAD]; }
 const distM=(a,b)=>gc(a[0],a[1],b[0],b[1]).nm*1852;
-function fmtDist(m){ return (m<1000?`${Math.round(m).toLocaleString()} m`:`${(m/1000).toFixed(2)} km`)+`（${(m/1852).toFixed(2)} NM）`; }
+function fmtDist(m){ return fmtDist2(m); }
 function stepTxt(v,u){ return `${(+v).toLocaleString()} ${u}`; }
 function polyM(pts){ const la0=pts.reduce((s,p)=>s+p[0],0)/pts.length, k=Math.cos(la0*RAD)*RE*RAD; return pts.map(p=>[p[1]*k,p[0]*RE*RAD]); }
 function polyArea(pts){ const q=polyM(pts); let a=0; for(let i=0;i<q.length;i++){ const [x1,y1]=q[i],[x2,y2]=q[(i+1)%q.length]; a+=x1*y2-x2*y1; } return Math.abs(a)/2; }
@@ -2158,12 +2348,12 @@ const P3d=v=>String(Math.round(((v%360)+360)%360)%360||360).padStart(3,'0');
 function measTxt(a,b){ const g=gc(a[0],a[1],b[0],b[1]); return {d:fmtDist(g.nm*1852), t:`真方位 ${P3d(g.crs)}°／磁方位 約${P3d(g.crs+MAGVAR)}°`, back:`逆方位 真 ${P3d(g.crs+180)}°`}; }
 const GCOL=i=>String.fromCharCode(65+i);
 function itemInfo(it){
-  if(it.t==='pt') return `<div class="drow1"><span class="ptic">📍</span><input class="ded" data-ed="${DRAW.items.indexOf(it)}" value="${esc(it.label||'')}" aria-label="ポイントの名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b></div><div class="drow2">${fmtLL(it.lat,it.lon,'dm')}</div>`;
+  if(it.t==='pt') return `<div class="drow1"><span class="ptic">📍</span><input class="ded" data-ed="${DRAW.items.indexOf(it)}" value="${esc(it.label||'')}" aria-label="ポイントの名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b></div><div class="drow2">${fmtLL(it.lat,it.lon)}</div>`;
   if(it.t==='txt') return `文字 <input class="ded" data-ed="${DRAW.items.indexOf(it)}" value="${esc(it.text)}" aria-label="文字">`;
-  if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon,'dm')}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
+  if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
   if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）`;
   if(it.t==='meas'){ const m=measTxt(it.pts[0],it.pts[1]); return `<b>距離 ${m.d}</b>　<b>${m.t}</b>（${m.back}）`; }
-  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button></div><div class="drow2">${fmtLL(it.lat,it.lon,'dm')}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}</div>`; }
+  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}</div>`; }
   if(it.t==='route') return routeInfo(it);
   if(it.t==='area') return `<b>面積 ${fmtArea(polyArea(it.pts))}</b>　周囲 ${fmtDist(polyPerim(it.pts))}　${it.pts.length}点`;
   return ''; }
@@ -2764,7 +2954,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
    <div class="xstat"><span>周囲の最大 <b style="color:${(DWB[dwBand(o.vmax)]||DWB[0])[1]}">${o.vmax.toFixed(0)} m/s</b></span><span>物が飛ぶ（17 m/s〜）：${rng(o.r17,lb).replace('（中心から）','')}</span></div>
    ${o.notes.length?`<div class="xchips">${o.notes.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${o.notes.map(n=>`<li>${n[1]}</li>`).join('')}<li>物が舞う（10 m/s〜）：${rng(o.r10,lb)}</li></ul>`:`<div class="hint note">物が舞う（10 m/s〜）：${rng(o.r10,lb)}</div>`}</div>`; };
   const anyV=fa.notes.length||lr.notes.length;
-  box.innerHTML=`<div class="xsum ${Vg>=17||anyV?'xbad':''}"><b>${fmtLL(p.lat,p.lon,'dm')}</b>　地表 ${Math.round(pv('fa').z[(XN-1)/2])} m・ローター面〜地表 ${Math.round(hAGL)} m<br>真下の吹き下ろし 約 <b>${Vg.toFixed(0)} m/s</b>（${(Vg*3.6).toFixed(0)} km/h）${drift>=3?`・風下へ <b>${Math.round(drift)} m</b> ずれる`:''}${anyV?'　<b style="color:var(--warn)">⚠ 地形で強まる所あり</b>':''}
+  box.innerHTML=`<div class="xsum ${Vg>=17||anyV?'xbad':''}"><b>${fmtLL(p.lat,p.lon)}</b>　地表 ${Math.round(pv('fa').z[(XN-1)/2])} m・ローター面〜地表 ${Math.round(hAGL)} m<br>真下の吹き下ろし 約 <b>${Vg.toFixed(0)} m/s</b>（${(Vg*3.6).toFixed(0)} km/h）${drift>=3?`・風下へ <b>${Math.round(drift)} m</b> ずれる`:''}${anyV?'　<b style="color:var(--warn)">⚠ 地形で強まる所あり</b>':''}
   <div class="hint note">ローター面の高さ＝障害物 ${obs} m＋ホバリング ${hft} ft。ローター直径の${hd.toFixed(1)}倍の高さ${hd<=3?'：3倍以内なので2Viのまま届く':hd<10?'：3倍を超え、弱まりながら届く':'：10倍以上でほぼ届かない'}。風 ${wc.ws} kt（向かい風${wc.head>=0?'':'−'}${Math.abs(wc.head).toFixed(0)}・横風 ${Math.abs(wc.cross).toFixed(0)} kt）${drift>=3?`：吹き下ろしは風下へ約${Math.round(drift)} m流されて地表に当たる。風上側は吹き出しが押し戻されて地面渦ができ、風下側は風が加わって遠くまで強い`:'：風の影響は小さい'}。</div></div>
   ${card('機首方向（前後）の断面',fa,['後方','前方'])}${card('左右方向の断面',lr,['左','右'])}
   <div class="xleg note">${DWB.map((b,i)=>`<span><i style="background:${b[1]}"></i>${i===0?'5 m/s未満':b[0]<999?DWB[i-1][0]+'〜'+b[0]+' m/s':DWB[i-1][0]+' m/s以上'}：${b[2]}</span>`).join('')}</div>
