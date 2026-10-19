@@ -2650,7 +2650,7 @@ function radarDraw(){ const sv=$('mRadar'), el=$('map'); if(!sv||!el) return; co
     const hit=T.find(o=>o.dm<=RDR.ring||(o.dm<=RDR.fan&&Math.abs(o.off)<=FAN)), oc=hit?null:T.find(o=>o.dm>30&&Math.abs(o.off)<=5);
     const GC=hit?'#ff2d2d':oc?'#ffd400':G, cls=hit||oc?' class="rdron"':'';
     const [l1x,l1y]=A(-FAN,FR), [l2x,l2y]=A(FAN,FR), [fx,fy]=A(0,R), [bx,by]=A(180,R), [w1x,w1y]=A(-FAN,R), [w2x,w2y]=A(FAN,R);
-    let d=`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0M${bx},${by}L${fx},${fy}M${cx},${cy}L${w1x},${w1y}M${cx},${cy}L${w2x},${w2y}`;
+    let d=`M${cx-r},${cy}a${r},${r} 0 1,0 ${2*r},0a${r},${r} 0 1,0 ${-2*r},0M${cx},${cy}L${fx},${fy}`; // ring + forward heading line only (fan edges / aft line removed)
     h+=`<path d="M${cx},${cy}L${l1x},${l1y}A${FR},${FR} 0 0,1 ${l2x},${l2y}Z" fill="${hit?'rgba(255,45,45,.22)':'rgba(57,255,106,.10)'}"${cls}/>`;
     h+=`<path d="M${l1x},${l1y}A${FR},${FR} 0 0,1 ${l2x},${l2y}" fill="none" stroke="${GC}" stroke-width="1.2" stroke-dasharray="4 4" stroke-opacity=".8"/>`;
     h+=`<g${cls}><path d="${d}" fill="none" ${halo} stroke-width="3.2"/><path d="${d}" fill="none" stroke="${GC}" stroke-width="${hit||oc?2.2:1.4}" stroke-opacity=".95"/></g>`;
