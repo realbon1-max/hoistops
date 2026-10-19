@@ -56,7 +56,7 @@ h2{font-size:15.5px;margin:0 0 8px}
 #w_fuelR::-moz-range-progress{height:14px;border-radius:7px;background:var(--c-fuel)}
 #w_fuelR::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;margin-top:-11px;border-radius:50%;background:#fff;border:3px solid var(--c-fuel);box-shadow:0 2px 6px rgba(0,0,0,.3)}
 #w_fuelR::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--c-fuel);box-shadow:0 2px 6px rgba(0,0,0,.3)}
-.fuelticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin:-4px 2px 6px}
+.fuelaux{display:block;font-size:13px;margin:2px 0 2px}.fuelcap{font-size:12px;color:var(--muted);margin:0 0 6px}.fuelticks{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin:-4px 2px 6px}
 .fuelbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.fuelbtns button{font:inherit;font-size:14px;font-weight:700;height:36px;border-radius:8px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);cursor:pointer;touch-action:manipulation}
 .inputs .unit{font-size:13px;color:var(--muted);min-width:34px}
 .derived{margin-top:14px;font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:10px}
@@ -730,8 +730,9 @@ a{color:#7cc4ff}
           <div class="bdrow"><span class="sw" style="background:var(--c-pax)"></span><label for="w_pax">搭乗者（救助員・医療員など）</label><input id="w_pax" type="number" step="10"><span class="unit">kg</span></div>
           <div class="bdrow"><span class="sw" style="background:var(--c-load)"></span><label for="w_load">吊荷（要救助者・器材）</label><input id="w_load" type="number" step="10"><span class="unit">kg</span></div>
           <div class="bdrow"><span class="sw" style="background:var(--c-fuel)"></span><label for="w_fuel">搭載燃料</label><input id="w_fuel" type="number" step="10"><span class="unit">kg</span></div>
-          <div class="fuelsl"><input id="w_fuelR" type="range" min="0" max="2400" step="10" aria-label="搭載燃料スライダー">
-            <div class="fuelticks" aria-hidden="true"><span>0</span><span>600</span><span>1,200</span><span>1,800</span><span>2,400 kg</span></div>
+          <div class="fuelsl"><input id="w_fuelR" type="range" min="0" max="1300" step="10" aria-label="搭載燃料スライダー">
+            <div class="fuelticks" id="fuelTicks" aria-hidden="true"></div>
+            <label class="chk fuelaux"><input type="checkbox" id="w_aux"> 補助燃料タンク装置あり（＋400 kg・追加飛行規程15）</label><div class="fuelcap" id="fuelCap"></div>
             <div class="fuelbtns"><button type="button" data-fd="-100">−100</button><button type="button" data-fd="-10">−10</button><button type="button" data-fd="10">＋10</button><button type="button" data-fd="100">＋100</button></div></div>
           <div class="bdrow"><span class="sw" style="background:transparent"></span><label for="w_mtow">最大全備重量（機体の型式・オプション）</label><select id="w_mtow"><option value="6400">6,400 kg（標準）</option><option value="6800">6,800 kg</option><option value="7000">7,000 kg</option></select></div>
         </div>
@@ -1541,8 +1542,18 @@ const save=()=>{try{localStorage.setItem('aw139wt',JSON.stringify(CFG))}catch(e)
 const F=['empty','crew','pax','load','fuel'];
 F.forEach(k=>{$('w_'+k).value=CFG[k]; $('w_'+k).addEventListener('input',()=>{CFG[k]=+$('w_'+k).value; if(k==='fuel')$('w_fuelR').value=CFG.fuel; save(); update();});});
 $('w_fuelR').value=CFG.fuel; $('w_fuelR').addEventListener('input',()=>{CFG.fuel=+$('w_fuelR').value;$('w_fuel').value=CFG.fuel;save();update();});
-function fuelFill(){ const r=$('w_fuelR'); if(r) r.style.setProperty('--fp',(Math.max(0,Math.min(1,(+r.value)/(+r.max||2400)))*100).toFixed(1)+'%'); }
-document.querySelectorAll('.fuelbtns [data-fd]').forEach(b=>b.onclick=()=>{ CFG.fuel=Math.max(0,Math.min(2400,Math.round((CFG.fuel+(+b.dataset.fd))/10)*10)); $('w_fuel').value=CFG.fuel; $('w_fuelR').value=CFG.fuel; save(); update(); });
+function fuelFill(){ const r=$('w_fuelR'); if(r) r.style.setProperty('--fp',(Math.max(0,Math.min(1,(+r.value)/(+r.max||1300)))*100).toFixed(1)+'%'); }
+// usable fuel capacity per RFM 8.7: basic 1,300 kg (2,820 lb); auxiliary fuel tank kit (RFM supplement 15) +400 kg (880 lb)
+const fuelMax=()=>CFG.aux?1700:1300;
+function fuelLim(){ const M=fuelMax(), r=$('w_fuelR'); r.max=M; $('w_fuel').max=M; $('w_fuel').min=0; $('w_aux').checked=!!CFG.aux;
+  if(CFG.fuel>M){ CFG.fuel=M; save(); } if(CFG.fuel<0) CFG.fuel=0; $('w_fuel').value=CFG.fuel; r.value=CFG.fuel;
+  $('fuelTicks').innerHTML=[0,.25,.5,.75,1].map(f=>`<span>${Math.round(M*f).toLocaleString()}${f===1?' kg':''}</span>`).join('');
+  $('fuelCap').innerHTML=`満タン ${M.toLocaleString()} kg（${CFG.aux?'基本 1,300＋補助 400':'基本形態'}・飛行規程 8.7）${CFG.fuel>=M?' — <b>満タン</b>':''}`; fuelFill(); }
+$('w_aux').addEventListener('change',e=>{ CFG.aux=e.target.checked; save(); fuelLim(); update(); });
+$('w_fuel').addEventListener('change',()=>{ fuelLim(); update(); });
+$('w_fuelR').addEventListener('input',()=>fuelLim());
+fuelLim();
+document.querySelectorAll('.fuelbtns [data-fd]').forEach(b=>b.onclick=()=>{ CFG.fuel=Math.max(0,Math.min(fuelMax(),Math.round((CFG.fuel+(+b.dataset.fd))/10)*10)); $('w_fuel').value=CFG.fuel; $('w_fuelR').value=CFG.fuel; save(); fuelLim(); update(); });
 ['ff','rsv'].forEach(k=>{$(k).value=CFG[k];$(k).addEventListener('input',()=>{CFG[k]=+$(k).value;save();update();});});
 $('tgt').value=CFG.tgt; $('tgt').addEventListener('change',()=>{CFG.tgt=$('tgt').value;save();update();});
 function drawEq(){const box=$('eqlist'); box.innerHTML='';
