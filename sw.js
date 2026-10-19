@@ -1,6 +1,6 @@
 // HOIST OPS service worker: keeps the app itself available offline.
 // Map tiles are NOT cached here (the app's own "地図を端末に保存" handles that on request).
-const VERSION = 'hoistops-2026-10-19v';
+const VERSION = 'hoistops-2026-10-19w';
 const APP = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(APP)).then(() => self.skipWaiting()));

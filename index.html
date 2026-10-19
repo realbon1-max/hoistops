@@ -381,6 +381,7 @@ html{scroll-padding-top:52px}
 .snapov{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px}.snapbox{background:var(--panel);color:var(--ink);border-radius:12px;max-width:min(720px,100%);max-height:94vh;overflow:auto;padding:10px 12px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
 .snaph{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.snapx{font:inherit;font-size:20px;width:36px;height:36px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .snaptxt{white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;margin:6px 0 0;max-height:24vh;overflow:auto;user-select:text;-webkit-user-select:text}
+.dsun{color:#b45309}.dsun b{font-weight:700}
 .dlist button.dshare{border-color:#d62828;color:#b71c1c}
 .snapbox img{display:block;width:auto;max-width:100%;max-height:62vh;margin:0 auto;height:auto;border-radius:6px;border:1px solid var(--rule)}.snapbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.snapbtns button,.snapdl{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}.snapbtns .pri{background:#2f6fb0;border-color:#2f6fb0;color:#fff}
 .mctr{position:absolute;right:56px;bottom:30px;z-index:6;pointer-events:none;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:#1b2733;background:rgba(255,255,255,.72);border-radius:4px;padding:2px 6px;white-space:nowrap;max-width:calc(100% - 200px);overflow:hidden;text-overflow:ellipsis}.mctr i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;background:linear-gradient(#d62828,#d62828) center/100% 1.6px no-repeat,linear-gradient(#d62828,#d62828) center/1.6px 100% no-repeat}.msun{bottom:52px}.msun i{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:-1px;border-radius:50%;background:radial-gradient(circle at 50% 100%,#ffb300 0 45%,transparent 47%);border-bottom:1.6px solid #c77700;border-radius:0}.msun i.set{background:radial-gradient(circle at 50% 100%,#ff7043 0 45%,transparent 47%);border-bottom-color:#8e3b1f}
@@ -2416,6 +2417,7 @@ function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www
   L.push(`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`, `MGRS ${fmtMGRS(la,lo)}`);
   if(it.h!=null&&isFinite(it.h)) L.push(`標高 ${Math.round(it.h).toLocaleString()} m（${Math.round(it.h*FT).toLocaleString()} ft）`);
   L.push(`${mbeFix(la,lo).str}（松本VOR/DMEから 磁方位/NM）`); if(it.at) L.push(`記録 ${it.at}`);
+  { const t=SUN.times(jstDay(new Date()),la,lo); L.push(`日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}（今日・平地の値）`, `→ ${sunText(la,lo)}`); }
   L.push(`Googleマップ ${g}`);
   return {title:it.label||ROLES[r].n, text:L.join('\n'), gmap:g}; }
 async function placeShare(it,btn){ if(!it) return; const old=btn&&btn.textContent; if(btn){ btn.disabled=true; btn.textContent='作成中…'; }
@@ -2472,7 +2474,7 @@ function sunPos(){ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null; return p?[
 function sunDraw(){ const el=$('mSun'); if(!el) return; const [la,lo,pk]=sunPos(); const r=sunNext(la,lo); const t=sunText(la,lo);
   const key=t+pk; if(el.dataset.k===key) return; el.dataset.k=key;
   el.innerHTML=`<i class="${r.k}"></i>${t}`; el.title=`${pk?'選んだ地点':'地図の中心'}の日の出 ${sunHM(r.t.rise)}・日没 ${sunHM(r.t.set)}（平地の値。山の陰や稜線では見かけの日の出・日没がずれます）`; }
-setInterval(()=>{ try{ sunDraw(); }catch(e){} },30000);
+setInterval(()=>{ try{ sunDraw(); document.querySelectorAll('[data-sunla]').forEach(b=>{ b.textContent=sunText(+b.dataset.sunla,+b.dataset.sunlo); }); }catch(e){} },30000);
 // map tap / current position -> search box and dial follow the picked point
 function pickSync(la,lo){ const i=$('mLL'); i.value=fmtLL(la,lo); i.classList.remove('flash'); void i.offsetWidth; i.classList.add('flash');
   const p=$('dialPanel'); if(p&&!p.hidden&&$('dialWheels')){ requestAnimationFrame(()=>{ dialFrom(la,lo); const o=$('dialOut'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash'); }); } }
@@ -2504,7 +2506,7 @@ function itemInfo(it){
   if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
   if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）`;
   if(it.t==='meas'){ const m=measTxt(it.pts[0],it.pts[1]); return `<b>距離 ${m.d}</b>　<b>${m.t}</b>（${m.back}）`; }
-  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}</div>`; }
+  if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}${r==='vic'?(()=>{ const t=SUN.times(jstDay(new Date()),it.lat,it.lon); return `<br><span class="dsun">日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}　<b data-sunla="${it.lat}" data-sunlo="${it.lon}">${sunText(it.lat,it.lon)}</b></span>`; })():''}</div>`; }
   if(it.t==='route') return routeInfo(it);
   if(it.t==='area') return `<b>面積 ${fmtArea(polyArea(it.pts))}</b>　周囲 ${fmtDist(polyPerim(it.pts))}　${it.pts.length}点`;
   return ''; }
