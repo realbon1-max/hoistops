@@ -434,6 +434,7 @@ details.mset>summary.msh{cursor:pointer}
 .mwb button,.mwt button{font:inherit;font-size:11px;padding:3px 0;border:1px solid #bbb;border-radius:4px;background:#fff;color:#111;cursor:pointer;touch-action:manipulation}
 .mwt button[aria-pressed=true]{background:#2f6fb0;color:#fff;border-color:#2f6fb0}
 .mwc{display:flex;align-items:center;gap:3px;margin-top:3px;font-size:11px}
+.mwmsm{font:inherit;font-size:11.5px;font-weight:800;color:#0b63ce;background:#eef5ff;border:1px solid #9cc1ee;border-radius:12px;padding:2px 8px;margin-left:6px;cursor:pointer;white-space:nowrap}.mwmsm.wide{display:block;width:100%;margin:6px 0 0;padding:5px 6px}.mwmsm:disabled{opacity:.6}
 .mwopen{font:inherit;font-size:12px;font-weight:700;color:#2f6fb0;background:none;border:none;cursor:pointer;padding:2px}
 .mwind:has(.mwopen){width:auto;padding:2px 6px}
 .mwindf{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2}
@@ -620,7 +621,7 @@ a{color:#7cc4ff}
           <div class="dialw" id="dialWheels"></div>
           <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
         </div>
-        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button><button type="button" id="jmaGo2" class="gopen" title="選んだ地点の上空の気温と風を気象庁の数値予報から読み込む">🌐 気象庁MSM</button></div>
+        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button></div>
 
       </div>
       <div class="mtabs" role="tablist" aria-label="地図の設定"><button type="button" role="tab" data-mt="gov" aria-selected="false">重ねる地図</button><button type="button" role="tab" data-mt="disp" aria-selected="false">表示の設定</button><button type="button" role="tab" data-mt="ifr" aria-selected="false">航空図 RJAF</button><button type="button" role="tab" data-mt="site" aria-selected="false">現場の設定</button><button type="button" role="tab" data-mt="fp" aria-selected="false">出発地・飛行条件</button></div>
@@ -3689,13 +3690,15 @@ function xsExport(){ const svgs=[...document.querySelectorAll('#xsBody .xsvg')];
 const MW={tgt:'wind',show:true,open:true}; try{ const v=JSON.parse(localStorage.getItem('aw139mw')||'{}'); Object.assign(MW,v); }catch(e){}
 function mwSave(){ try{ localStorage.setItem('aw139mw',JSON.stringify({tgt:MW.tgt,show:MW.show,open:MW.open})); }catch(e){} }
 function mwTrue(){ if(wmode!=='true'){ const hd=+$('hdg').value||0, rel=+$('rel').value||0; $('wdir').value=((hd+rel)%360+360)%360; document.querySelector('#wmode [data-m="true"]').click(); } }
+function jmaBind2(){ const b2=$('jmaGo2'); if(!b2||b2.dataset.b) return; b2.dataset.b=1; b2.addEventListener('pointerdown',e=>e.stopPropagation());
+  b2.onclick=async e=>{ e.stopPropagation(); const g=$('jmaGo'); if(!g) return; const t=b2.textContent; b2.disabled=true; b2.textContent='読み込み中…'; try{ await g.onclick(); }catch(_){} const nb=$('jmaGo2'); if(nb){ nb.disabled=false; nb.textContent=t; } mapMsg($('jmaMsg').innerText+'（時刻は「② 条件」の「高度ごとの気温と風」の表で変えられます）'); }; }
 function mwVals(){ const hd=((+$('hdg').value%360)+360)%360, wd=wmode==='true'?((+$('wdir').value%360)+360)%360:((hd+(+$('rel').value||0))%360+360)%360; return {hd,wd,ws:+$('ws').value||0}; }
 function mapWind(){ mkHeli(); const box=$('mWind'); if(!box) return; const {hd,wd,ws}=mwVals(), R0=58, C=70, P3=v=>String(Math.round(v)%360||360).padStart(3,'0');
   const pt=(a,r)=>[C+r*Math.sin(a*RAD),C-r*Math.cos(a*RAD)];
   const rel=((wd-hd+540)%360)-180, ar=Math.abs(rel), side=ar<15||ar>165?'':rel>0?'右':'左';
   const kind=ws<=0?'無風':ar<=45?'向かい風':ar>=135?'背風（追い風）':'横風';
   const relTxt=ws<=0?'無風':`機首から${side}${side?Math.round(ar<=90?ar:180-ar)+'°の':''}${kind}`;
-  if(!MW.open){ box.innerHTML=`<button type="button" class="mwopen" id="mwOpen" title="風と機首方位の入力を開く">🧭 風 ${P3(wd)}°/${ws}kt・HDG ${P3(hd)}°</button>`; $('mwOpen').onclick=()=>{ MW.open=true; mwSave(); mapWind(); }; mapWindField(); return; }
+  if(!MW.open){ box.innerHTML=`<button type="button" class="mwopen" id="mwOpen" title="風と機首方位の入力を開く">🧭 風 ${P3(wd)}°/${ws}kt・HDG ${P3(hd)}°</button><button type="button" class="mwmsm" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 MSM</button>`; $('mwOpen').onclick=()=>{ MW.open=true; mwSave(); mapWind(); }; jmaBind2(); mapWindField(); return; }
   let g=`<circle cx="${C}" cy="${C}" r="${R0+10}" fill="rgba(255,255,255,.96)" stroke="#555" stroke-width="1.2"/><circle cx="${C}" cy="${C}" r="${R0-14}" fill="#eef3f8"/>`;
   for(let b=0;b<360;b+=10){ const [x0,y0]=pt(b,R0+10-(b%30?3:6)), [x1,y1]=pt(b,R0+10); g+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#666" stroke-width="${b%30?0.7:1.4}"/>`; }
   [['N',0,'#d62828'],['E',90,'#333'],['S',180,'#1d5fd0'],['W',270,'#333']].forEach(([l,a,c])=>{ const [x,y]=pt(a,R0-3); g+=`<text x="${x}" y="${y+5}" font-size="${l==='N'||l==='S'?14:11}" font-weight="900" text-anchor="middle" fill="${c}">${l}</text>`; });
@@ -3716,7 +3719,7 @@ function mapWind(){ mkHeli(); const box=$('mWind'); if(!box) return; const {hd,w
    <div class="mwv">${vtxt}</div>
    <input type="range" id="mwWs" class="mwrange" min="0" max="60" step="1" value="${ws}" aria-label="風速（kt）">
    <div class="mwv2">${vtxt2}</div>
-   <label class="mwc"><input type="checkbox" id="mwShow" ${MW.show?'checked':''}> 地図に風の矢羽</label>`;
+   <label class="mwc"><input type="checkbox" id="mwShow" ${MW.show?'checked':''}> 地図に風の矢羽</label><button type="button" class="mwmsm wide" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 気象庁MSMで入力</button>`;
   const sv=$('mwSvg');
   const ang=e=>{ const r=sv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*140-C, y=(e.clientY-r.top)/r.height*140-C; return [(Math.atan2(x,-y)/RAD+360)%360, Math.hypot(x,y)]; };
   const setA=e=>{ const a=Math.round(ang(e)[0]/5)*5%360; if(MW.grab==='wind') mwSetWd(a); else mwSetHd(a); update(); };
@@ -3724,7 +3727,7 @@ function mapWind(){ mkHeli(); const box=$('mWind'); if(!box) return; const {hd,w
   sv.addEventListener('pointermove',e=>{ if(MW.grab) setA(e); });
   const end=()=>{ if(MW.grab){ MW.grab=null; mapWind(); } }; sv.addEventListener('pointerup',end); sv.addEventListener('pointercancel',end);
   box.addEventListener('pointerdown',e=>e.stopPropagation());
-  $('mwShow').onchange=e=>{ MW.show=e.target.checked; mwSave(); mapWindField(); };
+  $('mwShow').onchange=e=>{ MW.show=e.target.checked; mwSave(); mapWindField(); }; jmaBind2();
   $('mwWs').oninput=e=>{ const k=+e.target.value; $('ws').value=k; if($('wsR')) $('wsR').value=k; update(); };
   $('mwClose').onclick=()=>{ MW.open=false; mwSave(); mapWind(); };
   mwBind(box); mapWindField(); }
@@ -3996,7 +3999,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
     document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
     $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
   $('jmaT').onchange=jmaApply;
-  if($('jmaGo2')) $('jmaGo2').onclick=async()=>{ const b2=$('jmaGo2'); b2.disabled=true; b2.textContent='読み込み中…'; await $('jmaGo').onclick(); b2.disabled=false; b2.textContent='🌐 気象庁MSM'; mapMsg($('jmaMsg').innerText+'（下の「高度ごとの気温と風」の表で時刻を変えられます）'); };
+  jmaBind2();
   $('jmaGo').onclick=async()=>{ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z), b=$('jmaGo'), m=$('jmaMsg');
     if(navigator.onLine===false){ m.textContent='オフラインのため読み込めません。'; return; }
     const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`));
