@@ -2756,10 +2756,13 @@ function gtLegs(){ if(!GT.last) return ''; const [la,lo]=GT.last, v=GT.v, kt=v!=
   const rs=(RD.gps||[]).slice(0,2).map(r=>`<span class="gl">📡${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`); return (L.length?L.join(''):'')+(rs.length?rs.join(''):''); }
 function gtAltM(){ return GT.alt==null?null:GT.alt-(+RD.geoid||0); }
 // ---- VHF radio line-of-sight to ground stations (terrain profile from the DEM, 4/3 earth, first Fresnel zone)
-const RADIO0=[{n:'霞目飛行場',lat:38.23556,lon:140.92306,elev:7,ant:15,on:true},{n:'仙台空港',lat:38.13972,lon:140.91694,elev:2,ant:15,on:false},{n:'蓄山',lat:38.256667,lon:140.783217,elev:NaN,ant:20,on:true,user:1},{n:'長の森',lat:38.829533,lon:141.519867,elev:NaN,ant:20,on:true,user:1}];
+const RADIO0=[{n:'霞目飛行場',lat:38.23556,lon:140.92306,elev:7,ant:15,on:true},{n:'仙台空港',lat:38.13972,lon:140.91694,elev:2,ant:15,on:false,user:1},{n:'蓄山',lat:38.256667,lon:140.783217,elev:NaN,ant:20,on:true},{n:'長の森',lat:38.829533,lon:141.519867,elev:NaN,ant:20,on:true}];
 const RD={list:null,geoid:0,f:122,gps:[],busy:false,lastT:0,lastP:null,plan:[]};
 try{ const v=JSON.parse(localStorage.getItem('sd139radio')||'null'); if(v&&Array.isArray(v.list)){ RD.list=v.list; RD.geoid=+v.geoid||0; } }catch(e){}
 if(!RD.list) RD.list=JSON.parse(JSON.stringify(RADIO0));
+// fixed stations (霞目・蓄山・長の森) cannot be deleted; 仙台空港 and user-added ones can. Restore fixed ones if missing.
+RADIO0.forEach(d=>{ if(d.user) return; let x=RD.list.find(s=>s.n===d.n||Math.abs(s.lat-d.lat)<0.003&&Math.abs(s.lon-d.lon)<0.003); if(x){ delete x.user; } else RD.list.push(JSON.parse(JSON.stringify(d))); });
+RD.list.forEach(s=>{ if(s.n==='仙台空港') s.user=1; });
 function rdSave(){ try{ localStorage.setItem('sd139radio',JSON.stringify({list:RD.list,geoid:RD.geoid})); }catch(e){} }
 async function rdLos(A,altA,st){ // A=[lat,lon], altA = antenna height MSL (m) of the aircraft
   const ge=isFinite(st.elev)?st.elev:await elevAt(st.lat,st.lon).catch(()=>NaN); if(!isFinite(st.elev)&&isFinite(ge)){ st.elev=ge; rdSave(); }
