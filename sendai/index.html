@@ -546,7 +546,14 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 #wpTab input{width:62px;font:inherit;font-size:15px;padding:3px 6px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink)}#wpTab input[data-k=l]{width:74px}#wpTab .wpz{text-align:right;color:var(--muted);min-width:64px}
 #wpTab tr.near td{background:rgba(255,160,40,.16)}#wpTab button{font:inherit;width:28px;height:28px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--warn);cursor:pointer}
 .wpbtns{display:flex;gap:6px;margin:6px 0}.wpbtns button,#wpUse{font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
-#wpTab td.wpbt{white-space:nowrap}#wpTab td.wx{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);padding:2px 6px;white-space:nowrap}#wpTab th.wx{text-align:right;line-height:1.1}#wpTab td.wxfl{text-align:left}#wpTab td.hot{color:#c0392b;font-weight:800}#wpTab tr.under td{opacity:.5}#wpTab td.wx small{color:var(--muted);font-size:10.5px}
+#wpTab td.wpbt{white-space:nowrap}
+.mtctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 8px}.mtctl .hint{margin:0;font-size:12px}.mtctl select{font:inherit;font-size:13px;padding:3px 6px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.mtc{border:1px solid var(--rule);border-left:6px solid var(--cat,#888);border-radius:8px;padding:7px 10px;margin:0 0 8px;background:var(--paper)}
+.mtc .hd{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.mtc .hd b{font-size:16px}.mtc .hd .nm{font-weight:700}.mtc .hd small{color:var(--muted);font-size:11.5px}
+.mtc .cat{font-size:11px;font-weight:900;color:#fff;background:var(--cat,#888);border-radius:8px;padding:1px 7px}.mtc .old{color:#c0392b;font-weight:800}
+.mtc .dv{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:3px 10px;margin:5px 0 4px;font-size:13px}.mtc .dv small{display:block;color:var(--muted);font-size:10.5px}.mtc .dv b{font-size:14px}
+.mtc .raw{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;background:rgba(127,127,127,.09);border-radius:5px;padding:4px 7px;white-space:pre-wrap;word-break:break-word}
+.mtc .raw.taf{margin-top:4px}.mtc .raw .k{font-weight:800;color:#0b63ce}.mtc button.q{font:inherit;font-size:12px;font-weight:700;padding:2px 9px;border-radius:10px;border:1px solid #9cc1ee;background:#eef5ff;color:#0b63ce;cursor:pointer}#wpTab td.wx{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);padding:2px 6px;white-space:nowrap}#wpTab th.wx{text-align:right;line-height:1.1}#wpTab td.wxfl{text-align:left}#wpTab td.hot{color:#c0392b;font-weight:800}#wpTab tr.under td{opacity:.5}#wpTab td.wx small{color:var(--muted);font-size:10.5px}
 #wpTab .fl{display:inline-block;font-size:10.5px;font-weight:800;border-radius:8px;padding:0 6px;margin-right:3px;color:#fff}#wpTab .fl.ic{background:#0088c8}#wpTab .fl.cl{background:#6b7b8b}#wpTab .fl.sh{background:#c46a00}@media (max-width:560px){#wpTab input{width:48px!important;padding:3px 4px!important;font-size:14px!important}#wpTab input[data-k=l]{width:56px!important}#wpTab td{padding:2px 2px!important}#wpTab th{padding:2px 3px!important;font-size:10.5px!important}#wpTab .wpz{min-width:44px!important;font-size:12px}#wpTab button{width:30px!important}#wpTab button.wpfin{margin-right:2px}}#wpTab button.wpfin{color:#2f6fb0;font-weight:800;margin-right:4px;width:34px}
 .wfov{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998}
 .wfs{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(560px,100%);max-height:92vh;overflow:auto;z-index:9999;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-bottom:0;border-radius:14px 14px 0 0;box-shadow:0 -6px 30px rgba(0,0,0,.35);padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
@@ -903,6 +910,13 @@ a{color:#7cc4ff}
             <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
             <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
             <div class="wpres" id="wpRes"></div>
+          </div>
+          <div class="wprof" id="mtBox">
+            <h3>空港・飛行場の METAR / TAF（現場の近い順）</h3>
+            <div class="mtctl"><button type="button" class="pri" id="mtGo">✈ 最新の METAR / TAF を読み込む</button><span class="hint" id="mtMsg"></span>
+              <label class="chk"><input type="checkbox" id="mtTaf" checked> TAF も表示</label><select id="mtN" aria-label="表示する数"><option value="3">近い 3 か所</option><option value="5" selected>近い 5 か所</option><option value="8">近い 8 か所</option></select></div>
+            <div id="mtList"></div>
+            <p class="legend">気象庁が発表した METAR（定時・特別観測）と TAF（運航用飛行場予報）を、米国 NOAA の航空気象センター（aviationweather.gov）が中継しているものを、10 分ごとに取得して表示します。自衛隊の飛行場などは含まれないことがあります。色は VFR（緑）・MVFR（青：シーリング 3,000 ft 以下か視程 8 km 以下）・IFR（赤：1,000 ft 未満か 5 km 未満）・LIFR（紫：500 ft 未満か 1.6 km 未満）の目安です。運航判断には正式な気象情報（MetAir など）を使ってください。</p>
           </div>
         </div>
       </div>
@@ -2419,6 +2433,59 @@ async function radarAt(la,lo){ window.RNOW=null; try{
   const v=n.v, jst=new Date(Date.UTC(+v.slice(0,4),+v.slice(4,6)-1,+v.slice(6,8),+v.slice(8,10),+v.slice(10,12))+9*3600e3);
   window.RNOW={at:c0,mx,time:`${jst.getUTCMonth()+1}/${jst.getUTCDate()} ${String(jst.getUTCHours()).padStart(2,'0')}:${String(jst.getUTCMinutes()).padStart(2,'0')}`};
   }catch(e){ window.RNOW={err:1}; } }
+// ---- METAR / TAF of nearby aerodromes. wx.json is refreshed every 10 min by a GitHub Actions job
+//      (NOAA Aviation Weather Center data API, which relays the JMA reports) and served from raw.githubusercontent.com.
+const MT={d:null,key:'',busy:false};
+const MT_URL='https://raw.githubusercontent.com/realbon1-max/hoistops/wx/wx.json';
+try{ const v=JSON.parse(localStorage.getItem('sd139mt')||'null'); if(v&&v.metar) MT.d=v; }catch(e){}
+const MT_WX={RA:'雨',SN:'雪',DZ:'霧雨',SG:'霧雪',PL:'凍雨',GR:'ひょう',GS:'あられ',IC:'細氷',UP:'不明の降水',BR:'もや',FG:'霧',FU:'煙',VA:'火山灰',DU:'ちり',SA:'砂',HZ:'煙霧',SQ:'スコール',FC:'竜巻',SS:'砂じん嵐',DS:'じん嵐',PO:'じん旋風'};
+const MT_DS={MI:'地を這う',BC:'散在する',PR:'部分的な',DR:'低い地吹',BL:'高い地吹',SH:'しゅう雨性の',TS:'雷',FZ:'着氷性の'};
+function mtParse(raw){ const r={wx:[],cl:[]}; if(!raw) return r; const T=raw.split(/\s+/);
+  for(let k=0;k<T.length;k++){ const t=T[k]; if(/^(RMK|NOSIG|TEMPO|BECMG)$/.test(t)) break; let m;
+    if(m=t.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/)){ const f=m[4]==='MPS'?1.944:1; r.wd=m[1]==='VRB'?null:+m[1]; r.ws=Math.round(+m[2]*f); r.wg=m[3]?Math.round(+m[3]*f):null; continue; }
+    if(m=t.match(/^(\d{3})V(\d{3})$/)){ r.wv=[+m[1],+m[2]]; continue; }
+    if(t==='CAVOK'){ r.vis=10000; r.cavok=1; continue; }
+    if(m=t.match(/^(\d+)SM$/)){ r.vis=Math.min(10000,Math.round(+m[1]*1609)); continue; }
+    if(/^\d{4}$/.test(t)&&r.vis==null&&k>2){ r.vis=+t; continue; }
+    if(m=t.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)(CB|TCU)?/)){ r.cl.push({c:m[1],h:m[2]==='///'?null:+m[2]*100,x:m[3]||''}); continue; }
+    if(m=t.match(/^(M?\d{2})\/(M?\d{2})?$/)){ r.t=+m[1].replace('M','-'); if(m[2]) r.td=+m[2].replace('M','-'); continue; }
+    if(m=t.match(/^Q(\d{4})$/)){ r.q=+m[1]; continue; } if(m=t.match(/^A(\d{4})$/)){ if(r.q==null) r.q=Math.round(+m[1]/100*33.8639); continue; }
+    if((m=t.match(/^(\+|-|VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?((?:DZ|RA|SN|SG|PL|GR|GS|IC|UP|BR|FG|FU|VA|DU|SA|HZ|SQ|FC|SS|DS|PO)+)?$/))&&(m[2]||m[3])){
+      const ph=(m[3]||'').match(/../g)||[]; r.wx.push((m[1]==='+'?'強い':m[1]==='-'?'弱い':m[1]==='VC'?'付近で':'')+(m[2]?MT_DS[m[2]]:'')+ph.map(x=>MT_WX[x]||x).join('・')+(m[2]==='TS'&&!ph.length?'（雷電）':'')); } }
+  const ce=r.cl.filter(c=>/BKN|OVC|VV/.test(c.c)&&c.h!=null).map(c=>c.h); r.ceil=ce.length?Math.min(...ce):null;
+  const v=r.vis!=null?r.vis:99999, c=r.ceil!=null?r.ceil:99999;
+  r.cat=(c<500||v<1600)?'LIFR':(c<1000||v<5000)?'IFR':(c<=3000||v<=8000)?'MVFR':'VFR'; return r; }
+const MT_JA={RJCC:'新千歳',RJCJ:'千歳',RJCH:'函館',RJCB:'帯広',RJCK:'釧路',RJCM:'女満別',RJCN:'中標津',RJCW:'稚内',RJEC:'旭川',RJCO:'札幌丘珠',RJER:'利尻',RJEB:'紋別',RJEO:'奥尻',RJSA:'青森',RJSM:'三沢',RJSH:'八戸',RJSI:'花巻',RJSK:'秋田',RJSR:'大館能代',RJSY:'庄内',RJSC:'山形',RJSS:'仙台',RJST:'松島',RJSU:'霞目',RJSF:'福島',RJSN:'新潟',RJSD:'佐渡',RJTT:'羽田',RJAA:'成田',RJTJ:'入間',RJTY:'横田',RJTA:'厚木',RJAH:'百里',RJTU:'宇都宮',RJTL:'下総',RJTK:'木更津',RJTE:'館山',RJTF:'調布',RJAK:'霞ヶ浦',RJTO:'大島',RJTH:'八丈島',RJAN:'新島',RJAZ:'神津島',RJTQ:'三宅島',RJTC:'立川',RJTR:'キャンプ座間',RJAF:'松本',RJNT:'富山',RJNK:'小松',RJNW:'能登',RJNS:'静岡',RJGG:'中部',RJNA:'名古屋',RJNG:'岐阜',RJNH:'浜松',RJNY:'静浜',RJNO:'隠岐',RJBB:'関西',RJOO:'伊丹',RJBE:'神戸',RJBD:'南紀白浜',RJBT:'但馬',RJOY:'八尾',RJOE:'明野',RJOF:'防府',RJOZ:'小月',RJOB:'岡山',RJOA:'広島',RJOI:'岩国',RJOW:'石見',RJOC:'出雲',RJOH:'美保',RJOR:'鳥取',RJDC:'山口宇部',RJOT:'高松',RJOK:'高知',RJOM:'松山',RJOS:'徳島',RJOP:'小松島',RJFF:'福岡',RJFR:'北九州',RJFS:'佐賀',RJFU:'長崎',RJFT:'熊本',RJFO:'大分',RJFM:'宮崎',RJFK:'鹿児島',RJFN:'新田原',RJFZ:'築城',RJFA:'芦屋',RJFY:'鹿屋',RJFE:'福江',RJDB:'壱岐',RJDT:'対馬',RJFG:'種子島',RJKA:'奄美',RJKN:'徳之島',RJKB:'沖永良部',RJFC:'屋久島',ROAH:'那覇',RODN:'嘉手納',ROMD:'南大東',ROKJ:'久米島',ROMY:'宮古',RORS:'下地島',ROIG:'石垣',ROYN:'与那国',ROTM:'普天間',RORK:'北大東',RORY:'与論',RJAM:'南鳥島'};
+const MT_COL={VFR:'#2e7d32',MVFR:'#1565c0',IFR:'#c62828',LIFR:'#8e24aa'};
+function mtNm(la1,lo1,la2,lo2){ const R=Math.PI/180, dl=(lo2-lo1)*R, a=Math.sin((la2-la1)*R/2)**2+Math.cos(la1*R)*Math.cos(la2*R)*Math.sin(dl/2)**2, d=2*6371*Math.asin(Math.sqrt(a))/1.852;
+  const y=Math.sin(dl)*Math.cos(la2*R), x=Math.cos(la1*R)*Math.sin(la2*R)-Math.sin(la1*R)*Math.cos(la2*R)*Math.cos(dl); return [d,(Math.atan2(y,x)/R+360)%360]; }
+async function mtLoad(){ if(MT.busy) return; MT.busy=true; const b=$('mtGo'); if(b){ b.disabled=true; b.textContent='読み込み中…'; }
+  try{ const r=await fetch(MT_URL+'?t='+Math.floor(Date.now()/60000),{cache:'no-cache'}); if(!r.ok) throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.metar) throw new Error('データなし');
+    MT.d=d; try{ localStorage.setItem('sd139mt',JSON.stringify(d)); }catch(e){} MT.err=null; }catch(e){ MT.err=e.message||String(e); }
+  MT.busy=false; if(b){ b.disabled=false; b.textContent='✈ METAR / TAF を読み込み直す'; } MT.key=''; mtRender(); }
+function mtRender(){ const box=$('mtList'); if(!box) return; const d=MT.d, msg=$('mtMsg');
+  const c=MAP.pick&&!MAP.pick.loading?MAP.pick:{lat:BASE.lat,lon:BASE.lon}, n=+(($('mtN')||{}).value||5), tf=!$('mtTaf')||$('mtTaf').checked;
+  const key=[c.lat.toFixed(3),c.lon.toFixed(3),n,tf,d?d.t:0,Math.floor(Date.now()/60000)].join(','); if(key===MT.key) return; MT.key=key;
+  if(!d){ msg.textContent=MT.err?`読み込めませんでした（${MT.err}）`:''; box.innerHTML=''; return; }
+  const age=Math.round((Date.now()/1000-d.t)/60); msg.innerHTML=`取得 ${new Date(d.t*1000).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}（${age} 分前）${MT.err?`<span class="old">　更新できませんでした：${MT.err}（前回の取得分を表示）</span>`:''}${age>40?'<span class="old">　データが古くなっています</span>':''}`;
+  const L=d.metar.filter(m=>m.lat!=null&&m.raw).map(m=>{ const [nm,br]=mtNm(c.lat,c.lon,m.lat,m.lon); return {...m,nm,br}; }).sort((a,b)=>a.nm-b.nm);
+  const bs=d.metar.filter(m=>m.lat!=null).map(m=>({m,d:mtNm(BASE.lat,BASE.lon,m.lat,m.lon)[0]})).sort((a,b)=>a.d-b.d)[0];
+  let show=L.slice(0,n); if(bs&&!show.some(x=>x.id===bs.m.id)){ const x=L.find(x=>x.id===bs.m.id); if(x) show.push(x); }
+  const f0=v=>Math.round(v).toLocaleString(), P3=v=>String(Math.round(v)%360).padStart(3,'0');
+  box.innerHTML=show.map(m=>{ const p=mtParse(m.raw), col=MT_COL[p.cat], ag=m.obs?Math.round((Date.now()/1000-m.obs)/60):null, ob=m.obs?new Date(m.obs*1000):null;
+    const nmj=MT_JA[m.id]||(m.name||'').replace(/,.*$/,'').replace(/ Arpt| Intl| Airport/g,''), ta=d.taf.find(t=>t.id===m.id), isB=bs&&bs.m.id===m.id;
+    const it=(l,v)=>`<div><small>${l}</small><b>${v}</b></div>`;
+    const wind=p.ws==null?'—':p.ws===0?'静穏':`${p.wd==null?'VRB':P3(p.wd)+'°'} / ${p.ws}${p.wg?`G${p.wg}`:''} kt${p.wv?`<small>${P3(p.wv[0])}〜${P3(p.wv[1])}° で変化</small>`:''}`;
+    const cl=p.cavok?'CAVOK':p.cl.length?p.cl.map(x=>`${x.c}${x.h!=null?' '+f0(x.h):''}${x.x?' '+x.x:''}`).join('・'):'—';
+    const tafHtml=tf&&ta?`<div class="raw taf">${ta.raw.replace(/\s+(?=(BECMG|TEMPO|FM\d{6}|PROB\d{2}))/g,'\n  ').replace(/\b(BECMG|TEMPO|FM\d{6}|PROB\d{2})\b/g,'<span class="k">$1</span>')}</div>`:'';
+    return `<div class="mtc" style="--cat:${col}"><div class="hd"><b>${m.id}</b><span class="nm">${nmj}</span><span class="cat">${p.cat}</span>${isB?'<small>基地に最寄り</small>':''}
+      <small>現場から ${P3(m.br)}°（真）・${m.nm.toFixed(0)} NM</small><small${ag!=null&&ag>75?' class="old"':''}>${ob?`${String(ob.getHours()).padStart(2,'0')}:${String(ob.getMinutes()).padStart(2,'0')} 観測（${ag} 分前）`:''}</small>
+      ${p.q?`<button type="button" class="q" data-q="${p.q}">QNH ${p.q} を使う</button>`:''}</div>
+      <div class="dv">${it('風',wind)}${it('視程',p.vis==null?'—':p.vis>=9999?'10 km 以上':p.vis>=5000?`${(p.vis/1000).toFixed(0)} km`:`${f0(p.vis)} m`)}${it('天気',p.wx.length?p.wx.join('、'):'—')}${it('雲（ft）',cl)}${it('シーリング',p.ceil!=null?`${f0(p.ceil)} ft`:'なし')}${it('気温／露点',p.t!=null?`${p.t}／${p.td!=null?p.td:'—'} ℃`:'—')}${it('QNH',p.q?`${p.q} hPa<small>${(p.q/33.8639).toFixed(2)} inHg</small>`:'—')}</div>
+      <div class="raw">${m.raw}</div>${tafHtml}</div>`; }).join('')||'<p class="hint">表示できる METAR がありません。</p>';
+  box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{ setMaster(null,+b.dataset.q,null); b.textContent=`QNH ${b.dataset.q} を入れました`; }); }
+setTimeout(()=>{ if($('mtGo')){ $('mtGo').onclick=mtLoad; $('mtN').onchange=()=>{ MT.key=''; mtRender(); }; $('mtTaf').onchange=()=>{ MT.key=''; mtRender(); }; mtRender(); if(navigator.onLine!==false) mtLoad(); }
+  setInterval(()=>{ try{ mtRender(); }catch(e){} },3000); setInterval(()=>{ if(navigator.onLine!==false&&!document.hidden) mtLoad(); },5*60000); },900);
 async function jmaTimes(force){ const need=GOVL.some(L=>L.jma&&GOV.on[L.k]); if(!need||JMAT.busy) return; if(!force&&Date.now()-JMAT.t<4*60000) return; JMAT.busy=true; JMAT.t=Date.now();
   const get=async(u,f)=>{ try{ const r=await fetch(u,{cache:'no-cache'}); if(!r.ok) throw 0; const a=await r.json(); return f(a); }catch(e){ return null; } };
   const now=Date.now();
