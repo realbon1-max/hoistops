@@ -445,7 +445,10 @@ details.mset>summary.msh{cursor:pointer}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
 #mMark{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;pointer-events:none;z-index:5}
-#mMark svg{display:block;width:100%;height:100%;transition:transform .15s}
+#mMark svg{display:block;width:100%;height:100%;transition:transform .2s,filter .2s}
+#mMark.hi svg{transform:translate(-6px,-9px) scale(1.12);filter:drop-shadow(0 0 4px rgba(120,190,255,.95))}#mMark.hi::before{content:'';position:absolute;left:18px;top:24px;width:44px;height:34px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.85),rgba(0,0,0,.45) 60%,transparent);filter:blur(1.5px)}
+#mMark .mkalt i{font-style:normal;color:#ffd23f;margin-left:4px}
+#mMark .mkalt{position:absolute;left:50%;top:100%;transform:translate(-50%,2px);font-size:10.5px;font-weight:800;white-space:nowrap;color:#fff;background:#2f6fb0;border-radius:8px;padding:1px 6px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 #mMark .heliimg{filter:none!important}
 .mzoom{position:absolute;right:10px;top:10px;display:grid;gap:4px;z-index:5}
 .mzoom button{width:34px;height:34px;font-size:20px;line-height:1;border:1px solid #9aa4ae;background:#fff;color:#15253a;border-radius:4px;cursor:pointer}
@@ -1441,7 +1444,7 @@ function drawRel(Happ,T){
 const inputs=['hp','oat'];
 inputs.forEach(id=>{const n=$(id),r=$(id+'R');n.addEventListener('input',()=>{r.value=n.value;update()});r.addEventListener('input',()=>{n.value=r.value;update()});});
 const hhP2V=p=>{ p=Math.max(0,Math.min(1000,+p||0)); return p<=500?Math.round(p/500*300/5)*5:Math.round((300+(p-500)/500*4700)/50)*50; }, hhV2P=v=>{ v=Math.max(0,+v||0); return v<=300?Math.round(v/300*500):Math.min(1000,Math.round(500+(v-300)/4700*500)); };
-const hhTouch=()=>{ try{ if(GT.on){ RD.simUntil=Date.now()+30000; clearTimeout(RD.simEndT); RD.simEndT=setTimeout(()=>{ RD.simUntil=0; rdDraw(); rdPanel(); try{ gtSpd(); }catch(e){} },30200); } }catch(e){} };
+const hhTouch=()=>{ try{ if(GT.on){ RD.simUntil=Date.now()+30000; clearTimeout(RD.simEndT); clearInterval(RD.simTick); RD.simTick=setInterval(()=>{ try{ rdBox(); mkHeli(); }catch(e){} },1000); RD.simEndT=setTimeout(()=>{ RD.simUntil=0; clearInterval(RD.simTick); try{ mkHeli(); }catch(e){} rdDraw(); rdPanel(); try{ gtSpd(); }catch(e){} },30200); } }catch(e){} };
 $('hh').addEventListener('input',()=>{hhTouch();$('hhR').value=hhV2P($('hh').value);update()});$('hhR').addEventListener('input',()=>{hhTouch();$('hh').value=hhP2V($('hhR').value);update()});
 function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; if(+r.value!==hhV2P(v)&&document.activeElement!==r) r.value=hhV2P(v); const hp=(hhV2P(v)/10).toFixed(1)+'%'; r.style.setProperty('--hp',hp); r.classList.toggle('hhhi',v>300); r.style.setProperty('--trk',v>300?`linear-gradient(90deg,#2f6fb0 0 50%,transparent 50%),linear-gradient(90deg,transparent 0 ${hp},#d9dee5 ${hp}),repeating-linear-gradient(-45deg,#2f6fb0 0 3px,#dbe8f6 3px 8px)`:`linear-gradient(90deg,#2f6fb0 0,#2f6fb0 ${hp},#d9dee5 ${hp})`); const m=$('hhM'); if(m) m.textContent=`約 ${Math.round(v/3.28084)} m`; }
 document.querySelectorAll('.hhbtns [data-hd]').forEach(b=>b.onclick=()=>{ hhTouch(); const v=Math.max(0,Math.min(5000,Math.round(((+$('hh').value||0)+(+b.dataset.hd))/5)*5)); $('hh').value=v; $('hhR').value=hhV2P(v); update(); });
@@ -1510,7 +1513,7 @@ function drawCeil(H,T,W,wind){
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
-function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ rdSim(); }catch(e){} try{ wfCheck(); }catch(e){} try{ hlimRender(); }catch(e){}
+function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(e){} try{ rdSim(); }catch(e){} try{ wfCheck(); }catch(e){} try{ hlimRender(); }catch(e){}
   $('gw').value=Math.round(totalGW()); $('gwTotal').textContent=Math.round(totalGW()).toLocaleString()+' kg'+(totalGW()>MTOW()?`（最大 ${MTOW().toLocaleString()} kg 超過）`:totalGW()>CHW?'（6,400 kg超：性能図の範囲外）':'');
   const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW(), hh=+$('hh').value;
   const isa=ISA(H), dev=T-isa;
@@ -1894,6 +1897,7 @@ function mapSetBase(k){ MAP.base=k; document.querySelectorAll('#mBase button').f
 // picked point drawn as a small top-view helicopter whose nose follows the heading (HDG)
 function mkHeli(){ const mk=$('mMark'); if(!mk) return; if(!mk.firstChild||mk.dataset.v!=='h'){ mk.dataset.v='h';
     mk.innerHTML=`<svg viewBox="-26 -26 52 52" aria-hidden="true"><circle r="21" fill="rgba(176,38,140,.18)" stroke="#b0268c" stroke-width="2.2"/><circle r="22.5" fill="none" stroke="#fff" stroke-width="1.2"/><g class="mkh"><path d="M0,-25 L4.5,-18 L-4.5,-18 Z" fill="#b0268c" stroke="#fff" stroke-width="1"/><g stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><g stroke="#15253a" stroke-width="1.6" stroke-linecap="round">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><path d="M0,-13 C4.5,-13 5.5,-6 5,1 C4.6,6 2.5,8 1.6,9 L1.2,19 L5,20.5 L5,22.5 L-5,22.5 L-5,20.5 L-1.2,19 L-1.6,9 C-2.5,8 -4.6,6 -5,1 C-5.5,-6 -4.5,-13 0,-13 Z" fill="#1d4d9a" stroke="#fff" stroke-width="1.3"/><path d="M-2.6,-9.5 Q0,-12 2.6,-9.5 L2.2,-6.5 L-2.2,-6.5 Z" fill="#9fd0ff"/><circle r="2" fill="#fff" stroke="#15253a" stroke-width="1"/></g></svg>`; }
+  { const hv=+(($('hh')||{}).value)||0, hi=hv>300; mk.classList.toggle('hi',hi); let t=mk.querySelector('.mkalt'); if(hi){ if(!t){ t=document.createElement('div'); t.className='mkalt'; mk.appendChild(t); } const left=GT.on&&typeof RD!=='undefined'?Math.ceil(((RD.simUntil||0)-Date.now())/1000):0; t.innerHTML='▲'+hv.toLocaleString()+' ft'+(left>0?`<i>⏱${left}秒でGPSへ</i>`:''); } else if(t) t.remove(); }
   const hd=((+$('hdg').value%360)+360)%360; const g=mk.querySelector('.mkh'); if(g) g.setAttribute('transform',`rotate(${hd})`); try{ radarDraw(); }catch(e){} mk.title='機首 '+String(Math.round(hd)).padStart(3,'0')+'°'; }
 function mapScale(){ const el=$('mScale'), m=$('map'); if(!el||!m) return; const la=y2lat(MAP.cy,MAP.z), mpp=40075016.686*Math.cos(la*Math.PI/180)/(256*Math.pow(2,MAP.z));
   const nd=niceDist(mpp*Math.min(140,m.clientWidth*0.3)), d=nd.m, px=d/mpp;
@@ -2806,7 +2810,8 @@ function rdSim(force){ if(!RD.show||!RD.sim||!rdSimOn()){ return; } const a=rdSi
     try{ RD.plan=await rdCheck([a.p.lat,a.p.lon],a.alt); RD.planAlt=a.alt; }catch(e){} RD.simBusy=false; rdDraw(); rdPanel(); },350); }
 function rdBox(){ let e=$('mRdV'); if(!e){ e=document.createElement('div'); e.id='mRdV'; e.className='mgpsv'; $('map').appendChild(e); }
   if(!rdSimOn()||!RD.show||!RD.plan.length){ e.hidden=true; return; } e.hidden=false; if(GT.on){ const g=$('mGpsV'); if(g) g.hidden=true; } const fm=n=>Math.round(n).toLocaleString();
-  e.innerHTML=`<small>📡 無線シミュレーション（地点の上 ${fm(+$('hh').value||0)} ft・海抜 ${fm((RD.planAlt||0)*FT)} ft）</small>`+RD.plan.map(r=>`<span class="gl">${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`).join(''); }
+  const left=GT.on?Math.max(0,Math.ceil(((RD.simUntil||0)-Date.now())/1000)):0;
+  e.innerHTML=(GT.on?`<small style="color:#a06a00;font-weight:800">⏱ ${left}秒後にGPS表示へ</small><br>`:'')+`<small>📡 無線シミュレーション（地点の上 ${fm(+$('hh').value||0)} ft・海抜 ${fm((RD.planAlt||0)*FT)} ft）</small>`+RD.plan.map(r=>`<span class="gl">${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`).join(''); }
 function rdUI(){ if($('mRdB')) return; const b=document.createElement('button'); b.type='button'; b.id='mRdB'; b.className='msnap mrdb'; b.title='無線の見通しを地図に表示'; b.setAttribute('aria-label','無線の見通し表示'); b.setAttribute('aria-pressed',RD.show);
   b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 13v9M9 22h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="10.5" r="2.2" fill="currentColor"/><path d="M7.6 6.2a6 6 0 0 0 0 8.6M16.4 6.2a6 6 0 0 1 0 8.6M4.6 3.4a10 10 0 0 0 0 14.2M19.4 3.4a10 10 0 0 1 0 14.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
   $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',e=>{ e.stopPropagation(); RD.show=!RD.show; rdSaveV(); b.setAttribute('aria-pressed',RD.show); RD.lastT=0; RD.simKey='';
