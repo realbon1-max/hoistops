@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "HOIST OPS 仙台｜AW139",
-  "short_name": "HOIST 仙台",
+  "name": "HOIST OPS MPP｜AW139",
+  "short_name": "HOIST OPS MPP",
   "description": "AW139 ホイスト運用（仙台・霞目版）：ホバリング性能・風・地形・離脱の判定（訓練用の目安）",
   "lang": "ja",
   "start_url": "./index.html",
