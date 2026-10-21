@@ -3293,8 +3293,6 @@ function drawLayer(){ const sv=$('mDraw'), el=$('map'); if(!sv) return; const z=
     if(it.t==='txt') h+=`<text x="${x}" y="${y}" font-size="15" font-weight="800" fill="#111" text-anchor="middle" ${halo}>${esc(it.text)}</text>`; });
   if(DRAW.tmp.length){ const q=DRAW.tmp, rt=DRAW.mode==='route'; if(q.length>1) h+=`<polyline points="${pp(DRAW.mode==='area'&&q.length>2?[...q,q[0]]:q)}" fill="${DRAW.mode==='area'?'#7a3fd022':'none'}" stroke="${rt?'#e8590c':'#7a3fd0'}" stroke-width="${rt?3:2}" stroke-dasharray="${rt?'':'5 4'}" stroke-linejoin="round"/>`;
     (rt?q.filter((p,i)=>i===0||i===q.length-1||q.length<60):q).forEach(p=>{ const [x,y]=P(...p); h+=`<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${DRAW.mode==='area'?'#7a3fd0':'#111'}" stroke-width="2.5"/>`; }); }
-  DRAW.items.forEach(it=>{ if(it.t!=='circ'&&it.t!=='grid') return; const [x,y]=P(it.lat,it.lon); if(x<-30||y<-30||x>el.clientWidth+30||y>el.clientHeight+30) return; const c=it.t==='circ'?C:B, on=DRAW.mv&&DRAW.mv.it===it;
-    h+=`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})" opacity="${on?1:.9}"><circle r="${on?15:12}" fill="#fff" fill-opacity=".92" stroke="${c}" stroke-width="2"/><path d="M0,-8L-3,-4.5H3ZM0,8L-3,4.5H3ZM-8,0L-4.5,-3V3ZM8,0L4.5,-3V3Z" fill="${c}"/><path d="M0,-5V5M-5,0H5" stroke="${c}" stroke-width="1.6"/></g>`; });
   if(DRAW.mv){ const [x,y]=P(DRAW.mv.it.lat,DRAW.mv.it.lon); h+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="22" fill="none" stroke="#ff8a1f" stroke-width="3" stroke-dasharray="5 4"/>`; }
   sv.innerHTML=h; }
 // hit test for moving drawn items: circle / grid handles, points, text (direct drag); rescue points (dest) need a long press
