@@ -853,7 +853,7 @@ a{color:#7cc4ff}
         <label class="chk rchk"><input type="checkbox" id="r_lk" checked> 規正値をQNHに合わせる</label>
       </div>
       <div class="rbtns"><button type="button" data-p="std">標準大気</button><button type="button" data-p="sum">夏・低気圧</button><button type="button" data-p="win">冬・高気圧</button><button type="button" data-p="forget">規正し忘れ（冬）</button></div>
-      <div class="rbtns2"><span>ヘリの高さを</span><button type="button" id="acSite">現場の標高に合わせる</button><button type="button" id="acHover">現場＋ホバリング高度に合わせる</button><span id="acNote"></span></div>
+      <div class="rbtns2"><button type="button" id="relWx" class="mwmsm" style="margin:0 8px 0 0;padding:5px 10px">🌐 気象庁MSMの雲・0℃高度・雨を重ねる</button><span>ヘリの高さを</span><button type="button" id="acSite">現場の標高に合わせる</button><button type="button" id="acHover">現場＋ホバリング高度に合わせる</button><span id="acNote"></span></div>
       <svg id="relScene" viewBox="0 0 760 450" role="img" aria-label="海抜、気圧高度、密度高度と航空機の高度の関係"></svg>
       <div class="relcards">
         <div class="rc"><div class="l">海抜（本当の高さ）</div><div class="v" id="r1"></div><div class="s" id="r1s"></div></div>
@@ -1403,6 +1403,20 @@ function drawRel(Happ,T){
   // 1013 hPa surface
   const z0=-c.off, yz=Y(z0);
   h+=`<line x1="0" y1="${yz}" x2="760" y2="${yz}" stroke="var(--curve)" stroke-width="2" stroke-dasharray="7 5"/><text x="10" y="${yz>Y(0)?yz+36:yz-8}" font-size="13" fill="var(--curve)">1013 hPaの面（標準大気の0）${Math.abs(c.off)>20?`：海面の${z0<0?'下':'上'} ${fm(Math.abs(c.off))} ft`:''}</text>`;
+  // weather from JMA numerical forecast: cloud layers (RH), freezing level, precipitation
+  if(window.WXP&&WXP.pr&&WXP.pr.length>1){ const P=WXP.pr.slice().sort((a,b)=>a.z-b.z), yl=v=>Math.max(T0,Math.min(B0,Y(v))); let cb=null; const B=[];
+    for(let k=0;k<P.length-1;k++){ const a=P[k], b=P[k+1]; if(a.rh==null||b.rh==null) continue; const m=(a.rh+b.rh)/2; if(m<80) continue; const c=m>=90?2:1, L=B[B.length-1];
+      if(L&&L.c===c&&L.top===a.z){ L.top=b.z; L.mx=Math.max(L.mx,m); } else B.push({c,bot:a.z,top:b.z,mx:m}); }
+    B.forEach(r=>{ const y1=yl(r.top), y2=yl(r.bot); if(y2-y1<1) return; if(r.c===2&&cb==null) cb=r.bot;
+      h+=`<rect x="0" y="${y1}" width="700" height="${y2-y1}" fill="#a9b6c3" fill-opacity="${r.c===2?.42:.18}"${r.c===2?'':' stroke="#a9b6c3" stroke-opacity=".6" stroke-dasharray="6 5"'}/>`;
+      if(y2-y1>13) h+=`<text x="12" y="${y1+15}" font-size="12" font-weight="800" fill="var(--ink)" opacity=".8" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${r.c===2?'☁ 雲':'雲の可能性'} ${fm(r.bot)}〜${fm(r.top)} ft（湿度 最大${Math.round(r.mx)}%）</text>`; });
+    for(let k=0;k<P.length-1;k++){ const a=P[k], b=P[k+1]; if((a.t>=0)!==(b.t>=0)){ const fz=a.z+(b.z-a.z)*(a.t/(a.t-b.t)), y=Y(fz); if(y>T0&&y<B0){
+      h+=`<line x1="0" y1="${y}" x2="700" y2="${y}" stroke="#00a8e0" stroke-width="2.4" stroke-dasharray="12 4 3 4"/><text x="405" y="${y-6}" text-anchor="end" font-size="13" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3.5">0℃ フリージングレベル ${fm(fz)} ft</text>`; } break; } }
+    if(P[0].t<0) h+=`<text x="405" y="${Math.min(B0,Y(0))-26}" text-anchor="end" font-size="12" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3">地上付近から 0℃ 以下（着氷に注意）</text>`;
+    const bot=Math.min(B0,Y(0));
+    if(WXP.rain>0.05){ const top=cb!=null?Math.max(T0,Y(cb)):T0+20; let ln=''; for(let x=8;x<700;x+=15) ln+=`M${x},${top}L${x-9},${bot}`;
+      h+=`<path d="${ln}" stroke="#3d8bd9" stroke-width="1.4" opacity=".45"/><text x="12" y="${bot-24}" font-size="13" font-weight="800" fill="#3d8bd9" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${(WXP.t2!=null&&WXP.t2<1.5)?'❄ 雪・みぞれ':'☂ 雨'} ${WXP.rain.toFixed(1)} mm/h${cb!=null?`（雲底 約${fm(cb)} ft から）`:''}</text>`; }
+    h+=`<text x="12" y="${bot-8}" font-size="11" fill="var(--muted)" paint-order="stroke" stroke="var(--paper)" stroke-width="3">気象庁${WXP.model} ${WXP.time} の格子予報（実況ではありません）</text>`; }
   // mountain
   const sx=230, sy=Y(c.eft);
   h+=`<polygon points="20,${Y(0)} 80,${Y(0)-18} 160,${sy+60} ${sx},${sy} 280,${sy+40} 360,${Y(0)-14} 400,${Y(0)}" fill="#888780" opacity=".55"/>`;
@@ -3995,17 +4009,20 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
   const jmaApply=()=>{ const d=JMA.data, i=+$('jmaT').value; if(!d) return; const H=d.hourly, rows=[];
     JMA.lv.forEach(l=>{ const t=H[`temperature_${l}hPa`], w=H[`wind_speed_${l}hPa`], a=H[`wind_direction_${l}hPa`]; if(!t||t[i]==null) return; rows.push({l:String(l),t:t[i].toFixed(1),d:a&&a[i]!=null?String(Math.round(a[i]/5)*5%360):'',s:w&&w[i]!=null?String(Math.round(w[i])):''}); });
     if(!rows.length){ $('jmaMsg').textContent='この時刻のデータがありません。'; return; }
+    { const pr=[]; JMA.lv.forEach(l=>{ const t=H[`temperature_${l}hPa`], z=H[`geopotential_height_${l}hPa`], rh=H[`relative_humidity_${l}hPa`]; if(t&&t[i]!=null&&z&&z[i]!=null) pr.push({p:l,t:t[i],z:z[i]*FT,rh:rh&&rh[i]!=null?rh[i]:null}); });
+      window.WXP={pr,rain:H.precipitation?H.precipitation[i]:null,t2:H.temperature_2m?H.temperature_2m[i]:null,time:$('jmaT').selectedOptions[0].textContent.replace('（今）',''),model:$('jmaM').value==='jma_msm'?'MSM':'GSM'}; }
     WP.base='hpa'; WP.rows=rows; WP.auto=true; WP.lastKey=''; const tb=$('wpTab'); tb.dataset.built=''; wpSave();
     document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
     $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
   $('jmaT').onchange=jmaApply;
   jmaBind2();
+  if($('relWx')) $('relWx').onclick=async()=>{ const b=$('relWx'); if(!(MAP.pick&&!MAP.pick.loading)){ b.textContent='先に地図で現場を選んでください'; setTimeout(()=>b.textContent='🌐 気象庁MSMの雲・0℃高度・雨を重ねる',2500); return; } b.disabled=true; b.textContent='読み込み中…'; try{ await $('jmaGo').onclick(); }catch(e){} b.disabled=false; b.textContent='🌐 気象庁MSMを読み込み直す'; try{ update(); }catch(e){} };
   $('jmaGo').onclick=async()=>{ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z), b=$('jmaGo'), m=$('jmaMsg');
     if(navigator.onLine===false){ m.textContent='オフラインのため読み込めません。'; return; }
-    const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`));
-    const url=`https://api.open-meteo.com/v1/jma?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&hourly=${vars.join(',')}&models=${$('jmaM').value}&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`;
+    const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`)); const vx=[]; JMA.lv.forEach(l=>vx.push(`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`)); vx.push('precipitation','temperature_2m');
+    const mk=v=>`https://api.open-meteo.com/v1/jma?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&hourly=${v.join(',')}&models=${$('jmaM').value}&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`, url=mk(vars.concat(vx));
     b.disabled=true; b.textContent='読み込み中…';
-    try{ const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.hourly||!d.hourly.time) throw new Error(d.reason||'データなし'); JMA.data=d;
+    try{ let r=await fetch(url); if(r.status===400) r=await fetch(mk(vars)); if(!r.ok) throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.hourly||!d.hourly.time) throw new Error(d.reason||'データなし'); JMA.data=d;
       const T=d.hourly.time, now=new Date(), j=new Date(now.getTime()+9*3600e3), key=j.toISOString().slice(0,13);
       let best=0; T.forEach((t,i)=>{ if(t.slice(0,13)<=key) best=i; });
       const tv=$('fpTo').value; let eta=-1; if(tv){ /* default to the takeoff hour when given */ }
