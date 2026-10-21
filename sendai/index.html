@@ -918,7 +918,7 @@ a{color:#7cc4ff}
             <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
               <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
             <div class="wpscroll"><table id="wpTab"></table></div>
-            <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
+            <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><label class="chk" style="flex-basis:100%;font-size:12.5px"><input type="checkbox" id="humOn"> 湿度を密度高度に含める（湿った空気は軽いので、密度高度が少し高くなる・安全側）</label><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
             <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
             <div class="wpres" id="wpRes"></div>
           </div>
@@ -1022,7 +1022,14 @@ function fig47(H,T,W){
   for(const k of ks){const tp=WD.top[k],bt=WD.bot[k]; const Wk=tp+(y-WD.ytop)*(bt[0]-tp)/(bt[1]-WD.ytop); if(W<=Wk) return {kt:+k,x,y};}
   return {kt:0,x,y,over:true};
 }
-function densAlt(H,T){const ps=1013.25*Math.pow(1-6.8756e-6*H,5.2559); const sig=(ps/1013.25)*(288.15/(T+273.15)); return 145442*(1-Math.pow(sig,0.234969));}
+function densAltDry(H,T){const ps=1013.25*Math.pow(1-6.8756e-6*H,5.2559); const sig=(ps/1013.25)*(288.15/(T+273.15)); return 145442*(1-Math.pow(sig,0.234969));}
+// humidity from the JMA forecast (MSM/GSM): relative humidity at a height, interpolated between pressure levels (and the 2 m value near the ground)
+const HUM={on:true}; try{ const v=localStorage.getItem('sd139hum'); if(v!==null) HUM.on=v==='1'; }catch(e){}
+function humAt(H){ const W=window.WXP; if(!HUM.on||!W||!W.pr) return null; const P=W.pr.filter(q=>q.rh!=null&&q.z!=null).map(q=>[q.z,q.rh]); if(W.rh2!=null) P.push([W.el2||0,W.rh2]); if(!P.length) return null; P.sort((a,b)=>a[0]-b[0]);
+  if(H<=P[0][0]) return P[0][1]; for(let k=1;k<P.length;k++){ if(H<=P[k][0]){ const a=P[k-1],b=P[k],f=(H-a[0])/(b[0]-a[0]||1); return a[1]+(b[1]-a[1])*f; } } return P[P.length-1][1]; }
+// moist air is lighter: use the virtual temperature (vapour pressure from RH and the Magnus formula)
+function densAlt(H,T){ const rh=humAt(H); if(rh==null) return densAltDry(H,T); const ps=1013.25*Math.pow(1-6.8756e-6*H,5.2559), e=Math.min(100,Math.max(0,rh))/100*6.112*Math.exp(17.67*T/(T+243.5));
+  const Tv=(T+273.15)/(1-0.378*e/ps), sig=(ps/1013.25)*(288.15/Tv); return 145442*(1-Math.pow(sig,0.234969)); }
 function relAng(){ if(wmode==='rel') return ((+$('rel').value%360)+360)%360; return (((+$('wdir').value)-(+$('hdg').value))%360+360)%360; }
 function limitsFor(m,H,T,W){
   const hd=densAlt(H,T), r47=fig47(H,T,W);
@@ -1425,7 +1432,7 @@ function drawRel(Happ,T){
   $('r_iao').textContent=fm(c.ind)+' ft'; $('r_sto').textContent=c.st+' hPa'; $('r_st').disabled=$('r_lk').checked;
   $('r1').textContent=fm(c.eft)+' ft'; $('r1s').textContent=fm(c.eft*0.3048)+' m（いつも同じ）';
   $('r2').textContent=fm(c.hp)+' ft'; $('r2s').textContent=`海抜${c.hp-c.eft>=0?'+':''}${fm(c.hp-c.eft)} ft（気圧の影響）`;
-  $('r3').textContent=fm(c.da)+' ft'; $('r3s').textContent=`気圧高度${c.da-c.hp>=0?'+':''}${fm(c.da-c.hp)} ft（ISA${c.dt>=0?'+':''}${Math.round(c.dt)}℃）`;
+  $('r3').textContent=fm(c.da)+' ft'; { const rh=humAt(c.hp), dd=c.da-densAltDry(c.hp,T); $('r3s').textContent=`気圧高度${c.da-c.hp>=0?'+':''}${fm(c.da-c.hp)} ft（ISA${c.dt>=0?'+':''}${Math.round(c.dt)}℃${rh!=null?`・湿度${Math.round(rh)}%で+${fm(dd)} ft`:''}）`; }
   $('r4').textContent=fm(c.ps)+' hPa'; $('r4s').textContent='QNH '+Math.round(c.qh)+' hPa／'+(c.qh/33.8639).toFixed(2)+' inHg';
   const err=c.tru-c.ind; $('r5').textContent=fm(c.tru)+' ft'; $('r5s').textContent='指示との差 '+(err>=0?'+':'')+fm(err)+' ft'+(err<-50?'（実際は低い）':err>50?'（実際は高い）':'');
   const cc=c.clr<500?'var(--warn)':c.clr<1000?'var(--caution)':'var(--ok)';
@@ -2512,6 +2519,7 @@ function mtRender(){ const box=$('mtList'); if(!box) return; const d=MT.d, msg=$
   box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{ setMaster(null,+b.dataset.q,null); b.textContent=`QNH ${b.dataset.q} を入れました`; }); }
 // auto-refresh the JMA forecast when the site leaves the current model grid cell (online only, after the pick settles)
 const JAUTO={key:'',tm:0};
+setTimeout(()=>{ const c=$('humOn'); if(!c) return; c.checked=HUM.on; c.onchange=()=>{ HUM.on=c.checked; try{ localStorage.setItem('sd139hum',HUM.on?'1':'0'); }catch(e){} try{ update(); }catch(e){} }; },800);
 setInterval(()=>{ try{ const p=MAP.pick; if(!p||p.loading||navigator.onLine===false) return; const g=$('jmaGo'); if(!g||g.disabled) return;
   const key=p.lat.toFixed(5)+','+p.lon.toFixed(5); if(key===JAUTO.key) return;
   if(JAUTO.tm&&JAUTO.tm.key===key){ if(Date.now()-JAUTO.tm.t<1500) return; } else { JAUTO.tm={key,t:Date.now()}; return; }
@@ -4188,7 +4196,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
       const z1=H.geopotential_height_1000hPa&&H.geopotential_height_1000hPa[i]; let q=(sp!=null&&el!=null)?sp/Math.pow(1-2.25577e-5*el,5.25588):ms; if(q==null&&z1!=null) q=1000/Math.pow(1-2.25577e-5*z1,5.25588); JMA.qnh=null;
       if(q!=null&&q>900&&q<1080){ JMA.qnh={v:q,el}; if(window.WXP) WXP.qnh=q; setMaster(null,q,null); } }
     if($('relWx')&&!$('relWx').disabled) $('relWx').textContent='🌐 気象庁MSMを読み込み直す';
-    try{ jmaDetail(H,i,d); }catch(e){ console.warn(e); }
+    try{ if(window.WXP&&JMA.sf&&JMA.sf.relative_humidity_2m&&JMA.sf.relative_humidity_2m[i]!=null){ WXP.rh2=JMA.sf.relative_humidity_2m[i]; WXP.el2=(d.elevation||0)*3.28084; } jmaDetail(H,i,d); }catch(e){ console.warn(e); }
     WP.base='hpa'; WP.rows=rows; WP.auto=true; WP.lastKey=''; const tb=$('wpTab'); tb.dataset.built=''; wpSave();
     document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
     $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層${JMA.qnh?`・QNH ${Math.round(JMA.qnh.v)} hPa（${(JMA.qnh.v/33.8639).toFixed(2)} inHg）`:''} 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
