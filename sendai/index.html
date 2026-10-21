@@ -624,7 +624,7 @@ a{color:#7cc4ff}
           <div class="dialw" id="dialWheels"></div>
           <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
         </div>
-        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button></div>
+        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button><button type="button" id="jmaGo2" class="gopen" title="選んだ地点の上空の気温と風を気象庁の数値予報から読み込む">🌐 気象庁MSM</button></div>
 
       </div>
       <div class="mtabs" role="tablist" aria-label="地図の設定"><button type="button" role="tab" data-mt="gov" aria-selected="false">重ねる地図</button><button type="button" role="tab" data-mt="disp" aria-selected="false">表示の設定</button><button type="button" role="tab" data-mt="ifr" aria-selected="false">航空図 東北</button><button type="button" role="tab" data-mt="site" aria-selected="false">現場の設定</button><button type="button" role="tab" data-mt="fp" aria-selected="false">出発地・飛行条件</button></div>
@@ -632,6 +632,7 @@ a{color:#7cc4ff}
           <div id="govList" class="govlist"></div>
           <div class="mrow govop"><span class="mlab">濃さ</span><input type="range" id="govOp" min="15" max="100" step="5" value="65" aria-label="重ねる地図の濃さ"></div>
           <div id="govLeg" class="govleg"></div>
+          <div class="mrow" style="font-size:12px"><span>低高度悪天予想図など航空気象の図：</span><a href="https://www.data.jma.go.jp/airinfo/index.html" target="_blank" rel="noopener">気象庁 航空気象情報 ↗</a><small style="color:var(--muted)">（図は地図の投影が違うため重ねずにリンクで開きます）</small></div>
           <p class="legend">色別標高図・雪崩傾斜（全国傾斜量区分図）・陰影起伏図・赤色立体地図・傾斜量図は国土地理院の地理院タイル、シームレス地質図は産総研 地質調査総合センターの地図をそのまま重ねます。空域（空港等の周辺空域・管制圏・情報圏・特別管制区・進入管制区・民間訓練試験空域）は、国土交通省航空局が地理院地図に提供している無人航空機向けの区域データで、ズーム7以上で表示します。高度の上限・下限は表示しないので、有人機の運航には最新の AIP・航空図を使ってください。雪崩傾斜タイプB・色別傾斜区分図・高精度赤色立体地図は、このアプリが地理院の標高タイル（ズーム15以上は5 mメッシュ、ない所と14以下は10 mメッシュ）から傾斜と凹凸を計算して色を付けたもので、地理院の公式の地図ではありません。どれも電波が必要で、「地図を端末に保存」の対象外です。雪崩の危険の判断には、積雪・気象・地形の情報を合わせて使ってください。</p>
         </div>
       <div class="mpane dispbox" data-mp="disp" role="tabpanel" hidden>
@@ -2349,6 +2350,10 @@ const GOVL=[
   {k:'slopemap',n:'傾斜量図',g:'国土地理院',url:(z,x,y)=>`${GSI}slopemap/${z}/${x}/${y}.png`,min:3,max:15},
   {k:'slopecls',n:'色別傾斜区分図',g:'国土地理院',calc:'cls',note:'地理院の標高タイルから傾斜を計算'},
   {k:'wflow',n:'局所気流（推定）',g:'気流（地形と風からの推定）',calc:'wflow',note:'入力した風向・風速と地形から推定'},
+  {k:'jnowc',n:'雨雲（高解像度降水ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('nowc',z,x,y),min:4,max:10,note:'気象庁・5分ごと・実況'},
+  {k:'jthns',n:'雷（雷ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('thns',z,x,y),min:4,max:10,note:'気象庁・活動度1〜4'},
+  {k:'jsatv',n:'雲（ひまわり 可視・高解像度）',g:'気象（気象庁）',jma:'satjp',url:(z,x,y)=>jmaUrl('satv',z,x,y),min:3,max:6,note:'気象庁・日本域・昼間のみ'},
+  {k:'jsatir',n:'雲（ひまわり 赤外）',g:'気象（気象庁）',jma:'satjp',url:(z,x,y)=>jmaUrl('satir',z,x,y),min:3,max:6,note:'気象庁・日本域・夜間も可'},
   {k:'kokuarea',n:'空港等の周辺空域',g:'空域（国土交通省航空局）',geo:'kokuarea',col:'#2e7d32',note:'制限表面など'},
   {k:'kokuarea_kanseikentou',n:'管制圏・情報圏',g:'空域（国土交通省航空局）',geo:'kokuarea_kanseikentou',col:'#1565c0'},
   {k:'kokuarea_tokubetsukanseiku',n:'特別管制区',g:'空域（国土交通省航空局）',geo:'kokuarea_tokubetsukanseiku',col:'#0d47a1'},
@@ -2356,6 +2361,25 @@ const GOVL=[
   {k:'kokuarea_minkankunren',n:'民間訓練試験空域',g:'空域（国土交通省航空局）',geo:'kokuarea_minkankunren',col:'#8e24aa'},
   {k:'geo',n:'シームレス地質図',g:'地質',url:(z,x,y)=>`https://gbank.gsj.jp/seamless/v2/api/1.2/tiles/${z}/${y}/${x}.png`,min:3,max:13,note:'産総研 地質調査総合センター'}];
 const GOV={on:{},op:65};
+// ---- JMA tiles (nowcast / Himawari): base & valid times from targetTimes JSON, fallback to a computed recent time
+const JMAT={nowc:null,satjp:null,t:0,busy:false};
+const jmaFmt=d=>d.toISOString().replace(/[-:T]/g,'').slice(0,14);
+function jmaUrl(kind,z,x,y){ const B='https://www.jma.go.jp/bosai/'; const n=JMAT.nowc, s=JMAT.satjp;
+  if(kind==='nowc') return n?`${B}jmatile/data/nowc/${n.b}/none/${n.v}/surf/hrpns/${z}/${x}/${y}.png`:'';
+  if(kind==='thns') return n?`${B}jmatile/data/nowc/${n.b}/none/${n.v}/surf/thns/${z}/${x}/${y}.png`:'';
+  if(kind==='satv') return s?`${B}himawari/data/satimg/${s.b}/jp/${s.v}/B03/ALBD/${z}/${x}/${y}.jpg`:'';
+  if(kind==='satir') return s?`${B}himawari/data/satimg/${s.b}/jp/${s.v}/B13/TBB/${z}/${x}/${y}.jpg`:''; return ''; }
+async function jmaTimes(force){ const need=GOVL.some(L=>L.jma&&GOV.on[L.k]); if(!need||JMAT.busy) return; if(!force&&Date.now()-JMAT.t<4*60000) return; JMAT.busy=true; JMAT.t=Date.now();
+  const get=async(u,f)=>{ try{ const r=await fetch(u,{cache:'no-cache'}); if(!r.ok) throw 0; const a=await r.json(); return f(a); }catch(e){ return null; } };
+  const now=Date.now();
+  let n=await get('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N1.json',a=>{ const x=a.find(o=>o.elements&&o.elements.includes('hrpns'))||a[0]; return x?{b:x.basetime,v:x.validtime,src:'json'}:null; });
+  if(!n){ const d=new Date(Math.floor((now-5*60000)/300000)*300000); n={b:jmaFmt(d),v:jmaFmt(d),src:'calc'}; }
+  let s=await get('https://www.jma.go.jp/bosai/himawari/data/satimg/targetTimes_jp.json',a=>{ const x=a[a.length-1]; return x?{b:x.basetime,v:x.validtime,src:'json'}:null; });
+  if(!s){ const d=new Date(Math.floor((now-25*60000)/600000)*600000); s={b:jmaFmt(d),v:jmaFmt(d),src:'calc'}; }
+  const ch=!JMAT.nowc||JMAT.nowc.v!==n.v||!JMAT.satjp||JMAT.satjp.v!==s.v; JMAT.nowc=n; JMAT.satjp=s; JMAT.busy=false;
+  if(ch){ const box=$('mGOv'); if(box) box.querySelectorAll(':scope>div[data-l]').forEach(dv=>{ const L=GOVL.find(l=>l.k===dv.dataset.l); if(L&&L.jma) dv.innerHTML=''; }); govRender(); } }
+setInterval(()=>{ try{ jmaTimes(); }catch(e){} },60000);
+const jmaJST=v=>{ if(!v) return ''; const d=new Date(Date.UTC(+v.slice(0,4),+v.slice(4,6)-1,+v.slice(6,8),+v.slice(8,10),+v.slice(10,12))+9*3600e3); return `${d.getUTCMonth()+1}/${d.getUTCDate()} ${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; };
 try{ Object.assign(GOV,JSON.parse(localStorage.getItem('sd139gov')||'{}')); }catch(e){}
 function govSave(){ try{ localStorage.setItem('sd139gov',JSON.stringify({on:GOV.on,op:GOV.op})); }catch(e){} }
 const AVYC=[[27,[150,220,80]],[30,[255,225,60]],[35,[255,150,40]],[40,[235,45,45]],[45,[180,50,190]],[50,[50,90,230]],[60,[30,30,30]]];
@@ -2420,6 +2444,7 @@ function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; co
     lay.style.opacity=GOV.op/100; lay.style.zIndex=li; const want=new Set();
     if(L.calc&&z<(L.calc==='wflow'?12:9)){ lay.innerHTML=''; return; }
     if(!L.calc&&z<L.min){ lay.innerHTML=''; return; }
+    if(L.jma&&!JMAT[L.jma]){ jmaTimes(true); return; }
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty+(L.calc==='wflow'?'/'+wfSig():''); want.add(k);
       let t=lay.querySelector(`[data-k="${k}"]`);
       if(!t){ if(L.calc){ t=document.createElement('canvas'); t.width=t.height=256; t.dataset.k=k; lay.appendChild(t); govCalc(t,L,z,tx,ty).catch(()=>{}); }
@@ -2457,14 +2482,16 @@ function govLegend(){ const lg=$('govLeg'); if(!lg) return; const z=MAP.z; const
     else if(L.calc==='cls') out.push(`<div><b>${L.n}</b>：${CLSC.map(([t,c],i)=>sw(c,i<CLSC.length-1?`${t}〜${CLSC[i+1][0]}°`:`${t}°以上`)).join('')}</div>`);
     else if(L.calc==='rrim') out.push(`<div><b>${L.n}</b>：赤いほど急傾斜、明るいほど尾根・凸、暗いほど谷・凹（ズーム15以上で5 mメッシュ）</div>`);
     else if(L.calc==='wflow'){ const {wd,ws}=mwVals(); out.push(`<div><b>${L.n}</b>（風 ${String(Math.round(wd)).padStart(3,'0')}°／${Math.round(ws)} kt）：${sw(WFC.up,'風上斜面・上昇気流')}${sw(WFC.dn,'風下斜面・下降気流')}${sw(WFC.lee,'風下の陰・ローター／下降気流')}${sw(WFC.edge,'稜線・崖の縁・剥離と乱流')}<br><small>地形と入力した風だけから出した目安です（濃いほど強い）。気温減率・日射・谷風・上空の風の変化は含みません。実際の気流は偵察・パワーチェックで確かめてください。${ws<5?'<b>風速5 kt未満のため表示しません。</b>':''}</small></div>`); }
+    if(L.jma){ const T=JMAT[L.jma]; const RC=[[0,'#f2f2ff','1'],[1,'#a0d2ff','5'],[5,'#218cff','10'],[10,'#0041ff','20'],[20,'#fff500','30'],[30,'#ff9900','50'],[50,'#ff2800','80'],[80,'#b40068','80〜']];
+      out.push(`<div><b>${L.n}</b>：${T?`${jmaJST(T.v)}（日本時間）${T.src==='calc'?'・時刻は推定':''}`:'時刻を取得中…'}${L.k==='jnowc'?`<br>${RC.map(([a,c,t])=>`<span class="govsw"><i style="background:${c}"></i>${t}</span>`).join('')} mm/h`:''}${L.k==='jthns'?'<br><small>黄（活動度1）→赤→紫（活動度4）</small>':''}${L.k==='jsatv'?'<br><small>可視画像は夜間は真っ暗になります。夜は赤外を使ってください。</small>':''} <small>出典：気象庁</small></div>`); }
     if(L.calc&&z<(L.calc==='wflow'?12:9)) out.push(`<div class="caution">${L.n}は、ズーム${L.calc==='wflow'?12:9}以上で表示します</div>`);
     if(L.geo){ if(z<7) out.push(`<div class="caution">${L.n}は、ズーム7以上で表示します</div>`); return; }
     if(!L.calc&&z<L.min) out.push(`<div class="caution">${L.n}は、ズーム${L.min}以上で表示します</div>`);
     if(!L.calc&&z>L.max) out.push(`<div style="color:var(--muted)">${L.n}：ズーム${L.max}の画像を拡大して表示中</div>`); });
   lg.innerHTML=out.join(''); }
 function govPanel(){ const box=$('govList'); if(!box) return; const grp={}; GOVL.forEach(L=>{ (grp[L.g]=grp[L.g]||[]).push(L); });
-  const GH={'国土地理院':'地形','気流（地形と風からの推定）':'気流','空域（国土交通省航空局）':'空域','地質':'地質'}; box.innerHTML=Object.entries(grp).map(([g,a])=>`<div class="govg" role="group" aria-label="${g}"><div class="govh" title="${g}">${GH[g]||g}</div>${a.map(L=>`<label class="chk gchip${GOV.on[L.k]?' on':''}" title="${L.g}${L.note?'・'+L.note:''}"><input type="checkbox" data-gov="${L.k}"${GOV.on[L.k]?' checked':''}>${L.n}</label>`).join('')}</div>`).join('');
-  box.querySelectorAll('[data-gov]').forEach(c=>c.onchange=()=>{ GOV.on[c.dataset.gov]=c.checked; c.parentElement.classList.toggle('on',c.checked); govSave(); govRender(); });
+  const GH={'気象（気象庁）':'気象','国土地理院':'地形','気流（地形と風からの推定）':'気流','空域（国土交通省航空局）':'空域','地質':'地質'}; box.innerHTML=Object.entries(grp).map(([g,a])=>`<div class="govg" role="group" aria-label="${g}"><div class="govh" title="${g}">${GH[g]||g}</div>${a.map(L=>`<label class="chk gchip${GOV.on[L.k]?' on':''}" title="${L.g}${L.note?'・'+L.note:''}"><input type="checkbox" data-gov="${L.k}"${GOV.on[L.k]?' checked':''}>${L.n}</label>`).join('')}</div>`).join('');
+  box.querySelectorAll('[data-gov]').forEach(c=>c.onchange=()=>{ GOV.on[c.dataset.gov]=c.checked; if(c.checked&&GOVL.find(l=>l.k===c.dataset.gov&&l.jma)) jmaTimes(true); c.parentElement.classList.toggle('on',c.checked); govSave(); govRender(); });
   $('govOp').value=GOV.op; $('govOp').oninput=e=>{ GOV.op=+e.target.value; govSave(); $('mGOv').querySelectorAll(':scope>div[data-l]').forEach(d=>d.style.opacity=GOV.op/100); const g=$('mGeo'); if(g) g.style.opacity=GOV.op/100; }; }
 function dispPanel(){ const set=(id,key,after)=>{ document.querySelectorAll(`#${id} [data-v]`).forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.v===DISP[key]); b.onclick=()=>{ DISP[key]=b.dataset.v; dispSave(); document.querySelectorAll(`#${id} [data-v]`).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===DISP[key])); after&&after(); }; }); };
   set('dCoord','coord',()=>{ LLF.f=DISP.coord; llHint(); if(MAP.pick){ $('mLL').value=fmtLL(MAP.pick.lat,MAP.pick.lon); } mapInfo(); if(typeof drawPanel==='function') drawPanel(); });
@@ -3930,6 +3957,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
     document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
     $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
   $('jmaT').onchange=jmaApply;
+  if($('jmaGo2')) $('jmaGo2').onclick=async()=>{ const b2=$('jmaGo2'); b2.disabled=true; b2.textContent='読み込み中…'; await $('jmaGo').onclick(); b2.disabled=false; b2.textContent='🌐 気象庁MSM'; mapMsg($('jmaMsg').innerText+'（下の「高度ごとの気温と風」の表で時刻を変えられます）'); };
   $('jmaGo').onclick=async()=>{ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z), b=$('jmaGo'), m=$('jmaMsg');
     if(navigator.onLine===false){ m.textContent='オフラインのため読み込めません。'; return; }
     const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`));
