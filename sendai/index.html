@@ -2161,13 +2161,20 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   mapSetView(BASE.lat,BASE.lon,11);
   const pts=new Map(); let st=null;
   el.addEventListener('pointerdown',e=>{ if(e.target.closest('.mzoom,.mattr,.mmsg,.mwind')) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pts.size===1) st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
+    if(pts.size===1){ st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
+      const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
+      if(hit){ if(hit.it.t==='dest'){ st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg('救助地点を移動中：指を離した場所に置きます'); } },450); }
+        else { st.drag=hit; DRAW.mv=hit; drawLayer(); } } }
     if(pts.size===2){ const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pts.size===1){ const dx=e.clientX-st.x, dy=e.clientY-st.y; if(Math.hypot(dx,dy)>5){st.moved=true; el.classList.add('drag');} MAP.cx=st.cx-dx; MAP.cy=st.cy-dy; mapReq(); }
+    if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
+      it.lat=y2lat(MAP.cy-el.clientHeight/2+py,MAP.z); it.lon=x2lon(MAP.cx-el.clientWidth/2+px,MAP.z); if(!st.raf) st.raf=requestAnimationFrame(()=>{ if(st) st.raf=0; drawLayer(); }); return; }
+    if(pts.size===1){ const dx=e.clientX-st.x, dy=e.clientY-st.y; if(Math.hypot(dx,dy)>5){st.moved=true; el.classList.add('drag'); if(st.lp){ clearTimeout(st.lp); st.lp=0; }} MAP.cx=st.cx-dx; MAP.cy=st.cy-dy; mapReq(); }
     else if(pts.size===2&&st.pinch){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), r=el.getBoundingClientRect(); const mx=(a.x+b.x)/2-r.left, my=(a.y+b.y)/2-r.top;
       if(d/st.pinch>1.6){mapZoom(1,mx,my); st.pinch=d;} else if(d/st.pinch<0.62){mapZoom(-1,mx,my); st.pinch=d;} } });
-  const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag');
+  const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
+    if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
+        drawSave(); drawPanel(); } drawLayer(); if(!was&&it.t!=='dest'){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
         const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; const la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } }
       st=null; }
@@ -3153,8 +3160,8 @@ const GCOL=i=>String.fromCharCode(65+i);
 function itemInfo(it){
   if(it.t==='pt') return `<div class="drow1"><span class="ptic">📍</span><input class="ded" data-ed="${DRAW.items.indexOf(it)}" value="${esc(it.label||'')}" aria-label="ポイントの名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b></div><div class="drow2">${fmtLL(it.lat,it.lon)}</div>`;
   if(it.t==='txt') return `文字 <input class="ded" data-ed="${DRAW.items.indexOf(it)}" value="${esc(it.text)}" aria-label="文字">`;
-  if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button>`;
-  if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）`;
+  if(it.t==='circ') return `同心円 ${stepTxt(it.step,it.unit)}ごと×${it.n}本（中心 ${fmtLL(it.lat,it.lon)}）<button type="button" class="drose" data-rose="${DRAW.items.indexOf(it)}" aria-pressed="${!!it.rose}">${it.rose?'✓ ':''}磁方位</button><button type="button" class="drose" data-mvpk="${DRAW.items.indexOf(it)}">中心を現場へ</button>`;
+  if(it.t==='grid') return `グリッド ${stepTxt(it.step,it.unit)}四方×${it.n}×${it.n}マス（A1〜${GCOL(it.n-1)}${it.n}、北が上）<button type="button" class="drose" data-mvpk="${DRAW.items.indexOf(it)}">中心を現場へ</button>`;
   if(it.t==='meas'){ const m=measTxt(it.pts[0],it.pts[1]); return `<b>距離 ${m.d}</b>　<b>${m.t}</b>（${m.back}）`; }
   if(it.t==='dest'){ const i=DRAW.items.indexOf(it), r=roleOf(it); return `<div class="drow1"><select class="drole" data-role-i="${i}" style="--rc:${ROLES[r].col}" aria-label="役割">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}"${k===r?' selected':''}>${v.ic} ${v.n}</option>`).join('')}</select><input class="ded" data-ed="${i}" value="${esc(it.label||'')}" aria-label="目的地の名前"><b class="dmbe">${mbeFix(it.lat,it.lon).str}</b><button type="button" class="dgo" data-go="${i}" title="地図をこの目的地に戻して性能を表示">表示</button><button type="button" class="dgo dtgt" data-tgt="${i}" aria-pressed="${isTgt(it)}" title="レーダーのオンコース判定（針路±5°で点滅）の対象にする">◎ ターゲット</button><button type="button" class="dgo dgr" data-gr="${i}" aria-pressed="${!!it.gr}" title="無線で交信中の地上（要救助者・降下した隊員）として、ヘリとの見通し・距離を監視">📻 無線</button><button type="button" class="dgo dshare" data-share="${i}" title="地図の画像と位置（座標・Googleマップのリンク）を共有">共有</button></div><div class="drow2">${fmtLL(it.lat,it.lon)}${it.h!=null?`・地表 ${it.h.toLocaleString()} m`:''}${it.at?`・${it.at} 記録`:''}${r==='vic'?(()=>{ const t=SUN.times(jstDay(new Date()),it.lat,it.lon), n=sunNext(it.lat,it.lon), b=`<b data-sunla="${it.lat}" data-sunlo="${it.lon}">${sunText(it.lat,it.lon)}</b>`; return `<br><span class="dsun">${n.k==='set'?`日の出 ${sunHM(t.rise)}・${b}`:n.tomorrow?`日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}・${b}`:`${b}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}`}</span>`; })():''}</div>`; }
   if(it.t==='route') return routeInfo(it);
@@ -3292,7 +3299,15 @@ function drawLayer(){ const sv=$('mDraw'), el=$('map'); if(!sv) return; const z=
     if(it.t==='txt') h+=`<text x="${x}" y="${y}" font-size="15" font-weight="800" fill="#111" text-anchor="middle" ${halo}>${esc(it.text)}</text>`; });
   if(DRAW.tmp.length){ const q=DRAW.tmp, rt=DRAW.mode==='route'; if(q.length>1) h+=`<polyline points="${pp(DRAW.mode==='area'&&q.length>2?[...q,q[0]]:q)}" fill="${DRAW.mode==='area'?'#7a3fd022':'none'}" stroke="${rt?'#e8590c':'#7a3fd0'}" stroke-width="${rt?3:2}" stroke-dasharray="${rt?'':'5 4'}" stroke-linejoin="round"/>`;
     (rt?q.filter((p,i)=>i===0||i===q.length-1||q.length<60):q).forEach(p=>{ const [x,y]=P(...p); h+=`<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="${DRAW.mode==='area'?'#7a3fd0':'#111'}" stroke-width="2.5"/>`; }); }
+  DRAW.items.forEach(it=>{ if(it.t!=='circ'&&it.t!=='grid') return; const [x,y]=P(it.lat,it.lon); if(x<-30||y<-30||x>el.clientWidth+30||y>el.clientHeight+30) return; const c=it.t==='circ'?C:B, on=DRAW.mv&&DRAW.mv.it===it;
+    h+=`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)})" opacity="${on?1:.9}"><circle r="${on?15:12}" fill="#fff" fill-opacity=".92" stroke="${c}" stroke-width="2"/><path d="M0,-8L-3,-4.5H3ZM0,8L-3,4.5H3ZM-8,0L-4.5,-3V3ZM8,0L4.5,-3V3Z" fill="${c}"/><path d="M0,-5V5M-5,0H5" stroke="${c}" stroke-width="1.6"/></g>`; });
+  if(DRAW.mv){ const [x,y]=P(DRAW.mv.it.lat,DRAW.mv.it.lon); h+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="22" fill="none" stroke="#ff8a1f" stroke-width="3" stroke-dasharray="5 4"/>`; }
   sv.innerHTML=h; }
+// hit test for moving drawn items: circle / grid handles, points, text (direct drag); rescue points (dest) need a long press
+function drawHit(px,py){ const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let best=null;
+  DRAW.items.forEach(it=>{ if(!['circ','grid','pt','txt','dest'].includes(it.t)) return; let x=lon2x(it.lon,z)-x0, y=lat2y(it.lat,z)-y0; if(it.t==='pt') y-=14;
+    const d=Math.hypot(px-x,py-y), r=it.t==='txt'?26:it.t==='dest'?20:22; if(d<=r&&(!best||d<best.d)) best={it,d,ox:lon2x(it.lon,z)-x0-px,oy:lat2y(it.lat,z)-y0-py}; });
+  return best; }
 function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mode;
   document.querySelectorAll('#drawModes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
   $('map').classList.toggle('drawing',m!=='pick');
@@ -3323,6 +3338,7 @@ function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mo
   box.innerHTML=h; if($('dImp')) $('dImp').onclick=importDialog;
   if($('dLabel')) $('dLabel').oninput=e=>{ DRAW.lbl=e.target.value; };
   if($('dText')) $('dText').oninput=e=>{ DRAW.txt=e.target.value; if(DRAW.warn){ DRAW.warn=''; } };
+  box.querySelectorAll('[data-mvpk]').forEach(b=>b.onclick=()=>{ const it=DRAW.items[+b.dataset.mvpk], p=MAP.pick; if(!it) return; if(!p){ mapMsg('先に地図で現場を選んでください'); return; } it.lat=p.lat; it.lon=p.lon; drawSave(); drawLayer(); drawPanel(); });
   box.querySelectorAll('[data-ed]').forEach(inp=>inp.onchange=()=>{ const it=DRAW.items[+inp.dataset.ed]; if(!it) return; if(it.t==='pt'||it.t==='dest') it.label=inp.value; else if(inp.value.trim()) it.text=inp.value.trim(); drawSave(); drawLayer(); });
   if(set){ const st=m==='circ'?'cStep':'gStep', nn=m==='circ'?'cN':'gN';
     $('dStep').onchange=e=>{ DRAW[st]=Math.max(0.001,+e.target.value||1); drawSave(); drawPanel(); };
