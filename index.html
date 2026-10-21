@@ -1862,7 +1862,7 @@ function getDem(z,x,y){
   if(DEM.size>160){const first=DEM.keys().next().value; DEM.delete(first);}
   return p;
 }
-function elevAt(lat,lon){ if(ldemIn(lat,lon)) return ldemGet(lat,lon).then(v=>v===undefined?elevAtNet(lat,lon):v); return elevAtNet(lat,lon); }
+function elevAt(lat,lon){ if(ldemIn(lat,lon)) return ldemGet(lat,lon).then(v=>(v===undefined||Number.isNaN(v))?elevAtNet(lat,lon):v); return elevAtNet(lat,lon); }
 function elevAtNet(lat,lon){ const z=14, X=lon2x(lon,z), Y=lat2y(lat,z), tx=Math.floor(X/256), ty=Math.floor(Y/256);
   return getDem(z,tx,ty).then(a=>{ const px=Math.min(255,Math.floor(X-tx*256)), py=Math.min(255,Math.floor(Y-ty*256)); return a[py*256+px]; }); }
 
@@ -3285,7 +3285,7 @@ async function contourPath(A,B){ const D=distM(A,B); if(D<15) return [A,B];
   if(!isFinite(G[g0])) return null;
   const path=[]; for(let k=g0;k>=0;k=prev[k]){ path.push(toLL((k%nx)*cell+x0,Math.floor(k/nx)*cell+y0)); if(k===s0) break; }
   path.reverse(); path[0]=A; path[path.length-1]=B; let ton=0; for(let k=g0;k>=0&&k!==s0;k=prev[k]) if(onT[k]) ton++; const out=simplify(path,1.5); out.trailFrac=ton/Math.max(1,path.length); return out; }
-function routeElev(la,lo){ return ldemIn(la,lo)?ldemBil(la,lo):elevAtNet(la,lo).catch(()=>NaN); }
+function routeElev(la,lo){ return ldemIn(la,lo)?Promise.resolve(ldemBil(la,lo)).then(v=>Number.isNaN(v)?elevAtNet(la,lo).catch(()=>NaN):v):elevAtNet(la,lo).catch(()=>NaN); }
 // walking time: DIN 33466 (horizontal 4 km/h, ascent 300 m/h, descent 500 m/h; the larger + half the smaller), × pace
 function dinT(dKm,up,dn){ const th=dKm/4, tv=up/300+dn/500; return (Math.max(th,tv)+Math.min(th,tv)/2)*(+DRAW.pace||1); }
 function routeTimes(st,it){ const f=1+(2/3)*((it&&it.off)||0); st.tUp=dinT(st.d/1000,st.up,st.dn)*f; st.tDn=dinT(st.d/1000,st.dn,st.up)*f; }
@@ -3464,7 +3464,7 @@ function ldemBil(lat,lon){ const fr=(DEMP.lat1-lat)/DEMP.dlat-0.5, fc=(lon-DEMP.
 function netPix(z,px,py){ const tx=Math.floor(px/256), ty=Math.floor(py/256); return getDem(z,tx,ty).then(a=>a[(py-ty*256)*256+(px-tx*256)]); }
 function elevNetBil(lat,lon){ const z=14, X=lon2x(lon,z)-0.5, Y=lat2y(lat,z)-0.5, x0=Math.floor(X), y0=Math.floor(Y), a=X-x0, b=Y-y0;
   return Promise.all([netPix(z,x0,y0),netPix(z,x0+1,y0),netPix(z,x0,y0+1),netPix(z,x0+1,y0+1)]).then(([p,q,r,t])=>{ const v=[p,q,r,t]; if(v.some(isNaN)){ const ok=v.filter(x=>!isNaN(x)); return ok.length?ok.reduce((m,x)=>m+x,0)/ok.length:NaN; } return (p*(1-a)+q*a)*(1-b)+(r*(1-a)+t*a)*b; }); }
-function xsElev(la,lo){ if(XS.src==='net') return elevNetBil(la,lo).then(v=>isNaN(v)&&ldemIn(la,lo)?ldemBil(la,lo):v).catch(()=>ldemIn(la,lo)?ldemBil(la,lo):NaN); return ldemIn(la,lo)?ldemBil(la,lo):elevAtNet(la,lo).catch(()=>NaN); }
+function xsElev(la,lo){ if(XS.src==='net') return elevNetBil(la,lo).then(v=>isNaN(v)&&ldemIn(la,lo)?ldemBil(la,lo):v).catch(()=>ldemIn(la,lo)?ldemBil(la,lo):NaN); return ldemIn(la,lo)?Promise.resolve(ldemBil(la,lo)).then(v=>Number.isNaN(v)?elevAtNet(la,lo).catch(()=>NaN):v):elevAtNet(la,lo).catch(()=>NaN); }
 function xsNear(la,lo){ if(XS.src==='net') return elevAtNet(la,lo).then(v=>isNaN(v)&&ldemIn(la,lo)?ldemGet(la,lo):v).catch(()=>ldemIn(la,lo)?ldemGet(la,lo):NaN); return ldemIn(la,lo)?ldemGet(la,lo).then(v=>v===undefined?NaN:v):elevAtNet(la,lo).catch(()=>NaN); }
 function xsWide(la,lo){ return ldemIn(la,lo)?ldemGet(la,lo).then(v=>v===undefined?NaN:v):elevAtNet(la,lo).catch(()=>NaN); }
 async function xsLoad(lat,lon,hdg,range){
