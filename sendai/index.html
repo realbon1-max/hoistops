@@ -694,7 +694,7 @@ a{color:#7cc4ff}
           <input id="fromQ" type="text" list="peakList" placeholder="山名・場外離着陸場の緯度経度など" aria-label="出発地の山名または緯度経度"><button type="button" id="fromGo">出発地にする</button>
           <button type="button" id="fromPick">選択中の地点を出発地に</button><button type="button" id="fromBase">霞目飛行場に戻す</button>
           <span class="fpi"><label for="fpFuel">出発時の燃料</label> <input id="fpFuel" type="number" step="10" placeholder="搭載" style="width:76px"> kg</span>
-          <label for="fpTo">離陸予定</label><input id="fpTo" type="time" aria-label="離陸予定時刻"><button type="button" id="fpNow">今</button>
+          <label for="fpTo">離陸予定</label><input id="fpTo" type="time" aria-label="離陸予定時刻"><button type="button" id="fpNow" title="今の時刻を離陸予定にする">今</button><button type="button" id="fpNowSu" title="今から始動した場合の離陸時刻（始動〜離陸の分を足す）">今から始動</button>
         </div>
         <div class="rdbox" id="rdBox"></div>
         <div class="mrow">
@@ -2245,7 +2245,9 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   const etoSet=v=>{ $('fpTo').value=v; $('fpTo').dispatchEvent(new Event('input')); };
   document.addEventListener('change',e=>{ if(e.target.classList&&e.target.classList.contains('etoIn')&&e.target.value) etoSet(e.target.value); });
   document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.etoNow'); if(!b) return; const d=new Date(); etoSet(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); });
-  $('fpNow').onclick=()=>{ const d=new Date(); d.setMinutes(d.getMinutes()+(+FP.su||0)); $('fpTo').value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); $('fpTo').dispatchEvent(new Event('input')); };
+  const nowPlus=m=>{ const d=new Date(); d.setMinutes(d.getMinutes()+m); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+  $('fpNow').onclick=()=>etoSet(nowPlus(0));
+  { const b=$('fpNowSu'), lab=()=>{ b.textContent=`今から始動（+${+FP.su||0}分）`; }; lab(); b.onclick=()=>{ lab(); etoSet(nowPlus(+FP.su||0)); }; $('fpSu').addEventListener('input',lab); }
   try{ $('vrsOn').checked=localStorage.getItem('sd139vrs')==='1'; }catch(e){}
   $('vrsOn').addEventListener('change',()=>{ try{localStorage.setItem('sd139vrs',$('vrsOn').checked?'1':'0');}catch(e){} update(); });
   $('mGo').onclick=go; $('mLL').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
