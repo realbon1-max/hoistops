@@ -2161,8 +2161,7 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   el.addEventListener('pointerdown',e=>{ if(e.target.closest('.mzoom,.mattr,.mmsg,.mwind')) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1){ st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
       const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
-      if(hit){ if(hit.it.t==='dest'){ st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg('救助地点を移動中：指を離した場所に置きます'); } },450); }
-        else { st.drag=hit; DRAW.mv=hit; drawLayer(); } } }
+      if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); } }
     if(pts.size===2){ const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
@@ -2172,7 +2171,7 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
       if(d/st.pinch>1.6){mapZoom(1,mx,my); st.pinch=d;} else if(d/st.pinch<0.62){mapZoom(-1,mx,my); st.pinch=d;} } });
   const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
     if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
-        drawSave(); drawPanel(); } drawLayer(); if(!was&&it.t!=='dest'){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
+        drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
         const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; const la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } }
       st=null; }
