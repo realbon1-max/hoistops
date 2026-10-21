@@ -3877,7 +3877,7 @@ document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closes
 update();
 </script>
 <script>
-if('serviceWorker' in navigator&&window.isSecureContext){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
+if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
 </script>
 </body>
 </html>
