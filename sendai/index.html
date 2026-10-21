@@ -454,6 +454,7 @@ details.mset>summary.msh{cursor:pointer}
 #mMark .heliimg{filter:none!important}
 .mzoom{position:absolute;right:10px;top:10px;display:grid;gap:4px;z-index:5}
 .dlbox{margin:6px 0;padding:7px 10px;border-radius:6px;font-size:13px;font-weight:700;line-height:1.45}.dlbox.ok{background:#e3f4ea;color:#11643f}.dlbox.caution{background:#fff0c2;color:#7a5600;border-left:5px solid #d99a00}.dlbox.warn{background:#ffd9d6;color:#a3160b;border-left:5px solid #c0392b;animation:rdblink 1.2s ease-in-out infinite}
+.jmabox{margin:8px 0;padding:8px;border:1px dashed var(--rule);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}.jmabox .hint{flex-basis:100%;font-size:11.5px;margin:0}
 .mzjog{position:relative;width:34px;height:80px;border:1px solid #9aa4ae;background:linear-gradient(#fff,#e9eef3);border-radius:17px;touch-action:none;cursor:ns-resize;box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}.mzjog::before,.mzjog::after{position:absolute;left:0;right:0;text-align:center;font-size:9px;font-weight:800;color:#8a96a3;pointer-events:none}.mzjog::before{content:'▲';top:3px}.mzjog::after{content:'▼';bottom:3px}
 .mzk{position:absolute;left:3px;top:50%;width:26px;height:26px;margin-top:-13px;border-radius:50%;background:#1d4d9a;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;transition:transform .18s ease-out}.mzk b{font-size:11px;font-weight:800;color:#fff;font-style:normal}.mzjog.drag .mzk{transition:none;background:#ff8a1f}
 .mzoom button{width:34px;height:34px;font-size:20px;line-height:1;border:1px solid #9aa4ae;background:#fff;color:#15253a;border-radius:4px;cursor:pointer}
@@ -889,6 +890,7 @@ a{color:#7cc4ff}
             <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
               <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
             <div class="wpscroll"><table id="wpTab"></table></div>
+            <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
             <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
             <div class="wpres" id="wpRes"></div>
           </div>
@@ -3919,6 +3921,28 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
     WP.rows=(WP.base==='ft'?[3000,5000,7000,9000,10000,12000,14000]:[1000,925,850,800,700,600,500]).map(wpBlank); wpSave(); wpDraw(); });
   $('wpAuto').onchange=e=>{ WP.auto=e.target.checked; WP.lastKey=''; wpSave(); wpDraw(); };
   $('wpAdd').onclick=()=>{ WP.rows.push(wpBlank('')); wpSave(); wpDraw(); };
+  // ---- JMA numerical forecast (MSM / GSM) via Open-Meteo: temperature and wind on pressure levels at the selected point
+  const JMA={data:null,lv:[1000,975,950,925,900,850,800,700,600,500]};
+  const jmaApply=()=>{ const d=JMA.data, i=+$('jmaT').value; if(!d) return; const H=d.hourly, rows=[];
+    JMA.lv.forEach(l=>{ const t=H[`temperature_${l}hPa`], w=H[`wind_speed_${l}hPa`], a=H[`wind_direction_${l}hPa`]; if(!t||t[i]==null) return; rows.push({l:String(l),t:t[i].toFixed(1),d:a&&a[i]!=null?String(Math.round(a[i]/5)*5%360):'',s:w&&w[i]!=null?String(Math.round(w[i])):''}); });
+    if(!rows.length){ $('jmaMsg').textContent='この時刻のデータがありません。'; return; }
+    WP.base='hpa'; WP.rows=rows; WP.auto=true; WP.lastKey=''; const tb=$('wpTab'); tb.dataset.built=''; wpSave();
+    document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
+    $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
+  $('jmaT').onchange=jmaApply;
+  $('jmaGo').onclick=async()=>{ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z), b=$('jmaGo'), m=$('jmaMsg');
+    if(navigator.onLine===false){ m.textContent='オフラインのため読み込めません。'; return; }
+    const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`));
+    const url=`https://api.open-meteo.com/v1/jma?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&hourly=${vars.join(',')}&models=${$('jmaM').value}&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`;
+    b.disabled=true; b.textContent='読み込み中…';
+    try{ const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.hourly||!d.hourly.time) throw new Error(d.reason||'データなし'); JMA.data=d;
+      const T=d.hourly.time, now=new Date(), j=new Date(now.getTime()+9*3600e3), key=j.toISOString().slice(0,13);
+      let best=0; T.forEach((t,i)=>{ if(t.slice(0,13)<=key) best=i; });
+      const tv=$('fpTo').value; let eta=-1; if(tv){ /* default to the takeoff hour when given */ }
+      const sel=$('jmaT'); sel.innerHTML=T.map((t,i)=>{ const ok=d.hourly[`temperature_${JMA.lv[3]}hPa`]&&d.hourly[`temperature_${JMA.lv[3]}hPa`][i]!=null; return ok?`<option value="${i}"${i===best?' selected':''}>${t.slice(5,10).replace('-','/')} ${t.slice(11,16)}${i===best?'（今）':''}</option>`:''; }).join(''); sel.hidden=false;
+      jmaApply(); }
+    catch(e){ m.innerHTML=`<b class="warn">読み込めませんでした</b>（${esc(String(e.message||e))}）。電波の状態を確認するか、手入力してください。`; }
+    b.disabled=false; b.textContent='🌐 気象庁の予報（MSM）を読み込み直す'; };
   $('wpClr').onclick=()=>{ WP.rows.forEach(r=>{ r.t=''; r.d=''; r.s=''; }); const tb=$('wpTab'); tb.dataset.built=''; wpSave(); wpDraw(); };
   wpDraw(); })();
 
