@@ -1693,7 +1693,7 @@ function drawISA(H,T,isa,isaAlt){
 }
 
 // ---- weight breakdown
-const DEF={empty:4300,crew:160,pax:160,load:90,fuel:800,ff:520,rsv:200,tgt:'p444z',v:2,eq:[{n:'機外ホイスト装置',w:65,on:true},{n:'ヘリテレ（機外カメラ・送信機）',w:90,on:true},{n:'サーチライト',w:30,on:false},{n:'救急・救助器材',w:50,on:true}]};
+const DEF={empty:4300,crew:160,pax:160,load:90,fuel:1100,ff:400,rsv:200,tgt:'p444z',v:2,eq:[{n:'機外ホイスト装置',w:65,on:true},{n:'ヘリテレ（機外カメラ・送信機）',w:160,on:true},{n:'サーチライト',w:30,on:false},{n:'救急・救助器材',w:20,on:true}]};
 let CFG; try{CFG=JSON.parse(localStorage.getItem('sd139wt'))||null;}catch(e){CFG=null}
 if(!CFG) CFG=JSON.parse(JSON.stringify(DEF));
 if(!CFG.v){ CFG.tgt=({p412:'p917',p413:'p918',p414:'p444z'})[CFG.tgt]||CFG.tgt; CFG.v=2; try{localStorage.setItem('sd139wt',JSON.stringify(CFG))}catch(e){} }
@@ -2047,7 +2047,7 @@ function findPeak(q){ q=q.trim().replace(/\s/g,''); if(!q) return null; return P
 function gc(la1,lo1,la2,lo2){ const R=3440.065, r=Math.PI/180, p1=la1*r,p2=la2*r, dl=(lo2-lo1)*r;
   const a=Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2; const d=2*R*Math.asin(Math.sqrt(a));
   const y=Math.sin(dl)*Math.cos(p2), x=Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl); return {nm:d,crs:(Math.atan2(y,x)/r+360)%360}; }
-const FP={gs:130,roc:1000,rod:800,ff:600,su:5,work:30}; let DLX=null;
+const FP={gs:100,roc:500,rod:800,ff:400,su:15,work:20}; let DLX=null;
 try{ Object.assign(FP,JSON.parse(localStorage.getItem('sd139fp')||'{}')); }catch(e){}
 function fpLeg(nm,dh){ const tH=nm/(+FP.gs||1)*60, tV=dh>=0?dh/(+FP.roc||1):-dh/(+FP.rod||1); return {t:Math.max(tH,tV),tH,tV,orbit:tV>tH}; }
 function crsHTML(c,cb){ const P3=v=>String(Math.round(((v%360)+360)%360)%360||360).padStart(3,'0');
