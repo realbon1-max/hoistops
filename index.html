@@ -2771,8 +2771,9 @@ try{ const v=JSON.parse(localStorage.getItem('aw139radio')||'null'); if(v&&Array
 if(!RD.list) RD.list=JSON.parse(JSON.stringify(RADIO0));
 function rdSave(){ try{ localStorage.setItem('aw139radio',JSON.stringify({list:RD.list,geoid:RD.geoid})); }catch(e){} }
 async function rdLos(A,altA,st){ // A=[lat,lon], altA = antenna height MSL (m) of the aircraft
-  const ge=isFinite(st.elev)?st.elev:await elevAt(st.lat,st.lon).catch(()=>NaN); if(!isFinite(st.elev)&&isFinite(ge)){ st.elev=ge; rdSave(); }
-  const hB=(isFinite(ge)?ge:0)+(+st.ant||10), D=gc(A[0],A[1],st.lat,st.lon).nm*1852, crs=gc(A[0],A[1],st.lat,st.lon).crs, Re=6371000*4/3, lam=299.79/(+RD.f||122);
+  const okE=v=>typeof v==='number'&&Number.isFinite(v); let ge=okE(st.elev)?st.elev:await elevAt(st.lat,st.lon).catch(()=>NaN); if(!okE(ge)) ge=NaN; if(!okE(st.elev)&&okE(ge)){ st.elev=ge; rdSave(); }
+  if(!Number.isFinite(ge)) return {name:st.n,st,D:gc(A[0],A[1],st.lat,st.lon).nm*1852,km:(gc(A[0],A[1],st.lat,st.lon).nm*1.852).toFixed(1),cls:'cau',short:`${(gc(A[0],A[1],st.lat,st.lon).nm*1.852).toFixed(1)} km 判定不可`,txt:'無線局の標高を読めません（電波のある所でもう一度）',worst:null,A,hB:0};
+  const hB=ge+(+st.ant||10), D=gc(A[0],A[1],st.lat,st.lon).nm*1852, crs=gc(A[0],A[1],st.lat,st.lon).crs, Re=6371000*4/3, lam=299.79/(+RD.f||122);
   const N=Math.max(20,Math.min(160,Math.round(D/250))); let worst=null;
   const pts=[]; for(let i=1;i<N;i++) pts.push(i/N);
   const hs=await Promise.all(pts.map(f=>{ const q=destLL(A[0],A[1],crs,D*f); return elevAt(q[0],q[1]).then(h=>[f,q,h]).catch(()=>[f,q,NaN]); }));
