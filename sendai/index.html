@@ -2063,7 +2063,7 @@ function hpCol(k){ return /飛行場（|^飛行場$/.test(k)?'#6a1b9a':/拠点/.
 function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2; let h='';
   if(BT.on&&z>=9&&BTRK.lines.length){ let d=''; BTRK.lines.forEach(L=>{ d+='M'+L.map(q=>(lon2x(q[1],z)-x0).toFixed(1)+','+(lat2y(q[0],z)-y0).toFixed(1)).join('L'); });
     h+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="5" stroke-opacity=".85" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#c2185b" stroke-width="2.6" stroke-dasharray="7 3" stroke-linejoin="round" stroke-linecap="round"/>`;
-    if(z>=11) BTRK.poi.forEach(q=>{ if(z<13&&!/S|P/.test(q[3])) return; const px=lon2x(q[2],z)-x0, py=lat2y(q[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const [ic,c]=BT_IC[q[3]]||['●','#333'];
+    if(z>=12) BTRK.poi.forEach(q=>{ if(z<13&&!/S|P/.test(q[3])) return; const px=lon2x(q[2],z)-x0, py=lat2y(q[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const [ic,c]=BT_IC[q[3]]||['●','#333'];
       h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[水滝沼望]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text></g><text x="${(px+11).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11.5" font-weight="800" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${q[0]}</text>`; }); }
   if(!HP.on||MAP.z<9){ sv.innerHTML=h; return; }
   const r=z>=12?8:6.5, lab=z>=12;
@@ -2074,7 +2074,7 @@ function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=
 function hpAt(la,lo){ let b=null; HELIP.forEach(x=>{ const d=Math.hypot((x[1]-la)*111000,(x[2]-lo)*111000*Math.cos(la*Math.PI/180)); if(d<=40&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
 function hpLines(x){ return [`${x[0]}（${x[3]||'ヘリポート'}）`, `所在地 ${x[4]||'—'}`, `管理者 ${x[5]||'—'}・広さ ${x[6]||'—'}`, '出典：国土数値情報（ヘリポートデータ）・使用の際は管理者に確認']; }
 function hpHit(px,py){ const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let b=null;
-  if(BT.on&&z>=11) BTRK.poi.forEach(q=>{ const d=Math.hypot(lon2x(q[2],z)-x0-px,lat2y(q[1],z)-y0-py); if(d<=12&&(!b||d<b.d)) b={x:[q[0],q[1],q[2],'山の目印',q[4],'—','—'],d,bt:1}; }); if(b) return b.x;
+  if(BT.on&&z>=12) BTRK.poi.forEach(q=>{ const d=Math.hypot(lon2x(q[2],z)-x0-px,lat2y(q[1],z)-y0-py); if(d<=12&&(!b||d<b.d)) b={x:[q[0],q[1],q[2],'山の目印',q[4],'—','—'],d,bt:1}; }); if(b) return b.x;
   if(!HP.on||MAP.z<9) return null;
   HELIP.forEach(x=>{ const d=Math.hypot(lon2x(x[2],z)-x0-px,lat2y(x[1],z)-y0-py); if(d<=14&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
 // ---- flight plan (base -> site)
