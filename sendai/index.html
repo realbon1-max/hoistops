@@ -401,7 +401,8 @@ html{scroll-padding-top:52px}
 .mgpst{position:absolute;right:56px;top:258px;z-index:7;font-size:11px;font-weight:800;background:rgba(21,101,192,.92);color:#fff;border-radius:4px;padding:3px 6px;pointer-events:none;white-space:nowrap}.mrdrb[aria-pressed=true]{background:#0b2414;border-color:#39ff6a;color:#39ff6a}@keyframes rdrblink{0%,100%{opacity:1}50%{opacity:.25}}#mRadar .rdron{animation:rdrblink .8s ease-in-out infinite}#mOei{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}#mEdge{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9;overflow:hidden}#mRadio{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}
 .rdlist{display:grid;gap:4px;margin:4px 0}.rdrow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12.5px}.rdrow input[type=number]{width:62px}.rdrow .rdres{font-weight:700}.rdok{color:#1e8449}.rdcau{color:#b07d00}.rdbad{color:#c0392b}.rdbox{margin-top:8px;padding:6px 8px;border:1px solid var(--rule);border-radius:6px}
 .mgpsv .gl{display:block}.mgpsv .gl i{font-style:normal;font-weight:800}.mgpsv .ok{color:#1e8449}.mgpsv .cau{color:#a06a00}.mgpsv .bad{color:#c0392b}
-#mRadar{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}.mhdgf[aria-pressed=true]{background:#ff8a1f;border-color:#ff8a1f;color:#fff}.mhdgt{position:absolute;right:8px;top:344px;z-index:7;font-size:11px;font-weight:700;background:rgba(255,138,31,.94);color:#fff;border-radius:6px;padding:3px 7px;max-width:min(300px,calc(100% - 16px))}.mhdgt.bad:not(.open){background:rgba(214,40,40,.92)}.mhdgt:not(.open) .hfb,.mhdgt:not(.open) .hfn,.mhdgt:not(.open) .hfw{display:none}.hfh{white-space:nowrap;cursor:pointer;padding:2px 0}.hfw{margin-top:3px;font-weight:600;background:rgba(0,0,0,.25);border-radius:4px;padding:2px 4px}.hfb{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}.hfb span{margin-right:2px}.hfb button{font:inherit;font-size:12px;font-weight:800;min-width:32px;height:28px;border-radius:5px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.18);color:#fff;cursor:pointer;touch-action:manipulation}.hfn{margin-top:3px;font-weight:500;font-size:10.5px;opacity:.95;white-space:normal}
+#mRadar{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible}.mhdgf[aria-pressed=true]{background:#ff8a1f;border-color:#ff8a1f;color:#fff}.mrdb{top:344px!important}.mrdb[aria-pressed=true]{background:#1e8449!important;color:#fff!important;border-color:#1e8449!important}
+.mhdgt{position:absolute;right:8px;top:392px;z-index:7;font-size:11px;font-weight:700;background:rgba(255,138,31,.94);color:#fff;border-radius:6px;padding:3px 7px;max-width:min(300px,calc(100% - 16px))}.mhdgt.bad:not(.open){background:rgba(214,40,40,.92)}.mhdgt:not(.open) .hfb,.mhdgt:not(.open) .hfn,.mhdgt:not(.open) .hfw{display:none}.hfh{white-space:nowrap;cursor:pointer;padding:2px 0}.hfw{margin-top:3px;font-weight:600;background:rgba(0,0,0,.25);border-radius:4px;padding:2px 4px}.hfb{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}.hfb span{margin-right:2px}.hfb button{font:inherit;font-size:12px;font-weight:800;min-width:32px;height:28px;border-radius:5px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.18);color:#fff;cursor:pointer;touch-action:manipulation}.hfn{margin-top:3px;font-weight:500;font-size:10.5px;opacity:.95;white-space:normal}
 .mtabs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}.mtabs button{font:inherit;font-size:13px;font-weight:700;padding:6px 11px;border:1px solid var(--rule);border-radius:16px;background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}.mtabs button[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}.mtabs button::after{content:" ▾";font-size:10px;opacity:.6}.mtabs button[aria-selected=true]::after{content:" ▴"}
 .mpane{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--paper);margin:6px 0 2px;font-size:13px}.mpane .mrow{margin:4px 0}
 .msets{display:grid;gap:8px;margin-top:10px}
@@ -720,7 +721,7 @@ a{color:#7cc4ff}
       <p class="legend" style="margin:4px 0 0">内訳は右の「全備重量の内訳」で設定します。</p>
       <div class="hhbox"><label for="hh">ホバリング高度（対地・障害物上）</label>
       <div class="hhrow"><input id="hh" type="number" step="10" value="150" inputmode="numeric"><span class="unit">ft</span><span class="hhm" id="hhM"></span></div>
-      <input id="hhR" type="range" min="0" max="400" step="5" value="150" aria-label="ホバリング高度スライダー">
+      <input id="hhR" type="range" min="0" max="154" step="1" value="30" aria-label="ホバリング高度スライダー">
       <div class="fuelticks" aria-hidden="true"><span>0</span><span>100</span><span>200</span><span>300</span><span>400 ft</span></div>
       <div class="fuelbtns hhbtns"><button type="button" data-hd="-50">−50</button><button type="button" data-hd="-10">−10</button><button type="button" data-hd="10">＋10</button><button type="button" data-hd="50">＋50</button></div></div>
       <label>ホバリングの出力（風の制限の基準）</label>
@@ -1441,9 +1442,10 @@ function drawRel(Happ,T){
 // ---- UI
 const inputs=['hp','oat'];
 inputs.forEach(id=>{const n=$(id),r=$(id+'R');n.addEventListener('input',()=>{r.value=n.value;update()});r.addEventListener('input',()=>{n.value=r.value;update()});});
-$('hh').addEventListener('input',()=>{$('hhR').value=$('hh').value;update()});$('hhR').addEventListener('input',()=>{$('hh').value=$('hhR').value;update()});
-function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; r.style.setProperty('--hp',(Math.max(0,Math.min(1,v/(+r.max||400)))*100).toFixed(1)+'%'); const m=$('hhM'); if(m) m.textContent=`約 ${Math.round(v/3.28084)} m`; }
-document.querySelectorAll('.hhbtns [data-hd]').forEach(b=>b.onclick=()=>{ const v=Math.max(0,Math.min(400,Math.round(((+$('hh').value||0)+(+b.dataset.hd))/5)*5)); $('hh').value=v; $('hhR').value=v; update(); });
+const hhP2V=p=>{ p=+p||0; return p<=60?p*5:300+(p-60)*50; }, hhV2P=v=>{ v=Math.max(0,+v||0); return v<=300?Math.round(v/5):Math.min(154,60+Math.round((v-300)/50)); };
+$('hh').addEventListener('input',()=>{$('hhR').value=hhV2P($('hh').value);update()});$('hhR').addEventListener('input',()=>{$('hh').value=hhP2V($('hhR').value);update()});
+function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; if(+r.value!==hhV2P(v)&&document.activeElement!==r) r.value=hhV2P(v); r.style.setProperty('--hp',(hhV2P(v)/154*100).toFixed(1)+'%'); const m=$('hhM'); if(m) m.textContent=`約 ${Math.round(v/3.28084)} m`; }
+document.querySelectorAll('.hhbtns [data-hd]').forEach(b=>b.onclick=()=>{ const v=Math.max(0,Math.min(5000,Math.round(((+$('hh').value||0)+(+b.dataset.hd))/5)*5)); $('hh').value=v; $('hhR').value=hhV2P(v); update(); });
 const TAPES=[
  {key:'p917',name:'離陸出力・双発（AEO）',sub:'第9-117図 NR102%｜航空局承認対象外の追加データ',chart:'c917',cap:14000,hdc:true,main:true,lab:'離陸出力',lab2:'双発・第9-117図',cn:'離陸出力（TOP）・双発'},
  {key:'p918',name:'連続最大出力・双発（AEO）',sub:'第9-118図 NR102%｜航空局承認対象外の追加データ',chart:'c918',cap:14000,hdc:true,main:true,lab:'連続最大',lab2:'双発・第9-118図',cn:'連続最大（MCP）・双発'},
@@ -1509,7 +1511,7 @@ function drawCeil(H,T,W,wind){
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
-function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ wfCheck(); }catch(e){} try{ hlimRender(); }catch(e){}
+function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ rdSim(); }catch(e){} try{ wfCheck(); }catch(e){} try{ hlimRender(); }catch(e){}
   $('gw').value=Math.round(totalGW()); $('gwTotal').textContent=Math.round(totalGW()).toLocaleString()+' kg'+(totalGW()>MTOW()?`（最大 ${MTOW().toLocaleString()} kg 超過）`:totalGW()>CHW?'（6,400 kg超：性能図の範囲外）':'');
   const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW(), hh=+$('hh').value;
   const isa=ISA(H), dev=T-isa;
@@ -2753,11 +2755,13 @@ function gtLegs(){ if(!GT.last) return ''; const [la,lo]=GT.last, v=GT.v, kt=v!=
     L.push(`<span class="gl">→${esc(t[0].label||'要救助者')} ${(t[1].nm*1.852).toFixed(1)} km ${mm(t[1].nm)}${dh(t[0].h)}</span>`); }
   if(FROM){ const g=gc(la,lo,FROM.lat,FROM.lon); if(g.nm>0.3) L.push(`<span class="gl">→${esc(FROM.name)} ${(g.nm*1.852).toFixed(1)} km ${mm(g.nm)}${dh(FROM.elev)}</span>`); }
   if(L.length&&!kt) L.push('<small>（時間は計画速度 '+fm(gs)+' kt）</small>');
-  const rs=(RD.gps||[]).slice(0,2).map(r=>`<span class="gl">📡${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`); return (L.length?L.join(''):'')+(rs.length?rs.join(''):''); }
+  const rs=(RD.show?RD.gps||[]:[]).slice(0,3).map(r=>`<span class="gl">📡${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`); return (L.length?L.join(''):'')+(rs.length?rs.join(''):''); }
 function gtAltM(){ return GT.alt==null?null:GT.alt-(+RD.geoid||0); }
 // ---- VHF radio line-of-sight to ground stations (terrain profile from the DEM, 4/3 earth, first Fresnel zone)
 const RADIO0=[{n:'霞目飛行場',lat:38.23556,lon:140.92306,elev:7,ant:15,on:true},{n:'仙台空港',lat:38.13972,lon:140.91694,elev:2,ant:15,on:false,user:1},{n:'蓄山',lat:38.256667,lon:140.783217,elev:NaN,ant:20,on:true},{n:'長の森',lat:38.829533,lon:141.519867,elev:NaN,ant:20,on:true}];
-const RD={list:null,geoid:0,f:122,gps:[],busy:false,lastT:0,lastP:null,plan:[]};
+const RD={list:null,geoid:0,f:122,gps:[],busy:false,lastT:0,lastP:null,plan:[],show:true,sim:true,simKey:'',simBusy:false};
+try{ const v=JSON.parse(localStorage.getItem('sd139radiov')||'{}'); if(v.show!=null) RD.show=!!v.show; if(v.sim!=null) RD.sim=!!v.sim; }catch(e){}
+function rdSaveV(){ try{ localStorage.setItem('sd139radiov',JSON.stringify({show:RD.show,sim:RD.sim})); }catch(e){} }
 try{ const v=JSON.parse(localStorage.getItem('sd139radio')||'null'); if(v&&Array.isArray(v.list)){ RD.list=v.list; RD.geoid=+v.geoid||0; } }catch(e){}
 if(!RD.list) RD.list=JSON.parse(JSON.stringify(RADIO0));
 // fixed stations (霞目・蓄山・長の森) cannot be deleted; 仙台空港 and user-added ones can. Restore fixed ones if missing.
@@ -2781,34 +2785,53 @@ async function rdLos(A,altA,st){ // A=[lat,lon], altA = antenna height MSL (m) o
   return {name:st.n,st,D,km,cls,short:`${km} km ${short}`,txt,worst,A,hB}; }
 async function rdCheck(A,altA){ const sts=RD.list.filter(x=>x.on); const out=[]; for(const st of sts){ try{ out.push(await rdLos(A,altA,st)); }catch(e){} }
   return out.sort((a,b)=>({ok:0,cau:1,bad:2}[a.cls]-{ok:0,cau:1,bad:2}[b.cls])||a.D-b.D); }
-function rdAuto(){ if(!GT.on||!GT.last||RD.busy) return; const am=gtAltM(); if(am==null){ RD.gps=[]; return; } const now=Date.now();
+function rdAuto(){ if(!RD.show||!GT.on||!GT.last||RD.busy) return; const am=gtAltM(); if(am==null){ RD.gps=[]; return; } const now=Date.now();
   if(RD.lastP&&now-RD.lastT<10000&&distM(RD.lastP,GT.last)<300) return; RD.busy=true; RD.lastT=now; RD.lastP=GT.last.slice();
   rdCheck(GT.last,am).then(r=>{ RD.gps=r.sort((a,b)=>a.D-b.D); RD.busy=false; rdDraw(); const e=$('mGpsV'); if(e&&!e.hidden) gtSpd(); rdPanel(); }).catch(()=>{ RD.busy=false; }); }
 function rdDraw(){ const sv=$('mRadio'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight; sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  const res=GT.on?RD.gps:RD.plan; if(!res||!res.length){ sv.innerHTML=''; return; } const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, P=(la,lo)=>[lon2x(lo,z)-x0,lat2y(la,z)-y0];
+  const res=GT.on?RD.gps:RD.plan; rdBox(); if(!RD.show||!res||!res.length){ sv.innerHTML=''; return; } const z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, P=(la,lo)=>[lon2x(lo,z)-x0,lat2y(la,z)-y0];
   const C={ok:'#1e8449',cau:'#d08a00',bad:'#c0392b'}; let h='';
   res.forEach(r=>{ const [ax,ay]=P(r.A[0],r.A[1]), [bx,by]=P(r.st.lat,r.st.lon), c=C[r.cls]||'#666';
     h+=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#fff" stroke-width="4" stroke-opacity=".7"/><line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${c}" stroke-width="2" ${r.cls==='ok'?'':'stroke-dasharray="7 5"'}/>`;
     h+=`<g transform="translate(${bx},${by})"><circle r="6" fill="${c}" stroke="#fff" stroke-width="2"/><path d="M-4,-9 L0,-15 L4,-9" fill="none" stroke="${c}" stroke-width="1.8"/></g><text x="${bx+9}" y="${by-8}" font-size="11" font-weight="800" fill="${c}" stroke="#fff" stroke-width="3" paint-order="stroke">${esc(r.name)}</text>`;
     if(r.cls!=='ok'&&r.worst){ const [wx,wy]=P(r.worst.q[0],r.worst.q[1]); h+=`<path d="M${wx-6},${wy-6}L${wx+6},${wy+6}M${wx+6},${wy-6}L${wx-6},${wy+6}" stroke="#fff" stroke-width="5"/><path d="M${wx-6},${wy-6}L${wx+6},${wy+6}M${wx+6},${wy-6}L${wx-6},${wy+6}" stroke="${c}" stroke-width="2.6"/>`; } });
   sv.innerHTML=h; }
+function rdSimAlt(){ const p=MAP.pick; if(!p||p.loading||!isFinite(p.h)) return null; return {p,alt:p.h+(+(($('mObs')||{}).value)||0)+(+$('hh').value||0)/FT}; }
+let rdSimT=null;
+function rdSim(force){ if(GT.on||!RD.show||!RD.sim){ return; } const a=rdSimAlt(); if(!a){ if(RD.plan.length){ RD.plan=[]; rdDraw(); rdPanel(); } return; }
+  const key=[a.p.lat.toFixed(5),a.p.lon.toFixed(5),Math.round(a.alt),RD.list.filter(x=>x.on).map(x=>x.n+x.ant).join('|')].join(',');
+  if(!force&&key===RD.simKey) return; clearTimeout(rdSimT);
+  rdSimT=setTimeout(async()=>{ if(RD.simBusy){ rdSimT=setTimeout(()=>rdSim(true),400); return; } RD.simBusy=true; RD.simKey=key;
+    try{ RD.plan=await rdCheck([a.p.lat,a.p.lon],a.alt); RD.planAlt=a.alt; }catch(e){} RD.simBusy=false; rdDraw(); rdPanel(); },350); }
+function rdBox(){ let e=$('mRdV'); if(!e){ e=document.createElement('div'); e.id='mRdV'; e.className='mgpsv'; $('map').appendChild(e); }
+  if(GT.on||!RD.show||!RD.plan.length){ e.hidden=true; return; } e.hidden=false; const fm=n=>Math.round(n).toLocaleString();
+  e.innerHTML=`<small>📡 無線シミュレーション（地点の上 ${fm(+$('hh').value||0)} ft・海抜 ${fm((RD.planAlt||0)*FT)} ft）</small>`+RD.plan.map(r=>`<span class="gl">${esc(r.name)} <i class="${r.cls}">${r.short}</i></span>`).join(''); }
+function rdUI(){ if($('mRdB')) return; const b=document.createElement('button'); b.type='button'; b.id='mRdB'; b.className='msnap mrdb'; b.title='無線の見通しを地図に表示'; b.setAttribute('aria-label','無線の見通し表示'); b.setAttribute('aria-pressed',RD.show);
+  b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 13v9M9 22h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="10.5" r="2.2" fill="currentColor"/><path d="M7.6 6.2a6 6 0 0 0 0 8.6M16.4 6.2a6 6 0 0 1 0 8.6M4.6 3.4a10 10 0 0 0 0 14.2M19.4 3.4a10 10 0 0 1 0 14.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',e=>{ e.stopPropagation(); RD.show=!RD.show; rdSaveV(); b.setAttribute('aria-pressed',RD.show); RD.lastT=0; RD.simKey='';
+    if(RD.show){ if(GT.on) rdAuto(); else rdSim(true); if(!MAP.pick&&!GT.on) mapMsg('無線の見通し：地図で地点をタップすると、その上空（ホバリング高度）から各無線局への見通しを判定します。'); }
+    rdDraw(); rdPanel(); try{ gtSpd(); }catch(_){} }); }
+setTimeout(rdUI,345);
 function rdPanel(){ const b=$('rdBox'); if(!b) return; const res=GT.on?RD.gps:RD.plan, by=new Map((res||[]).map(r=>[r.st,r]));
   b.innerHTML=`<div style="font-weight:700">無線の見通し（VHF・地形と地球の丸みから判定）</div>
+  <div class="mrow"><label class="chk"><input type="checkbox" id="rdShow" ${RD.show?'checked':''}> 地図に表示する（地図の📡ボタンと同じ）</label><label class="chk"><input type="checkbox" id="rdSimC" ${RD.sim?'checked':''}> GPSなしでも、選んだ地点・ホバリング高度で自動シミュレーション</label></div>
   <div class="rdlist">${RD.list.map((st,i)=>{ const r=by.get(st); return `<div class="rdrow"><label class="chk"><input type="checkbox" data-rdon="${i}" ${st.on?'checked':''}> ${esc(st.n)}</label><label>アンテナ <input type="number" min="0" step="1" data-rdant="${i}" value="${st.ant}"> m</label>${st.user?`<button type="button" class="small" data-rddel="${i}">削除</button>`:''}${r?`<span class="rdres rd${r.cls}">${r.short}</span><small>${r.txt}</small>`:''}</div>`; }).join('')}</div>
   <div class="mrow"><input id="rdName" type="text" placeholder="局名（例：中継所）" style="width:9em"><button type="button" id="rdAdd">選択中の地点を無線局に追加</button>
-  <button type="button" id="rdPlan">選択地点・ホバリング高度で判定</button>${RD.plan.length?'<button type="button" id="rdClr">判定線を消す</button>':''}</div>
+  <button type="button" id="rdPlan">今すぐ判定</button></div>
   <div class="mrow"><label>GPS高度の補正（ジオイド高を引く） <input id="rdGeo" type="number" step="1" value="${RD.geoid}" style="width:56px"> m</label><small>Androidなどで楕円体高が出る端末は約 38 m を入れる。iPhoneは通常 0。</small></div>
-  <div class="hint" style="font-size:11.5px">GPSオン中は現在地とGPS高度で約10秒ごとに自動判定し、地図に見通し線を描きます（緑＝見通し良好、黄＝フレネル帯にかかる、赤×＝山影で遮られる位置）。地形は標高データ（約10 m／50 mメッシュ）だけで、樹木・建物・電波の回折や反射は含みません。目安として使ってください。</div>`;
-  b.querySelectorAll('[data-rdon]').forEach(c=>c.onchange=()=>{ RD.list[+c.dataset.rdon].on=c.checked; rdSave(); RD.lastT=0; rdAuto(); });
-  b.querySelectorAll('[data-rdant]').forEach(c=>c.onchange=()=>{ RD.list[+c.dataset.rdant].ant=Math.max(0,+c.value||0); rdSave(); RD.lastT=0; rdAuto(); });
+  <div class="hint" style="font-size:11.5px">飛んでいないときは、地図で選んだ地点の上空（地表＋障害物＋ホバリング高度。上のスライダーで5,000 ftまで）から判定します。GPSオン中は現在地とGPS高度で約10秒ごとに自動判定し、地図に見通し線を描きます（緑＝見通し良好、黄＝フレネル帯にかかる、赤×＝山影で遮られる位置）。地形は標高データ（約10 m／50 mメッシュ）だけで、樹木・建物・電波の回折や反射は含みません。目安として使ってください。</div>`;
+  $('rdShow').onchange=e=>{ RD.show=e.target.checked; rdSaveV(); const mb=$('mRdB'); if(mb) mb.setAttribute('aria-pressed',RD.show); RD.lastT=0; RD.simKey=''; if(RD.show){ rdAuto(); rdSim(true); } rdDraw(); rdPanel(); };
+  $('rdSimC').onchange=e=>{ RD.sim=e.target.checked; rdSaveV(); if(!RD.sim){ RD.plan=[]; rdDraw(); rdPanel(); } else rdSim(true); };
+  b.querySelectorAll('[data-rdon]').forEach(c=>c.onchange=()=>{ RD.list[+c.dataset.rdon].on=c.checked; rdSave(); RD.lastT=0; rdAuto(); rdSim(true); });
+  b.querySelectorAll('[data-rdant]').forEach(c=>c.onchange=()=>{ RD.list[+c.dataset.rdant].ant=Math.max(0,+c.value||0); rdSave(); RD.lastT=0; rdAuto(); rdSim(true); });
   b.querySelectorAll('[data-rddel]').forEach(c=>c.onclick=()=>{ RD.list.splice(+c.dataset.rddel,1); rdSave(); rdPanel(); });
   $('rdGeo').onchange=e=>{ RD.geoid=+e.target.value||0; rdSave(); RD.lastT=0; };
   $('rdAdd').onclick=()=>{ const p=MAP.pick; if(!p||p.loading){ mapMsg('先に地図で無線局の位置をタップしてください。'); return; } const n=($('rdName').value||'').trim()||'無線局'+(RD.list.length+1);
-    RD.list.push({n,lat:p.lat,lon:p.lon,elev:isFinite(p.h)?p.h:NaN,ant:20,on:true,user:1}); rdSave(); rdPanel(); };
+    RD.list.push({n,lat:p.lat,lon:p.lon,elev:isFinite(p.h)?p.h:NaN,ant:20,on:true,user:1}); rdSave(); rdPanel(); rdSim(true); };
   $('rdPlan').onclick=async()=>{ const p=MAP.pick; if(!p||p.loading||!isFinite(p.h)){ mapMsg('先に地図で判定する地点（現場）をタップしてください。'); return; }
-    const alt=p.h+(+(($('mObs')||{}).value)||0)+(+$('hh').value||0)/FT; $('rdPlan').disabled=true; $('rdPlan').textContent='判定中…';
-    RD.plan=await rdCheck([p.lat,p.lon],alt); rdDraw(); rdPanel(); };
-  if($('rdClr')) $('rdClr').onclick=()=>{ RD.plan=[]; rdDraw(); rdPanel(); }; }
+    if(!RD.show){ RD.show=true; rdSaveV(); const mb=$('mRdB'); if(mb) mb.setAttribute('aria-pressed',true); }
+    const alt=rdSimAlt().alt; $('rdPlan').disabled=true; $('rdPlan').textContent='判定中…';
+    RD.plan=await rdCheck([p.lat,p.lon],alt); RD.planAlt=alt; rdDraw(); rdPanel(); }; }
 setTimeout(()=>{ try{ rdPanel(); }catch(e){ console.error(e); } },360);
 function gtSpd(){ let e=$('mGpsV'); if(!e){ e=document.createElement('div'); e.id='mGpsV'; e.className='mgpsv'; e.setAttribute('aria-live','off'); $('map').appendChild(e); }
   if(!GT.on||!GT.got){ e.hidden=true; return; } e.hidden=false; const v=GT.v, fm=n=>Math.round(n).toLocaleString();
@@ -3498,7 +3521,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
       ht.hidden=false; ht.className='hlterr '+(ok?'ok':'bad');
       ht.innerHTML=`上の図は<b>平らな地面・余裕0</b>での計算です。地図で選んだ地点の地形で、離脱方向（${dirTxt(E.oOff)}）の地面の上り・樹木と、余裕 ${RC.mg} ft を入れると、片発で要るホバリング高度は <b>${E.hMinO} ft</b>（平らなら ${flat} ft）です。今の ${hft} ft は<b>${ok?'足りています':`${E.hMinO-hft} ft 足りません`}</b>。→ <a href="#g_site">⑤ 断面・離脱</a>`; } else ht.hidden=true; } }
   box.querySelectorAll('[data-rc]').forEach(inp=>inp.onchange=()=>{ const v=+inp.value; if(!isNaN(v)) RC[inp.dataset.rc]=v; try{localStorage.setItem('sd139rc',JSON.stringify(RC));}catch(e){} const op=box.querySelector('.rcset')?.open; drawXsec(XS.H,XS.T,XS.W); const d2=box.querySelector('.rcset'); if(d2&&op) d2.open=true; });
-  box.querySelectorAll('[data-sethh]').forEach(b=>b.onclick=()=>{ const v=+b.dataset.sethh; $('hh').value=v; if($('hhR')) $('hhR').value=Math.min(+$('hhR').max||400,v); update(); });
+  box.querySelectorAll('[data-sethh]').forEach(b=>b.onclick=()=>{ const v=+b.dataset.sethh; $('hh').value=v; if($('hhR')) $('hhR').value=hhV2P(v); update(); });
   const ed=box.querySelector('.escdet'); if(ed) ed.addEventListener('toggle',()=>{ ESCOPEN=ed.open; try{ localStorage.setItem('sd139escopen',ESCOPEN?'1':'0'); }catch(e){} });
   const gd=$('rcGnd'); if(gd) gd.onchange=()=>{ RC.gnd=gd.checked?1:0; try{localStorage.setItem('sd139rc',JSON.stringify(RC));}catch(e){} drawXsec(XS.H,XS.T,XS.W); };
   const rr=$('rcReset'); if(rr) rr.onclick=()=>{ Object.assign(RC,RC0); try{localStorage.removeItem('sd139rc');}catch(e){} drawXsec(XS.H,XS.T,XS.W); const d2=box.querySelector('.rcset'); if(d2) d2.open=true; };
