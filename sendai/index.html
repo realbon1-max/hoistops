@@ -2061,6 +2061,8 @@ function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; if(!HP.o
     h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/><text y="${(r*0.42).toFixed(1)}" font-size="${(r*1.25).toFixed(1)}" font-weight="900" fill="${c}" text-anchor="middle">H</text></g>`;
     if(lab) h+=`<text x="${(px+r+3).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11" font-weight="700" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${x[0]}</text>`; });
   sv.innerHTML=h; }
+function hpAt(la,lo){ let b=null; HELIP.forEach(x=>{ const d=Math.hypot((x[1]-la)*111000,(x[2]-lo)*111000*Math.cos(la*Math.PI/180)); if(d<=40&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
+function hpLines(x){ return [`${x[0]}（${x[3]||'ヘリポート'}）`, `所在地 ${x[4]||'—'}`, `管理者 ${x[5]||'—'}・広さ ${x[6]||'—'}`, '出典：国土数値情報（ヘリポートデータ）・使用の際は管理者に確認']; }
 function hpHit(px,py){ if(!HP.on||MAP.z<9) return null; const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let b=null;
   HELIP.forEach(x=>{ const d=Math.hypot(lon2x(x[2],z)-x0-px,lat2y(x[1],z)-y0-py); if(d<=14&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
 // ---- flight plan (base -> site)
@@ -2736,12 +2738,12 @@ async function snapInset(g,W,H,it,FONT){ const iw=Math.round(Math.min(W*0.44,230
   g.restore(); g.strokeStyle='#fff'; g.lineWidth=2; g.strokeRect(ox,oy,iw,ih); g.font=`700 9.5px ${FONT}`; g.fillStyle='#fff'; g.strokeStyle='rgba(0,0,0,.6)'; g.lineWidth=2.5; g.strokeText('広域図',ox+5,oy+ih+12); g.fillText('広域図',ox+5,oy+ih+12); }
 async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
-  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hdr=opt.place?104:pk?98:76, ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hpx=opt.place?hpAt(opt.place.lat,opt.place.lon):pk?hpAt(pk.lat,pk.lon):null, hdr=(opt.place?104:pk?98:76)+(hpx?46:0), ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
   g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
   await snapTiles(g,$('mBaseL'),1); await snapTiles(g,$('mGOv'),1); await snapTiles(g,$('mOvL'),1);
-  for(const id of ['mGeo','mWindF','mGrid','mIfr','mRoute','mOei','mRadar','mRadio','mDraw','mRet','mEdge']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
+  for(const id of ['mGeo','mWindF','mGrid','mIfr','mRoute','mOei','mRadar','mRadio','mHp','mDraw','mRet','mEdge']){ const r=await snapSvg($(id),W,H); if(r){ g.globalAlpha=r.op; g.drawImage(r.im,0,0,W,H); g.globalAlpha=1; } }
   if(DISP.ret==='none'&&!opt.place){ g.strokeStyle='rgba(255,255,255,.9)'; g.lineWidth=4; g.beginPath(); g.moveTo(W/2-12,H/2); g.lineTo(W/2+12,H/2); g.moveTo(W/2,H/2-12); g.lineTo(W/2,H/2+12); g.stroke(); g.strokeStyle='#ff3b3b'; g.lineWidth=2; g.stroke(); }
   const mk=$('mMark'); if(!opt.place&&mk&&!mk.hidden&&mk.querySelector('svg')){ const r=await snapSvg(mk.querySelector('svg'),52,52); if(r) g.drawImage(r.im,(parseFloat(mk.style.left)||0)-26,(parseFloat(mk.style.top)||0)-26,52,52); }
   // scale bar + north arrow
@@ -2765,6 +2767,8 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   else { if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
   g.strokeStyle='#ff5a5a'; g.lineWidth=2; g.beginPath(); g.moveTo(11,y-4); g.lineTo(23,y-4); g.moveTo(17,y-10); g.lineTo(17,y+2); g.stroke();
   g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13); }
+  if(hpx){ const L=hpLines(hpx), yy=hdr-30; g.fillStyle='rgba(46,125,50,.25)'; g.fillRect(6,yy-14,W-12,38); g.fillStyle='#fff'; g.strokeStyle='#2e7d32'; g.lineWidth=2; g.beginPath(); g.arc(18,yy-1,8,0,7); g.fill(); g.stroke(); g.fillStyle='#2e7d32'; g.font=`900 11px ${FONT}`; g.textAlign='center'; g.fillText('H',18,yy+3); g.textAlign='left';
+    g.fillStyle='#b9f6ca'; fit(L[0],32,yy+3,W-42,'800',13); g.fillStyle='#e8eef5'; fit(`${L[1]}　${L[2]}`,32,yy+20,W-42,'600',11.5); }
   // footer
   g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}${opt.place?'　時間・燃料は無風での計算':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
   return await new Promise(r=>cv.toBlob(r,'image/png')); }
@@ -2780,7 +2784,7 @@ function placeFlightTxt(f,short){ const fm=n=>Math.round(n).toLocaleString(), mm
   return [`${f.from}→現場 ${f.nm.toFixed(1)} NM・磁方位 ${String(f.mag).padStart(3,'0')}°・離陸から約${mm(f.tAir)}（始動〜離陸${f.su}分を含め約${mm(f.tOut)}）${f.eta?`・到着予定 ${f.eta}`:''}`,
     `燃料 ${fm(f.fuel)}→${fm(f.fArr)} kg（−${fm(f.burn)} kg）・全備 ${fm(f.GW)}→${fm(f.gwArr)} kg で臨場・現場で使える時間 約${f.hovMin>0?mm(f.hovMin):'0分'}（帰投・予備を残して）`]; }
 function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`;
-  const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`, `座標 ${fmtAny(la,lo,'dm')}（WGS84）`];
+  const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`]; { const hx=hpAt(la,lo); if(hx) L.push('■ 場外離着陸場・ヘリポート',...hpLines(hx).map(t=>'　'+t)); } L.push(`座標 ${fmtAny(la,lo,'dm')}（WGS84）`);
   if(DISP.coord!=='dm'&&DISP.coord!=='mgrs') L.push(`${COORDN[DISP.coord]} ${fmtAny(la,lo,DISP.coord)}`);
   L.push(`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`, `MGRS ${fmtMGRS(la,lo)}`);
   if(it.h!=null&&isFinite(it.h)) L.push(`標高 ${Math.round(it.h).toLocaleString()} m（${Math.round(it.h*FT).toLocaleString()} ft）`);
@@ -2839,7 +2843,9 @@ async function placeShare(it,btn){ if(!it) return; const old=btn&&btn.textConten
 function snapUI(){ if($('mSnap')) return; const b=document.createElement('button'); b.type='button'; b.id='mSnap'; b.className='msnap'; b.setAttribute('aria-label','地図を画像で共有'); b.title='地図を画像で共有';
   b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
   $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',async e=>{ e.stopPropagation(); if(b.disabled) return; b.disabled=true; b.classList.add('busy');
-    try{ const blob=await mapSnapshot(); snapSheet(blob); }catch(err){ mapMsg('地図の画像を作れませんでした：'+(err&&err.message||err)); } b.disabled=false; b.classList.remove('busy'); }); }
+    try{ const blob=await mapSnapshot(); const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hx=pk&&hpAt(pk.lat,pk.lon);
+      if(hx){ const la=hx[1], lo=hx[2], gm=`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`; const T=['【場外離着陸場・ヘリポート】',...hpLines(hx),`座標 ${fmtAny(la,lo,'dm')}（WGS84）`,`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`,`MGRS ${fmtMGRS(la,lo)}`]; if(isFinite(pk.h)) T.push(`標高 ${Math.round(pk.h).toLocaleString()} m（${Math.round(pk.h*FT).toLocaleString()} ft）`); T.push(mbeFix(la,lo).str, `Googleマップ ${gm}`); snapSheet(blob,{title:hx[0],text:T.join('\n'),gmap:gm}); }
+      else snapSheet(blob); }catch(err){ mapMsg('地図の画像を作れませんでした：'+(err&&err.message||err)); } b.disabled=false; b.classList.remove('busy'); }); }
 function snapSheet(blob,extra){ const old=$('snapOv'); if(old) old.remove(); const now=new Date(), P=n=>String(n).padStart(2,'0');
   const name=`HOISTOPS_${now.getFullYear()}${P(now.getMonth()+1)}${P(now.getDate())}_${P(now.getHours())}${P(now.getMinutes())}.png`;
   const file=new File([blob],name,{type:'image/png'}), url=URL.createObjectURL(blob);
