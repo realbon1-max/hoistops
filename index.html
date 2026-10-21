@@ -555,6 +555,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 #wpTab tr.near td{background:rgba(255,160,40,.16)}#wpTab button{font:inherit;width:28px;height:28px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--warn);cursor:pointer}
 .wpbtns{display:flex;gap:6px;margin:6px 0}.wpbtns button,#wpUse{font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
 #wpTab td.wpbt{white-space:nowrap}
+.etoIn{font:inherit;font-size:14px;font-weight:700;padding:2px 6px;border:1.5px solid #4a90e2;border-radius:6px;background:var(--paper);color:var(--ink);width:auto}.etoNow{font:inherit;font-size:12.5px;font-weight:800;margin-left:4px;padding:3px 9px;border-radius:6px;border:1px solid #4a90e2;background:transparent;color:#4a90e2;cursor:pointer}
 .mtctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 8px}.mtctl .hint{margin:0;font-size:12px}.mtctl select{font:inherit;font-size:13px;padding:3px 6px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .mtc{border:1px solid var(--rule);border-left:6px solid var(--cat,#888);border-radius:8px;padding:7px 10px;margin:0 0 8px;background:var(--paper)}
 .mtc .hd{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.mtc .hd b{font-size:16px}.mtc .hd .nm{font-weight:700}.mtc .hd small{color:var(--muted);font-size:11.5px}
@@ -2105,7 +2106,7 @@ function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString()
   <tr><td>水平距離</td><td class="r">${g.nm.toFixed(1)} NM（${(g.nm*1.852).toFixed(1)} km）</td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間（片道・無風）</td><td class="r">${mm(out.t)}${su?`＋始動等 ${su}分`:''}</td></tr>
-  <tr><td>到着予定時刻（無風）</td><td class="r">${eta?`<b style="font-size:15px">${eta}</b>（離陸 ${tv}）`:'<span style="color:var(--muted)">離陸予定時刻を入れると表示</span>'}</td></tr>
+  <tr><td>到着予定時刻（無風）</td><td class="r">${eta?`<b style="font-size:15px">${eta}</b>（離陸 <input type="time" class="etoIn" value="${tv}" aria-label="離陸予定時刻">）`:'<span style="color:var(--muted)">離陸予定時刻 </span><input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button>'}</td></tr>
   ${DLX?`<tr><td>現場の日没／薄明終了</td><td class="r"><b>${DLX.ss}</b>／<b>${DLX.du}</b></td></tr><tr><td>救助終了見込み（${DLX.wk}分）→帰投</td><td class="r">${DLX.wend} → ${DLX.home} 着</td></tr>`:''}
   <tr><td>消費燃料（片道）</td><td class="r">${fm(burnOut)} kg</td></tr>
   <tr><td>到着時の燃料／全備重量</td><td class="r">${fm(fArr)} kg／${fm(gwArr)} kg</td></tr>
@@ -2238,6 +2239,10 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   try{ const t=localStorage.getItem('aw139eto'); if(t) $('fpTo').value=t; }catch(e){}
   $('fpFuel').addEventListener('input',mapInfo);
   $('fpTo').addEventListener('input',()=>{ try{localStorage.setItem('aw139eto',$('fpTo').value);}catch(e){} mapInfo(); });
+  // inline entry of the takeoff time from the flight table (writes the same field as 出発地・飛行条件)
+  const etoSet=v=>{ $('fpTo').value=v; $('fpTo').dispatchEvent(new Event('input')); };
+  document.addEventListener('change',e=>{ if(e.target.classList&&e.target.classList.contains('etoIn')&&e.target.value) etoSet(e.target.value); });
+  document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.etoNow'); if(!b) return; const d=new Date(); etoSet(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); });
   $('fpNow').onclick=()=>{ const d=new Date(); d.setMinutes(d.getMinutes()+(+FP.su||0)); $('fpTo').value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); $('fpTo').dispatchEvent(new Event('input')); };
   try{ $('vrsOn').checked=localStorage.getItem('aw139vrs')==='1'; }catch(e){}
   $('vrsOn').addEventListener('change',()=>{ try{localStorage.setItem('aw139vrs',$('vrsOn').checked?'1':'0');}catch(e){} update(); });
