@@ -1420,7 +1420,7 @@ function drawRel(Happ,T){
       if(y>T0&&y<B0) h+=`<line x1="0" y1="${y}" x2="700" y2="${y}" stroke="#00a8e0" stroke-width="2.4" stroke-dasharray="12 4 3 4"/><text x="405" y="${y-6}" text-anchor="end" font-size="13" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3.5">0℃ フリージングレベル ${fm(fz)} ft</text>`;
       else note.push(`0℃ フリージングレベル 約${fm(fz)} ft（図の範囲外）`); break; } }
     if(P[0].t<0) h+=`<text x="405" y="${bot-26}" text-anchor="end" font-size="12" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3">地上付近から 0℃ 以下（着氷に注意）</text>`;
-    note.push(`雲・0℃：気象庁${WXP.model} ${WXP.time} の格子予報（N${WXP.lat.toFixed(3)} E${WXP.lon.toFixed(3)} 付近、実況ではありません）`+(WXP.rain!=null?`／予報の降水 ${WXP.rain.toFixed(1)} mm/h`:'')); }
+    note.push(`雲・0℃：気象庁${WXP.model} ${WXP.time} の格子予報（N${WXP.lat.toFixed(3)} E${WXP.lon.toFixed(3)} 付近、実況ではありません）`+(WXP.qnh?`／QNH ${Math.round(WXP.qnh)} hPa`:'')+(WXP.rain!=null?`／予報の降水 ${WXP.rain.toFixed(1)} mm/h`:'')); }
   // rain: the nowcast (observed) wins over the model forecast
   const R=window.RNOW, snow=window.WXP&&WXP.t2!=null&&WXP.t2<1.5; let rr=null, rl='';
   if(R&&R.mx){ rr=R.mx[3]; rl=`${snow?'❄ 雪・みぞれ':'☂ 雨'}（実況）現場 ${R.at?(R.at[4]>=999?'80 mm/h 以上':`${R.at[3]}〜${R.at[4]} mm/h`):'なし'}${R.mx!==R.at?`・周囲1 km 最大 ${R.mx[4]>=999?'80以上':`${R.mx[3]}〜${R.mx[4]}`} mm/h`:''}`; note.push(`雨：気象庁 高解像度降水ナウキャスト ${R.time}（実況）`); }
@@ -4038,15 +4038,19 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
     if(!rows.length){ $('jmaMsg').textContent='この時刻のデータがありません。'; return; }
     { const pr=[]; JMA.lv.forEach(l=>{ const t=H[`temperature_${l}hPa`], z=H[`geopotential_height_${l}hPa`], rh=H[`relative_humidity_${l}hPa`], cc=H[`cloud_cover_${l}hPa`]; if(t&&t[i]!=null&&z&&z[i]!=null) pr.push({p:l,t:t[i],z:z[i]*FT,rh:rh&&rh[i]!=null?rh[i]:null,cc:cc&&cc[i]!=null?cc[i]:null}); });
       window.WXP={pr,rain:H.precipitation?H.precipitation[i]:null,t2:H.temperature_2m?H.temperature_2m[i]:null,time:$('jmaT').selectedOptions[0].textContent.replace('（今）',''),model:$('jmaM').value==='jma_msm'?'MSM':'GSM',lat:JMA.ll[0],lon:JMA.ll[1]}; }
+    { const sp=H.surface_pressure&&H.surface_pressure[i], el=d.elevation, ms=H.pressure_msl&&H.pressure_msl[i];
+      const q=(sp!=null&&el!=null)?sp/Math.pow(1-2.25577e-5*el,5.25588):ms; JMA.qnh=null;
+      if(q!=null&&q>900&&q<1080){ JMA.qnh={v:q,el}; if(window.WXP) WXP.qnh=q; setMaster(null,q,null); } }
+    if($('relWx')&&!$('relWx').disabled) $('relWx').textContent='🌐 気象庁MSMを読み込み直す';
     WP.base='hpa'; WP.rows=rows; WP.auto=true; WP.lastKey=''; const tb=$('wpTab'); tb.dataset.built=''; wpSave();
     document.querySelectorAll('#wpBase [data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b==='hpa')); if($('wpAuto')) $('wpAuto').checked=true; wpDraw(); try{ update(); }catch(e){}
-    $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
+    $('jmaMsg').innerHTML=`<b>${$('jmaT').selectedOptions[0].textContent}</b> の${$('jmaM').value==='jma_msm'?'MSM':'GSM'}予報を ${rows.length}層${JMA.qnh?`・QNH ${Math.round(JMA.qnh.v)} hPa（${(JMA.qnh.v/33.8639).toFixed(2)} inHg）`:''} 入れました（${d.latitude.toFixed(2)}, ${d.longitude.toFixed(2)} 付近の格子）。数値予報は実況ではありません。出典：気象庁（Open-Meteo経由）`; };
   $('jmaT').onchange=jmaApply;
   jmaBind2();
   if($('relWx')) $('relWx').onclick=async()=>{ const b=$('relWx'); if(!(MAP.pick&&!MAP.pick.loading)){ b.textContent='先に地図で現場を選んでください'; setTimeout(()=>b.textContent='🌐 気象庁MSMの雲・0℃高度・雨を重ねる',2500); return; } b.disabled=true; b.textContent='読み込み中…'; try{ await $('jmaGo').onclick(); }catch(e){} b.disabled=false; b.textContent='🌐 気象庁MSMを読み込み直す'; try{ update(); }catch(e){} };
   $('jmaGo').onclick=async()=>{ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z), b=$('jmaGo'), m=$('jmaMsg');
     if(navigator.onLine===false){ m.textContent='オフラインのため読み込めません。'; return; }
-    const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`)); const vx=[]; JMA.lv.forEach(l=>vx.push(`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`)); vx.push('precipitation','temperature_2m'); const vc=[]; JMA.lv.forEach(l=>vc.push(`cloud_cover_${l}hPa`));
+    const vars=[]; JMA.lv.forEach(l=>vars.push(`temperature_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`)); const vx=[]; JMA.lv.forEach(l=>vx.push(`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`)); vx.push('precipitation','temperature_2m','pressure_msl','surface_pressure'); const vc=[]; JMA.lv.forEach(l=>vc.push(`cloud_cover_${l}hPa`));
     const mk=v=>`https://api.open-meteo.com/v1/jma?latitude=${la.toFixed(4)}&longitude=${lo.toFixed(4)}&hourly=${v.join(',')}&models=${$('jmaM').value}&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`, url=mk(vars.concat(vx,vc));
     b.disabled=true; b.textContent='読み込み中…';
     try{ let r=await fetch(url); if(r.status===400) r=await fetch(mk(vars.concat(vx))); if(r.status===400) r=await fetch(mk(vars)); if(!r.ok) throw new Error('HTTP '+r.status); const d=await r.json(); if(!d.hourly||!d.hourly.time) throw new Error(d.reason||'データなし'); JMA.data=d;
