@@ -1958,7 +1958,11 @@ function mapRender(){
   const mk=$('mMark'); mkHeli(); if(MAP.pick){ mk.hidden=false; mk.style.left=(lon2x(MAP.pick.lon,z)-x0)+'px'; mk.style.top=(lat2y(MAP.pick.lat,z)-y0)+'px'; } else mk.hidden=true;
 }
 let mapRAF=0; const mapReq=()=>{ if(!mapRAF) mapRAF=requestAnimationFrame(()=>{mapRAF=0; mapRender();}); };
-function mapMsg(text){ const m=$('mMsg'); if(!m.onclick) m.onclick=()=>{ m.hidden=true; m.dataset.closed=1; };
+// keep the message banner clear of the wind panel: beside it when the panel is open, under it when it is a single line
+function mmsgPlace(){ const m=$('mMsg'), w=document.querySelector('#map .mwind'), el=$('map'); if(!m||!el) return; if(getComputedStyle(m).bottom!=='auto'&&getComputedStyle(m).top==='auto') return;
+  if(!w||w.hidden||!w.offsetWidth){ m.style.left='10px'; m.style.top='10px'; return; } const r=w.getBoundingClientRect(), R=el.getBoundingClientRect();
+  if(r.height<64){ m.style.left='10px'; m.style.top=(r.bottom-R.top+6)+'px'; } else { m.style.left=(r.right-R.left+8)+'px'; m.style.top='10px'; } }
+function mapMsg(text){ const m=$('mMsg'); if(!m.onclick) m.onclick=()=>{ m.hidden=true; m.dataset.closed=1; }; try{ mmsgPlace(); }catch(e){}
   if(text){ m.hidden=false; if(/<(br|small|b)>/.test(text)) m.innerHTML=text; else m.textContent=text; return; }
   if(MAP.ok===0&&MAP.ng>=3&&MAP.base!=='local'&&![...TS.known].some(k=>k.startsWith(MAP.base+'/'))){ mapSetBase('local'); m.hidden=false; m.textContent='地理院の地図を読み込めないため、内蔵の標高データ（長野県と周辺）から作った地形図で表示しています。標高とホバリングの判定は、内蔵データの範囲内ならネット接続なしで使えます。'; setTimeout(()=>{m.hidden=true;},9000); }
   else if(MAP.ok>0) m.hidden=true; }
@@ -2170,7 +2174,7 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
     else if(pts.size===2&&st.pinch){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), r=el.getBoundingClientRect(); const mx=(a.x+b.x)/2-r.left, my=(a.y+b.y)/2-r.top;
       if(d/st.pinch>1.6){mapZoom(1,mx,my); st.pinch=d;} else if(d/st.pinch<0.62){mapZoom(-1,mx,my); st.pinch=d;} } });
   const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
-    if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
+    if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; { const mm=$('mMsg'); if(mm&&/移動中/.test(mm.textContent)) mm.hidden=true; } st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
         const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; const la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } }
@@ -3856,7 +3860,7 @@ function mwTrue(){ if(wmode!=='true'){ const hd=+$('hdg').value||0, rel=+$('rel'
 function jmaBind2(){ const b2=$('jmaGo2'); if(!b2||b2.dataset.b) return; b2.dataset.b=1; b2.addEventListener('pointerdown',e=>e.stopPropagation());
   b2.onclick=async e=>{ e.stopPropagation(); const g=$('jmaGo'); if(!g) return; const t=b2.textContent; b2.disabled=true; b2.textContent='読み込み中…'; try{ await g.onclick(); }catch(_){} const nb=$('jmaGo2'); if(nb){ nb.disabled=false; nb.textContent=t; } mapMsg($('jmaMsg').innerText+'（時刻は「② 条件」の「高度ごとの気温と風」の表で変えられます）'); }; }
 function mwVals(){ const hd=((+$('hdg').value%360)+360)%360, wd=wmode==='true'?((+$('wdir').value%360)+360)%360:((hd+(+$('rel').value||0))%360+360)%360; return {hd,wd,ws:+$('ws').value||0}; }
-function mapWind(){ mkHeli(); const box=$('mWind'); if(!box) return; const {hd,wd,ws}=mwVals(), R0=58, C=70, P3=v=>String(Math.round(v)%360||360).padStart(3,'0');
+function mapWind(){ setTimeout(()=>{ try{ mmsgPlace(); }catch(e){} },0); mkHeli(); const box=$('mWind'); if(!box) return; const {hd,wd,ws}=mwVals(), R0=58, C=70, P3=v=>String(Math.round(v)%360||360).padStart(3,'0');
   const pt=(a,r)=>[C+r*Math.sin(a*RAD),C-r*Math.cos(a*RAD)];
   const rel=((wd-hd+540)%360)-180, ar=Math.abs(rel), side=ar<15||ar>165?'':rel>0?'右':'左';
   const kind=ws<=0?'無風':ar<=45?'向かい風':ar>=135?'背風（追い風）':'横風';
