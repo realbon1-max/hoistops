@@ -1,0 +1,28 @@
+# Every 10 minutes: fetch the latest METAR/TAF for Japanese aerodromes and publish wx.json on the "wx" branch
+# (one commit, force-pushed, so the history does not grow). The app reads it from raw.githubusercontent.com.
+name: METAR/TAF
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: wx
+  cancel-in-progress: true
+jobs:
+  wx:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch
+        run: python3 tools/fetch_wx.py /tmp/wx.json
+      - name: Publish to the wx branch
+        run: |
+          mkdir /tmp/pub && cd /tmp/pub && git init -q -b wx
+          cp /tmp/wx.json .
+          git config user.name "hoistops-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add wx.json && git commit -qm "METAR/TAF $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" wx
