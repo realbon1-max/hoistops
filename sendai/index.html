@@ -1418,13 +1418,14 @@ function drawRel(Happ,T){
       if(L&&L.c===c&&L.top===a.z){ L.top=b.z; L.mx=Math.max(L.mx,m); L.cc=Math.max(L.cc,cc); } else B.push({c,bot:a.z,top:b.z,mx:m,cc}); }
     B.forEach(r=>{ if(r.c===2&&cb==null) cb=r.bot; const y1=yl(r.top), y2=yl(r.bot); if(y2-y1<1) return;
       h+=`<rect x="0" y="${y1}" width="700" height="${y2-y1}" fill="#a9b6c3" fill-opacity="${r.c===2?.42:.18}"${r.c===2?'':' stroke="#a9b6c3" stroke-opacity=".6" stroke-dasharray="6 5"'}/>`;
-      if(y2-y1>13) h+=`<text x="12" y="${y1+15}" font-size="12" font-weight="800" fill="var(--ink)" opacity=".8" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${r.c===2?'☁ 雲':'雲の可能性'} ${fm(r.bot)}〜${fm(r.top)} ft（湿度 ${Math.round(r.mx)}%${r.cc?`・雲量 ${Math.round(r.cc)}%`:''}）</text>`; });
+      if(y2-y1>13) h+=`<text x="695" y="${y1+14}" text-anchor="end" font-size="11" font-weight="800" fill="var(--ink)" opacity=".75" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${r.c===2?'☁ 雲':'雲の可能性'}</text>`; });
+    B.forEach(r=>note.push(`${r.c===2?'☁ 雲':'雲の可能性'} ${fm(r.bot)}〜${fm(r.top)} ft（湿度 最大${Math.round(r.mx)}%${r.cc?`・雲量 最大${Math.round(r.cc)}%`:''}）`));
     if(!B.length) note.push(`MSM の予報ではこの地点・時刻に雲の層はありません（湿度 最大${Math.round(rhx)}%）`);
     for(let k=0;k<P.length-1;k++){ const a=P[k], b=P[k+1]; if((a.t>=0)!==(b.t>=0)){ const fz=a.z+(b.z-a.z)*(a.t/(a.t-b.t)), y=Y(fz);
       if(y>T0&&y<B0) h+=`<line x1="0" y1="${y}" x2="700" y2="${y}" stroke="#00a8e0" stroke-width="2.4" stroke-dasharray="12 4 3 4"/><text x="405" y="${y-6}" text-anchor="end" font-size="13" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3.5">0℃ フリージングレベル ${fm(fz)} ft</text>`;
       else note.push(`0℃ フリージングレベル 約${fm(fz)} ft（図の範囲外）`); break; } }
     if(P[0].t<0) h+=`<text x="405" y="${bot-26}" text-anchor="end" font-size="12" font-weight="800" fill="#00a8e0" paint-order="stroke" stroke="var(--paper)" stroke-width="3">地上付近から 0℃ 以下（着氷に注意）</text>`;
-    note.push(`雲・0℃：気象庁${WXP.model} ${WXP.time} の格子予報（N${WXP.lat.toFixed(3)} E${WXP.lon.toFixed(3)} 付近、実況ではありません）`+(WXP.qnh?`／QNH ${Math.round(WXP.qnh)} hPa`:'')+(WXP.rain!=null?`／予報の降水 ${WXP.rain.toFixed(1)} mm/h`:'')); }
+    note.push(`雲・0℃：気象庁${WXP.model} ${WXP.time} の格子予報（N${WXP.lat.toFixed(3)} E${WXP.lon.toFixed(3)} 付近、実況ではありません）`+(WXP.qnh?`／QNH ${Math.round(WXP.qnh)} hPa（${(WXP.qnh/33.8639).toFixed(2)} inHg）を入力欄に入れました`:'／予報に気圧がないため QNH は変えていません')+(WXP.rain!=null?`／予報の降水 ${WXP.rain.toFixed(1)} mm/h`:'')); }
   // rain: the nowcast (observed) wins over the model forecast
   const R=window.RNOW, snow=window.WXP&&WXP.t2!=null&&WXP.t2<1.5; let rr=null, rl='';
   if(R&&R.mx){ rr=R.mx[3]; rl=`${snow?'❄ 雪・みぞれ':'☂ 雨'}（実況）現場 ${R.at?(R.at[4]>=999?'80 mm/h 以上':`${R.at[3]}〜${R.at[4]} mm/h`):'なし'}${R.mx!==R.at?`・周囲1 km 最大 ${R.mx[4]>=999?'80以上':`${R.mx[3]}〜${R.mx[4]}`} mm/h`:''}`; note.push(`雨：気象庁 高解像度降水ナウキャスト ${R.time}（実況）`); }
@@ -4000,7 +4001,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
     { const pr=[]; JMA.lv.forEach(l=>{ const t=H[`temperature_${l}hPa`], z=H[`geopotential_height_${l}hPa`], rh=H[`relative_humidity_${l}hPa`], cc=H[`cloud_cover_${l}hPa`]; if(t&&t[i]!=null&&z&&z[i]!=null) pr.push({p:l,t:t[i],z:z[i]*FT,rh:rh&&rh[i]!=null?rh[i]:null,cc:cc&&cc[i]!=null?cc[i]:null}); });
       window.WXP={pr,rain:H.precipitation?H.precipitation[i]:null,t2:H.temperature_2m?H.temperature_2m[i]:null,time:$('jmaT').selectedOptions[0].textContent.replace('（今）',''),model:$('jmaM').value==='jma_msm'?'MSM':'GSM',lat:JMA.ll[0],lon:JMA.ll[1]}; }
     { const sp=H.surface_pressure&&H.surface_pressure[i], el=d.elevation, ms=H.pressure_msl&&H.pressure_msl[i];
-      const q=(sp!=null&&el!=null)?sp/Math.pow(1-2.25577e-5*el,5.25588):ms; JMA.qnh=null;
+      const z1=H.geopotential_height_1000hPa&&H.geopotential_height_1000hPa[i]; let q=(sp!=null&&el!=null)?sp/Math.pow(1-2.25577e-5*el,5.25588):ms; if(q==null&&z1!=null) q=1000/Math.pow(1-2.25577e-5*z1,5.25588); JMA.qnh=null;
       if(q!=null&&q>900&&q<1080){ JMA.qnh={v:q,el}; if(window.WXP) WXP.qnh=q; setMaster(null,q,null); } }
     if($('relWx')&&!$('relWx').disabled) $('relWx').textContent='🌐 気象庁MSMを読み込み直す';
     WP.base='hpa'; WP.rows=rows; WP.auto=true; WP.lastKey=''; const tb=$('wpTab'); tb.dataset.built=''; wpSave();
