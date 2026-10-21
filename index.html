@@ -2446,8 +2446,8 @@ const GOVL=[
   {k:'slopemap',n:'傾斜量図',g:'国土地理院',url:(z,x,y)=>`${GSI}slopemap/${z}/${x}/${y}.png`,min:3,max:15},
   {k:'slopecls',n:'色別傾斜区分図',g:'国土地理院',calc:'cls',note:'地理院の標高タイルから傾斜を計算'},
   {k:'wflow',n:'局所気流（推定）',g:'気流（地形と風からの推定）',calc:'wflow',note:'入力した風向・風速と地形から推定'},
-  {k:'jnowc',n:'雨雲（高解像度降水ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('nowc',z,x,y),min:4,max:10,note:'気象庁・5分ごと・実況'},
-  {k:'jthns',n:'雷（雷ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('thns',z,x,y),min:4,max:10,note:'気象庁・活動度1〜4'},
+  {k:'jnowc',n:'雨雲（高解像度降水ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('nowc',z,x,y),min:4,max:10,zs:[4,6,8,10],note:'気象庁・5分ごと・実況'},
+  {k:'jthns',n:'雷（雷ナウキャスト）',g:'気象（気象庁）',jma:'nowc',url:(z,x,y)=>jmaUrl('thns',z,x,y),min:4,max:10,zs:[4,6,8,10],note:'気象庁・活動度1〜4'},
   {k:'jsatv',n:'雲（ひまわり 可視・高解像度）',g:'気象（気象庁）',jma:'satjp',url:(z,x,y)=>jmaUrl('satv',z,x,y),min:3,max:6,note:'気象庁・日本域・昼間のみ'},
   {k:'jsatir',n:'雲（ひまわり 赤外）',g:'気象（気象庁）',jma:'satjp',url:(z,x,y)=>jmaUrl('satir',z,x,y),min:3,max:6,note:'気象庁・日本域・夜間も可'},
   {k:'kokuarea',n:'空港等の周辺空域',g:'空域（国土交通省航空局）',geo:'kokuarea',col:'#2e7d32',note:'制限表面など'},
@@ -2630,9 +2630,11 @@ function govRender(){ const box=$('mGOv'), el=$('map'); if(!box||!el) return; co
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty+(L.calc==='wflow'?'/'+wfSig():''); want.add(k);
       let t=lay.querySelector(`[data-k="${k}"]`);
       if(!t){ if(L.calc){ t=document.createElement('canvas'); t.width=t.height=256; t.dataset.k=k; lay.appendChild(t); govCalc(t,L,z,tx,ty).catch(()=>{}); }
-        else { const zs=Math.min(z,L.max), f=Math.pow(2,z-zs), ptx=Math.floor(tx/f), pty=Math.floor(ty/f); t=document.createElement('div'); t.className='govt'; t.dataset.k=k;
-          const im=document.createElement('img'); im.alt=''; im.draggable=false; im.style.cssText=`position:absolute;width:${256*f}px;height:${256*f}px;left:${-(tx-ptx*f)*256}px;top:${-(ty-pty*f)*256}px;max-width:none`;
-          im.onerror=()=>{ im.remove(); }; im.src=L.url(zs,ptx,pty); t.appendChild(im); lay.appendChild(t); } }
+        else { t=document.createElement('div'); t.className='govt'; t.dataset.k=k; const im=document.createElement('img'); im.alt=''; im.draggable=false;
+          // some services (JMA nowcast tiles) publish only some zoom levels: fall back to a lower zoom and enlarge it
+          const load=zs=>{ const f=Math.pow(2,z-zs), ptx=Math.floor(tx/f), pty=Math.floor(ty/f); im.style.cssText=`position:absolute;width:${256*f}px;height:${256*f}px;left:${-(tx-ptx*f)*256}px;top:${-(ty-pty*f)*256}px;max-width:none`;
+            im.onerror=()=>{ if(zs-1>=L.min) load(zs-1); else im.remove(); }; im.src=L.url(zs,ptx,pty); };
+          load(Math.min(z,(L.zs?L.zs.filter(v=>v<=z).pop():null)||L.max)); t.appendChild(im); lay.appendChild(t); } }
       t.style.left=(tx*256-x0)+'px'; t.style.top=(ty*256-y0)+'px'; }
     lay.querySelectorAll('[data-k]').forEach(t=>{ if(!want.has(t.dataset.k)) t.remove(); }); });
   govLegend(); }
