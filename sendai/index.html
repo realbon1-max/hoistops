@@ -609,8 +609,9 @@ details[open]>summary .more{display:none}
 details.notice>summary{cursor:pointer;list-style:none}details.notice>summary::-webkit-details-marker{display:none}
 details.notice[open]>summary{margin-bottom:4px}details.notice .about{color:inherit;opacity:.85}
 /* 地図操作ボタンの固定（スクロールしても上に残す） */
-nav.jump{padding-top:calc(6px + env(safe-area-inset-top,0px))!important;margin-top:calc(-1 * env(safe-area-inset-top,0px))}
-.mstick{position:sticky;top:var(--jh,46px);z-index:40;background:var(--panel);margin:0 -6px;padding:2px 6px 4px;border-radius:0 0 8px 8px}
+nav.jump{top:env(safe-area-inset-top,0px)!important}
+body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:#04080d;z-index:60;pointer-events:none}
+.mstick{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--jh,46px));z-index:40;background:var(--panel);margin:0 -6px;padding:2px 6px 4px;border-radius:0 0 8px 8px}
 .mstick.stuck{box-shadow:0 6px 12px -6px rgba(0,0,0,.45);max-height:calc(100vh - var(--jh,46px) - 120px);overflow-y:auto;overscroll-behavior:contain}
 .mstick.stuck .mlayers .mlab,.mstick.stuck .drawh{display:none}
 .mstick.stuck .mtabs,.mstick.stuck .drawmodes,.mstick.stuck .mlayers{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
@@ -4361,17 +4362,17 @@ update();
   const setJ=()=>{ document.documentElement.style.setProperty('--jh',(nav?nav.getBoundingClientRect().height:0)+'px'); };
   setJ(); addEventListener('resize',setJ); addEventListener('orientationchange',()=>setTimeout(setJ,300));
   const chk=()=>{ const t=st.getBoundingClientRect().top, j=nav?nav.getBoundingClientRect().height:0, sec=document.getElementById('mapsec').getBoundingClientRect();
-    const on = t<=j+1 && sec.top<j && sec.bottom>j+st.offsetHeight+40; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
+    const jb=nav?nav.getBoundingClientRect().bottom:0; const on = t<=jb+1 && sec.top<jb && sec.bottom>jb+st.offsetHeight+40; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
   addEventListener('scroll',chk,{passive:true}); addEventListener('resize',chk); setTimeout(chk,300);
 })();
 
 // 各欄の見出しをタップで畳む（参考の表・図は最初から畳んでおく）
 (function(){ const DEFC={'高度と許容風速':1,'チャートで確認':1,'qnh':1,'ptab':1};
-  document.querySelectorAll('section.box').forEach(sec=>{ if(sec.id==='mapsec') return; const h=sec.querySelector(':scope>h2'); if(!h) return;
+  document.querySelectorAll('section.box').forEach(sec=>{ const h=sec.querySelector(':scope>h2'); if(!h) return;
     const k=sec.getAttribute('aria-label')||sec.id; h.classList.add('sfh'); h.tabIndex=0; h.setAttribute('role','button');
     const ap=c=>{ sec.classList.toggle('sfold',c); h.setAttribute('aria-expanded',String(!c)); };
     ap(FOLDS.get('s:'+k,!!DEFC[k]));
-    const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const c=!sec.classList.contains('sfold'); ap(c); FOLDS.set('s:'+k,c); if(!c) try{ update(); }catch(err){} };
+    const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const c=!sec.classList.contains('sfold'); ap(c); FOLDS.set('s:'+k,c); if(!c){ try{ update(); }catch(err){} dispatchEvent(new Event('resize')); } };
     h.addEventListener('click',tg); h.addEventListener('keydown',tg); });
   document.querySelectorAll('h3.fh').forEach(h=>{ const k=h.dataset.fk, box=h.closest('.wprof')||h.parentElement; const body=h.closest('.wprof')?null:h.nextElementSibling;
     h.tabIndex=0; h.setAttribute('role','button');
