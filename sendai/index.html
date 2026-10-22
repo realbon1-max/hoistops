@@ -745,6 +745,10 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .fpn{font-size:11.5px;margin-top:2px}
 #mInfo .fpr .ft .v .ok,#mInfo .fpr .ft .v b.ok{color:var(--ok)}
 @container (max-width:519px){ #mInfo .fpr{grid-template-columns:repeat(2,minmax(0,1fr))} #mInfo .fpr.r3{grid-template-columns:repeat(3,minmax(0,1fr))} #mInfo .ft.k .v{font-size:22px} }
+
+#mInfo .tl.og .m2{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+#mInfo .tl.og .m2 .now{font-size:12px;font-weight:700;opacity:.85}#mInfo .tl.og .m2 .ar{font-size:11px;color:var(--muted)}
+#mInfo .tl.og .m2 .arr{font-size:12px;font-weight:700}#mInfo .tl.og .m2 .arr b{font-size:17px;font-weight:800}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2389,7 +2393,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   { const T0=fpT0(); window.FPARR=T0.m+out.t; window.FPARRset=true; }
   const tOut=out.t+su, burnOut=(+FP.ff)*tOut/60, burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
-  const fArr=fuel-burnOut, gwArr=GW-burnOut, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0;
+  const fArr=fuel-burnOut, gwArr=GW-burnOut; window.FPGWARR=gwArr; const onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0;
   const mm=t=>`${Math.floor(t)}分${String(Math.round((t%1)*60)).padStart(2,'0')}秒`;
   const T0=fpT0(), tv=T0.hm; let eta='',lim='';
   if(tv){ const [hh_,mi_]=tv.split(':').map(Number); const t0=hh_*60+mi_; const hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
@@ -2415,7 +2419,6 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
     <div class="fph">時刻</div><div class="fpr">${T('eta','到着予定',`<b>${eta||'—'}</b>`,etoS,'k')}${T('res',`救助終了（${DLX?DLX.wk:+FP.work||0}分）`,DLX?DLX.wend:'—','','')}${T('back',DST?'目的地着':'帰投着',DLX?DLX.home:'—','','')}${T('lim','離脱リミット',lim?`<b class="warn">${lim}</b>`:'—','','k')}</div>
     <div class="fph">飛行</div><div class="fpr">${T('dist','距離',`${g.nm.toFixed(1)}<small> NM</small>`,`${(g.nm*1.852).toFixed(1)} km`)}${T('alt','高度差',`${dh>=0?'+':'−'}${fm(Math.abs(dh))}<small> ft</small>`)}${T('time','飛行時間',`${Math.round(out.t)}<small> 分</small>`,su?`＋始動 ${su}分`:'')}${T('sun','日没',DLX?DLX.ss:'—',DLX?`薄明終了 ${DLX.du}`:'')}</div>
     <div class="fph">燃料</div><div class="fpr">${T('fuel','消費（往路）',`${fm(burnOut)}<small> kg</small>`)}${T('fuel','到着時の燃料',`${fm(fArr)}<small> kg</small>`,`全備 ${fm(gwArr)} kg`)}${T('back',DST?'目的地への燃料':'帰投燃料',`${fm(burnBack)}<small> kg</small>`,`${Math.round(back.t)}分・${gb.nm.toFixed(1)} NM`)}${T('hov','ホバリング可能',`<b class="${hc}">${hovMin>0?Math.floor(hovMin):0}<small> 分</small></b>`,'','k')}</div>
-    <div class="fph">到着時のOGE余裕</div><div class="fpr r3">${T('wt','TOP',marg('p917'),'')}${T('wt','MCP',marg('p918'),'')}${T('wt','OEI 2.5分',marg('p444z'),'')}</div>
     ${densAlt(Hp,T)>7000?'<div class="fpn warn">密度高度7,000 ft超：TOPでのホイスト運用は不可</div>':''}</div>`; })()}
   ${out.orbit?`<div class="hint warn">高度差が大きく、水平距離の間に上がり切れません（上昇に ${Math.ceil(out.tV)}分）。時間は上昇時間で計算しています。</div>`:''}
   ${Math.abs(FROM.lat-BASE.lat)>1e-5||Math.abs(FROM.lon-BASE.lon)>1e-5?`<div class="hint">出発地が${BASE.name}以外です。飛行中に別の現場へ向かう場合は「始動〜離陸」を0分に、「出発時の燃料」を今の残燃料にしてください（出発時の燃料 ${fm(fuel)} kg${fv!==''?'':'＝搭載燃料'}）。</div>`:''}
@@ -2488,18 +2491,20 @@ function mapInfo0(){
   const t=MAP.thr||mapThresholds(); const W=+$('gw').value, wind=getHW();
   const site=p.h*FT+(+$('mObs').value||0)*FT, hov=site+(+$('hh').value||0);
   const Hp=hov+t.f, T=ISA(Hp)+t.dev, hd=densAlt(Hp,T); const fm=n=>Math.round(n).toLocaleString();
+  const fpH=flightHTML(p,site,hov,Hp,T), Wa=window.FPGWARR!=null?window.FPGWARR:W;
   const rows=[['p917','TOP'],['p918','MCP'],['p444z','OEI 2.5分'],['p444','OEI＋向かい風']].map(([k,nm])=>{
     const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:'図の範囲外'};
     if(!r.err&&tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,wind)));
     if(r.err) return `<div class="tl"><div class="l">${nm}</div><div class="v caution">${r.err}</div></div>`;
     const m=r.W-W, c=m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)';
-    return `<div class="tl og" style="--oc:${c}"><div class="l">${nm}</div><div class="v">${fm(r.W)}<small> kg</small></div><div class="m" style="color:${c}">余裕 ${m>=0?'+':''}${fm(m)}</div></div>`;}).join('');
+    const ma=r.W-Wa, ca=ma>=100?'var(--ok)':ma>=0?'var(--caution)':'var(--warn)', sg=v=>(v>=0?'+':'−')+fm(Math.abs(v));
+    return `<div class="tl og" style="--oc:${ca}"><div class="l">${nm}</div><div class="v">${fm(r.W)}<small> kg</small></div><div class="m2"><span class="now" style="color:${c}">今 ${sg(m)}</span><span class="ar">→</span><span class="arr" style="color:${ca}">到着 <b>${sg(ma)}</b></span></div></div>`;}).join('');
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
   box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="wxs" id="wxSite"></div><div class="sitev"><div class="big" title="${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}">${tIco('elev')}${DISP.alt==='ft'?fm(p.h*FT)+'<small> ft</small>':fm(p.h)+'<small> m</small>'}</div><div class="hchips"><span title="地表">${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}</span><span title="樹木・障害物の上面">${tIco('tree')}${fm(site)} ft</span><span title="ホバリング高度">${tIco('heli')}${fm(hov)} ft</span></div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
   <div class="mi">${tilesOf(`<table><tr><td>気圧高度</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>気温</td><td class="r" colspan="2">${T.toFixed(1)}℃<small> ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}</small></td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>許容横風・背風 MCP</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
-  <div class="mi"><div class="mih">${tIco('wt')}OGE最大重量 <small>全備 ${fm(W)} kg との差</small></div><div class="tiles t4">${rows}</div></div>
-  ${flightHTML(p,site,hov,Hp,T)}
+  <div class="mi"><div class="mih">${tIco('wt')}OGE最大重量と余裕 <small>今 全備 ${fm(W)} kg → 到着時 ${fm(Wa)} kg（往路で燃料 ${fm(W-Wa)} kg 消費）</small></div><div class="tiles t4">${rows}</div></div>
+  ${fpH}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
   $('mUse').onclick=()=>applyPick(true);
   try{ wxSite(p,hov); }catch(e){ console.warn(e); }
