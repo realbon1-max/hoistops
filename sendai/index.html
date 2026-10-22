@@ -705,6 +705,20 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .llall .ll1{white-space:nowrap}#mInfo .mbe{display:flex;flex-direction:column;gap:0}#mInfo .mbe>span{font-size:11.5px!important;color:var(--muted);white-space:nowrap}
 @container (min-width:520px){ #mInfo .mi.site{grid-template-columns:auto minmax(0,1fr) auto!important} }
 @container (max-width:519px){ #mInfo .wxs{margin:6px 0;padding:6px 0;border-top:1px dashed var(--rule);border-bottom:1px dashed var(--rule)} }
+
+/* 地点カード：2段レイアウト（上：座標｜高さ・判定、下：現場の予報の帯） */
+#mInfo .mi.site{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"ll sv" "wx wx";gap:4px 14px!important}
+#mInfo .mi.site>.llall{grid-area:ll}#mInfo .mi.site>.sitev{grid-area:sv}#mInfo .mi.site>.wxs{grid-area:wx}
+#mInfo .wxs{display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center!important;justify-content:flex-start!important;gap:6px 16px!important;min-width:0!important;margin-top:6px;padding:8px 10px!important;border-radius:10px;background:var(--panel);border:1px solid var(--rule)}
+#mInfo .wxtop{display:contents!important}
+#mInfo .wxic{width:50px!important;height:52px!important;flex:none}
+#mInfo .wxtx{min-width:0}#mInfo .wxtx b{font-size:17px!important}
+#mInfo .wxwind{flex:none}#mInfo .wxwind b{font-size:24px!important}
+#mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 220px}
+#mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
+#mInfo .wxp{width:15px;height:15px;flex:none}
+#mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
+@container (max-width:519px){ #mInfo .mi.site{grid-template-columns:1fr!important;grid-template-areas:"ll" "sv" "wx"} #mInfo .mi.site .sitev{text-align:left} #mInfo .hchips{justify-content:flex-start!important} #mInfo .wxs{border-top:1px solid var(--rule)!important;border-bottom:1px solid var(--rule)!important} #mInfo .wxt{margin-left:0} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -4602,6 +4616,15 @@ function wxIcon(code,night){ const c=code==null?-1:code, id='wg'+Math.random().t
   else if(c>=95) g=cloud(true)+bolt+rain(2);
   else g=cloud(false);
   return `<svg class="wxic" viewBox="0 0 64 68" aria-hidden="true"><defs><radialGradient id="${id}s" cx=".4" cy=".35"><stop offset="0" stop-color="#fff59d"/><stop offset=".6" stop-color="#ffc107"/><stop offset="1" stop-color="#ff8f00"/></radialGradient><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffde7"/><stop offset="1" stop-color="#b0bec5"/></linearGradient><linearGradient id="${id}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd8e3"/></linearGradient><linearGradient id="${id}d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa7b6"/><stop offset="1" stop-color="#5f6d7c"/></linearGradient></defs>${g}</svg>`; }
+function wxPic(k){ const P=d=>`<svg class="wxp" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  return P(({base:'<path d="M6 11h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5 1A3 3 0 0 0 6 11z"/><path d="M12 14v7M9 18l3 3 3-3"/>',
+    vis:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    oat:'<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+    fz:'<path d="M12 3v10M8 5l4 3 4-3M8 11l4-3 4 3"/><path d="M3 18h18" stroke-dasharray="3 2"/>',
+    ice:'<path d="M12 2v20M3.5 7l17 10M3.5 17l17-10M9 4l3 2 3-2M9 20l3-2 3 2"/>',
+    top:'<path d="M6 10h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5 1A3 3 0 0 0 6 10z"/><path d="M12 21v-7M9 17l3-3 3 3"/>',
+    ra:'<path d="M6 10h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5 1A3 3 0 0 0 6 10z"/><path d="M8 14l-1 3M12 14l-1 3M16 14l-1 3M10 19l-1 2M14 19l-1 2"/>',
+    sn:'<path d="M6 10h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5 1A3 3 0 0 0 6 10z"/><circle cx="8" cy="15" r=".8" fill="currentColor"/><circle cx="12" cy="18" r=".8" fill="currentColor"/><circle cx="16" cy="15" r=".8" fill="currentColor"/><circle cx="10" cy="21" r=".8" fill="currentColor"/><circle cx="14" cy="21" r=".8" fill="currentColor"/>'})[k]||''); }
 async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
   const key=(Math.round(p.lat*20)/20).toFixed(2)+','+(Math.round(p.lon*20)/20).toFixed(2), C=WXS.c[key];
   const LV=[1000,975,950,925,900,850,800,700,600,500];
@@ -4637,21 +4660,21 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     else if(below.length){ hd='雲上 VMC on top'; cls='w'; ic=2; }
     else { hd=wc!=null&&wc<=1?'VMC 快晴':'VMC'; cls='ok'; }
     const fm=n=>Math.round(n).toLocaleString(), chips=[];
-    if(base!=null&&base<8000) chips.push([`雲底 ${fm(Math.round(base/100)*100)} ft AGL`,base<1000?'d':base<2000?'w':'']);
-    if(vis!=null) chips.push([`VIS ${vis>=10000?'10km+':(vis/1000).toFixed(1)+'km'}`,vis<1600?'d':vis<5000?'w':'']);
-    if(tH!=null) chips.push([`OAT ${tH.toFixed(0)}℃ @${fm(Math.round(H/100)*100)}`,'']);
-    if(fz!=null) chips.push([`0℃ ${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'']);
-    if(icing&&!(hd.includes('着氷'))) chips.push(['着氷のおそれ','d']);
-    if(above.length&&!inCloud) chips.push([`上空に雲 ${fm(Math.round((above[0].z-siteFt)/100)*100)} ft AGL〜`,'']);
-    if(precip&&!hd.match(/雨|雪|TS|FZ/)) chips.push([sn?'降雪':'降水','w']);
-    if(gu!=null&&ws!=null&&gu>=ws+8) chips.push([`突風 G${Math.round(gu)}`,gu>=30?'d':'w']);
+    if(base!=null&&base<8000) chips.push([`${fm(Math.round(base/100)*100)} ft`,base<1000?'d':base<2000?'w':'','base','雲底（地上から）']);
+    if(vis!=null) chips.push([`${vis>=10000?'10 km+':(vis/1000).toFixed(1)+' km'}`,vis<1600?'d':vis<5000?'w':'','vis','視程']);
+    if(tH!=null) chips.push([`${tH.toFixed(0)}℃`,'','oat',`ホバリング高度 ${fm(Math.round(H/100)*100)} ft の気温`]);
+    if(fz!=null) chips.push([`${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'','fz','0℃高度（フリージングレベル）']);
+    if(icing&&!(hd.includes('着氷'))) chips.push(['着氷','d','ice','着氷のおそれ']);
+    if(above.length&&!inCloud) chips.push([`${fm(Math.round((above[0].z-siteFt)/100)*100)} ft〜`,'','top','上空の雲（地上から）']);
+    if(precip&&!hd.match(/雨|雪|TS|FZ/)) chips.push([sn?'雪':'雨','w',sn?'sn':'ra',sn?'降雪':'降水']);
+    
     let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
     if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
-    b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?`・露点差 ${spread.toFixed(0)}℃`:''}</span></div>
+    b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div></div>
-      ${chips.length?`<div class="wxch">${chips.map(([t,c])=>`<span class="${c}">${t}</span>`).join('')}</div>`:''}
-      <div class="wxt">${window.FPARRset?'到着':'到着予定'} ${T[i].slice(11,16)}・ホバリング高度 ${fm(Math.round(H/100)*100)} ft の予報（MSM）<button type="button" class="wxuse" title="この予報の地上風を風向・風速に入れる">風に反映</button></div>`;
+      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}${t}</span>`).join('')}</div>`:''}
+      <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${T[i].slice(11,16)} 予報<button type="button" class="wxuse" title="この予報の地上風を風向・風速に入れる">風に反映</button></div>`;
     const u=b.querySelector('.wxuse'); if(u) u.onclick=()=>{ if(wd==null||ws==null) return; try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=Math.round(ws); if($('wsR')) $('wsR').value=Math.round(ws); update(); mapWind&&mapWind(); }catch(e){} u.textContent='反映しました'; }; };
   if(C&&Date.now()-C.t<3600e3){ draw(C.d); return; }
   if(navigator.onLine===false){ box.innerHTML='<div class="wxt">オフライン：予報は表示できません</div>'; return; }
