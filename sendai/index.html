@@ -2414,7 +2414,7 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
     for(let k=1;k<L.length;k++){ const a=L[k-1], b=L[k], g=gc(a.lat,a.lon,b.lat,b.lon); if(g.nm<0.2) continue; const [ax,ay]=P(a.lat,a.lon), [bx_,by_]=P(b.lat,b.lon); if(Math.hypot(bx_-ax,by_-ay)<70) continue;
       const mx=(ax+bx_)/2, my=(ay+by_)/2, an=Math.atan2(by_-ay,bx_-ax), ox=-Math.sin(an)*12, oy=Math.cos(an)*12;
       t+=g.nm/gs*60; h+=tag(mx+ox,my+oy+4,`${P3(g.crs+MAGVAR)}°M・${g.nm.toFixed(1)} NM・${Math.round(g.nm/gs*60)}分`,k===L.length-1&&DST?'#2e7d32':'#8e1b6e');
-      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?'':`（${T0.pick}選択）`}・${gs} kt`,'#15253a','start'); }
+      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?`（離陸 ${T0.hm}）`:`（${T0.pick}選択＋始動${T0.su}分）`}・${gs} kt`,'#15253a','start'); }
     if(gpsKt){ const [gla,glo]=GT.last, g=gc(gla,glo,site.lat,site.lon), [sx,sy]=P(site.lat,site.lon), [gx,gy]=P(gla,glo), m=g.nm/gpsKt*60;
       h+=`<line x1="${gx}" y1="${gy}" x2="${sx}" y2="${sy}" stroke="#0b63ce" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>`;
       h+=tag(sx+12,sy+18,`GPS ${Math.round(gpsKt)} kt・${P3(g.crs+MAGVAR)}°M ${g.nm.toFixed(1)} NM・ETA ${hm(nm0+m)}（${Math.round(m)}分）`,'#0b63ce','start');
@@ -2487,7 +2487,8 @@ function applyPick(force){ const p=MAP.pick; if(!p||p.loading||p.err||isNaN(p.h)
   if($('mRefOn').checked){ const rf=(+$('mRefE').value||0)*FT; const T=(+$('mRefT').value)-1.98*(site-rf)/1000; $('oat').value=T.toFixed(1); $('oatR').value=Math.round(T); setMaster(site,null,null); }
   else setElev(site);
 }
-function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'local':'net',at:Date.now()}; mapReq(); mapInfo(); const my=MAP.pick;
+function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const n=new Date(), d=((+v.split(':')[0])*60+(+v.split(':')[1]))-(n.getHours()*60+n.getMinutes()); const dd=((d%1440)+1440)%1440; if(dd>720&&dd<1440-0){ /* takeoff time already passed */ if(1440-dd>10){ $('fpTo').value=''; try{ localStorage.removeItem('sd139eto'); }catch(e){} } } } }catch(e){}
+  MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'local':'net',at:Date.now()}; mapReq(); mapInfo(); const my=MAP.pick;
   elevAt(lat,lon).then(h=>{ if(MAP.pick!==my) return; my.loading=false; my.h=h; mapInfo(); if(!isNaN(h)) applyPick(false); if(typeof drawXsec==='function'&&XS.W) drawXsec(XS.H,XS.T,XS.W); })
    .catch(e=>{ if(MAP.pick!==my) return; my.loading=false; my.err='標高タイルを読み込めません（インターネット接続を確認してください）'; mapInfo(); }); }
 (function(){
@@ -2545,9 +2546,10 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   $('fromQ').addEventListener('keydown',e=>{if(e.key==='Enter')$('fromGo').click();});
   $('fromPick').onclick=()=>{ const p=MAP.pick; if(!p||p.loading||isNaN(p.h)){ mapMsg('先に地図で地点を選んでください。'); return; } FROM={name:'選択地点 '+fmtLL(p.lat,p.lon),lat:p.lat,lon:p.lon,elev:p.h}; setFrom(FROM); };
   $('fromBase').onclick=()=>setFrom({...BASE});
-  try{ const t=localStorage.getItem('sd139eto'); if(t) $('fpTo').value=t; }catch(e){}
+  // 設定した離陸予定は、保存から3時間以内のときだけ復元（古い値が残って ETA がずれるのを防ぐ）
+  try{ const t=localStorage.getItem('sd139eto'), at=+localStorage.getItem('sd139etoAt')||0; if(t&&Date.now()-at<3*3600e3) $('fpTo').value=t; else localStorage.removeItem('sd139eto'); }catch(e){}
   $('fpFuel').addEventListener('input',mapInfo);
-  $('fpTo').addEventListener('input',()=>{ try{localStorage.setItem('sd139eto',$('fpTo').value);}catch(e){} mapInfo(); });
+  $('fpTo').addEventListener('input',()=>{ try{localStorage.setItem('sd139eto',$('fpTo').value); localStorage.setItem('sd139etoAt',String(Date.now()));}catch(e){} mapInfo(); try{ drawRoute(); }catch(e){} });
   // inline entry of the takeoff time from the flight table (writes the same field as 出発地・飛行条件)
   const etoSet=v=>{ $('fpTo').value=v; $('fpTo').dispatchEvent(new Event('input')); };
   ['change','input'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!(t.classList&&t.classList.contains('etoIn'))) return; if(t.value){ if(ev==='change') etoSet(t.value); } else if($('fpTo').value) etoSet(''); }));
@@ -3097,7 +3099,7 @@ function flightNums(la,lo,hM){ const site=(isFinite(hM)?hM:0)*FT+(+$('mObs').val
   const R_=RET(), gb=gc(la,lo,R_.lat,R_.lon), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
   const fArr=fuel-burn, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0; let eta='';
-  const tv=$('fpTo').value; if(tv){ const [a,b]=tv.split(':').map(Number); const m=((Math.round(a*60+b+out.t)%1440)+1440)%1440; eta=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
+  const tv=fpT0().hm; if(tv){ const [a,b]=tv.split(':').map(Number); const m=((Math.round(a*60+b+out.t)%1440)+1440)%1440; eta=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
   return {from:FROM.name,nm:g.nm,mag:((Math.round(g.crs+MAGVAR)%360)+360)%360||360,tAir:out.t,tOut,su,burn,fuel,fArr,GW,gwArr:GW-burn,hovMin,eta}; }
 function placeFlightTxt(f,short){ const fm=n=>Math.round(n).toLocaleString(), mm=t=>`${Math.round(t)}分`;
   if(short) return [`${f.from}→現場 ${f.nm.toFixed(1)} NM・${String(f.mag).padStart(3,'0')}°M・離陸から約${mm(f.tAir)}${f.eta?`（${f.eta}着）`:''}`, `燃料 ${fm(f.fuel)}→${fm(f.fArr)} kg（−${fm(f.burn)}）・全備 ${fm(f.gwArr)} kg で臨場・現場 約${f.hovMin>0?mm(f.hovMin):'0分'}`];
