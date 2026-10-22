@@ -581,6 +581,29 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 .wfl{font-size:12px;color:var(--muted);text-align:center;margin-top:4px;max-width:270px}
 #wpUse{background:#2f6fb0;color:#fff;border-color:#2f6fb0;margin:4px 0}.wpout{font-size:13px}.wpv{font-size:18px;color:#2f6fb0}.wpout small{color:var(--muted)}
 
+
+/* 折りたたみ */
+h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
+h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
+section.sfold>h2.sfh::after{content:'▾'}
+section.box.sfold>:not(h2){display:none!important}
+section.box.sfold{padding-bottom:6px}section.box.sfold>h2{margin-bottom:0}
+h3.fh{cursor:pointer;user-select:none}h3.fh::after{content:' ▴';font-size:11px;color:var(--muted)}h3.fh.fc::after{content:' ▾ 開く';font-size:11px;color:var(--muted);font-weight:400}
+.fhid{display:none!important}
+.ptabs:has(>.pt:first-child>h3.fc){grid-template-columns:1fr!important}.rfsum small{margin-left:8px;font-size:11px}.rfsum small+b{margin-left:3px}
+details.reffold>summary{cursor:pointer;list-style:none}details.reffold>summary::-webkit-details-marker{display:none}
+details.reffold>summary::before{content:'▸ ';}details.reffold[open]>summary::before{content:'▾ ';}
+.rfsum{margin-left:6px}.rfsum b{margin-left:8px;font-size:12.5px}details.reffold[open] .rfsum{display:none}
+details.dwfold>summary,details.hzfold>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+details.dwfold>summary::-webkit-details-marker,details.hzfold>summary::-webkit-details-marker{display:none}
+details.dwfold>summary h3{margin:0}details.dwfold>summary::before,details.hzfold>summary::before{content:'▸';color:var(--muted);font-size:12px}
+details.dwfold[open]>summary::before,details.hzfold[open]>summary::before{content:'▾'}
+.dwsum{font-size:12.5px;color:var(--muted)}details.dwfold[open] .dwsum{display:none}
+details.hzfold>summary .lv{margin:0}
+details .more{font-size:11.5px;color:var(--muted);border:1px solid var(--rule);border-radius:10px;padding:0 7px;margin-left:6px;font-weight:400}
+details[open]>summary .more{display:none}
+details.notice>summary{cursor:pointer;list-style:none}details.notice>summary::-webkit-details-marker{display:none}
+details.notice[open]>summary{margin-bottom:4px}details.notice .about{color:inherit;opacity:.85}
 /* 地図操作ボタンの固定（スクロールしても上に残す） */
 nav.jump{padding-top:calc(6px + env(safe-area-inset-top,0px))!important;margin-top:calc(-1 * env(safe-area-inset-top,0px))}
 .mstick{position:sticky;top:var(--jh,46px);z-index:40;background:var(--panel);margin:0 -6px;padding:2px 6px 4px;border-radius:0 0 8px 8px}
@@ -742,8 +765,8 @@ a{color:#7cc4ff}
     </section>
 </div>
 <div class="aboutbar">
-<div class="notice">試作版。数値はスキャン画像のチャートから読み取った目安で、読み取り誤差（重量で約±20 kg）があります。運航の判断は必ずRFMの原図で行ってください。下の「チャートで確認」で、計算の読み取り線を原図に重ねて確かめられます。</div>
-<p class="about">飛行規程のチャートを数値化し、風の許容範囲、OGEホバリング可能重量、片発故障後の離脱時の高度低下、燃料消費によるホバリング可能時刻を一画面で計算します。</p>
+<details class="notice nfnote" id="noticeD"><summary><b>試作版</b>：数値は目安。運航の判断は必ずRFMの原図で。<span class="more">詳しく</span></summary>数値はスキャン画像のチャートから読み取った目安で、読み取り誤差（重量で約±20 kg）があります。運航の判断は必ずRFMの原図で行ってください。下の「チャートで確認」で、計算の読み取り線を原図に重ねて確かめられます。
+<p class="about">飛行規程のチャートを数値化し、風の許容範囲、OGEホバリング可能重量、片発故障後の離脱時の高度低下、燃料消費によるホバリング可能時刻を一画面で計算します。</p></details>
 </div>
 <main>
   <div class="col">
@@ -917,17 +940,19 @@ a{color:#7cc4ff}
       <h2>気圧の対照表（QNH換算・気圧と高度）</h2>
       <div class="ptabs">
         <div class="pt">
-          <h3>QNH換算表</h3>
+          <h3 class="fh" data-fk="qnh">QNH換算表</h3><div class="fb">
           <div class="ctl">刻み：<button type="button" data-u="hPa" aria-pressed="true">hPa 1ごと</button><button type="button" data-u="hPa5" aria-pressed="false">hPa 5ごと</button><button type="button" data-u="inHg" aria-pressed="false">inHg 0.05ごと</button></div>
           <div class="pscroll" id="qsc"><table id="qTab2"></table></div>
           <p class="legend">換算値 = 気圧高度 − 標高。QNHが低いほど換算値はプラス（気圧高度が標高より高い）。右端の列は、今の現場の標高 <b id="qElv"></b> ft で読んだ気圧高度。範囲は920〜1060 hPa（27.17〜31.30 inHg）。黄色の行が今のQNH。</p>
+          </div>
         </div>
         <div class="pt">
-          <h3>気圧と高度の対照（標準大気・200 hPaまで）</h3>
+          <h3 class="fh" data-fk="ptab">気圧と高度の対照（標準大気・200 hPaまで）</h3><div class="fb">
           <div class="pscroll" id="psc"><table id="pTab"></table></div>
           <p class="legend">気圧高度とISA気温は標準大気の値（どの日も同じ）。「今日の海抜」は、今のQNHと気温（ISA偏差 <b id="pDev"></b>）で、その気圧の面が海抜何ftにあるかの概算。黄色＝現場の気圧、青＝航空機の高さの気圧。</p>
+          </div>
           <div class="wprof" id="wprof">
-            <h3>高度ごとの気温と風（エマグラム・高層天気図などから入力）</h3>
+            <h3 class="fh" data-fk="wprof">高度ごとの気温と風（エマグラム・高層天気図などから入力）</h3>
             <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
               <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
             <div class="wpscroll"><table id="wpTab"></table></div>
@@ -1073,7 +1098,7 @@ function drawDownwash(H,T,W){
   const wind=windComp().ws, person=d.q*0.7*1.1/9.80665; // standing adult ~0.7 m2, Cd~1.1
   const bf=v=>{const t=[[0.3,0],[1.6,1],[3.4,2],[5.5,3],[8,4],[10.8,5],[13.9,6],[17.2,7],[20.8,8],[24.5,9],[28.5,10],[32.7,11]]; for(const [x,n] of t) if(v<x) return n; return 12;};
   const hh=+$('hh').value||0, hD=hh*0.3048/ROTOR_D;
-  let h=`<h3>この条件でのダウンウォッシュ（理論値）</h3><div class="row3">
+  let h=`<div class="row3">
   <div class="k"><div class="l">ローター面の吹き下ろし</div><div class="v">${fm(d.vi,1)} m/s</div><div class="s">${fm(d.vi*ms2kt)} kt／${fm(d.vi*3.6)} km/h</div></div>
   <div class="k"><div class="l">ローター下方の最大（後流）</div><div class="v" style="color:var(--warn)">${fm(d.vw,1)} m/s</div><div class="s">${fm(d.vw*ms2kt)} kt／${fm(d.vw*3.6)} km/h（風力${bf(d.vw)}相当）</div></div>
   <div class="k"><div class="l">人が受ける力（立った成人）</div><div class="v">約 ${fm(person)} kgf</div><div class="s">体重70 kgの人の約${fm(person/70*100)}%</div></div></div>`;
@@ -1092,7 +1117,8 @@ function drawDownwash(H,T,W){
   h+=`<svg viewBox="0 0 440 80" role="img" aria-label="ダウンウォッシュと風速の比較">${g}</svg>`;
   h+=`<div class="hint note">全備重量 ${fm(W)} kg、空気密度 ${fm(d.rho,3)} kg/m³（海面の${fm(d.sig*100)}%）、ローター直径 ${ROTOR_D} m、ディスク荷重 ${fm(d.dl,1)} kg/m²。運動量理論（v=√(T/2ρA)、後流は2倍）による。空気が薄いほど、重いほど強くなります。</div>`;
   h+=`<div class="hint note">ホバリング高度 ${hh} ft（ローター直径の約${fm(hD,1)}倍）：${hD<=3?`ローター直径の3倍以内なので、後流はほぼ ${fm(d.vw,1)} m/s のまま地表に届きます（Airbus SPN 3684-P-00）。地表では横に向きを変え、0.5〜1直径の所で最大、その先は距離に反比例して弱まります（Prestonモデル：1直径で最大値、2直径で約半分、6直径で約1/7）`:hD<10?`ローター直径の3倍を超えるので、後流は乱れて弱まりながら地表に届きます（約 ${fm(d.vw*wakeF(hD),1)} m/s。10直径でほぼ静止、Airbus SPN 3684-P-00）`:'ローター直径の10倍以上なので、後流は地表に届くまでにほぼ静まります（Airbus SPN 3684-P-00）'}。風の目安（同SPN）：60 km/h（17 m/s）で1 cm未満の小石、80〜90 km/h（22〜25 m/s）で1 cmを超える石や瓦が飛び、100 km/h（28 m/s）で大人が風に向かって歩けず、130 km/h（36 m/s）で立っていられず60 kgの大人が倒れます。実際の地表の風速は高さ・地形・風で変わるので、目安として見てください。</div>`;
-  $('dwBox').innerHTML=h;
+  $('dwBox').innerHTML=`<details class="dwfold"${FOLDS.get('dw',false)?' open':''}><summary><h3>この条件でのダウンウォッシュ（理論値）</h3><span class="dwsum">後流 <b style="color:var(--warn)">${fm(d.vw,1)} m/s</b>（${fm(d.vw*ms2kt)} kt）・人が受ける力 約 ${fm(person)} kgf</span></summary>${h}</details>`;
+  $('dwBox').querySelector('details').addEventListener('toggle',e=>FOLDS.set('dw',e.target.open));
 }
 
 let VRSW=null, VRSANIM=0;
@@ -1314,7 +1340,7 @@ function hazardEval(H,T,W){
   if(cw.head<0) li+=`<li>背風成分 ${Math.abs(cw.head).toFixed(0)} kt：ホバリング性能が下がる方向</li>`;
   if(!hits.length&&!low) li+='<li>危険方位に入っていません。向かい風±45°付近が最も余裕を持てます。</li>';
   $('hazard').style.borderLeftColor=cols[lv];
-  $('hazard').innerHTML=`<div class="lv" style="color:${cols[lv]}">機首保持の${names[lv]}</div><ul>${li}</ul><div class="hzkey">${HZ.map(z=>`<span style="--c:${z.c}">${z.k==='rfm'?'RFM 第4-6図':z.name.split('（')[0]}</span>`).join('')}</div>`;
+  $('hazard').innerHTML=`<details class="hzfold"${FOLDS.get('hz',false)?' open':''}><summary><div class="lv" style="color:${cols[lv]}">機首保持の${names[lv]}</div><span class="more">理由・説明</span></summary><ul>${li}</ul><div class="hzkey">${HZ.map(z=>`<span style="--c:${z.c}">${z.k==='rfm'?'RFM 第4-6図':z.name.split('（')[0]}</span>`).join('')}</div></details>`; $('hazard').querySelector('details').addEventListener('toggle',e=>FOLDS.set('hz',e.target.open));
 }
 function updateWind(H,T,W){
   const cw=windComp(), a=cw.a, ws=cw.ws, hd=densAlt(H,T);
@@ -1628,7 +1654,7 @@ function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(
     if(!r.err&&r.capped) flags.push('性能図の上限6,400 kgで頭打ち（6,400 kg超の図が必要）');
     if(T>isa+35) flags.push('MAX OAT限界を超える外気温度');
     state.res[tp.key]=r;
-    if(tp.ref&&!box.querySelector('.refhead')){const hd=document.createElement('div'); hd.className='refhead'; hd.textContent='参考：ローター回転数100%の図（No.11がホイスト運用の重量の決定に指定する図）'; box.appendChild(hd);}
+    if(tp.ref&&!box.querySelector('.reffold')){const hd=document.createElement('details'); hd.className='reffold'; hd.open=FOLDS.get('ref100',false); hd.innerHTML='<summary class="refhead">参考：ローター回転数100%の図（No.11がホイスト運用の重量の決定に指定する図）<span class="rfsum"></span></summary>'; hd.addEventListener('toggle',()=>FOLDS.set('ref100',hd.open)); box.appendChild(hd);}
     if(!box.querySelector('.blegend')){ const lg=document.createElement('div'); lg.className='blegend'; lg.innerHTML='<span><i class="lcur"></i>縦線＝今の全備重量</span><span><i class="lmax"></i>棒の先端＝ホバリングできる最大重量（限界）</span><span>右の数字の「余裕」＝限界−全備</span>'; box.appendChild(lg); }
     const el=document.createElement('div'); el.className='tape'+(tp.ref?' ref':'');
     const pct=v=>((v-4400)/(MTOW()-4400)*100);
@@ -1641,7 +1667,8 @@ function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(
       valHTML=`<div class="val" style="color:${c}">${Math.round(r.W).toLocaleString()} kg<small>余裕 ${m>=0?'+':''}${Math.round(m)} kg</small></div>`;
     }
     el.innerHTML=`<div class="name">${tp.name}<small>${tp.sub}</small></div>${barHTML}${valHTML}${flags.length?`<div class="flags">注意：${flags.join('／')}</div>`:''}`;
-    box.appendChild(el);
+    (tp.ref?box.querySelector('.reffold'):box).appendChild(el);
+    if(tp.ref&&!r.err){ const sm=box.querySelector('.rfsum'); const mm=r.W-W; sm.innerHTML+=`<small>${/OEI/.test(tp.name)?'OEI':/連続/.test(tp.name)?'連続':'離陸'}</small><b style="color:${colorFor(mm)}">${Math.round(r.W).toLocaleString()}</b>`; }
   });
   drawStack(W); drawBurn(W); updateWind(H,T,W); drawRel(H,T); drawCeil(H,T,W,wind); if(typeof xsRedraw==='function'){ XS.H=H; XS.T=T; XS.W=W; xsRedraw(); }
   // height loss
@@ -3809,6 +3836,9 @@ function pendHTML(wft){ const L=Math.max(1,wft/FT+RC.pc), d=RC.po, P=pendCalc(L,
    <li><b>揺れたまま巻き上げると振れ角が大きくなります</b>（${f1(deg)}° → 5 m で約 ${f1(thR/RAD)}°、周期 ${f1(pendCalc(Lr,0.01).T)} 秒）。機体・スキッドへの衝突に注意。</li>
    <li>機体の横移動がこの周期に合うと揺れが大きくなります（共振）。修正は周期より十分ゆっくり。</li>
    <li>理想的な振り子の計算です（ダウンウォッシュ・風・回転・介添えロープは含まない）。</li></ul></details></div>`; }
+// 折りたたみの開閉状態（端末に保存）
+const FOLDS=(()=>{ let o={}; try{ o=JSON.parse(localStorage.getItem('aw139folds')||'{}')||{}; }catch(e){}
+  return { get:(k,d)=>k in o?o[k]:d, set:(k,v)=>{ o[k]=v; try{ localStorage.setItem('aw139folds',JSON.stringify(o)); }catch(e){} } }; })();
 let WDOPEN=false; try{ WDOPEN=localStorage.getItem('aw139wdopen')==='1'; }catch(e){}
 document.addEventListener('toggle',e=>{ if(e.target&&e.target.classList&&e.target.classList.contains('wdet')){ WDOPEN=e.target.open; try{ localStorage.setItem('aw139wdopen',WDOPEN?'1':'0'); }catch(err){} } },true);
 // fold explanatory notes (.legend / .note) behind a small "▼ 説明" toggle; remembers which ones are open
@@ -4372,6 +4402,23 @@ update();
   const chk=()=>{ const t=st.getBoundingClientRect().top, j=nav?nav.getBoundingClientRect().height:0, sec=document.getElementById('mapsec').getBoundingClientRect();
     const on = t<=j+1 && sec.top<j && sec.bottom>j+st.offsetHeight+40; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
   addEventListener('scroll',chk,{passive:true}); addEventListener('resize',chk); setTimeout(chk,300);
+})();
+
+// 各欄の見出しをタップで畳む（参考の表・図は最初から畳んでおく）
+(function(){ const DEFC={'高度と許容風速':1,'チャートで確認':1,'qnh':1,'ptab':1};
+  document.querySelectorAll('section.box').forEach(sec=>{ if(sec.id==='mapsec') return; const h=sec.querySelector(':scope>h2'); if(!h) return;
+    const k=sec.getAttribute('aria-label')||sec.id; h.classList.add('sfh'); h.tabIndex=0; h.setAttribute('role','button');
+    const ap=c=>{ sec.classList.toggle('sfold',c); h.setAttribute('aria-expanded',String(!c)); };
+    ap(FOLDS.get('s:'+k,!!DEFC[k]));
+    const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const c=!sec.classList.contains('sfold'); ap(c); FOLDS.set('s:'+k,c); if(!c) try{ update(); }catch(err){} };
+    h.addEventListener('click',tg); h.addEventListener('keydown',tg); });
+  document.querySelectorAll('h3.fh').forEach(h=>{ const k=h.dataset.fk, box=h.closest('.wprof')||h.parentElement; const body=h.closest('.wprof')?null:h.nextElementSibling;
+    h.tabIndex=0; h.setAttribute('role','button');
+    const ap=c=>{ h.classList.toggle('fc',c); h.setAttribute('aria-expanded',String(!c)); if(body) body.hidden=c; else [...box.children].forEach(x=>{ if(x!==h) x.classList.toggle('fhid',c); }); };
+    ap(FOLDS.get('h:'+k,!!DEFC[k]));
+    const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const c=!h.classList.contains('fc'); ap(c); FOLDS.set('h:'+k,c); };
+    h.addEventListener('click',tg); h.addEventListener('keydown',tg); });
+  const nd=document.getElementById('noticeD'); if(nd){ nd.open=FOLDS.get('notice',false); nd.addEventListener('toggle',()=>FOLDS.set('notice',nd.open)); }
 })();
 </script>
 <script>
