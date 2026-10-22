@@ -4452,6 +4452,18 @@ update();
     h.addEventListener('click',tg); h.addEventListener('keydown',tg); });
   const nd=document.getElementById('noticeD'); if(nd) nd.open=false;
 })();
+
+// スライダー操作中に画面が勝手に動かないように：ブラウザの自動スクロール補正を止め、操作中のスライダーの位置を固定
+(function(){ document.documentElement.style.overflowAnchor='none'; document.body.style.overflowAnchor='none';
+  let el=null, top=0, raf=0, until=0;
+  const fix=()=>{ if(!el||!el.isConnected) return; const d=el.getBoundingClientRect().top-top; if(Math.abs(d)>0.5){ const sc=el.closest('main>.col'); if(sc&&getComputedStyle(sc).position==='sticky'&&sc.scrollHeight>sc.clientHeight) sc.scrollTop+=d; else scrollBy(0,d); } };
+  const loop=()=>{ fix(); if(performance.now()<until) raf=requestAnimationFrame(loop); else { raf=0; el=null; } };
+  const hold=t=>{ if(el!==t){ el=t; top=t.getBoundingClientRect().top; } until=performance.now()+600; if(!raf) raf=requestAnimationFrame(loop); };
+  document.addEventListener('pointerdown',e=>{ const t=e.target; if(t&&t.type==='range'){ el=null; hold(t); until=Infinity; } },true);
+  const up=()=>{ if(el) until=performance.now()+600; };
+  document.addEventListener('pointerup',up,true); document.addEventListener('pointercancel',up,true);
+  document.addEventListener('input',e=>{ const t=e.target; if(!t||t.type!=='range') return; hold(t); if(until!==Infinity) until=performance.now()+600; },true);
+})();
 </script>
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
