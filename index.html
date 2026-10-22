@@ -680,6 +680,7 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 @container (min-width:520px){ #mInfo .sitev .hchips{justify-content:flex-end} #mInfo .mg3{grid-template-columns:repeat(3,auto auto)} }
 
 /* 現場の予想（風・天気） */
+#mInfo .etoIn.auto{border-style:dashed!important;opacity:.85}#mInfo .etoA{font-style:normal;font-size:10.5px;color:var(--muted);white-space:nowrap}
 #mInfo .wxs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:150px;padding:2px 6px}
 #mInfo .wxtop{display:flex;align-items:center;gap:6px}#mInfo .wxic{width:58px;height:62px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
 #mInfo .wxtx{display:flex;flex-direction:column;line-height:1.2}#mInfo .wxtx b{font-size:15px}#mInfo .wxtx span{font-size:13px;color:var(--muted)}
@@ -2349,17 +2350,21 @@ function tilesOf(h){ const key=/到着予定|ホバリング可能|離脱リミ�
   const ic=l=>{ const q=IK.find(([r])=>r.test(l)); return q?tIco(q[1]):''; };
   return h.replace(/<table>/g,'<div class="tiles">').replace(/<\/table>/g,'</div>')
     .replace(/<tr><td>([\s\S]*?)<\/td><td class="r"(?: colspan="2")?>([\s\S]*?)<\/td><\/tr>/g,(m,l,v)=>`<div class="tl${key.test(l)?' key':''}${/OGE余裕/.test(l)?' wide':''}"><div class="l">${ic(l)}${l}</div><div class="v">${v}</div></div>`); }
+// 離陸時刻：設定があればそれ、なければ「地図で地点を選んだ時刻＋始動等」
+function fpT0(){ const hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+  const v=$('fpTo')&&$('fpTo').value; if(v){ const m=(+v.split(':')[0])*60+(+v.split(':')[1]); return {m,hm:v,set:true}; }
+  const a=new Date(MAP.pick&&MAP.pick.at?MAP.pick.at:Date.now()), pm=a.getHours()*60+a.getMinutes(), su=+FP.su||0; return {m:pm+su,hm:hm(pm+su),set:false,pick:hm(pm),su}; }
 function flightHTML(p,site,hov,Hp,T){ return tilesOf(flightHTML0(p,site,hov,Hp,T)); }
 function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
   const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
   const gb=gc(p.lat,p.lon,R_.lat,R_.lon);
   const out=fpLeg(g.nm,dh), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), su=+FP.su||0;
-  { const tv0=$('fpTo').value, nw=new Date(), nm=nw.getHours()*60+nw.getMinutes(); window.FPARR=tv0?(+tv0.split(':')[0])*60+(+tv0.split(':')[1])+out.t:nm+su+out.t; window.FPARRset=!!tv0; }
+  { const T0=fpT0(); window.FPARR=T0.m+out.t; window.FPARRset=true; }
   const tOut=out.t+su, burnOut=(+FP.ff)*tOut/60, burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
   const fArr=fuel-burnOut, gwArr=GW-burnOut, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0;
   const mm=t=>`${Math.floor(t)}分${String(Math.round((t%1)*60)).padStart(2,'0')}秒`;
-  const tv=$('fpTo').value; let eta='',lim='';
+  const T0=fpT0(), tv=T0.hm; let eta='',lim='';
   if(tv){ const [hh_,mi_]=tv.split(':').map(Number); const t0=hh_*60+mi_; const hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
     eta=hm(t0+out.t); if(hovMin>0) lim=hm(t0+out.t+hovMin); }
   const marg=k=>{const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:1}; if(r.err) return '<span class="caution">範囲外</span>'; if(tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,getHW()))); const m=r.W-gwArr; return `<b style="color:${m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}">${m>=0?'+':''}${fm(m)}</b>`;};
@@ -2380,7 +2385,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
-  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn" value="${tv}" aria-label="離陸予定時刻"></small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
+  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ ${T0.pick} ＋始動等 ${T0.su}分（押して変更）`}">${T0.set?'':`<i class="etoA">選択 ${T0.pick}＋${T0.su}分</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
   ${DLX?`<tr><td>日没／薄明終了</td><td class="r"><b>${DLX.ss}</b><small> ／ ${DLX.du}</small></td></tr><tr><td>救助終了→帰投着</td><td class="r">${DLX.wend}<small> → ${DLX.home}</small></td></tr>`:''}
   <tr><td>消費燃料（往路）</td><td class="r">${fm(burnOut)} kg</td></tr>
   <tr><td>到着時 燃料／全備</td><td class="r">${fm(fArr)}<small> ／ ${fm(gwArr)} kg</small></td></tr>
@@ -2402,11 +2407,11 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
     const hm=m=>{ m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }, P3=v=>String(Math.round(((v%360)+360)%360)%360||360).padStart(3,'0');
     const tag=(x,y,t,c,an)=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="10.5" font-weight="700" fill="${c}" text-anchor="${an||'middle'}" paint-order="stroke" stroke="#fff" stroke-width="3">${t}</text>`;
     const gpsKt=GT.on&&GT.last&&GT.v!=null&&GT.v*3600/1852>=20?GT.v*3600/1852:null, gs=+FP.gs||100, now=new Date(), nm0=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
-    const tv=$('fpTo')&&$('fpTo').value; let t=tv?(+tv.split(':')[0])*60+(+tv.split(':')[1]):nm0;
+    const T0=fpT0(), tv=T0.set; let t=T0.m;
     for(let k=1;k<L.length;k++){ const a=L[k-1], b=L[k], g=gc(a.lat,a.lon,b.lat,b.lon); if(g.nm<0.2) continue; const [ax,ay]=P(a.lat,a.lon), [bx_,by_]=P(b.lat,b.lon); if(Math.hypot(bx_-ax,by_-ay)<70) continue;
       const mx=(ax+bx_)/2, my=(ay+by_)/2, an=Math.atan2(by_-ay,bx_-ax), ox=-Math.sin(an)*12, oy=Math.cos(an)*12;
       t+=g.nm/gs*60; h+=tag(mx+ox,my+oy+4,`${P3(g.crs+MAGVAR)}°M・${g.nm.toFixed(1)} NM・${Math.round(g.nm/gs*60)}分`,k===L.length-1&&DST?'#2e7d32':'#8e1b6e');
-      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?'':'（今から）'}・${gs} kt`,'#15253a','start'); }
+      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?'':`（${T0.pick}選択）`}・${gs} kt`,'#15253a','start'); }
     if(gpsKt){ const [gla,glo]=GT.last, g=gc(gla,glo,site.lat,site.lon), [sx,sy]=P(site.lat,site.lon), [gx,gy]=P(gla,glo), m=g.nm/gpsKt*60;
       h+=`<line x1="${gx}" y1="${gy}" x2="${sx}" y2="${sy}" stroke="#0b63ce" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>`;
       h+=tag(sx+12,sy+18,`GPS ${Math.round(gpsKt)} kt・${P3(g.crs+MAGVAR)}°M ${g.nm.toFixed(1)} NM・ETA ${hm(nm0+m)}（${Math.round(m)}分）`,'#0b63ce','start');
@@ -2479,7 +2484,7 @@ function applyPick(force){ const p=MAP.pick; if(!p||p.loading||p.err||isNaN(p.h)
   if($('mRefOn').checked){ const rf=(+$('mRefE').value||0)*FT; const T=(+$('mRefT').value)-1.98*(site-rf)/1000; $('oat').value=T.toFixed(1); $('oatR').value=Math.round(T); setMaster(site,null,null); }
   else setElev(site);
 }
-function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'local':'net'}; mapReq(); mapInfo(); const my=MAP.pick;
+function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'local':'net',at:Date.now()}; mapReq(); mapInfo(); const my=MAP.pick;
   elevAt(lat,lon).then(h=>{ if(MAP.pick!==my) return; my.loading=false; my.h=h; mapInfo(); if(!isNaN(h)) applyPick(false); if(typeof drawXsec==='function'&&XS.W) drawXsec(XS.H,XS.T,XS.W); })
    .catch(e=>{ if(MAP.pick!==my) return; my.loading=false; my.err='標高タイルを読み込めません（インターネット接続を確認してください）'; mapInfo(); }); }
 (function(){
