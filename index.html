@@ -4523,7 +4523,7 @@ document.documentElement.style.overflowAnchor='none'; document.body.style.overfl
   const nm=e=>{ const h=e.querySelector&&e.querySelector('h2,summary,.msh'); return (e.id?'#'+e.id:e.tagName.toLowerCase()+(e.className&&typeof e.className==='string'?'.'+e.className.split(' ')[0]:''))+(h?'「'+h.textContent.trim().slice(0,18)+'」':''); };
   const start=(why)=>{ D.t=now(); D.y=scrollY; D.h=document.documentElement.scrollHeight; D.calls=[]; D.ev=[why]; D.shown=false; D.snap=pick().map(e=>[e,e.getBoundingClientRect().height]); };
   const isR=t=>t&&t.tagName==='INPUT'&&t.type==='range';
-  ['touchstart','pointerdown'].forEach(ev=>document.addEventListener(ev,e=>{ if(isR(e.target)) start(ev+' '+(e.target.id||'')); },{capture:true,passive:true}));
+  ['touchstart','pointerdown'].forEach(ev=>document.addEventListener(ev,e=>{ if(isR(e.target)) start(ev+' '+(e.target.id||'')); else D.t=0; },{capture:true,passive:true}));
   document.addEventListener('input',e=>{ if(isR(e.target)){ if(now()-D.t>3000) start('input '+e.target.id); else D.t=now(); D.ev.push(`input ${e.target.id}=${e.target.value} y=${Math.round(scrollY)} H=${document.documentElement.scrollHeight}`); if(D.ev.length>14) D.ev.splice(1,1); } },true);
   ['touchend','touchcancel','pointerup','pointercancel','blur','focusin','focusout'].forEach(ev=>document.addEventListener(ev,e=>{ if(now()-D.t<3000) D.ev.push(`${ev} ${(e.target&&e.target.id)||''} y=${Math.round(scrollY)}`); },true));
   addEventListener('scroll',()=>{ if(D.shown||now()-D.t>3000) return; if(Math.abs(scrollY-D.y)<250) return; D.shown=true;
