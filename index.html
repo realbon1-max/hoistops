@@ -602,7 +602,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
   #mInfo .tl{display:block;border:1px solid var(--rule);border-radius:6px;padding:5px 8px;background:var(--panel)}
   #mInfo .tl .l{font-size:11px;line-height:1.3}#mInfo .tl .v{text-align:left;font-size:18px;line-height:1.3}
   #mInfo .tl.key .v{font-size:22px}#mInfo .tl.og{border-left:4px solid var(--oc)}#mInfo .tl.og .m{text-align:left;font-size:13.5px}
-  #mInfo .tl.key{grid-column:span 2}
+  #mInfo .tl.key,#mInfo .tl.wide{grid-column:span 2}
   #mInfo .fp .nowind{display:inline-block}
   #mInfo .tl .v .etoIn{font-size:14px;padding:2px 4px;vertical-align:middle}#mInfo .tl.key .v{font-variant-numeric:tabular-nums}#mInfo .tl.key .v b{font-size:inherit!important}
 }
@@ -663,6 +663,21 @@ section.box>h2 small{font-size:12px;font-weight:400;color:var(--muted);margin-le
 nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 .mstick.stuck .mlayers .ib>span,.mstick.stuck .mtabs .ib>span{display:none}
 @media (max-width:560px){ .mlayers .ib>span{display:none} nav.jump a.ib>span{font-size:12px} }
+
+/* 地点情報のピクトグラム */
+#mInfo .tico{width:15px;height:15px;vertical-align:-3px;margin-right:4px;opacity:.85}
+#mInfo .big .tico{width:26px;height:26px;vertical-align:-3px;margin-right:6px;opacity:.7}
+#mInfo .big small{font-size:.55em;font-weight:700}
+#mInfo .hchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;margin-top:2px}#mInfo .hchips span{font-size:12.5px;padding:2px 8px;border:1px solid var(--rule);border-radius:12px;white-space:nowrap}
+#mInfo .tl .v small{font-size:.62em;font-weight:400;color:var(--muted);margin-left:2px}
+#mInfo .eto{display:inline-flex!important;align-items:center;gap:4px;margin-left:8px}#mInfo .eto .etoIn{font-size:13px!important;padding:1px 4px!important}
+#mInfo .mg3{display:inline-grid;grid-template-columns:auto auto;gap:0 6px;align-items:baseline}#mInfo .mg3 i{font-style:normal;font-size:11px;color:var(--muted);font-weight:400}#mInfo .mg3 b{font-size:15px}
+#mInfo .crsT b{font-size:24px;color:#b0268c}#mInfo .crsT small{font-size:12px;margin:0 6px 0 1px}#mInfo .crsC{font-size:12px;color:var(--muted)}
+#mInfo .mih small{font-weight:400}
+.llmore{margin-top:2px}.llmore>summary{font-size:11.5px;color:var(--muted);cursor:pointer;list-style:none}.llmore>summary::before{content:'▸ '}.llmore[open]>summary::before{content:'▾ '}.llmore>summary::-webkit-details-marker{display:none}
+#mInfo .mbe span{font-size:12px}
+.destbar .destb{min-height:38px!important;padding:4px 8px!important}
+@container (min-width:520px){ #mInfo .sitev .hchips{justify-content:flex-end} #mInfo .mg3{grid-template-columns:repeat(3,auto auto)} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -826,7 +841,7 @@ a{color:#7cc4ff}
         </div>
         <div class="mside">
         <div id="drawPanel" class="drawpanel"></div>
-        <details class="tsbox tsnear"><summary>地図を端末に保存（電波のない所で使うため）</summary>
+        <details class="tsbox tsnear"><summary>⤓ オフライン用に地図を保存</summary>
           <div class="mrow" style="margin-top:6px">
             <label for="tsArea">範囲</label><select id="tsArea"><option value="view">今表示している範囲</option><option value="nagano">長野県全域</option></select>
             <label for="tsZ">最大ズーム</label><select id="tsZ"><option value="12">12（主な山名・道路）</option><option value="13" selected>13（尾根・沢・林道）</option><option value="14">14（登山道・山小屋）</option><option value="15">15</option><option value="16">16（詳細）</option></select>
@@ -2226,7 +2241,7 @@ function mbeFix(la,lo,altFt){ const g=gc(MBE.lat,MBE.lon,la,lo), rad=((Math.roun
 function mbeHTML(la,lo,altFt){ const f=mbeFix(la,lo,altFt), u=[];
   if(f.vorU) u.push(`VOR使用不可区域（${f.vorU[0]}°〜${f.vorU[1]}°・${f.vorU[2]} NM以遠・${f.vorU[3].toLocaleString()} ft未満）`);
   if(f.dmeU) u.push(`DME使用不可区域（${f.dmeU[0]}°〜${f.dmeU[1]}°・${f.dmeU[2]} NM以遠・${f.dmeU[3].toLocaleString()} ft未満）`);
-  return `<div class="mbe"><b>${f.str}</b><span>松本VOR/DMEから ラジアル ${String(f.rad).padStart(3,'0')}°（磁方位）・${f.nm.toFixed(1)} NM${f.slant!=null?`（DMEの斜距離 ${f.slant.toFixed(1)} NM）`:''}</span>${u.length?`<div class="mbeu">⚠ ${u.join('／')}${altFt!=null?`：この地点のホバリング高度 ${Math.round(altFt).toLocaleString()} ft では受信できないおそれ`:''}</div>`:''}</div>`; }
+  return `<div class="mbe"><b>${f.str}</b><span title="松本VOR/DMEから ラジアル（磁方位）・距離${f.slant!=null?`／DMEの斜距離 ${f.slant.toFixed(1)} NM`:''}">VOR/DME R${String(f.rad).padStart(3,'0')}°・${f.nm.toFixed(1)} NM</span>${u.length?`<div class="mbeu" title="${u.join('／')}${altFt!=null?`：ホバリング高度 ${Math.round(altFt).toLocaleString()} ft`:''}">⚠ ${u.map(x=>x.replace(/区域.*$/,'')).join('・')}の区域（受信できないおそれ）</div>`:''}</div>`; }
 function parseLL(s){ { const um=parseUTMMGRS(s); if(um) return um; } { const m=String(s).trim().match(/^MBE\s*[\/／,、\s]\s*(\d{1,3}(?:\.\d+)?)\s*[\/／,、\s]\s*(\d+(?:\.\d+)?)\s*$/i); if(m){ return destLL(MBE.lat,MBE.lon,(+m[1])-MBE.dec,(+m[2])*1852); } }
   s=s.trim().replace(/[，、／]/g,',').replace(/[：]/g,':').replace(/[　]/g,' ');
   if(!s) return null;
@@ -2283,12 +2298,19 @@ function crsHTML(c,cb,rn){ const P3=v=>String(Math.round(((v%360)+360)%360)%360|
   const mag=c+MAGVAR, cmp=['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'][Math.round(((c%360)+360)%360/22.5)%16];
   const a=c*Math.PI/180, x=Math.sin(a)*24, y=-Math.cos(a)*24;
   return `<div class="crs"><svg viewBox="-34 -34 68 68" width="68" height="68" aria-hidden="true"><circle r="30" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>${[0,90,180,270].map(d=>{const r=d*Math.PI/180;return `<line x1="${Math.sin(r)*26}" y1="${-Math.cos(r)*26}" x2="${Math.sin(r)*30}" y2="${-Math.cos(r)*30}" stroke="var(--muted)" stroke-width="1.5"/>`;}).join('')}<text y="-17" text-anchor="middle" font-size="10" font-weight="700" fill="var(--warn)">N</text><line x1="${-x*.55}" y1="${-y*.55}" x2="${x}" y2="${y}" stroke="#b0268c" stroke-width="3.5" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="#b0268c"/><circle r="2.5" fill="var(--ink)"/></svg>
-  <div><div class="crsT">真方位 <b>${P3(c)}°</b><span class="crsC">（${cmp}）</span></div><div class="crsM">磁方位 約 <b>${P3(mag)}°</b>（偏差 ${Math.abs(MAGVAR)}°W で概算）</div><div class="crsM">${rn&&rn!==BASE.name?'目的地':'帰投'}（現場→${rn||BASE.name}）真方位 ${P3(cb)}°／磁方位 約 ${P3(cb+MAGVAR)}°</div></div></div>`; }
+  <div><div class="crsT"><b>${P3(mag)}°</b><small>M</small><span class="crsC">${cmp}・真 ${P3(c)}°</span></div><div class="crsM" title="偏差 ${Math.abs(MAGVAR)}°W で概算">${rn&&rn!==BASE.name?'目的地へ':'帰投'} <b>${P3(cb+MAGVAR)}°M</b>（真 ${P3(cb)}°）</div></div></div>`; }
 const MAGVAR=8; // 長野県付近の磁気偏差 約8°W（磁方位＝真方位＋8°）。正確な値は航空図・AIPで確認
 // 表の行を「ラベル小・値大」のタイルに変換（横幅が広いときは複数列に並ぶ）
-function tilesOf(h){ const key=/到着予定時刻|ホバリングできる時間|離れる最終時刻|日没／薄明終了/;
+function tIco(k){ const P=d=>`<svg class="tico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  return P(({elev:'<path d="M2 20l7-12 4 6 2-3 7 9z"/>',tree:'<path d="M12 3l-5 7h3l-4 6h12l-4-6h3zM12 16v5"/>',heli:'<path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/>',
+   pa:'<circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M12 5v2"/>',temp:'<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',da:'<path d="M4 18h16M7 14c2-4 8-4 10 0M12 4v6M9 7l3 3 3-3"/>',wind:'<path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
+   dist:'<path d="M4 20L20 4M4 14v6h6M14 4h6v6"/>',alt:'<path d="M12 3v18M7 8l5-5 5 5M7 16l5 5 5-5"/>',time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',eta:'<path d="M3 19h18M12 5l7 9H5z"/>',sun:'<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 7v3M5 11l2 1.5M19 11l-2 1.5"/>',
+   res:'<path d="M12 3v6M8 9h8l-1.5 3h-5zM6 15h12l-1 3H7z"/>',fuel:'<path d="M12 3c3 4.5 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 3-6.5 6-11z"/>',wt:'<path d="M12 4v3M4 9h16M7 9l-3 7h6zM17 9l-3 7h6zM12 7v13M8 20h8"/>',back:'<path d="M9 14l-5-5 5-5M4 9h10a6 6 0 0 1 0 12h-3"/>',hov:'<path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3z"/><path d="M12 18v3" stroke-dasharray="1.5 2"/>',lim:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5 5l14 14"/>'})[k]||''); }
+function tilesOf(h){ const key=/到着予定|ホバリング可能|離脱リミット|日没／薄明終了/;
+  const IK=[[/気圧高度/,'pa'],[/気温/,'temp'],[/密度高度/,'da'],[/横風/,'wind'],[/^距離/,'dist'],[/高度差/,'alt'],[/飛行時間/,'time'],[/到着予定/,'eta'],[/日没/,'sun'],[/救助終了/,'res'],[/消費燃料|到着時 燃料/,'fuel'],[/OGE余裕/,'wt'],[/帰投|目的地への/,'back'],[/ホバリング可能/,'hov'],[/離脱リミット/,'lim']];
+  const ic=l=>{ const q=IK.find(([r])=>r.test(l)); return q?tIco(q[1]):''; };
   return h.replace(/<table>/g,'<div class="tiles">').replace(/<\/table>/g,'</div>')
-    .replace(/<tr><td>([\s\S]*?)<\/td><td class="r"(?: colspan="2")?>([\s\S]*?)<\/td><\/tr>/g,(m,l,v)=>`<div class="tl${key.test(l)?' key':''}"><div class="l">${l}</div><div class="v">${v}</div></div>`); }
+    .replace(/<tr><td>([\s\S]*?)<\/td><td class="r"(?: colspan="2")?>([\s\S]*?)<\/td><\/tr>/g,(m,l,v)=>`<div class="tl${key.test(l)?' key':''}${/OGE余裕/.test(l)?' wide':''}"><div class="l">${ic(l)}${l}</div><div class="v">${v}</div></div>`); }
 function flightHTML(p,site,hov,Hp,T){ return tilesOf(flightHTML0(p,site,hov,Hp,T)); }
 function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
   const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
@@ -2301,7 +2323,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   const tv=$('fpTo').value; let eta='',lim='';
   if(tv){ const [hh_,mi_]=tv.split(':').map(Number); const t0=hh_*60+mi_; const hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
     eta=hm(t0+out.t); if(hovMin>0) lim=hm(t0+out.t+hovMin); }
-  const marg=k=>{const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:1}; if(r.err) return '<span class="caution">範囲外</span>'; if(tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,getHW()))); const m=r.W-gwArr; return `<b style="color:${m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}">${m>=0?'+':''}${fm(m)} kg</b>`;};
+  const marg=k=>{const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:1}; if(r.err) return '<span class="caution">範囲外</span>'; if(tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,getHW()))); const m=r.W-gwArr; return `<b style="color:${m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}">${m>=0?'+':''}${fm(m)}</b>`;};
   let dl=''; if(tv){ const [a_,b_]=tv.split(':').map(Number), t0=a_*60+b_, arr=t0+out.t, wk=Math.max(0,+FP.work||0), wend=arr+wk, home=wend+back.t;
     const sn=SUN.times(jstDay(new Date()),p.lat,p.lon), jm=d=>{ if(!d) return NaN; const j=new Date(d.getTime()+9*3600e3); return j.getUTCHours()*60+j.getUTCMinutes()+j.getUTCSeconds()/60; };
     const ss=jm(sn.set), du=jm(sn.dusk), sr=jm(sn.rise), hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}, mn=x=>`${Math.max(0,Math.round(x))}分`;
@@ -2312,22 +2334,20 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
     else if(wend>du){ cls='warn'; msg=`救助（見込み ${wk}分）の途中で薄明が終わります：到着 ${hm(arr)}→日没 ${hm(ss)}（到着から${mn(ss-arr)}）→薄明終了 ${hm(du)}（${mn(du-arr)}）`; }
     else if(wend>ss){ cls='caution'; msg=`救助中に日没になります：到着 ${hm(arr)}、日没 ${hm(ss)}（到着から${mn(ss-arr)}）、救助終了見込み ${hm(wend)}・薄明終了 ${hm(du)}`; }
     else if(home>du){ cls='caution'; msg=`救助は日没前に終わる見込み（${hm(wend)}）ですが、${R_.name}への${DST?'移動':'帰投'}（${hm(home)}着）は薄明終了 ${hm(du)} 後です`; }
-    else msg=`日没前に救助を終えられる見込み：到着 ${hm(arr)}・救助終了 ${hm(wend)}（日没 ${hm(ss)} まで余裕 ${mn(ss-wend)}）`;
+    else msg=`日没前に救助終了の見込み（日没まで余裕 ${mn(ss-wend)}）`;
     dl=`<div class="dlbox ${cls}">${cls==='ok'?'☀':cls==='caution'?'🌇 注意':'🌙 警告'}　${msg}</div>`;
     dl+=`<!--dlrow-->`; DLX={ss:hm(ss),du:hm(du),wk,wend:hm(wend),home:hm(home)}; } else DLX=null;
-  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 時間・燃料は無風の計算（向かい風20 ktで所要時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div><table>
-  <tr><td>水平距離</td><td class="r">${g.nm.toFixed(1)} NM（${(g.nm*1.852).toFixed(1)} km）</td></tr>
+  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 無風で計算（向かい風20 ktで時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div><table>
+  <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
-  <tr><td>飛行時間（片道・無風）</td><td class="r">${mm(out.t)}${su?`＋始動等 ${su}分`:''}</td></tr>
-  <tr><td>到着予定時刻（無風）</td><td class="r">${eta?`<b style="font-size:15px">${eta}</b>（離陸 <input type="time" class="etoIn" value="${tv}" aria-label="離陸予定時刻">）`:'<span style="color:var(--muted)">離陸予定時刻 </span><input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button>'}</td></tr>
-  ${DLX?`<tr><td>現場の日没／薄明終了</td><td class="r"><b>${DLX.ss}</b>／<b>${DLX.du}</b></td></tr><tr><td>救助終了見込み（${DLX.wk}分）→帰投</td><td class="r">${DLX.wend} → ${DLX.home} 着</td></tr>`:''}
-  <tr><td>消費燃料（片道）</td><td class="r">${fm(burnOut)} kg</td></tr>
-  <tr><td>到着時の燃料／全備重量</td><td class="r">${fm(fArr)} kg／${fm(gwArr)} kg</td></tr>
-  <tr><td>到着時のOGE余裕 TOP</td><td class="r">${marg('p917')}${densAlt(Hp,T)>7000?'<div style="font-size:11px;color:var(--warn)">密度高度7,000 ft超のため、TOPでのホイスト運用は不可</div>':''}</td></tr>
-  <tr><td>到着時のOGE余裕 MCP</td><td class="r">${marg('p918')}</td></tr>
-  <tr><td>到着時のOGE余裕 OEI</td><td class="r">${marg('p444z')}</td></tr>
-  <tr><td>${DST?'目的地までの燃料':'帰投燃料'}（現場→${R_.name}）</td><td class="r">${fm(burnBack)} kg（${mm(back.t)}・${gb.nm.toFixed(1)} NM）</td></tr>
-  <tr><td>現場でホバリングできる時間</td><td class="r"><b class="${hovMin>=10?'ok':hovMin>0?'caution':'warn'}">${hovMin>0?Math.floor(hovMin)+'分':'なし'}</b></td></tr>${lim?`<tr><td>現場を離れる最終時刻（無風）</td><td class="r"><b class="warn" style="font-size:15px">${lim}</b></td></tr>`:''}</table>
+  <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
+  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn" value="${tv}" aria-label="離陸予定時刻"></small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
+  ${DLX?`<tr><td>日没／薄明終了</td><td class="r"><b>${DLX.ss}</b><small> ／ ${DLX.du}</small></td></tr><tr><td>救助終了→帰投着</td><td class="r">${DLX.wend}<small> → ${DLX.home}</small></td></tr>`:''}
+  <tr><td>消費燃料（往路）</td><td class="r">${fm(burnOut)} kg</td></tr>
+  <tr><td>到着時 燃料／全備</td><td class="r">${fm(fArr)}<small> ／ ${fm(gwArr)} kg</small></td></tr>
+  <tr><td>到着時のOGE余裕</td><td class="r"><span class="mg3"><i>TOP</i>${marg('p917')}<i>MCP</i>${marg('p918')}<i>OEI</i>${marg('p444z')}</span>${densAlt(Hp,T)>7000?'<div style="font-size:11px;color:var(--warn)">密度高度7,000 ft超：TOPでのホイスト運用は不可</div>':''}</td></tr>
+  <tr><td>${DST?'目的地への燃料':'帰投燃料'}</td><td class="r">${fm(burnBack)} kg<small> ${Math.round(back.t)}分・${gb.nm.toFixed(1)} NM</small></td></tr>
+  <tr><td>ホバリング可能</td><td class="r"><b class="${hovMin>=10?'ok':hovMin>0?'caution':'warn'}">${hovMin>0?Math.floor(hovMin)+'分':'なし'}</b></td></tr>${lim?`<tr><td>離脱リミット</td><td class="r"><b class="warn">${lim}</b></td></tr>`:''}</table>
   ${out.orbit?`<div class="hint warn">高度差が大きく、水平距離の間に上がり切れません（上昇に ${Math.ceil(out.tV)}分）。時間は上昇時間で計算しています。</div>`:''}
   ${Math.abs(FROM.lat-BASE.lat)>1e-5||Math.abs(FROM.lon-BASE.lon)>1e-5?`<div class="hint">出発地が${BASE.name}以外です。飛行中に別の現場へ向かう場合は「始動〜離陸」を0分に、「出発時の燃料」を今の残燃料にしてください（出発時の燃料 ${fm(fuel)} kg${fv!==''?'':'＝搭載燃料'}）。</div>`:''}
   <div class="hint note">現場でホバリングできる時間＝(到着時の燃料−帰投燃料−予備 ${fm(rsv)} kg)÷ホバリングの燃料消費 ${fm(ffh)} kg/h。風は考えていません。</div></div>`; }
@@ -2358,7 +2378,7 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
   sv.innerHTML=h; }
 
 function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),d:()=>`N${la.toFixed(5)}° E${lo.toFixed(5)}°`,dms:()=>`${dmsTxt(la,true)} ${dmsTxt(lo,false)}`,utm:()=>fmtUTM(la,lo),mgrs:()=>fmtMGRS(la,lo)};
-  return `<div class="llall"><div class="ll1">${alt[f]()}<span>${COORDN[f]}</span></div>${['dm','d','dms','utm','mgrs'].filter(k=>k!==f).map(k=>`<div class="ll2">${alt[k]()}<span>${COORDN[k]}</span></div>`).join('')}${mbeHTML(la,lo,altFt)}</div>`; }
+  return `<div class="llall"><div class="ll1">${alt[f]()}</div>${mbeHTML(la,lo,altFt)}<details class="llmore"><summary>他の座標形式</summary>${['dm','d','dms','utm','mgrs'].filter(k=>k!==f).map(k=>`<div class="ll2">${alt[k]()}<span>${COORDN[k]}</span></div>`).join('')}</details></div>`; }
 function hpBar(){ const p=MAP.pick, box=$('mInfo'); if(!p||p.loading||!box||typeof hpAt!=='function') return; const x=hpAt(p.lat,p.lon); if(!x) return;
   const isF=Math.abs(FROM.lat-x[1])<1e-5&&Math.abs(FROM.lon-x[2])<1e-5, isD=DST&&Math.abs(DST.lat-x[1])<1e-5&&Math.abs(DST.lon-x[2])<1e-5, vi=VIA.findIndex(v=>Math.abs(v.lat-x[1])<1e-5&&Math.abs(v.lon-x[2])<1e-5);
   const d=document.createElement('div'); d.className='destbar hpbar';
@@ -2386,7 +2406,7 @@ function roleLabel(r,self){ return ROLES[r].n+(DRAW.items.filter(x=>x!==self&&x.
 function setRole(it,r){ if(new RegExp('^('+Object.values(ROLES).map(v=>v.n).join('|')+'|目的地)\\d*$').test(it.label||'')){ it.role=r; it.label=roleLabel(r,it); } else it.role=r; }
 function destBtn(){ const p=MAP.pick, box=$('mInfo'); if(!p||!box) return; const ex=DRAW.items.find(x=>x.t==='dest'&&distM([x.lat,x.lon],[p.lat,p.lon])<5);
   const d=document.createElement('div'); d.className='destbar';
-  d.innerHTML=`<div class="destlab">${ex?`「${esc(ex.label)}」として記録済み：押すと役割を切り替え`:'この地点をワンタッチで記録'}</div><div class="destbtns">${Object.entries(ROLES).map(([k,v])=>`<button type="button" class="destb${ex&&roleOf(ex)===k?' on':''}" data-role="${k}" style="--rc:${v.col}">${v.ic} ${v.n}</button>`).join('')}</div>`;
+  d.innerHTML=`<div class="destlab">${ex?`「${esc(ex.label)}」として記録済み：押すと役割を切り替え`:''}</div><div class="destbtns">${Object.entries(ROLES).map(([k,v])=>`<button type="button" class="destb${ex&&roleOf(ex)===k?' on':''}" data-role="${k}" style="--rc:${v.col}">${v.ic} ${v.n}</button>`).join('')}</div>`;
   box.prepend(d);
   d.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{ const r=b.dataset.role;
     if(ex) setRole(ex,r); else DRAW.items.push({t:'dest',role:r,lat:p.lat,lon:p.lon,label:roleLabel(r),h:isNaN(p.h)?null:Math.round(p.h),at:new Date().toTimeString().slice(0,5)});
@@ -2399,7 +2419,7 @@ function mapInfo0(){
   const t=MAP.thr||mapThresholds(); const W=+$('gw').value, wind=getHW();
   const site=p.h*FT+(+$('mObs').value||0)*FT, hov=site+(+$('hh').value||0);
   const Hp=hov+t.f, T=ISA(Hp)+t.dev, hd=densAlt(Hp,T); const fm=n=>Math.round(n).toLocaleString();
-  const rows=[['p917','離陸出力（TOP）'],['p918','連続最大（MCP）'],['p444z','OEI 2.5分'],['p444','OEI＋向かい風']].map(([k,nm])=>{
+  const rows=[['p917','TOP'],['p918','MCP'],['p444z','OEI 2.5分'],['p444','OEI＋向かい風']].map(([k,nm])=>{
     const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:'図の範囲外'};
     if(!r.err&&tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,wind)));
     if(r.err) return `<div class="tl"><div class="l">${nm}</div><div class="v caution">${r.err}</div></div>`;
@@ -2407,9 +2427,9 @@ function mapInfo0(){
     return `<div class="tl og" style="--oc:${c}"><div class="l">${nm}</div><div class="v">${fm(r.W)}<small> kg</small></div><div class="m" style="color:${c}">余裕 ${m>=0?'+':''}${fm(m)}</div></div>`;}).join('');
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
-  box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="sitev"><div class="big">地表 ${DISP.alt==='ft'?fm(p.h*FT)+' ft':fm(p.h)+' m'}</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
-  <div class="mi">${tilesOf(`<table><tr><td>気圧高度（ホバリング高度）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
-  <div class="mi"><div class="mih">OGEホバリングできる最大重量（全備重量 ${fm(W)} kgとの差）</div><div class="tiles t4">${rows}</div></div>
+  box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="sitev"><div class="big" title="${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}">${tIco('elev')}${DISP.alt==='ft'?fm(p.h*FT)+'<small> ft</small>':fm(p.h)+'<small> m</small>'}</div><div class="hchips"><span title="地表">${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}</span><span title="樹木・障害物の上面">${tIco('tree')}${fm(site)} ft</span><span title="ホバリング高度">${tIco('heli')}${fm(hov)} ft</span></div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
+  <div class="mi">${tilesOf(`<table><tr><td>気圧高度</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>気温</td><td class="r" colspan="2">${T.toFixed(1)}℃<small> ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}</small></td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>許容横風・背風 MCP</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
+  <div class="mi"><div class="mih">${tIco('wt')}OGE最大重量 <small>全備 ${fm(W)} kg との差</small></div><div class="tiles t4">${rows}</div></div>
   ${flightHTML(p,site,hov,Hp,T)}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
   $('mUse').onclick=()=>applyPick(true);
@@ -3612,7 +3632,7 @@ function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mo
   document.querySelectorAll('#drawModes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
   $('map').classList.toggle('drawing',m!=='pick');
   const set=m==='circ'||m==='grid';
-  let h=`<div class="dhint">${DMODE[m][1]}</div>`;
+  let h=m==='pick'?'':`<div class="dhint">${DMODE[m][1]}</div>`;
   if(set){ const st=m==='circ'?'cStep':'gStep', nn=m==='circ'?'cN':'gN';
     h+=`<div class="mrow"><label>間隔 <input id="dStep" type="number" min="0" step="any" value="${DRAW[st]}" style="width:80px"></label><select id="dUnit">${['m','km','NM'].map(u=>`<option${u===DRAW.unit?' selected':''}>${u}</option>`).join('')}</select>
       <label>${m==='circ'?'本数':'マス数（1辺）'} <input id="dN" type="number" min="1" max="${m==='circ'?20:26}" value="${DRAW[nn]}" style="width:56px"></label>${m==='circ'?`<label class="chk"><input type="checkbox" id="dRose" ${DRAW.cRose?'checked':''}> 磁方位の目盛り（偏差${MAGVAR}°W）</label>`:''}
@@ -3632,7 +3652,7 @@ function drawPanel(){ const box=$('drawPanel'); if(!box) return; const m=DRAW.mo
     const f=DRAW.gf!=null&&DRAW.items[DRAW.gf]?.t==='dest'?DRAW.gf:fdef, t=DRAW.gt!=null&&DRAW.items[DRAW.gt]?.t==='dest'?DRAW.gt:tdef;
     h+=`<div class="gwalk"><div class="msh">地上の移動ルート（徒歩）</div><div class="mrow"><label>出発 <select id="gwF">${opt(f)}</select></label><label>到着 <select id="gwT">${opt(t)}</select></label></div>
       <div class="mrow"><label class="chk"><input type="radio" name="gwM" value="direct" ${DRAW.gm!=='contour'?'checked':''}> ダイレクト（直線）</label><label class="chk"><input type="radio" name="gwM" value="contour" ${DRAW.gm==='contour'?'checked':''}> 等高線沿い（地形を見た現実的な道）</label><button type="button" id="gwGo">ルートを作る</button></div><div class="dhint" id="gwMsg">等高線沿いは、標高データから急斜面（50°以上）を避け、歩く時間が最も短くなる道を探します。登山道は地図の絵から自動では読めないので、「ルート（道のり）」で登山道をなぞり、一覧で「登山道として使う」にチェックすると、その上を優先して通ります（道の上は道のない斜面の約1.7倍の速さで計算）。${DRAW.items.some(x=>x.t==='route'&&x.trail)||TRL.lines.length?`<b>登録済みの登山道（なぞった道 ${DRAW.items.filter(x=>x.t==='route'&&x.trail).length}本・読み込んだ道 ${TRL.lines.length.toLocaleString()}本）を使います。</b>`:''}</div></div>`; }
-  h+=`<div class="mrow"><button type="button" id="dImp" class="dimp">📥 共有された位置を取り込む</button></div>`;
+  h+=`<div class="mrow"><button type="button" id="dImp" class="dimp" title="共有された位置を取り込む">📥 共有を取り込む</button></div>`;
   if(DRAW.items.length){ h+=`<ol class="dlist">${DRAW.items.map((it,i)=>`<li><span>${itemInfo(it)}</span><button type="button" data-del="${i}" aria-label="削除">×</button></li>`).join('')}</ol>
     <div class="mrow"><button type="button" id="dUndo">最後に描いたものを消す</button><button type="button" id="dClear">すべて消す</button></div>`; }
   box.innerHTML=h; if($('dImp')) $('dImp').onclick=importDialog;
