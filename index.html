@@ -582,6 +582,30 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 #wpUse{background:#2f6fb0;color:#fff;border-color:#2f6fb0;margin:4px 0}.wpout{font-size:13px}.wpv{font-size:18px;color:#2f6fb0}.wpout small{color:var(--muted)}
 
 
+
+/* 地図の地点情報：タイル表示（広い画面では横に並べ、大事な数字を大きく） */
+#mInfo{container-type:inline-size}
+#mInfo .mih{color:var(--muted);font-size:12px;margin-bottom:4px}
+#mInfo .tiles{display:grid;grid-template-columns:1fr;gap:0}
+#mInfo .tl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 4px;border-bottom:1px solid var(--rule)}
+#mInfo .tl .l{font-size:12.5px;color:var(--muted)}#mInfo .tl .v{font-weight:700;text-align:right;font-size:14px}
+#mInfo .tl.key .v{font-size:16px}#mInfo .tl.og .m{font-weight:700;font-size:13px;min-width:70px;text-align:right}
+#mInfo .tl.og .v small{font-size:11px;font-weight:400}
+#mInfo .sitev .verd{margin-top:4px;font-weight:800;font-size:15px}
+@container (min-width:520px){
+  #mInfo .llall .ll2{display:inline-block;margin-right:14px;font-size:12px}
+  #mInfo .mi.site{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;align-items:start}
+  #mInfo .mi.site .sitev{text-align:right}#mInfo .big{font-size:30px}
+  #mInfo .sitev .verd{font-size:19px}
+  #mInfo .tiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+  #mInfo .tiles.t4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  #mInfo .tl{display:block;border:1px solid var(--rule);border-radius:6px;padding:5px 8px;background:var(--panel)}
+  #mInfo .tl .l{font-size:11px;line-height:1.3}#mInfo .tl .v{text-align:left;font-size:18px;line-height:1.3}
+  #mInfo .tl.key .v{font-size:22px}#mInfo .tl.og{border-left:4px solid var(--oc)}#mInfo .tl.og .m{text-align:left;font-size:13.5px}
+  #mInfo .tl.key{grid-column:span 2}
+  #mInfo .fp .nowind{display:inline-block}
+  #mInfo .tl .v .etoIn{font-size:14px;padding:2px 4px;vertical-align:middle}#mInfo .tl.key .v{font-variant-numeric:tabular-nums}#mInfo .tl.key .v b{font-size:inherit!important}
+}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2141,7 +2165,12 @@ function crsHTML(c,cb,rn){ const P3=v=>String(Math.round(((v%360)+360)%360)%360|
   return `<div class="crs"><svg viewBox="-34 -34 68 68" width="68" height="68" aria-hidden="true"><circle r="30" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>${[0,90,180,270].map(d=>{const r=d*Math.PI/180;return `<line x1="${Math.sin(r)*26}" y1="${-Math.cos(r)*26}" x2="${Math.sin(r)*30}" y2="${-Math.cos(r)*30}" stroke="var(--muted)" stroke-width="1.5"/>`;}).join('')}<text y="-17" text-anchor="middle" font-size="10" font-weight="700" fill="var(--warn)">N</text><line x1="${-x*.55}" y1="${-y*.55}" x2="${x}" y2="${y}" stroke="#b0268c" stroke-width="3.5" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="#b0268c"/><circle r="2.5" fill="var(--ink)"/></svg>
   <div><div class="crsT">真方位 <b>${P3(c)}°</b><span class="crsC">（${cmp}）</span></div><div class="crsM">磁方位 約 <b>${P3(mag)}°</b>（偏差 ${Math.abs(MAGVAR)}°W で概算）</div><div class="crsM">${rn&&rn!==BASE.name?'目的地':'帰投'}（現場→${rn||BASE.name}）真方位 ${P3(cb)}°／磁方位 約 ${P3(cb+MAGVAR)}°</div></div></div>`; }
 const MAGVAR=8; // 長野県付近の磁気偏差 約8°W（磁方位＝真方位＋8°）。正確な値は航空図・AIPで確認
-function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
+// 表の行を「ラベル小・値大」のタイルに変換（横幅が広いときは複数列に並ぶ）
+function tilesOf(h){ const key=/到着予定時刻|ホバリングできる時間|離れる最終時刻|日没／薄明終了/;
+  return h.replace(/<table>/g,'<div class="tiles">').replace(/<\/table>/g,'</div>')
+    .replace(/<tr><td>([\s\S]*?)<\/td><td class="r"(?: colspan="2")?>([\s\S]*?)<\/td><\/tr>/g,(m,l,v)=>`<div class="tl${key.test(l)?' key':''}"><div class="l">${l}</div><div class="v">${v}</div></div>`); }
+function flightHTML(p,site,hov,Hp,T){ return tilesOf(flightHTML0(p,site,hov,Hp,T)); }
+function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
   const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
   const gb=gc(p.lat,p.lon,R_.lat,R_.lon);
   const out=fpLeg(g.nm,dh), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), su=+FP.su||0;
@@ -2166,7 +2195,7 @@ function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString()
     else msg=`日没前に救助を終えられる見込み：到着 ${hm(arr)}・救助終了 ${hm(wend)}（日没 ${hm(ss)} まで余裕 ${mn(ss-wend)}）`;
     dl=`<div class="dlbox ${cls}">${cls==='ok'?'☀':cls==='caution'?'🌇 注意':'🌙 警告'}　${msg}</div>`;
     dl+=`<!--dlrow-->`; DLX={ss:hm(ss),du:hm(du),wk,wend:hm(wend),home:hm(home)}; } else DLX=null;
-  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 時間・燃料はすべて無風での計算です。向かい風・追い風で大きく変わります（例：向かい風20 ktなら対地速度 ${Math.max(0,(+FP.gs||0)-20)} kt、所要時間は約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）。</div><table>
+  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 時間・燃料は無風の計算（向かい風20 ktで所要時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div><table>
   <tr><td>水平距離</td><td class="r">${g.nm.toFixed(1)} NM（${(g.nm*1.852).toFixed(1)} km）</td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間（片道・無風）</td><td class="r">${mm(out.t)}${su?`＋始動等 ${su}分`:''}</td></tr>
@@ -2253,14 +2282,14 @@ function mapInfo0(){
   const rows=[['p917','離陸出力（TOP）'],['p918','連続最大（MCP）'],['p444z','OEI 2.5分'],['p444','OEI＋向かい風']].map(([k,nm])=>{
     const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:'図の範囲外'};
     if(!r.err&&tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,wind)));
-    if(r.err) return `<tr><td>${nm}</td><td class="r caution" colspan="2">${r.err}</td></tr>`;
+    if(r.err) return `<div class="tl"><div class="l">${nm}</div><div class="v caution">${r.err}</div></div>`;
     const m=r.W-W, c=m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)';
-    return `<tr><td>${nm}</td><td class="r">${fm(r.W)} kg</td><td class="r" style="color:${c}">${m>=0?'+':''}${fm(m)}</td></tr>`;}).join('');
+    return `<div class="tl og" style="--oc:${c}"><div class="l">${nm}</div><div class="v">${fm(r.W)}<small> kg</small></div><div class="m" style="color:${c}">余裕 ${m>=0?'+':''}${fm(m)}</div></div>`;}).join('');
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
-  box.innerHTML=`<div class="mi" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="big">地表 ${DISP.alt==='ft'?fm(p.h*FT)+' ft':fm(p.h)+' m'}</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div style="margin-top:4px;font-weight:700;color:${col}">${cls<0?'':OVN[cls]}</div></div>
-  <div class="mi"><table><tr><td>気圧高度（障害物の上面）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table></div>
-  <div class="mi"><div style="color:var(--muted);margin-bottom:2px">OGEホバリングできる最大重量（全備重量 ${fm(W)} kgとの差）</div><table>${rows}</table></div>
+  box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="sitev"><div class="big">地表 ${DISP.alt==='ft'?fm(p.h*FT)+' ft':fm(p.h)+' m'}</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
+  <div class="mi">${tilesOf(`<table><tr><td>気圧高度（障害物の上面）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
+  <div class="mi"><div class="mih">OGEホバリングできる最大重量（全備重量 ${fm(W)} kgとの差）</div><div class="tiles t4">${rows}</div></div>
   ${flightHTML(p,site,hov,Hp,T)}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
   $('mUse').onclick=()=>applyPick(true);
