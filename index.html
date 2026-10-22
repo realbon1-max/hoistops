@@ -724,6 +724,23 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .fpnotes{flex:1 1 260px;display:flex;flex-direction:column;gap:5px;min-width:0}
 #mInfo .fpnotes .dlbox,#mInfo .fpnotes .nowind{margin:0!important}
 @container (min-width:520px){ #mInfo .fp .tiles{display:flex!important;flex-wrap:wrap;gap:6px} #mInfo .fp .tiles>.tl{flex:1 1 150px;min-width:0} #mInfo .fp .tiles>.tl.key,#mInfo .fp .tiles>.tl.wide{flex:2 1 300px} }
+
+/* 飛行計画：時刻・飛行・燃料・余裕の4段、各段4列でそろえる */
+#mInfo .fpg{display:grid;gap:4px}
+#mInfo .fph{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin:4px 2px 0}
+#mInfo .fpr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#mInfo .fpr.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#mInfo .ft{border:1px solid var(--rule);border-radius:8px;padding:6px 9px;background:var(--panel);min-width:0}
+#mInfo .ft .l{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mInfo .ft .v{font-size:20px;font-weight:800;line-height:1.25;font-variant-numeric:tabular-nums;white-space:nowrap}
+#mInfo .ft .v small{font-size:12px;font-weight:600;color:var(--muted)}
+#mInfo .ft .v b{font-weight:800}#mInfo .ft .v b small{color:inherit}
+#mInfo .ft .s{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+#mInfo .ft.k .v{font-size:26px}
+#mInfo .ft .s .etoIn{font-size:12px!important;padding:0 3px!important}
+#mInfo .fpn{font-size:11.5px;margin-top:2px}
+#mInfo .fpr .ft .v .ok,#mInfo .fpr .ft .v b.ok{color:var(--ok)}
+@container (max-width:519px){ #mInfo .fpr{grid-template-columns:repeat(2,minmax(0,1fr))} #mInfo .fpr.r3{grid-template-columns:repeat(3,minmax(0,1fr))} #mInfo .ft.k .v{font-size:22px} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2389,17 +2406,15 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
     else msg=`日没前に救助終了の見込み（日没まで余裕 ${mn(ss-wend)}）`;
     dl=`<div class="dlbox ${cls}">${cls==='ok'?'☀':cls==='caution'?'🌇 注意':'🌙 警告'}　${msg}</div>`;
     dl+=`<!--dlrow-->`; DLX={ss:hm(ss),du:hm(du),wk,wend:hm(wend),home:hm(home)}; } else DLX=null;
-  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}<div class="fphead">${crsHTML(g.crs,gb.crs,R_.name)}<div class="fpnotes">${dl}<div class="nowind">⚠ 無風で計算（向かい風20 ktで時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div></div></div><table>
-  <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
-  <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
-  <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
-  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ時刻 ${T0.pick} から計算（押して変更）`}">${T0.set?`<button type="button" class="etoClr" title="設定した離陸予定を消して、地点を選んだ時刻から数える">↺</button>`:`<i class="etoA">地点を選んだ時刻</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
-  ${DLX?`<tr><td>日没／薄明終了</td><td class="r"><b>${DLX.ss}</b><small> ／ ${DLX.du}</small></td></tr><tr><td>救助終了→帰投着</td><td class="r">${DLX.wend}<small> → ${DLX.home}</small></td></tr>`:''}
-  <tr><td>消費燃料（往路）</td><td class="r">${fm(burnOut)} kg</td></tr>
-  <tr><td>到着時 燃料／全備</td><td class="r">${fm(fArr)}<small> ／ ${fm(gwArr)} kg</small></td></tr>
-  <tr><td>到着時のOGE余裕</td><td class="r"><span class="mg3"><i>TOP</i>${marg('p917')}<i>MCP</i>${marg('p918')}<i>OEI</i>${marg('p444z')}</span>${densAlt(Hp,T)>7000?'<div style="font-size:11px;color:var(--warn)">密度高度7,000 ft超：TOPでのホイスト運用は不可</div>':''}</td></tr>
-  <tr><td>${DST?'目的地への燃料':'帰投燃料'}</td><td class="r">${fm(burnBack)} kg<small> ${Math.round(back.t)}分・${gb.nm.toFixed(1)} NM</small></td></tr>
-  <tr><td>ホバリング可能</td><td class="r"><b class="${hovMin>=10?'ok':hovMin>0?'caution':'warn'}">${hovMin>0?Math.floor(hovMin)+'分':'なし'}</b></td></tr>${lim?`<tr><td>離脱リミット</td><td class="r"><b class="warn">${lim}</b></td></tr>`:''}</table>
+  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}<div class="fphead">${crsHTML(g.crs,gb.crs,R_.name)}<div class="fpnotes">${dl}<div class="nowind">⚠ 無風で計算（向かい風20 ktで時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div></div></div>${(()=>{ const T=(ic,l,v,sub,c)=>`<div class="ft${c?' '+c:''}"><div class="l">${tIco(ic)}${l}</div><div class="v">${v}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
+    const etoS=`離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻">${T0.set?`<button type="button" class="etoClr" title="設定した離陸予定を消して、地点を選んだ時刻から数える">↺</button>`:''}`;
+    const hc=hovMin>=10?'ok':hovMin>0?'caution':'warn';
+    return `<div class="fpg">
+    <div class="fph">時刻</div><div class="fpr">${T('eta','到着予定',`<b>${eta||'—'}</b>`,etoS,'k')}${T('res',`救助終了（${DLX?DLX.wk:+FP.work||0}分）`,DLX?DLX.wend:'—','','')}${T('back',DST?'目的地着':'帰投着',DLX?DLX.home:'—','','')}${T('lim','離脱リミット',lim?`<b class="warn">${lim}</b>`:'—','','k')}</div>
+    <div class="fph">飛行</div><div class="fpr">${T('dist','距離',`${g.nm.toFixed(1)}<small> NM</small>`,`${(g.nm*1.852).toFixed(1)} km`)}${T('alt','高度差',`${dh>=0?'+':'−'}${fm(Math.abs(dh))}<small> ft</small>`)}${T('time','飛行時間',`${Math.round(out.t)}<small> 分</small>`,su?`＋始動 ${su}分`:'')}${T('sun','日没',DLX?DLX.ss:'—',DLX?`薄明終了 ${DLX.du}`:'')}</div>
+    <div class="fph">燃料</div><div class="fpr">${T('fuel','消費（往路）',`${fm(burnOut)}<small> kg</small>`)}${T('fuel','到着時の燃料',`${fm(fArr)}<small> kg</small>`,`全備 ${fm(gwArr)} kg`)}${T('back',DST?'目的地への燃料':'帰投燃料',`${fm(burnBack)}<small> kg</small>`,`${Math.round(back.t)}分・${gb.nm.toFixed(1)} NM`)}${T('hov','ホバリング可能',`<b class="${hc}">${hovMin>0?Math.floor(hovMin):0}<small> 分</small></b>`,'','k')}</div>
+    <div class="fph">到着時のOGE余裕</div><div class="fpr r3">${T('wt','TOP',marg('p917'),'')}${T('wt','MCP',marg('p918'),'')}${T('wt','OEI 2.5分',marg('p444z'),'')}</div>
+    ${densAlt(Hp,T)>7000?'<div class="fpn warn">密度高度7,000 ft超：TOPでのホイスト運用は不可</div>':''}</div>`; })()}
   ${out.orbit?`<div class="hint warn">高度差が大きく、水平距離の間に上がり切れません（上昇に ${Math.ceil(out.tV)}分）。時間は上昇時間で計算しています。</div>`:''}
   ${Math.abs(FROM.lat-BASE.lat)>1e-5||Math.abs(FROM.lon-BASE.lon)>1e-5?`<div class="hint">出発地が${BASE.name}以外です。飛行中に別の現場へ向かう場合は「始動〜離陸」を0分に、「出発時の燃料」を今の残燃料にしてください（出発時の燃料 ${fm(fuel)} kg${fv!==''?'':'＝搭載燃料'}）。</div>`:''}
   <div class="hint note">現場でホバリングできる時間＝(到着時の燃料−帰投燃料−予備 ${fm(rsv)} kg)÷ホバリングの燃料消費 ${fm(ffh)} kg/h。風は考えていません。</div></div>`; }
