@@ -812,6 +812,26 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 .relcards .rc{border:1px solid var(--rule);background:var(--panel)!important;border-radius:8px!important;padding:6px 9px!important}
 .relcards .rc .l{display:flex;align-items:center}
 @media (min-width:900px){ .relcards{grid-template-columns:repeat(6,minmax(0,1fr))!important} .relcards .rc .v{font-size:17px} }
+
+/* ④ 風の許容範囲：判定カード・3基準の横並び */
+section[aria-label="風の許容範囲"]{container-type:inline-size}
+@container (min-width:700px){ section[aria-label="風の許容範囲"] .hero{grid-template-columns:minmax(300px,0.95fr) minmax(0,1fr)!important;gap:14px!important} }
+.vd{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;border:1px solid var(--rule);border-left:6px solid var(--rule);background:var(--panel)}
+.vd.ok{border-left-color:var(--ok)}.vd.warn{border-left-color:var(--warn)}
+.vd .vi{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none}.vd.ok .vi{background:var(--ok)}.vd.warn .vi{background:var(--warn)}.vd .vi svg{width:22px;height:22px}
+.vd b{font-size:24px;display:block;line-height:1.15}.vd.ok b{color:var(--ok)}.vd.warn b{color:var(--warn)}.vd small{font-size:12px!important;color:var(--muted)}
+.verdict{font-size:inherit!important}
+.vchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.vchips span{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;padding:3px 9px;border:1px solid var(--rule);border-radius:14px;background:var(--panel);color:var(--muted)}
+.vchips b{color:var(--ink);font-size:15px}.vchips .ok{border-color:var(--ok)}.vchips .ok b{color:var(--ok)}.vchips .cau{border-color:var(--caution)}.vchips .cau b{color:var(--caution)}.vchips .bad{border-color:var(--warn);color:var(--warn)}.vchips .bad b{color:var(--warn)}
+.vc{width:15px;height:15px}
+.cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+.card{position:relative;display:flex!important;flex-direction:column;align-items:flex-start!important;gap:2px!important;padding:7px 9px!important;border-radius:10px!important}
+.card .t{display:flex;align-items:flex-start;gap:5px;font-size:12.5px!important;font-weight:700;line-height:1.25}.card .t small{font-weight:400;font-size:10.5px!important}
+.kic{width:17px;height:17px;flex:none;vertical-align:-3px}
+.card .v{font-size:22px!important;text-align:left!important;line-height:1.1}
+.card .kon{font-style:normal;font-size:10px;font-weight:800;color:#fff;background:#ff7a1a;border-radius:8px;padding:0 6px}
+.vrschk{display:flex!important;align-items:center;gap:5px;font-size:13px;margin-top:8px}
+@media (max-width:420px){ .cards{grid-template-columns:1fr!important} .card{flex-direction:row!important;flex-wrap:wrap;align-items:center!important;justify-content:space-between} .card .kon{order:3} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -1076,7 +1096,7 @@ a{color:#7cc4ff}
           <div class="hz" id="hazard"></div>
           <div class="cards" id="cards"></div>
           <div class="dw" id="dwBox"></div>
-          <label class="chk vrschk"><input type="checkbox" id="vrsOn"> VRS（渦輪状態）に入る上昇気流の目安を表示 <span id="vrsTag" class="vrstag"></span></label>
+          <label class="chk vrschk"><input type="checkbox" id="vrsOn"> <svg class="kic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 8h16"/><path d="M7 12a5 3 0 1 0 10 0M5 16a7 4 0 1 0 14 0" stroke-dasharray="2.5 2"/></svg>VRS（渦輪）の目安 <span id="vrsTag" class="vrstag"></span></label>
           <div class="dw" id="vrsBox" hidden></div>
           <p class="legend">内側の円をタップ・ドラッグすると風を、外側の方位リングを回すと機首方位（HDG）を設定できます。緑の範囲が選んだ基準での許容、赤は許容外。青の点線は低速度IGE（第4-7図）の上限。矢印の先から伸びる2本の線が向かい風成分（縦）と横風成分（横）です。円の外側の色帯は注意すべき風の方位です。黄：RFMの危険相対風方位（右90°〜135°、第4-6図）。紫・赤・青：LTE（テールロータ効果の喪失）に関わる一般的な方位（米国FAA AC 90-95、反時計回りのメインロータの機種の一般論で、AW139のRFMの指定ではない）。今の風が入っている帯は濃く表示されます。</p>
         </div>
@@ -1584,7 +1604,8 @@ function updateWind(H,T,W){
     if(L.err) v=`<span class="caution" style="font-size:13px">${L.err}</span>`;
     else{const lim=L.fn(a); const ok=ws<=lim; v=`<span class="${ok?'ok':'warn'}">${lim===Infinity?'制限なし':lim===0?'<span style="font-size:13px">向かい風±10°のみ</span>':lim+' kt'}</span>`;}
     const tag=(m===pwr)?'<small style="color:var(--ink);font-weight:700">選択中の出力</small>':'';
-    el.innerHTML=`<div class="t">${t}<small>${s}</small>${tag}</div><div class="v">${v}</div>`;
+    const SH={mcp:['ホイスト MCP','<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'],top:['ホイスト TOP','<path d="M13 2L4 14h7l-1 8 9-12h-7z"/><path d="M19 3v4M17 5h4"/>'],lowspeed:['低速度 IGE','<path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3z"/><path d="M3 21h18"/>']}[m]||[t,''];
+    el.innerHTML=`<div class="t"><svg class="kic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${SH[1]}</svg><span>${SH[0]}<small>${s}</small></span></div><div class="v">${v}</div>${m===pwr?'<i class="kon">選択中の出力</i>':''}`; el.title=t;
     el.onclick=el.onkeydown=(e)=>{if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return; mode=m; update();};
     cards.appendChild(el);
   });
@@ -1593,7 +1614,9 @@ function updateWind(H,T,W){
   const name=MODES.find(x=>x[0]===mode)[1];
   if(L.err){$('verdict').innerHTML=`<span class="caution">${L.err}</span><small>${name}</small>`;}
   else{const lim=L.fn(a); const m=lim===Infinity?null:lim-ws; const ok=m===null||m>=0;
-    $('verdict').innerHTML=`<span class="${ok?'ok':'warn'}">${ok?'許容範囲内':'許容範囲外'}</span><small>${name}｜相対方位 ${a}° の風 ${ws} kt／この方位の上限 ${lim===Infinity?'制限なし（向かい風±10°）':lim===0?'なし':lim+' kt'}${m!==null?`（余裕 ${m>=0?'+':''}${m} kt）`:''}${a>=90&&a<=135?'<br><span class="caution">危険相対風方位（右90°〜135°）</span>':''}</small>`;}
+    const VI=ok?'<path d="M5 12.5l4.5 4.5L19 7.5"/>':'<path d="M6 6l12 12M18 6L6 18"/>';
+    $('verdict').innerHTML=`<div class="vd ${ok?'ok':'warn'}"><span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${VI}</svg></span><div><b>${ok?'許容範囲内':'許容範囲外'}</b><small>${name}</small></div></div>
+    <div class="vchips"><span><svg class="vc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v4M12 12l5-5"/><circle cx="12" cy="12" r="9"/></svg>相対 <b>${String(a).padStart(3,'0')}°</b> / <b>${ws}</b> kt</span><span>上限 <b>${lim===Infinity?'なし':lim===0?'0':lim}</b>${lim===Infinity?'':' kt'}</span>${m!==null?`<span class="${m>=10?'ok':m>=0?'cau':'bad'}">余裕 <b>${m>=0?'+':''}${m}</b> kt</span>`:''}${a>=90&&a<=135?'<span class="bad">⚠ 危険相対風方位 右90°〜135°</span>':''}</div>`;}
   drawPolar(L,a,ws); drawAlt(H,T,W); hazardEval(H,T,W); drawDownwash(H,T,W); drawVRS(H,T,W); { const lv=vrsWindLevel(); const t=$('vrsTag'); t.textContent=['VRS 低','VRS 注意（風が弱い）','VRS 警戒（ほぼ無風）'][lv]; t.style.background=['var(--ok)','#d99a1e','var(--warn)'][lv]; }
 }
 
