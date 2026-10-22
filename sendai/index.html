@@ -682,6 +682,20 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .mbe span{font-size:12px}
 .destbar .destb{min-height:38px!important;padding:4px 8px!important}
 @container (min-width:520px){ #mInfo .sitev .hchips{justify-content:flex-end} #mInfo .mg3{grid-template-columns:repeat(3,auto auto)} }
+
+/* 現場の予想（風・天気） */
+#mInfo .wxs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:150px;padding:2px 6px}
+#mInfo .wxtop{display:flex;align-items:center;gap:6px}#mInfo .wxic{width:58px;height:62px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
+#mInfo .wxtx{display:flex;flex-direction:column;line-height:1.2}#mInfo .wxtx b{font-size:15px}#mInfo .wxtx span{font-size:13px;color:var(--muted)}
+#mInfo .wxwind{display:flex;align-items:baseline;gap:3px;color:var(--curve);font-variant-numeric:tabular-nums}#mInfo .wxwind b{font-size:22px;font-weight:800}#mInfo .wxwind small{font-size:12px}#mInfo .wxwind em{font-style:normal;font-size:13px;font-weight:700;color:var(--warn);margin-left:4px}
+#mInfo .wxarr{width:22px;height:22px;align-self:center;transition:transform .4s}
+#mInfo .wxt{font-size:11px;color:var(--muted);text-align:center}#mInfo .wxuse{font:inherit;font-size:11px;margin-left:6px;padding:1px 7px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);color:var(--curve);cursor:pointer}
+.wsun{transform-origin:32px 30px;animation:wspin 24s linear infinite}@keyframes wspin{to{transform:rotate(360deg)}}
+.wdrop{animation:wdrop 1s linear infinite}@keyframes wdrop{0%{opacity:0;transform:translateY(-4px)}30%{opacity:1}100%{opacity:0;transform:translateY(5px)}}
+.wflake{animation:wflake 2s ease-in-out infinite}@keyframes wflake{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+.wbolt{animation:wbolt 2.4s steps(1) infinite}@keyframes wbolt{0%,70%,100%{opacity:1}75%,85%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.wsun,.wdrop,.wflake,.wbolt{animation:none}}
+@container (min-width:520px){ #mInfo .mi.site{grid-template-columns:minmax(0,1fr) auto auto!important} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2319,6 +2333,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
   const gb=gc(p.lat,p.lon,R_.lat,R_.lon);
   const out=fpLeg(g.nm,dh), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), su=+FP.su||0;
+  { const tv0=$('fpTo').value, nw=new Date(), nm=nw.getHours()*60+nw.getMinutes(); window.FPARR=tv0?(+tv0.split(':')[0])*60+(+tv0.split(':')[1])+out.t:nm+su+out.t; window.FPARRset=!!tv0; }
   const tOut=out.t+su, burnOut=(+FP.ff)*tOut/60, burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
   const fArr=fuel-burnOut, gwArr=GW-burnOut, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0;
@@ -2430,12 +2445,13 @@ function mapInfo0(){
     return `<div class="tl og" style="--oc:${c}"><div class="l">${nm}</div><div class="v">${fm(r.W)}<small> kg</small></div><div class="m" style="color:${c}">余裕 ${m>=0?'+':''}${fm(m)}</div></div>`;}).join('');
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
-  box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="sitev"><div class="big" title="${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}">${tIco('elev')}${DISP.alt==='ft'?fm(p.h*FT)+'<small> ft</small>':fm(p.h)+'<small> m</small>'}</div><div class="hchips"><span title="地表">${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}</span><span title="樹木・障害物の上面">${tIco('tree')}${fm(site)} ft</span><span title="ホバリング高度">${tIco('heli')}${fm(hov)} ft</span></div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
+  box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="wxs" id="wxSite"></div><div class="sitev"><div class="big" title="${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}">${tIco('elev')}${DISP.alt==='ft'?fm(p.h*FT)+'<small> ft</small>':fm(p.h)+'<small> m</small>'}</div><div class="hchips"><span title="地表">${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}</span><span title="樹木・障害物の上面">${tIco('tree')}${fm(site)} ft</span><span title="ホバリング高度">${tIco('heli')}${fm(hov)} ft</span></div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
   <div class="mi">${tilesOf(`<table><tr><td>気圧高度</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>気温</td><td class="r" colspan="2">${T.toFixed(1)}℃<small> ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}</small></td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>許容横風・背風 MCP</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
   <div class="mi"><div class="mih">${tIco('wt')}OGE最大重量 <small>全備 ${fm(W)} kg との差</small></div><div class="tiles t4">${rows}</div></div>
   ${flightHTML(p,site,hov,Hp,T)}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
   $('mUse').onclick=()=>applyPick(true);
+  try{ wxSite(p); }catch(e){ console.warn(e); }
 }
 function applyPick(force){ const p=MAP.pick; if(!p||p.loading||p.err||isNaN(p.h)) return; if(!force&&!$('mApply').checked) return;
   const site=Math.round(p.h*FT+(+$('mObs').value||0)*FT);
@@ -4556,6 +4572,49 @@ update();
 })();
 
 
+
+// ---- 現場の予想（風・天気）：到着予定時刻の MSM 予報を地点カードに表示（気象庁 MSM／Open-Meteo 経由・オンライン時のみ）
+const WXS={c:{},busy:{}};
+function wxIcon(code,night){ const c=code==null?-1:code, id='wg'+Math.random().toString(36).slice(2,7);
+  const sun=`<g class="wsun"><circle cx="32" cy="30" r="11" fill="url(#${id}s)"/>${[...Array(8)].map((_,k)=>`<path d="M32 13v-6" transform="rotate(${k*45} 32 30)" stroke="#ffb300" stroke-width="3.2" stroke-linecap="round"/>`).join('')}</g>`;
+  const moon=`<path d="M38 14a14 14 0 1 0 12 20a11 11 0 0 1-12-20z" fill="url(#${id}m)"/><circle cx="50" cy="14" r="1.3" fill="#fff"/><circle cx="18" cy="20" r="1" fill="#fff"/>`;
+  const cloud=(dark,y=0)=>`<path transform="translate(0 ${y})" d="M18 50h30a10 10 0 0 0 0-20a14 14 0 0 0-26-3a10 10 0 0 0-4 23z" fill="url(#${id}${dark?'d':'c'})" stroke="rgba(0,0,0,.08)"/>`;
+  const rain=n=>[...Array(n)].map((_,k)=>`<path class="wdrop" style="animation-delay:${k*0.25}s" d="M${22+k*8} 54l-3 7" stroke="#3aa0ff" stroke-width="2.6" stroke-linecap="round"/>`).join('');
+  const snow=n=>[...Array(n)].map((_,k)=>`<circle class="wflake" style="animation-delay:${k*0.3}s" cx="${22+k*9}" cy="57" r="2.3" fill="#e8f4ff" stroke="#9cc8ef"/>`).join('');
+  const bolt=`<path class="wbolt" d="M34 48l-7 10h6l-4 9 11-13h-6l4-6z" fill="#ffd400" stroke="#e0a000" stroke-width="1"/>`;
+  const fog=`<g stroke="#9aa6b2" stroke-width="3" stroke-linecap="round"><path d="M12 54h40"/><path d="M16 60h34"/></g>`;
+  let g='';
+  if(c<=1) g=night?moon:sun;
+  else if(c===2) g=(night?`<g transform="translate(-8 -6) scale(.8)">${moon}</g>`:`<g transform="translate(-8 -6)">${sun}</g>`)+cloud(false,4);
+  else if(c===3) g=cloud(false,-2)+`<g transform="translate(8 -10) scale(.7)" opacity=".7">${cloud(true)}</g>`;
+  else if(c===45||c===48) g=cloud(false,-6)+fog;
+  else if(c>=51&&c<=67||c>=80&&c<=82) g=cloud(c>=63)+rain(c>=63||c===82?4:3);
+  else if(c>=71&&c<=77||c===85||c===86) g=cloud(false)+snow(4);
+  else if(c>=95) g=cloud(true)+bolt+rain(2);
+  else g=cloud(false);
+  return `<svg class="wxic" viewBox="0 0 64 68" aria-hidden="true"><defs><radialGradient id="${id}s" cx=".4" cy=".35"><stop offset="0" stop-color="#fff59d"/><stop offset=".6" stop-color="#ffc107"/><stop offset="1" stop-color="#ff8f00"/></radialGradient><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffde7"/><stop offset="1" stop-color="#b0bec5"/></linearGradient><linearGradient id="${id}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd8e3"/></linearGradient><linearGradient id="${id}d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa7b6"/><stop offset="1" stop-color="#5f6d7c"/></linearGradient></defs>${g}</svg>`; }
+async function wxSite(p){ const box=$('wxSite'); if(!box||!p) return;
+  const key=(Math.round(p.lat*20)/20).toFixed(2)+','+(Math.round(p.lon*20)/20).toFixed(2), C=WXS.c[key];
+  const draw=d=>{ const b=$('wxSite'); if(!b) return; const T=d.time, now=new Date(), nm=now.getHours()*60+now.getMinutes();
+    let arr=window.FPARR!=null?window.FPARR:nm; let day=new Date(now); if(arr<nm-90) day=new Date(now.getTime()+864e5); const hh=Math.floor(((arr%1440)+1440)%1440/60);
+    const j=new Date(day.getTime()+9*3600e3), ds=j.toISOString().slice(0,10), k0=T.indexOf(`${ds}T${String(hh).padStart(2,'0')}:00`), i=k0>=0?k0:T.reduce((bi,t,ii)=>t.slice(0,13)<=new Date(now.getTime()+9*3600e3).toISOString().slice(0,13)?ii:bi,0);
+    const g=k=>d[k]&&d[k][i]!=null?d[k][i]:null, wc=g('weather_code'), wd=g('wind_direction_10m'), ws=g('wind_speed_10m'), gu=g('wind_gusts_10m'), t2=g('temperature_2m');
+    let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn.rise&&sn.set&&st>=sn.rise&&st<sn.set); }catch(e){}
+    const WN={0:'快晴',1:'晴れ',2:'晴れ時々曇り',3:'曇り',45:'霧',48:'着氷性の霧',51:'弱い霧雨',53:'霧雨',55:'強い霧雨',56:'着氷性の霧雨',57:'着氷性の霧雨',61:'弱い雨',63:'雨',65:'強い雨',66:'着氷性の雨',67:'着氷性の雨',71:'弱い雪',73:'雪',75:'強い雪',77:'霧雪',80:'にわか雨',81:'にわか雨',82:'激しいにわか雨',85:'にわか雪',86:'強いにわか雪',95:'雷雨',96:'雷雨・ひょう',99:'激しい雷雨'};
+    const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
+    b.innerHTML=`<div class="wxtop">${wxIcon(wc,night)}<div class="wxtx"><b>${wc!=null?(WN[wc]||''):'—'}</b>${t2!=null?`<span>${t2.toFixed(0)}℃</span>`:''}</div></div>
+      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" title="風が吹いていく向き" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div>
+      <div class="wxt">${window.FPARRset?'到着':'到着予定'} ${T[i].slice(11,16)} の予報（MSM）<button type="button" class="wxuse" title="この予報の風を風向・風速に入れる">風に反映</button></div>`;
+    const u=b.querySelector('.wxuse'); if(u) u.onclick=()=>{ if(wd==null||ws==null) return; try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=Math.round(ws); if($('wsR')) $('wsR').value=Math.round(ws); update(); mapWind&&mapWind(); }catch(e){} u.textContent='反映しました'; }; };
+  if(C&&Date.now()-C.t<3600e3){ draw(C.d); return; }
+  if(navigator.onLine===false){ box.innerHTML='<div class="wxt">オフライン：予報は表示できません</div>'; return; }
+  box.innerHTML='<div class="wxt">予報を読み込み中…</div>'; if(WXS.busy[key]) return; WXS.busy[key]=1;
+  try{ const url=`https://api.open-meteo.com/v1/jma?latitude=${p.lat.toFixed(3)}&longitude=${p.lon.toFixed(3)}&hourly=weather_code,temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=jma_msm&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`;
+    let r=await fetch(url); let d=r.ok?(await r.json()).hourly:null;
+    if(!d||!d.time){ r=await fetch(url.replace(',wind_gusts_10m','')); d=r.ok?(await r.json()).hourly:null; }
+    if(!d||!d.time) throw 0; WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
+  catch(e){ const b=$('wxSite'); if(b) b.innerHTML='<div class="wxt">予報を読み込めません</div>'; }
+  finally{ WXS.busy[key]=0; } }
 // ---- メニューをピクトグラム＋短い文字に（全体をすっきり）
 const ICO=(()=>{ const P=(d,ex='')=>`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}${ex}</svg>`;
   return {
