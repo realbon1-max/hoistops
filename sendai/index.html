@@ -4907,6 +4907,13 @@ function iconizeAll(){
 }
 iconizeAll(); setTimeout(iconizeAll,500);
 // ブラウザの自動スクロール補正を止める（スライダー操作中の揺れ対策）
+// ボタン・選択・チェックを押したとき、押した場所が画面上で動かないようにする（上の欄の高さが変わっても位置を保つ）
+(function(){ let el=null, top=0, until=0, raf=0;
+  const loop=()=>{ if(el&&el.isConnected){ const d=el.getBoundingClientRect().top-top; if(Math.abs(d)>0.5) window.scrollBy(0,d); } if(performance.now()<until) raf=requestAnimationFrame(loop); else { raf=0; el=null; } };
+  const hold=t=>{ const r=t.getBoundingClientRect(); if(r.bottom<0||r.top>innerHeight) return; el=t; top=r.top; until=performance.now()+900; if(!raf) raf=requestAnimationFrame(loop); };
+  const pick=e=>{ const t=e.target&&e.target.closest&&e.target.closest('button,select,input[type=checkbox],input[type=radio],label.chk,.card,.eqc,.hlit'); if(!t) return; if(t.closest('nav.jump,#map,.mstick,.mmsg,dialog,.wfs,.snapbox')) return; if(t.matches('a')) return; hold(t); };
+  document.addEventListener('pointerdown',pick,true); document.addEventListener('click',pick,true); document.addEventListener('change',pick,true);
+})();
 document.documentElement.style.overflowAnchor='none'; document.body.style.overflowAnchor='none';
 </script>
 </body>
