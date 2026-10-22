@@ -680,6 +680,7 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 @container (min-width:520px){ #mInfo .sitev .hchips{justify-content:flex-end} #mInfo .mg3{grid-template-columns:repeat(3,auto auto)} }
 
 /* 現場の予想（風・天気） */
+#mInfo .etoClr{font:inherit;font-size:13px;font-weight:800;padding:1px 7px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);color:var(--curve);cursor:pointer}
 #mInfo .etoIn.auto{border-style:dashed!important;opacity:.85}#mInfo .etoA{font-style:normal;font-size:10.5px;color:var(--muted);white-space:nowrap}
 #mInfo .wxs{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:150px;padding:2px 6px}
 #mInfo .wxtop{display:flex;align-items:center;gap:6px}#mInfo .wxic{width:58px;height:62px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
@@ -2385,7 +2386,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
-  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ ${T0.pick} ＋始動等 ${T0.su}分（押して変更）`}">${T0.set?'':`<i class="etoA">選択 ${T0.pick}＋${T0.su}分</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
+  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ ${T0.pick} ＋始動等 ${T0.su}分（押して変更）`}">${T0.set?`<button type="button" class="etoClr" title="設定した離陸予定を消して、地点を選んだ時刻から数える">↺</button>`:`<i class="etoA">選択 ${T0.pick}＋${T0.su}分</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
   ${DLX?`<tr><td>日没／薄明終了</td><td class="r"><b>${DLX.ss}</b><small> ／ ${DLX.du}</small></td></tr><tr><td>救助終了→帰投着</td><td class="r">${DLX.wend}<small> → ${DLX.home}</small></td></tr>`:''}
   <tr><td>消費燃料（往路）</td><td class="r">${fm(burnOut)} kg</td></tr>
   <tr><td>到着時 燃料／全備</td><td class="r">${fm(fArr)}<small> ／ ${fm(gwArr)} kg</small></td></tr>
@@ -2547,7 +2548,8 @@ function mapPick(lat,lon){ MAP.pick={lat,lon,loading:true,src:ldemIn(lat,lon)?'l
   $('fpTo').addEventListener('input',()=>{ try{localStorage.setItem('aw139eto',$('fpTo').value);}catch(e){} mapInfo(); });
   // inline entry of the takeoff time from the flight table (writes the same field as 出発地・飛行条件)
   const etoSet=v=>{ $('fpTo').value=v; $('fpTo').dispatchEvent(new Event('input')); };
-  document.addEventListener('change',e=>{ if(e.target.classList&&e.target.classList.contains('etoIn')&&e.target.value) etoSet(e.target.value); });
+  ['change','input'].forEach(ev=>document.addEventListener(ev,e=>{ const t=e.target; if(!(t.classList&&t.classList.contains('etoIn'))) return; if(t.value){ if(ev==='change') etoSet(t.value); } else if($('fpTo').value) etoSet(''); }));
+  document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.etoClr'); if(!b) return; etoSet(''); });
   document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.etoNow'); if(!b) return; const d=new Date(); etoSet(String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')); });
   const nowPlus=m=>{ const d=new Date(); d.setMinutes(d.getMinutes()+m); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
   $('fpNow').onclick=()=>etoSet(nowPlus(0));
@@ -4673,7 +4675,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
   const key=(Math.round(p.lat*20)/20).toFixed(2)+','+(Math.round(p.lon*20)/20).toFixed(2), C=WXS.c[key];
   const LV=[1000,975,950,925,900,850,800,700,600,500];
   const draw=d=>{ const b=$('wxSite'); if(!b) return; const T=d.time, now=new Date(), nm=now.getHours()*60+now.getMinutes();
-    let arr=window.FPARR!=null?window.FPARR:nm; let day=new Date(now); if(arr<nm-90) day=new Date(now.getTime()+864e5); const hh=Math.floor(((arr%1440)+1440)%1440/60);
+    let arr=window.FPARR!=null?window.FPARR:nm; let day=new Date(now); if(arr<nm-90) day=new Date(now.getTime()+864e5); const hh=Math.round(((arr%1440)+1440)%1440/60)%24; if(Math.round(((arr%1440)+1440)%1440/60)>=24) day=new Date(day.getTime()+864e5);
     const j=new Date(day.getTime()+9*3600e3), ds=j.toISOString().slice(0,10), k0=T.indexOf(`${ds}T${String(hh).padStart(2,'0')}:00`), i=k0>=0?k0:T.reduce((bi,t,ii)=>t.slice(0,13)<=new Date(now.getTime()+9*3600e3).toISOString().slice(0,13)?ii:bi,0);
     const g=k=>d[k]&&d[k][i]!=null?d[k][i]:null, wc=g('weather_code'), wd=g('wind_direction_10m'), ws=g('wind_speed_10m'), gu=g('wind_gusts_10m'), t2=g('temperature_2m');
     const vis=g('visibility'), rh2=g('relative_humidity_2m'), td2=g('dew_point_2m'), ccl=g('cloud_cover_low'), pr=g('precipitation');
