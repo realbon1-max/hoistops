@@ -584,6 +584,18 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 .wfrow{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px}.wfrow button{min-width:44px}
 .wfl{font-size:12px;color:var(--muted);text-align:center;margin-top:4px;max-width:270px}
 #wpUse{background:#2f6fb0;color:#fff;border-color:#2f6fb0;margin:4px 0}.wpout{font-size:13px}.wpv{font-size:18px;color:#2f6fb0}.wpout small{color:var(--muted)}
+
+/* 地図操作ボタンの固定（スクロールしても上に残す） */
+nav.jump{padding-top:calc(6px + env(safe-area-inset-top,0px))!important;margin-top:calc(-1 * env(safe-area-inset-top,0px))}
+.mstick{position:sticky;top:var(--jh,46px);z-index:40;background:var(--panel);margin:0 -6px;padding:2px 6px 4px;border-radius:0 0 8px 8px}
+.mstick.stuck{box-shadow:0 6px 12px -6px rgba(0,0,0,.45);max-height:calc(100vh - var(--jh,46px) - 120px);overflow-y:auto;overscroll-behavior:contain}
+.mstick.stuck .mlayers .mlab,.mstick.stuck .drawh{display:none}
+.mstick.stuck .mtabs,.mstick.stuck .drawmodes,.mstick.stuck .mlayers{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.mstick.stuck .mtabs::-webkit-scrollbar,.mstick.stuck .drawmodes::-webkit-scrollbar,.mstick.stuck .mlayers::-webkit-scrollbar{display:none}
+.mstick.stuck .mtabs button,.mstick.stuck .drawmodes button{flex:none;padding:5px 9px;font-size:12.5px}
+.mstick.stuck .drawbar{margin:4px 0 0;padding:3px 6px}
+.mstick.stuck .mlayers{margin:2px 0 0}.mstick.stuck .mlayers>*{flex:none}
+.mstickS{height:1px;margin-bottom:-1px}
 </style>
 <style id="eliteCss">
 /* ===== ELITE RESCUE THEME (design only) ===== */
@@ -656,6 +668,7 @@ a{color:#7cc4ff}
         <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button></div>
 
       </div>
+      <div id="mStick" class="mstick"><div id="mStickS" class="mstickS" aria-hidden="true"></div>
       <div class="mtabs" role="tablist" aria-label="地図の設定"><button type="button" role="tab" data-mt="gov" aria-selected="false">重ねる地図</button><button type="button" role="tab" data-mt="disp" aria-selected="false">表示の設定</button><button type="button" role="tab" data-mt="ifr" aria-selected="false">航空図 東北</button><button type="button" role="tab" data-mt="site" aria-selected="false">現場の設定</button><button type="button" role="tab" data-mt="fp" aria-selected="false">出発地・飛行条件</button></div>
       <div class="mpane govbox" data-mp="gov" role="tabpanel" hidden>
           <div id="govList" class="govlist"></div>
@@ -703,6 +716,7 @@ a{color:#7cc4ff}
         </div>
         </div>
       <div class="drawbar"><div class="drawh">地図に描く・測る</div><div id="drawModes" class="drawmodes" role="toolbar" aria-label="地図の作図ツール"></div></div>
+      </div>
       <div class="mapwrap">
         <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><svg id="mGeo" aria-hidden="true"></svg><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mOei" aria-hidden="true"></svg><svg id="mRadar" aria-hidden="true"></svg><svg id="mRadio" aria-hidden="true"></svg><svg id="mEdge" aria-hidden="true"></svg><svg id="mDraw"></svg><svg id="mHp" aria-hidden="true"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
           <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><div class="mzjog" id="mZjog" role="slider" aria-label="ズーム（上へ引くと拡大・下へ引くと縮小）" aria-valuemin="6" aria-valuemax="16" tabindex="0"><i class="mzk"><b id="mZlv"></b></i></div><button type="button" id="mZout" aria-label="縮小">−</button></div>
@@ -4310,6 +4324,16 @@ document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closes
     try{ localStorage.setItem('sd139skin',st.disabled?'classic':'elite'); }catch(e){} show(); try{ update(); }catch(e){} }; show(); })();
 
 update();
+
+// 地図操作ボタンを上に固定：地図の種類の行も固定枠に入れ、固定中は1行ずつ横スクロールにまとめる
+(function(){ const st=document.getElementById('mStick'), lay=document.querySelector('.mlayers'), nav=document.querySelector('nav.jump');
+  if(!st) return; if(lay) st.insertBefore(lay, st.children[1]);
+  const setJ=()=>{ document.documentElement.style.setProperty('--jh',(nav?nav.getBoundingClientRect().height:0)+'px'); };
+  setJ(); addEventListener('resize',setJ); addEventListener('orientationchange',()=>setTimeout(setJ,300));
+  const chk=()=>{ const t=st.getBoundingClientRect().top, j=nav?nav.getBoundingClientRect().height:0, sec=document.getElementById('mapsec').getBoundingClientRect();
+    const on = t<=j+1 && sec.top<j && sec.bottom>j+st.offsetHeight+40; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
+  addEventListener('scroll',chk,{passive:true}); addEventListener('resize',chk); setTimeout(chk,300);
+})();
 </script>
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}); }); }
