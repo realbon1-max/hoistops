@@ -836,6 +836,29 @@ section[aria-label="風の許容範囲"]{container-type:inline-size}
 .card .kon{font-style:normal;font-size:10px;font-weight:800;color:#fff;background:#ff7a1a;border-radius:8px;padding:0 6px}
 .vrschk{display:flex!important;align-items:center;gap:5px;font-size:13px;margin-top:8px}
 @media (max-width:420px){ .cards{grid-template-columns:1fr!important} .card{flex-direction:row!important;flex-wrap:wrap;align-items:center!important;justify-content:space-between} .card .kon{order:3} }
+
+/* ⑤ 断面・離脱：ピクトグラムとチップ */
+.xrow .xslope .xsa{font-size:24px!important;display:inline!important;color:var(--sc)!important;font-weight:800}
+.xrow .xslope small{display:block}
+.hl>div:last-child{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px 28px}.hl>div:last-child>.hlterr,.hl>div:last-child>.hlterr+*{flex-basis:100%}#hlmsg{margin:0!important}
+.xico{width:16px;height:16px;flex:none;vertical-align:-3px;margin-right:3px}
+.xsctl{gap:6px!important}.xsctl label{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 8px;border:1px solid var(--rule);border-radius:16px;background:var(--panel)}.xsctl label select{border:0!important;background:transparent!important;padding:3px 4px!important;font-size:12.5px!important}
+.xsctl #xsSave{display:inline-flex;align-items:center;border-radius:16px!important;font-size:12.5px!important}
+.xsum{padding:6px 8px!important}.xsc{display:flex;flex-wrap:wrap;gap:5px}
+.xsc>span{display:inline-flex;align-items:center;gap:2px;font-size:12.5px;padding:2px 9px;border:1px solid var(--rule);border-radius:14px;background:var(--panel);color:var(--muted)}
+.xsc>span b{color:var(--ink);font-size:14.5px}.xsc>span small{font-size:11px}
+.xsc>span.cau{border-color:var(--caution)}.xsc>span.cau b{color:var(--caution)}.xsc>span.bad{border-color:var(--warn);color:var(--warn)}.xsc>span.bad b{color:var(--warn)}
+.xsum .hint{margin-top:4px}
+.xrow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.8fr) minmax(0,1fr);gap:6px;margin:6px 0 4px}
+.xrow .xslope{display:flex;align-items:center;gap:8px;margin:0!important;padding:4px 8px!important;border:1px solid var(--rule);border-left:5px solid var(--sc)!important;border-radius:8px!important;background:var(--panel)!important}
+.xsa{font-size:22px;font-weight:800;color:var(--sc);font-variant-numeric:tabular-nums}.xrow .xslope b{display:block;font-size:12.5px!important;color:var(--ink)!important}.xrow .xslope small{font-size:11px;color:var(--muted)}
+.xst{border:1px solid var(--rule);border-radius:8px;padding:4px 8px;background:var(--panel);min-width:0}.xst small{display:block;font-size:11px;color:var(--muted)}.xst b{font-size:20px;font-weight:800}.xst b i{font-style:normal;font-size:11px;color:var(--muted)}.xst b.xs2{font-size:13px;font-weight:700}
+@media (max-width:560px){ .xrow{grid-template-columns:1fr 1fr} .xrow .xslope{grid-column:1/-1} }
+.hlk .l,.hlk2 .l{font-size:12px;color:var(--muted);display:block}
+.hlk2{display:block;margin-top:2px}.hlk2 b{font-size:24px;font-weight:800}
+.hlterr{border-left-width:5px!important;border-radius:8px!important;padding:6px 8px!important}
+.hlt3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.hlt3>div{background:var(--panel);border:1px solid var(--rule);border-radius:7px;padding:4px 7px}.hlt3 small{display:block;font-size:10.5px;color:var(--muted);line-height:1.25}.hlt3 b{font-size:17px;font-weight:800}
+.hlnote{font-size:11px;color:var(--muted);margin-top:4px}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -1109,10 +1132,10 @@ a{color:#7cc4ff}
     <div class="grph" id="g_site">⑤ 現場の地形・吹き下ろし・離脱</div>
     <section class="box" id="xssec" aria-label="ホイスト地点の詳細断面図">
       <h2>現場の断面・吹き下ろし</h2>
-      <div class="xsctl"><label>範囲 <select id="xsRange"><option value="50">±50 m</option><option value="100">±100 m</option><option value="200">±200 m</option><option value="300">±300 m</option><option value="500">±500 m</option><option value="1000">±1,000 m</option><option value="2000">±2,000 m</option></select></label>
-        <label>縦の倍率 <select id="xsVx"><option value="1">×1（実際の形）</option><option value="2">×2</option><option value="3">×3</option><option value="5">×5</option><option value="auto">自動</option></select></label>
-        <label>地形の描き方 <select id="xsAa"><option value="1">滑らか（補間）</option><option value="0">カクカク（データのまま）</option></select></label>
-        <button type="button" id="xsSave">画像で保存</button><span id="xsSt" class="xsst" aria-live="polite"></span></div>
+      <div class="xsctl"><label title="断面の範囲"><svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg><select id="xsRange"><option value="50">±50 m</option><option value="100">±100 m</option><option value="200">±200 m</option><option value="300">±300 m</option><option value="500">±500 m</option><option value="1000">±1,000 m</option><option value="2000">±2,000 m</option></select></label>
+        <label title="縦の倍率"><svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg><select id="xsVx"><option value="1">×1（実際の形）</option><option value="2">×2</option><option value="3">×3</option><option value="5">×5</option><option value="auto">自動</option></select></label>
+        <label title="地形の描き方"><svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18c3-6 5-8 8-4s5 2 7-3 3-3 5-2"/></svg><select id="xsAa"><option value="1">滑らか（補間）</option><option value="0">カクカク（データのまま）</option></select></label>
+        <button type="button" id="xsSave" title="断面図を画像で保存"><svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg>保存</button><span id="xsSt" class="xsst" aria-live="polite"></span></div>
       <div id="xsBody"></div>
       <div id="xsPrev" class="xsprev" hidden></div>
       <p class="legend">地図で選んだ地点を中心に、機首方位（風の欄の「機首方位」）の線と、それに直角な左右の線で地形を切った断面です。ローター面の高さは「樹木・障害物の高さ」＋「ホバリング高度」で、ヘリは真上から見た位置どおり断面の中心にいます。地形は、ネットにつながれば地理院の標高タイル（約10 m間隔）、つながらなければ内蔵データ（約50 m四方の最高点をなめらかにつないだもの、実際より高め）を使います。青の柱はローターからの吹き下ろしで、Airbus SPN 3684-P-00（Noise & downwash considerations for ground operators）に従い、誘導速度の2倍（2Vi）がローター直径の3倍までほぼそのまま届き、それより高いと弱まって10直径でほぼ静止するとしています。地表に沿った色の帯は、地表で向きを変えて広がる吹き出し（同SPNのPrestonモデル：0.5〜1直径で最大、その先は距離に反比例）に、風の欄で選んだ風のこの断面方向の成分を足した強さと向きです（白い線と矢印が流れる向き）。風があると吹き下ろしは風下へ流されて地表に当たり、風上側では吹き出しが風に押し戻されて地面渦ができます。色はSPNの目安（60 km/hで小石、80〜90 km/hで石・瓦、100 km/hで歩けない、130 km/hで立っていられない）で分けています。開けた所では四方に広がって急に弱まりますが、谷や沢では両側の斜面に挟まれて一方向にしか逃げられないため、遠くまで強いまま流れます（断面の各点で、横方向に10 m以上高くなる斜面までの幅から判定）。急な斜面に当たると跳ね返って巻き上がり、ローターに戻ることがあります。数値は単純化した模型による目安で、実際の風・地形の細部・樹木で大きく変わります。地上の隊員・要救助者・荷物・テント・ツェルト・ヘルメットの固定と、谷の下流側にいる人への注意に使ってください。</p>
@@ -1122,7 +1145,7 @@ a{color:#7cc4ff}
       <div class="hl">
         <svg id="hlsvg" viewBox="0 0 520 220" role="img" aria-label="高度低下の側面図"></svg>
         <div>
-          <div class="big" id="hlv">–</div>
+          <div class="hlk"><div class="l">↓ 高度低下</div><div class="big" id="hlv">–</div></div>
           <p id="hlmsg" style="margin:8px 0 0;font-size:13px"></p><div id="hlTerr" class="hlterr" hidden></div>
         </div>
       </div>
@@ -1937,7 +1960,7 @@ function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(
     const ft=hl.ft, clr=hh-ft;
     $('hlv').innerHTML=`${Math.round(ft)}<small> ft（${Math.round(ft*0.3048)} m）</small>`;
     const cls=clr>=50?'ok':clr>=0?'caution':'warn';
-    $('hlmsg').innerHTML=`ホバリング高度 ${hh} ft に対し、最低到達高度は約 <b class="${cls}">${Math.round(clr)} ft</b>。`+(clr<0?'<br><b class="warn">💥 離脱中に障害物・地面に激突する計算です。</b>':'')+(hl.clampW?'<br><span class="caution">重量は4,400〜6,400 kgの範囲で計算</span>':'')+(hl.clampWind?'<br><span class="caution">向かい風は0〜40 ktで計算</span>':'');
+    $('hlmsg').innerHTML=`<span class="hlk2"><span class="l">最低到達（ホバリング ${hh} ft から）</span><b class="${cls}">${Math.round(clr)} ft</b></span>`+(clr<0?'<br><b class="warn">💥 離脱中に障害物・地面に激突する計算です。</b>':'')+(hl.clampW?'<br><span class="caution">重量は4,400〜6,400 kgの範囲で計算</span>':'')+(hl.clampWind?'<br><span class="caution">向かい風は0〜40 ktで計算</span>':'');
     drawHL(ft,hh);
   }
   drawChart();
@@ -4270,11 +4293,12 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const hd=hAGL/ROTOR_D, Vg=2*d.vi*wakeF(hd), drift=Math.hypot(Ufa,Ulr)*hAGL/Math.max(1,(2*d.vi+Vg)/2);
   const rng=(r,lb)=>{ const a=Math.abs(Math.round(r[0])), b2=Math.round(r[1]); return a===0&&b2===0?'なし':`${lb[0]} ${a?a+' m':'なし'}・${lb[1]} ${b2?b2+' m':'なし'}`+'（中心から）'; };
   const card=(t,o,lb)=>{ const S=o.slope; return `<div class="xcard"><div class="xct">${t}</div>${o.svg}
-   ${S?`<div class="xslope" style="--sc:${S.cat[0]}"><b>降下地点の傾斜 ${Math.abs(S.ang).toFixed(0)}°</b>（${Math.round(Math.tan(Math.abs(S.ang)*Math.PI/180)*100)}%${S.dir?'・'+S.dir:''}）<span>${S.cat[1]}：${S.cat[2]}</span></div>`:''}
-   <div class="xstat"><span>周囲の最大 <b style="color:${(DWB[dwBand(o.vmax)]||DWB[0])[1]}">${o.vmax.toFixed(0)} m/s</b></span><span>物が飛ぶ（17 m/s〜）：${rng(o.r17,lb).replace('（中心から）','')}</span></div>
+   <div class="xrow">${S?`<div class="xslope" style="--sc:${S.cat[0]}" title="${S.cat[1]}：${S.cat[2]}"><span class="xsa">${Math.abs(S.ang).toFixed(0)}°</span><div><b>降下地点の傾斜</b><small>${Math.round(Math.tan(Math.abs(S.ang)*Math.PI/180)*100)}%${S.dir?'・'+S.dir:''}・${S.cat[1]}</small></div></div>`:''}
+   <div class="xst"><small>周囲の最大</small><b style="color:${(DWB[dwBand(o.vmax)]||DWB[0])[1]}">${o.vmax.toFixed(0)}<i> m/s</i></b></div><div class="xst"><small>物が飛ぶ（17 m/s〜）</small><b class="xs2">${rng(o.r17,lb).replace('（中心から）','')}</b></div></div>
    ${o.notes.length?`<div class="xchips">${o.notes.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${o.notes.map(n=>`<li>${n[1]}</li>`).join('')}<li>物が舞う（10 m/s〜）：${rng(o.r10,lb)}</li></ul>`:`<div class="hint note">物が舞う（10 m/s〜）：${rng(o.r10,lb)}</div>`}</div>`; };
   const anyV=fa.notes.length||lr.notes.length;
-  box.innerHTML=`<div class="xsum ${Vg>=17||anyV?'xbad':''}"><b>${fmtLL(p.lat,p.lon)}</b>　地表 ${Math.round(pv('fa').z[(XN-1)/2])} m・ローター面〜地表 ${Math.round(hAGL)} m<br>真下の吹き下ろし 約 <b>${Vg.toFixed(0)} m/s</b>（${(Vg*3.6).toFixed(0)} km/h）${drift>=3?`・風下へ <b>${Math.round(drift)} m</b> ずれる`:''}${anyV?'　<b style="color:var(--warn)">⚠ 地形で強まる所あり</b>':''}
+  const xI=d=>`<svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  box.innerHTML=`<div class="xsum ${Vg>=17||anyV?'xbad':''}"><div class="xsc"><span title="地点">${xI('<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>')}${fmtLL(p.lat,p.lon)}</span><span title="地表の標高">${xI('<path d="M2 20l7-12 4 6 2-3 7 9z"/>')}<b>${Math.round(pv('fa').z[(XN-1)/2])}</b> m</span><span title="ローター面〜地表">${xI('<path d="M2 5h20M12 5v3M5 12c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3z"/><path d="M12 16v6"/>')}ローター面 <b>${Math.round(hAGL)}</b> m</span><span class="${Vg>=17?'bad':Vg>=10?'cau':''}" title="真下の吹き下ろし">${xI('<path d="M12 3v14M7 12l5 5 5-5M4 21h16"/>')}吹き下ろし <b>${Vg.toFixed(0)}</b> m/s <small>${(Vg*3.6).toFixed(0)} km/h</small></span>${drift>=3?`<span title="吹き下ろしが風下へずれる距離">${xI('<path d="M4 8h11a3 3 0 1 0-3-3M4 13h14M14 17l4-4-4-4"/>')}風下へ <b>${Math.round(drift)}</b> m</span>`:''}${anyV?`<span class="bad">⚠ 地形で強まる所あり</span>`:''}</div>
   <div class="hint note">ローター面の高さ＝障害物 ${obs} m＋ホバリング ${hft} ft。ローター直径の${hd.toFixed(1)}倍の高さ${hd<=3?'：3倍以内なので2Viのまま届く':hd<10?'：3倍を超え、弱まりながら届く':'：10倍以上でほぼ届かない'}。風 ${wc.ws} kt（向かい風${wc.head>=0?'':'−'}${Math.abs(wc.head).toFixed(0)}・横風 ${Math.abs(wc.cross).toFixed(0)} kt）${drift>=3?`：吹き下ろしは風下へ約${Math.round(drift)} m流されて地表に当たる。風上側は吹き出しが押し戻されて地面渦ができ、風下側は風が加わって遠くまで強い`:'：風の影響は小さい'}。</div></div>
   ${card('機首方向（前後）の断面',fa,['後方','前方'])}${card('左右方向の断面',lr,['左','右'])}
   <div class="xleg note">${DWB.map((b,i)=>`<span><i style="background:${b[1]}"></i>${i===0?'5 m/s未満':b[0]<999?DWB[i-1][0]+'〜'+b[0]+' m/s':DWB[i-1][0]+' m/s以上'}：${b[2]}</span>`).join('')}</div>
@@ -4283,7 +4307,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   if(E&&p) roseTerrain(p.lat,p.lon,E.hdg,()=>drawXsec(XS.H,XS.T,XS.W));
   { const ht=$('hlTerr'); if(ht){ if(E&&E.hMinO!=null&&!isNaN(E.oLoss)){ const flat=Math.ceil((E.oLoss*FT+RC.mg)/5)*5, ok=hft>=E.hMinO;
       ht.hidden=false; ht.className='hlterr '+(ok?'ok':'bad');
-      ht.innerHTML=`上の図は<b>平らな地面・余裕0</b>での計算です。地図で選んだ地点の地形で、離脱方向（${dirTxt(E.oOff)}）の地面の上り・樹木と、余裕 ${RC.mg} ft を入れると、片発で要るホバリング高度は <b>${E.hMinO} ft</b>（平らなら ${flat} ft）です。今の ${hft} ft は<b>${ok?'足りています':`${E.hMinO-hft} ft 足りません`}</b>。→ <a href="#g_site">⑤ 断面・離脱</a>`; } else ht.hidden=true; } }
+      ht.innerHTML=`<div class="hlt3"><div><small>片発で要るホバリング高度（地形込み）</small><b class="${ok?'ok':'warn'}">${E.hMinO} ft</b></div><div><small>平らな地面なら</small><b>${flat} ft</b></div><div><small>今 ${hft} ft</small><b class="${ok?'ok':'warn'}">${ok?'✓ 足りる':`✗ ${E.hMinO-hft} ft 不足`}</b></div></div><div class="hlnote">図は平らな地面・余裕0。地形込みは離脱方向（${dirTxt(E.oOff)}）の上り・樹木と余裕 ${RC.mg} ft を含む → <a href="#g_site">⑤ 断面</a></div>`; } else ht.hidden=true; } }
   box.querySelectorAll('[data-rc]').forEach(inp=>inp.onchange=()=>{ const v=+inp.value; if(!isNaN(v)) RC[inp.dataset.rc]=v; try{localStorage.setItem('sd139rc',JSON.stringify(RC));}catch(e){} const op=box.querySelector('.rcset')?.open; drawXsec(XS.H,XS.T,XS.W); const d2=box.querySelector('.rcset'); if(d2&&op) d2.open=true; });
   box.querySelectorAll('[data-sethh]').forEach(b=>b.onclick=()=>{ const v=+b.dataset.sethh; $('hh').value=v; if($('hhR')) $('hhR').value=hhV2P(v); update(); });
   const ed=box.querySelector('.escdet'); if(ed) ed.addEventListener('toggle',()=>{ ESCOPEN=ed.open; try{ localStorage.setItem('sd139escopen',ESCOPEN?'1':'0'); }catch(e){} });
