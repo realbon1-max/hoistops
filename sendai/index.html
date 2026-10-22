@@ -785,6 +785,37 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 .pend{container-type:inline-size}
 @container (min-width:720px){ .pt3{grid-template-columns:repeat(3,minmax(0,1fr))} }
 .hlit input[type=text]{border:0!important;background:transparent!important;box-shadow:none!important}
+
+/* ② 条件：カード型 */
+#g_cond{container-type:inline-size}
+#g_cond .cgrid{display:grid;grid-template-columns:1fr;gap:8px}
+#g_cond .cc{border:1px solid var(--rule);border-left:4px solid var(--cc,var(--rule));border-radius:10px;padding:8px 10px;background:var(--panel);min-width:0;margin:0}
+#g_cond .ch{display:flex!important;align-items:center;gap:6px;margin:0 0 4px!important;font-size:13px!important;font-weight:700;color:var(--ink)!important}
+#g_cond .ch small{font-weight:400;color:var(--muted);font-size:11px;margin-left:4px}
+#g_cond .cico{width:19px;height:19px;color:var(--cc,var(--muted));flex:none}
+#g_cond .cc label:not(.ch):not(.chk){margin-top:4px}
+#g_cond .hint{font-size:11.5px;margin:2px 0 0}
+#g_cond .cisa{padding:4px;border-left-width:1px}#g_cond #isasvg{display:block;width:100%;max-width:440px;margin:0 auto}
+#g_cond .qnh{margin:0!important}#g_cond .qhead{margin-bottom:2px!important}
+#g_cond .gwtotal{font-size:24px!important}
+#g_cond .seg button{padding:7px 6px;font-size:13px}
+#g_cond .hhbox{margin:0!important}
+#g_cond .cwh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}#g_cond .cwh .ch{margin:0!important}#g_cond .cwh .seg{flex:1;min-width:220px}
+#g_cond .cwg{display:grid;grid-template-columns:1fr;gap:8px}
+#g_cond .comp{margin-top:8px}
+@container (min-width:560px){ #g_cond .cgrid{grid-template-columns:1fr 1fr} #g_cond .cw{grid-column:1/-1} #g_cond .cwg{grid-template-columns:1fr 1fr} #g_cond .comp{display:grid;grid-template-columns:1fr 1fr} }
+/* ③ ホバーシーリング：カードを横に並べる */
+@media (max-width:1000px){ #ceilside{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px} #ceilside .ccard{margin:0;padding:6px 9px} #ceilside .ccard .v{font-size:19px} #ceilside .ccard .s{font-size:11px} #ceilside .ccard.no .v,#ceilside .ccard .v.warn{font-size:15px} }
+
+/* ⑦ 高度の関係：ピクトグラム */
+.rico{width:16px;height:16px;flex:none;vertical-align:-3px;margin-right:4px;opacity:.85}
+.rs label{display:flex;align-items:center;white-space:nowrap}
+.rbtns,.rbtns2{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.rbtns button,.rbtns2 button{display:inline-flex;align-items:center;gap:2px;padding:4px 10px!important;font-size:12.5px!important;border-radius:14px!important}
+.rpl{font-size:12px;color:var(--muted);display:inline-flex;align-items:center}
+.relcards .rc{border:1px solid var(--rule);background:var(--panel)!important;border-radius:8px!important;padding:6px 9px!important}
+.relcards .rc .l{display:flex;align-items:center}
+@media (min-width:900px){ .relcards{grid-template-columns:repeat(6,minmax(0,1fr))!important} .relcards .rc .v{font-size:17px} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -977,46 +1008,49 @@ a{color:#7cc4ff}
   <div class="col">
     <section class="box inputs" id="g_cond" aria-label="入力">
       <h2>② 条件</h2>
-      <label for="hp">気圧高度</label>
+      <div class="cgrid">
+      <div class="cc" style="--cc:var(--curve)"><label for="hp" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M12 5v2"/></svg>気圧高度</label>
       <div class="row"><input id="hp" type="number" step="100" value="3000"><span class="unit">ft</span></div>
       <input id="hpR" type="range" min="-1000" max="14000" step="100" value="3000" aria-label="気圧高度スライダー">
-      <div class="hint" id="hpHint"></div>
-      <label for="oat">外気温度（OAT）</label>
+      <div class="hint" id="hpHint"></div></div>
+      <div class="cc" style="--cc:#e0702a"><label for="oat" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg>外気温度 OAT</label>
       <div class="row"><input id="oat" type="number" step="1" value="15"><span class="unit">℃</span></div>
       <input id="oatR" type="range" min="-40" max="50" step="1" value="15" aria-label="外気温度スライダー">
-      <div class="hint" id="oatHint"></div>
-      <svg id="isasvg" viewBox="0 0 300 220" role="img" aria-label="気圧高度と外気温度のISAとの関係"></svg>
-      <div class="qnh">
-        <div class="qhead">気圧高度を高度計規正値（QNH）から求める</div>
+      <div class="hint" id="oatHint"></div></div>
+      <div class="cc cw cisa"><svg id="isasvg" viewBox="0 0 300 220" role="img" aria-label="気圧高度と外気温度のISAとの関係"></svg></div>
+      <div class="cc cw qnh" style="--cc:#2e7d6b">
+        <div class="qhead ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l3-6M9 21h6"/></svg>QNHから気圧高度を求める</div>
         <label class="chk"><input type="checkbox" id="qnhLink" checked> 標高とQNHから気圧高度を計算する</label>
         <div class="qgrid"><div><label for="elev">標高<small class="qsm">（高度計の指示）</small></label><div class="row"><input id="elev" type="number" step="10" value="3000"><span class="unit">ft</span></div></div>
         <div><label for="qnh">QNH<small class="qsm">（高度計規正値）</small></label><div class="row"><input id="qnh" type="number" step="0.01" value="29.92"><select id="qnhU" aria-label="単位"><option value="inHg">inHg</option><option value="hPa">hPa</option></select></div></div></div>
         <div class="hint" id="qnhOut"></div>
         <div class="hint"><a href="#ptab" style="color:var(--curve)">QNH換算表・気圧と高度の対照表（下）を見る</a></div>
       </div>
-      <label>全備重量</label>
+      <div class="cc cgw" style="--cc:var(--c-empty)"><label class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v3M4 9h16M7 9l-3 7h6zM17 9l-3 7h6zM12 7v13M8 20h8"/></svg>全備重量</label>
       <div class="gwtotal" id="gwTotal"></div>
       <input id="gw" type="hidden" value="6000">
-      <p class="legend" style="margin:4px 0 0">内訳は右の「全備重量の内訳」で設定します。</p>
-      <div class="hhbox"><label for="hh">ホバリング高度（対地・障害物上）</label>
+      <p class="legend" style="margin:4px 0 0">内訳は「重量・燃料」の欄で設定します。</p></div>
+      <div class="cc cpw" style="--cc:#8a5cc2"><label class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>ホバリングの出力<small>風の制限の基準</small></label>
+      <div class="seg" id="pwr"><button aria-pressed="false" data-m="top">離陸 TOP</button><button aria-pressed="true" data-m="mcp">連続最大 MCP</button></div></div>
+      <div class="hhbox cc cw" style="--cc:#b0268c"><label for="hh" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h20M12 5v3M5 12c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3z"/><path d="M12 16v6M9.5 19.5L12 22l2.5-2.5"/></svg>ホバリング高度<small>対地・障害物上</small></label>
       <div class="hhrow"><input id="hh" type="number" step="10" value="150" inputmode="numeric"><span class="unit">ft</span><span class="hhm" id="hhM"></span></div>
       <input id="hhR" type="range" min="0" max="1000" step="1" value="250" aria-label="ホバリング高度スライダー">
       <div class="hhticks" aria-hidden="true"><span style="left:0.00%">0</span><span style="left:16.67%">100</span><span style="left:33.33%">200</span><span style="left:50.00%">300</span><span style="left:57.45%">1,000</span><span style="left:68.09%">2,000</span><span style="left:78.72%">3,000</span><span style="left:89.36%">4,000</span><span style="left:100.00%">5,000 ft</span></div>
       <div class="fuelbtns hhbtns"><button type="button" data-hd="-50">−50</button><button type="button" data-hd="-10">−10</button><button type="button" data-hd="10">＋10</button><button type="button" data-hd="50">＋50</button></div></div>
-      <label>ホバリングの出力（風の制限の基準）</label>
-      <div class="seg" id="pwr"><button aria-pressed="false" data-m="top">離陸出力（TOP）</button><button aria-pressed="true" data-m="mcp">連続最大（MCP）</button></div>
-      <label>風の入力方法</label>
-      <div class="seg" id="wmode"><button aria-pressed="true" data-m="rel">機首からの方位</button><button aria-pressed="false" data-m="true">風向と機首方位</button></div>
+            <div class="cc cw cwind" style="--cc:var(--curve)"><div class="cwh"><label class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 12l4-6"/></svg>風</label>
+      <div class="seg" id="wmode"><button aria-pressed="true" data-m="rel">機首からの方位</button><button aria-pressed="false" data-m="true">風向と機首方位</button></div></div>
+      <div class="cwg"><div>
       <div id="relBox">
-      <label for="rel">風の相対方位（機首0°、右回り、風が来る方向）</label><div class="row"><input id="rel" type="number" step="5" value="30"><span class="unit">°</span></div>
+      <label for="rel" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l4 9h-8z"/><path d="M12 12v9"/></svg>風の相対方位<small>機首0°・右回り・風が来る方向</small></label><div class="row"><input id="rel" type="number" step="5" value="30"><span class="unit">°</span></div>
       <input id="relR" type="range" min="0" max="355" step="5" value="30" aria-label="相対方位スライダー">
       </div>
       <div id="trueBox" hidden>
-      <label for="wdir">風向（風が来る方向）</label><div class="row"><input id="wdir" type="number" step="10" value="270"><span class="unit">°</span></div>
-      <label for="hdg">機首方位（ホバリング中）</label><div class="row"><input id="hdg" type="number" step="10" value="240"><span class="unit">°</span></div>
+      <label for="wdir" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l4 9h-8z"/><path d="M12 12v9"/></svg>風向<small>風が来る方向</small></label><div class="row"><input id="wdir" type="number" step="10" value="270"><span class="unit">°</span></div>
+      <label for="hdg" class="ch">機首方位<small>ホバリング中</small></label><div class="row"><input id="hdg" type="number" step="10" value="240"><span class="unit">°</span></div>
       </div>
-      <label for="ws">風速</label><div class="row"><input id="ws" type="number" step="1" value="15"><span class="unit">kt</span></div>
-      <input id="wsR" type="range" min="0" max="60" step="1" value="15" aria-label="風速スライダー">
+      </div><div><label for="ws" class="ch"><svg class="cico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></svg>風速</label><div class="row"><input id="ws" type="number" step="1" value="15"><span class="unit">kt</span></div>
+      <input id="wsR" type="range" min="0" max="60" step="1" value="15" aria-label="風速スライダー"></div></div></div>
+      </div>
       <div class="comp" id="compBox"></div>
       <div class="derived" id="derived"></div>
     </section>
@@ -1112,24 +1146,24 @@ a{color:#7cc4ff}
     <section class="box" aria-label="高度の関係">
       <h2>高度の関係 <small>海抜・気圧高度・密度高度</small></h2>
       <div class="rgrid">
-        <div class="rs"><label for="r_el">現場の標高</label><input type="range" id="r_el" min="0" max="12400" step="50"><output id="r_elo"></output></div>
-        <div class="rs"><label for="r_q">QNH</label><input type="range" id="r_q" min="920" max="1060" step="1"><output id="r_qo"></output></div>
-        <div class="rs"><label for="r_t">現場の気温</label><input type="range" id="r_t" min="-30" max="45" step="1"><output id="r_to"></output></div>
-        <div class="rs"><label for="r_ia">高度計の指示</label><input type="range" id="r_ia" min="0" max="15000" step="1" value="8000"><output id="r_iao"></output></div>
-        <div class="rs"><label for="r_st">高度計の規正値</label><input type="range" id="r_st" min="920" max="1060" step="1" value="1013"><output id="r_sto"></output></div>
+        <div class="rs"><label for="r_el"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20l7-12 4 6 2-3 7 9z"/></svg>標高</label><input type="range" id="r_el" min="0" max="12400" step="50"><output id="r_elo"></output></div>
+        <div class="rs"><label for="r_q"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l3-6M9 21h6"/></svg>QNH</label><input type="range" id="r_q" min="920" max="1060" step="1"><output id="r_qo"></output></div>
+        <div class="rs"><label for="r_t"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg>気温</label><input type="range" id="r_t" min="-30" max="45" step="1"><output id="r_to"></output></div>
+        <div class="rs"><label for="r_ia"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12l-4-5M12 4v2M20 12h-2M12 20v-2M4 12h2"/></svg>高度計</label><input type="range" id="r_ia" min="0" max="15000" step="1" value="8000"><output id="r_iao"></output></div>
+        <div class="rs"><label for="r_st"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>規正値</label><input type="range" id="r_st" min="920" max="1060" step="1" value="1013"><output id="r_sto"></output></div>
         <label class="chk rchk"><input type="checkbox" id="r_lk" checked> 規正値をQNHに合わせる</label>
       </div>
-      <div class="rbtns"><button type="button" data-p="std">標準大気</button><button type="button" data-p="sum">夏・低気圧</button><button type="button" data-p="win">冬・高気圧</button><button type="button" data-p="forget">規正し忘れ（冬）</button></div>
-      <div class="rbtns2"><button type="button" id="relWx" class="mwmsm" style="margin:0 8px 0 0;padding:5px 10px">🌐 気象庁MSMの雲・0℃高度・雨を重ねる</button><span>ヘリの高さを</span><button type="button" id="acSite">現場の標高に合わせる</button><button type="button" id="acHover">現場＋ホバリング高度に合わせる</button><span id="acNote"></span></div>
+      <div class="rbtns"><span class="rpl">例：</span><button type="button" data-p="std"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>標準大気</button><button type="button" data-p="sum"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.5"/><path d="M9 2v1.5M2 9h1.5M4 4l1 1M14 4l-1 1"/><text x="17" y="21" font-size="9" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle">L</text></svg>夏・低気圧</button><button type="button" data-p="win"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v12M3 6l10 6M3 12l10-6"/><text x="18" y="21" font-size="9" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle">H</text></svg>冬・高気圧</button><button type="button" data-p="forget"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17v.5"/></svg>規正し忘れ</button></div>
+      <div class="rbtns2"><button type="button" id="relWx" class="mwmsm" style="margin:0 8px 0 0;padding:5px 10px">🌐 気象庁MSMの雲・0℃高度・雨を重ねる</button><span class="rpl"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/></svg>ヘリの高さ：</span><button type="button" id="acSite">現場の標高</button><button type="button" id="acHover">現場＋ホバリング</button><span id="acNote"></span></div>
       <svg id="relScene" viewBox="0 0 760 450" role="img" aria-label="海抜、気圧高度、密度高度と航空機の高度の関係"></svg>
       <div id="relWxNote" hidden style="font-size:12px;color:var(--muted);line-height:1.5;margin:4px 2px 0"></div>
       <div class="relcards">
-        <div class="rc"><div class="l">海抜（本当の高さ）</div><div class="v" id="r1"></div><div class="s" id="r1s"></div></div>
-        <div class="rc"><div class="l">気圧高度</div><div class="v" id="r2" style="color:var(--curve)"></div><div class="s" id="r2s"></div></div>
-        <div class="rc"><div class="l">密度高度</div><div class="v" id="r3" style="color:var(--warn)"></div><div class="s" id="r3s"></div></div>
-        <div class="rc"><div class="l">現場の気圧</div><div class="v" id="r4"></div><div class="s" id="r4s"></div></div>
-        <div class="rc"><div class="l">航空機の本当の高度</div><div class="v" id="r5"></div><div class="s" id="r5s"></div></div>
-        <div class="rc"><div class="l">現場との間隔</div><div class="v" id="r6"></div><div class="s" id="r6s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20l7-12 4 6 2-3 7 9z"/></svg>海抜（本当の高さ）</div><div class="v" id="r1"></div><div class="s" id="r1s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l3-6M9 21h6"/></svg>気圧高度</div><div class="v" id="r2" style="color:var(--curve)"></div><div class="s" id="r2s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M7 14c2-4 8-4 10 0M12 4v6M9 7l3 3 3-3"/></svg>密度高度</div><div class="v" id="r3" style="color:var(--warn)"></div><div class="s" id="r3s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l3-6M9 21h6"/></svg>現場の気圧</div><div class="v" id="r4"></div><div class="s" id="r4s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/></svg>航空機の本当の高度</div><div class="v" id="r5"></div><div class="s" id="r5s"></div></div>
+        <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>現場との間隔</div><div class="v" id="r6"></div><div class="s" id="r6s"></div></div>
       </div>
       <p class="legend">機体のマークと山頂は、図の上で上下にドラッグできます。現場の標高（0〜12,400 ft）を動かしても大気（QNHとISAとの気温差）は同じとして扱うので、現場の気温は標高に合わせて変わり（1,000 ftごとに約2℃）、航空機の本当の高度は変わりません。変わるのは現場そのものの値（気圧高度・密度高度・気圧・気温）と現場との間隔です。ここのスライダーは左の入力欄（標高・QNH・外気温度）と連動します。黒のものさし：海抜（0は海面で固定）。青のものさし：標準大気の高さ（0は1013 hPaの面で、QNHによって上下）。この青いものさしで現場を読むと気圧高度、空気の密度で読むと密度高度になります。縦の目盛りは、今の値に合わせて自動で拡大します。</p>
     </section>
@@ -1669,7 +1703,7 @@ function drawRel(Happ,T){
   const act=document.activeElement;
   [['r_el',c.eft],['r_q',c.qh],['r_t',T]].forEach(([id,v])=>{if(act!==$(id))$(id).value=Math.round(v);});
   $('r_elo').textContent=fm(c.eft)+' ft'; $('r_qo').textContent=Math.round(c.qh)+' hPa'; $('r_to').textContent=Math.round(T)+'℃';
-  $('acHover').textContent=`現場＋ホバリング高度（${fm(+$('hh').value||0)} ft）に合わせる`; $('acNote').textContent=Math.abs(c.tru-c.eft)<=10?'今：現場の高さ':Math.abs(c.tru-c.eft-(+$('hh').value||0))<=10?'今：現場＋ホバリング高度':'';
+  $('acHover').textContent=`現場＋${fm(+$('hh').value||0)} ft`; $('acNote').textContent=Math.abs(c.tru-c.eft)<=10?'今：現場の高さ':Math.abs(c.tru-c.eft-(+$('hh').value||0))<=10?'今：現場＋ホバリング高度':'';
   $('r_iao').textContent=fm(c.ind)+' ft'; $('r_sto').textContent=c.st+' hPa'; $('r_st').disabled=$('r_lk').checked;
   $('r1').textContent=fm(c.eft)+' ft'; $('r1s').textContent=fm(c.eft*0.3048)+' m（いつも同じ）';
   $('r2').textContent=fm(c.hp)+' ft'; $('r2s').textContent=`海抜${c.hp-c.eft>=0?'+':''}${fm(c.hp-c.eft)} ft（気圧の影響）`;
@@ -1830,7 +1864,7 @@ function drawCeil(H,T,W,wind){
     else{const m=c.ceil-H; v=`<span style="color:${c.col}">${fm(c.ceil)} ft${c.edge==='top'?' 以上':''}</span>`;
       sm=`今の高度から ${m>=0?'+':'−'}${fm(Math.abs(m))} ft／密度高度 ${fm(densAlt(c.ceil,ISA(c.ceil)+dev))} ft`+(f!==null?`<br>標高に直すと約 ${fm(c.ceil-f)} ft`:'')+(c.edge==='top'?'<br>図の上限まで可能':c.edge==='chart'?'<br>この先は図の気温範囲外':'');}
     const rH=state.res&&state.res[tp.key]; if(rH&&!rH.err&&rH.W<W&&!c.err) sm+=`<br><b class="warn">今の高度でホバリングするには ${fm(W-rH.W)} kg 減らす</b>`;
-    return `<div class="ccard" style="border-left-color:${c.col||'var(--rule)'}"><div class="n">${nm}${tp.primary?' <small>HEC運用の重量</small>':''}</div><div class="v">${v}</div><div class="s">${sm}</div></div>`;}).join('');
+    return `<div class="ccard${(c.err||c.below)?' no':''}" style="border-left-color:${c.col||'var(--rule)'}"><div class="n">${nm}${tp.primary?' <small>HEC運用の重量</small>':''}</div><div class="v">${v}</div><div class="s">${sm}</div></div>`;}).join('');
 }
 let state={};
 function colorFor(m){return m>=100?'var(--ok)':m>=0?'var(--caution)':'var(--warn)'}
