@@ -717,6 +717,13 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxp{width:15px;height:15px;flex:none}
 #mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
 @container (max-width:519px){ #mInfo .mi.site{grid-template-columns:1fr!important;grid-template-areas:"ll" "sv" "wx"} #mInfo .mi.site .sitev{text-align:left} #mInfo .hchips{justify-content:flex-start!important} #mInfo .wxs{border-top:1px solid var(--rule)!important;border-bottom:1px solid var(--rule)!important} #mInfo .wxt{margin-left:0} }
+
+/* 飛行計画：見出しの横に注意を並べ、タイルを隙間なく詰める */
+#mInfo .fphead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-bottom:6px}
+#mInfo .fphead .crs{margin:0!important;flex:none}
+#mInfo .fpnotes{flex:1 1 260px;display:flex;flex-direction:column;gap:5px;min-width:0}
+#mInfo .fpnotes .dlbox,#mInfo .fpnotes .nowind{margin:0!important}
+@container (min-width:520px){ #mInfo .fp .tiles{display:flex!important;flex-wrap:wrap;gap:6px} #mInfo .fp .tiles>.tl{flex:1 1 150px;min-width:0} #mInfo .fp .tiles>.tl.key,#mInfo .fp .tiles>.tl.wide{flex:2 1 300px} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2382,7 +2389,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
     else msg=`日没前に救助終了の見込み（日没まで余裕 ${mn(ss-wend)}）`;
     dl=`<div class="dlbox ${cls}">${cls==='ok'?'☀':cls==='caution'?'🌇 注意':'🌙 警告'}　${msg}</div>`;
     dl+=`<!--dlrow-->`; DLX={ss:hm(ss),du:hm(du),wk,wend:hm(wend),home:hm(home)}; } else DLX=null;
-  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 無風で計算（向かい風20 ktで時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div><table>
+  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}<div class="fphead">${crsHTML(g.crs,gb.crs,R_.name)}<div class="fpnotes">${dl}<div class="nowind">⚠ 無風で計算（向かい風20 ktで時間 約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）</div></div></div><table>
   <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
