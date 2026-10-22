@@ -1962,18 +1962,27 @@ function ldemTile(z,tx,ty,smooth){
 
 // thresholds (ground elevation in metres) below which OGE hover is possible, by power
 function mapThresholds(){
-  const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value, wind=getHW();
+  // colour by weight margin (kg): OGE max hover weight on maximum continuous power (MCP, no wind) minus gross weight,
+  // evaluated at the hover altitude (ground + obstacles + hoist hover height). Below zero, take-off power (TOP) is checked.
+  const H=+$('hp').value, T=+$('oat').value, W=+$('gw').value;
   const f=paFactor(toInHg(+$('qnh').value));
   let dev=T-ISA(H);
   if($('mRefOn').checked){const rf=(+$('mRefE').value||0)*FT; dev=(+$('mRefT').value)-ISA(rf+f);}
-  const add=(+$('mObs').value||0)*FT;
-  const th=['p917','p918','p444z'].map(k=>{const tp=TAPES.find(t=>t.key===k); const c=ceilingFor(tp,W,dev,wind);
-    if(c.err||c.below) return -Infinity; if(c.edge==='top') return Infinity; return (c.ceil-f-add)/FT;});
-  return {top:th[0],mcp:th[1],oei:th[2],dev,f,add,W};
+  const add=(+$('mObs').value||0)*FT, hh=+$('hh').value||0;
+  const L0=-500, STEP=5, N=1001;
+  const mk=key=>{ const tp=TAPES.find(t=>t.key===key), P=DK(tp), lut=new Float32Array(N);
+    for(let k=0;k<N;k++){ const Hp=(L0+k*STEP)*FT+add+hh+f, r=hoverW(P,Hp,ISA(Hp)+dev);
+      if(r.err&&/気温/.test(r.err)) lut[k]=NaN; else if(r.err||(tp.cap&&Hp>tp.cap)) lut[k]=-Infinity; else lut[k]=r.W-W; }
+    const at=m=>{ const x=(m-L0)/STEP; if(x<=0) return lut[0]; if(x>=N-1) return -Infinity; const k=Math.floor(x), a=lut[k], b=lut[k+1];
+      if(!isFinite(a)||!isFinite(b)) return a; return a+(b-a)*(x-k); };
+    const cross=v=>{ if(!(lut[0]>=v)) return -Infinity; for(let k=1;k<N;k++) if(!(lut[k]>=v)){ const a=lut[k-1], b=lut[k]; return isFinite(b)?L0+(k-1+(a-v)/(a-b))*STEP:L0+(k-1)*STEP; } return Infinity; };
+    return {at,cross}; };
+  const M=mk('p918'), Tq=mk('p917');
+  return {at:M.at,atTop:Tq.at,b:[M.cross(300),M.cross(100),M.cross(0),Tq.cross(0)],dev,f,add,hh,W,sig:[Math.round(W),dev.toFixed(1),Math.round(add),Math.round(hh),Math.round(f)].join(',')};
 }
-const OVC=[[31,158,137],[76,175,80],[242,193,46],[215,48,39]];
-const OVN=['OEI 2.5分でも可','連続最大（MCP）で可','離陸出力（TOP）なら可','離陸出力でも不可'];
-function classify(h,t){ if(isNaN(h)) return -1; if(h<=t.oei) return 0; if(h<=t.mcp) return 1; if(h<=t.top) return 2; return 3; }
+const OVC=[[40,105,205],[40,160,70],[245,205,30],[240,120,25],[205,25,35]];
+const OVN=['余裕 300 kg以上','余裕 100〜300 kg','余裕 0〜100 kg（ぎりぎり）','MCPでは不足・TOPなら可','TOPでも不可'];
+function classify(h,t){ if(isNaN(h)) return -1; const m=t.at(h); if(isNaN(m)) return -1; if(m>=300) return 0; if(m>=100) return 1; if(m>=0) return 2; return t.atTop(h)>=0?3:4; }
 function netTile(z,tx,ty){ const zz=Math.min(z,14), k=Math.pow(2,z-zz), ptx=Math.floor(tx/k), pty=Math.floor(ty/k);
   return getDem(zz,ptx,pty).then(a=>{ if(k===1) return a; const o=new Float32Array(65536), ox=(tx-ptx*k)*256/k, oy=(ty-pty*k)*256/k;
     for(let py=0;py<256;py++){const sy=Math.min(255,Math.floor(oy+py/k)); for(let px=0;px<256;px++) o[py*256+px]=a[sy*256+Math.min(255,Math.floor(ox+px/k))];} return o; }); }
@@ -2062,10 +2071,12 @@ function mapZoom(dz,px,py){ const el=$('map'); const Wd=el.clientWidth,Hd=el.cli
   const nz=Math.max(MAP.minZ,Math.min(MAP.maxZ,MAP.z+dz)); if(nz===MAP.z) return; const s=Math.pow(2,nz-MAP.z);
   const wx=MAP.cx-Wd/2+px, wy=MAP.cy-Hd/2+py; MAP.cx=wx*s-px+Wd/2; MAP.cy=wy*s-py+Hd/2; MAP.z=nz;
   $('mBaseL').innerHTML=''; $('mOvL').innerHTML=''; mapReq(); }
-function mapParamsChanged(){ if(!$('map')) return; const t=mapThresholds(); const sig=[t.top,t.mcp,t.oei].map(v=>isFinite(v)?Math.round(v):String(v)).join(',');
-  const old=MAP.thr; MAP.thr=t; if(!old||old.sig!==sig){ MAP.ver++; } t.sig=sig; mapReq(); mapLegend(); mapInfo(); }
-function mapLegend(){ const t=MAP.thr; if(!t) return; const fm=v=>v===Infinity?'図の上限（14,000 ft）を超える高さまで':v===-Infinity?'今の重量では該当なし':`地表 ${Math.round(v).toLocaleString()} m（${Math.round(v*FT).toLocaleString()} ft）まで`;
-  $('mLegend').innerHTML=[0,1,2,3].map(i=>`<span style="--c:rgb(${OVC[i].join(',')})"><b>${OVN[i]}</b>${i<3?'：'+fm([t.oei,t.mcp,t.top][i]):''}</span>`).join('')+`<span style="color:var(--muted)">全備重量 ${Math.round(t.W).toLocaleString()} kg／ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}℃／樹木・障害物 ${Math.round(t.add/FT)} m の上面で計算</span>`; }
+function mapParamsChanged(){ if(!$('map')) return; const t=mapThresholds(); const sig=t.sig;
+  const old=MAP.thr; MAP.thr=t; if(!old||old.sig!==sig){ MAP.ver++; } mapReq(); mapLegend(); mapInfo(); }
+function mapLegend(){ const t=MAP.thr; if(!t) return; const fm=v=>Math.round(v).toLocaleString(), B=t.b;
+  const rg=(lo,hi)=>{ if(hi===-Infinity||hi<=lo) return '該当なし'; if(hi===Infinity) return lo===-Infinity?'全域':`地表 ${fm(Math.max(0,lo))} m 以上（全域）`; return lo===-Infinity?`地表 ${fm(hi)} m（${fm(hi*FT)} ft）まで`:`地表 ${fm(Math.max(0,lo))}〜${fm(hi)} m（${fm(hi*FT)} ft）`; };
+  const r=[rg(-Infinity,B[0]),rg(B[0],B[1]),rg(B[1],B[2]),rg(B[2],Math.max(B[2],B[3])),B[3]===Infinity?'該当なし':`地表 ${fm(Math.max(0,Math.max(B[2],B[3])))} m 以上`];
+  $('mLegend').innerHTML=[0,1,2,3,4].map(i=>`<span style="--c:rgb(${OVC[i].join(',')})"><b>${OVN[i]}</b>：${r[i]}</span>`).join('')+`<span style="color:var(--muted)">余裕＝連続最大出力（MCP）・無風・OGEでホバリングできる最大重量 − 全備重量 ${fm(t.W)} kg／ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}℃／地表＋樹木・障害物 ${Math.round(t.add/FT)} m＋ホバリング ${fm(t.hh)} ft の高さで計算</span>`; }
 
 // ---- base, peaks, coordinate formats, flight plan from base
 const BASE={name:'松本空港',lat:36.16667,lon:137.92278,elev:657};
@@ -2278,7 +2289,7 @@ function mapInfo0(){
   if(p.err||isNaN(p.h)){ box.innerHTML=`<div class="mi"><b class="caution">この地点の標高を読み取れません</b>${llAll(p.lat,p.lon)}${p.err||'標高データがない地点（海・湖など）'}</div>`; return; }
   const t=MAP.thr||mapThresholds(); const W=+$('gw').value, wind=getHW();
   const site=p.h*FT+(+$('mObs').value||0)*FT, hov=site+(+$('hh').value||0);
-  const Hp=site+t.f, T=ISA(Hp)+t.dev, hd=densAlt(Hp,T); const fm=n=>Math.round(n).toLocaleString();
+  const Hp=hov+t.f, T=ISA(Hp)+t.dev, hd=densAlt(Hp,T); const fm=n=>Math.round(n).toLocaleString();
   const rows=[['p917','離陸出力（TOP）'],['p918','連続最大（MCP）'],['p444z','OEI 2.5分'],['p444','OEI＋向かい風']].map(([k,nm])=>{
     const tp=TAPES.find(x=>x.key===k); let r=hoverW(DK(tp),Hp,T); if(!r.err&&tp.cap&&Hp>tp.cap) r={err:'図の範囲外'};
     if(!r.err&&tp.wind) r.W=Math.min(6400,r.raw+shiftAt(Math.min(40,wind)));
@@ -2288,7 +2299,7 @@ function mapInfo0(){
   const cls=classify(p.h,t); const col=cls<0?'var(--muted)':`rgb(${OVC[cls].join(',')})`;
   const hdl=hd<=7000?35:hd<=14000?20:null;
   box.innerHTML=`<div class="mi site" style="border-left:6px solid ${col}">${llAll(p.lat,p.lon,hov)}<div class="sitev"><div class="big">地表 ${DISP.alt==='ft'?fm(p.h*FT)+' ft':fm(p.h)+' m'}</div><div style="font-size:11.5px;color:var(--muted)">${p.src==='local'?'内蔵データ（約50 m四方の中の最高点）':'地理院の標高タイル（10 mメッシュ）'}</div><div>${DISP.alt==='ft'?fm(p.h)+' m':fm(p.h*FT)+' ft'}／障害物の上面 ${fm(site)} ft（ホバリング ${fm(hov)} ft）</div><div class="verd" style="color:${col}">${cls<0?'':OVN[cls]}</div></div></div>
-  <div class="mi">${tilesOf(`<table><tr><td>気圧高度（障害物の上面）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
+  <div class="mi">${tilesOf(`<table><tr><td>気圧高度（ホバリング高度）</td><td class="r" colspan="2">${fm(Hp)} ft</td></tr><tr><td>推定気温</td><td class="r" colspan="2">${T.toFixed(1)}℃（ISA${t.dev>=0?'+':''}${t.dev.toFixed(0)}）</td></tr><tr><td>密度高度</td><td class="r" colspan="2">${fm(hd)} ft</td></tr><tr><td>ホイスト運用の横風・背風（MCP）</td><td class="r" colspan="2">${hdl===null?'密度高度14,000 ft超':hdl+' kt'}</td></tr></table>`)}</div>
   <div class="mi"><div class="mih">OGEホバリングできる最大重量（全備重量 ${fm(W)} kgとの差）</div><div class="tiles t4">${rows}</div></div>
   ${flightHTML(p,site,hov,Hp,T)}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
@@ -4453,20 +4464,79 @@ update();
   const nd=document.getElementById('noticeD'); if(nd) nd.open=false;
 })();
 
-// スライダー操作中に画面が勝手に動かないように：ブラウザの自動スクロール補正を止め、操作中のスライダーの位置を固定
-(function(){ document.documentElement.style.overflowAnchor='none'; document.body.style.overflowAnchor='none';
-  let el=null, top=0, raf=0, until=0;
-  const fix=()=>{ if(!el||!el.isConnected) return; const d=el.getBoundingClientRect().top-top; if(Math.abs(d)>0.5){ const sc=el.closest('main>.col'); if(sc&&getComputedStyle(sc).position==='sticky'&&sc.scrollHeight>sc.clientHeight) sc.scrollTop+=d; else scrollBy(0,d); } };
-  const loop=()=>{ fix(); if(performance.now()<until) raf=requestAnimationFrame(loop); else { raf=0; el=null; } };
-  const hold=t=>{ if(el!==t){ el=t; top=t.getBoundingClientRect().top; } until=performance.now()+600; if(!raf) raf=requestAnimationFrame(loop); };
-  document.addEventListener('pointerdown',e=>{ const t=e.target; if(t&&t.type==='range'){ el=null; hold(t); until=Infinity; } },true);
-  const up=()=>{ if(el) until=performance.now()+600; };
-  document.addEventListener('pointerup',up,true); document.addEventListener('pointercancel',up,true);
-  document.addEventListener('input',e=>{ const t=e.target; if(!t||t.type!=='range') return; hold(t); if(until!==Infinity) until=performance.now()+600; },true);
+// ブラウザの自動スクロール補正を止める（スライダー操作中の揺れ対策）
+document.documentElement.style.overflowAnchor='none'; document.body.style.overflowAnchor='none';
+</script>
+</body>
+</html>
+<script>
+// keep a range slider under the finger while it is dragged.
+// 1) while a finger/mouse is on a slider, freeze the height of everything above it, so recalculated text above cannot push it up or down;
+// 2) if something still moves it (or on release, when heights are unfrozen), scroll the page by the same amount.
+(function(){ let A=null, L=[], held=null;
+  const top=el=>el.getBoundingClientRect().top;
+  const fix=()=>{ if(!A||!A.el.isConnected) return; const d=top(A.el)-A.top; if(Math.abs(d)>0.5) window.scrollBy(0,d); };
+  const lock=el=>{ unlock(true); held=el; for(let n=el; n&&n!==document.body; n=n.parentElement){
+      for(let s=n.previousElementSibling; s; s=s.previousElementSibling){ const cs=getComputedStyle(s); if(cs.position==='fixed'||cs.position==='absolute'||cs.display==='none') continue;
+        const h=s.getBoundingClientRect().height; L.push([s,s.style.height,s.style.overflow,s.style.contain]); s.style.height=h+'px'; s.style.overflow='hidden'; s.style.contain='size'; } } };
+  const unlock=quiet=>{ if(!L.length){ held=null; return; } const el=held, t0=el&&el.isConnected?top(el):null;
+    L.forEach(([s,h,o,c])=>{ s.style.height=h; s.style.overflow=o; s.style.contain=c; }); L=[]; held=null;
+    if(!quiet&&t0!==null){ const d=top(el)-t0; if(Math.abs(d)>0.5) window.scrollBy(0,d); } };
+  const isR=t=>t&&t.tagName==='INPUT'&&t.type==='range';
+  ['pointerdown','touchstart','mousedown'].forEach(ev=>document.addEventListener(ev,e=>{ if(isR(e.target)&&held!==e.target) lock(e.target); },{capture:true,passive:true}));
+  ['pointerup','pointercancel','touchend','touchcancel','mouseup'].forEach(ev=>document.addEventListener(ev,()=>{ if(held) setTimeout(()=>unlock(false),0); },{capture:true,passive:true}));
+  window.addEventListener('blur',()=>unlock(false));
+  document.addEventListener('input',e=>{ const t=e.target; if(isR(t)) A={el:t,top:top(t)}; else A=null; },true);
+  document.addEventListener('input',()=>{ if(!A) return; fix(); requestAnimationFrame(()=>{ fix(); requestAnimationFrame(fix); }); });
+})();
+</script>
+<script>
+// Touch handling for sliders (iPhone / iPad). Safari's own slider loses the finger when the page recalculates during a drag,
+// and the rest of the swipe then scrolls the page away. Here the page handles the finger itself:
+// a sideways drag (or a tap) sets the value, an up/down swipe that starts on a slider just scrolls the page.
+(function(){ let S=null; const TH=32;
+  const isR=t=>t&&t.tagName==='INPUT'&&t.type==='range'&&!t.disabled;
+  const setFrom=(el,x)=>{ const r=el.getBoundingClientRect(), mn=+el.min||0, mx=el.max===''?100:+el.max, st=el.step==='any'?0:(+el.step||1);
+    let f=(x-r.left-TH/2)/Math.max(1,r.width-TH); f=Math.max(0,Math.min(1,f)); let v=mn+f*(mx-mn); if(st) v=mn+Math.round((v-mn)/st)*st; v=Math.max(mn,Math.min(mx,v));
+    const sv=String(+v.toFixed(6)); if(el.value!==sv){ el.value=sv; el.dispatchEvent(new Event('input',{bubbles:true})); return true; } return false; };
+  document.addEventListener('touchstart',e=>{ const el=e.target; if(!isR(el)||e.touches.length!==1) return; e.preventDefault();
+    const t=e.touches[0]; S={el,x0:t.clientX,y0:t.clientY,y:t.clientY,mode:null,moved:false}; },{capture:true,passive:false});
+  document.addEventListener('touchmove',e=>{ if(!S) return; e.preventDefault(); const t=e.touches[0]; const dx=t.clientX-S.x0, dy=t.clientY-S.y0;
+    if(!S.mode&&Math.hypot(dx,dy)>6) S.mode=Math.abs(dx)>=Math.abs(dy)?'h':'v';
+    if(S.mode==='h'){ if(setFrom(S.el,t.clientX)) S.moved=true; }
+    else if(S.mode==='v'){ window.scrollBy(0,S.y-t.clientY); }
+    S.y=t.clientY; },{capture:true,passive:false});
+  const end=e=>{ if(!S) return; const s=S; S=null; if(e.type==='touchend'&&!s.mode){ if(setFrom(s.el,s.x0)) s.moved=true; }
+    if(s.moved) s.el.dispatchEvent(new Event('change',{bubbles:true})); };
+  document.addEventListener('touchend',end,{capture:true}); document.addEventListener('touchcancel',end,{capture:true});
+})();
+</script>
+<style>input[type=range]{touch-action:none!important;-webkit-user-select:none;user-select:none}</style>
+<script>
+// TEMPORARY diagnostic: if the page jumps while a slider is being used, show a small report box (to screenshot) explaining what moved it.
+(function(){ const D={t:0,y:0,h:0,calls:[],snap:null,shown:false,ev:[]};
+  const now=()=>performance.now(), stk=()=>{ try{ return (new Error().stack||'').split('\n').slice(2,5).map(x=>x.trim().replace(/^at /,'').replace(/https?:\/\/[^)\s]*\//,'').slice(0,70)).join(' ← '); }catch(e){ return ''; } };
+  const wrap=(o,k,label)=>{ const f=o[k]; if(typeof f!=='function') return; o[k]=function(){ if(now()-D.t<3000) D.calls.push(`${label}(${[...arguments].map(a=>typeof a==='object'?JSON.stringify(a):a).join(',').slice(0,40)}) ${this&&this.id?'#'+this.id:''} ← ${stk()}`); return f.apply(this,arguments); }; };
+  wrap(window,'scrollTo','window.scrollTo'); wrap(window,'scrollBy','window.scrollBy'); wrap(window,'scroll','window.scroll');
+  wrap(Element.prototype,'scrollIntoView','scrollIntoView'); wrap(HTMLElement.prototype,'focus','focus');
+  const pick=()=>[...document.querySelectorAll('header, .jump, main > *, main section, main details, .col > *, #map, .mstick, footer')].slice(0,400);
+  const nm=e=>{ const h=e.querySelector&&e.querySelector('h2,summary,.msh'); return (e.id?'#'+e.id:e.tagName.toLowerCase()+(e.className&&typeof e.className==='string'?'.'+e.className.split(' ')[0]:''))+(h?'「'+h.textContent.trim().slice(0,18)+'」':''); };
+  const start=(why)=>{ D.t=now(); D.y=scrollY; D.h=document.documentElement.scrollHeight; D.calls=[]; D.ev=[why]; D.shown=false; D.snap=pick().map(e=>[e,e.getBoundingClientRect().height]); };
+  const isR=t=>t&&t.tagName==='INPUT'&&t.type==='range';
+  ['touchstart','pointerdown'].forEach(ev=>document.addEventListener(ev,e=>{ if(isR(e.target)) start(ev+' '+(e.target.id||'')); },{capture:true,passive:true}));
+  document.addEventListener('input',e=>{ if(isR(e.target)){ if(now()-D.t>3000) start('input '+e.target.id); else D.t=now(); D.ev.push(`input ${e.target.id}=${e.target.value} y=${Math.round(scrollY)} H=${document.documentElement.scrollHeight}`); if(D.ev.length>14) D.ev.splice(1,1); } },true);
+  ['touchend','touchcancel','pointerup','pointercancel','blur','focusin','focusout'].forEach(ev=>document.addEventListener(ev,e=>{ if(now()-D.t<3000) D.ev.push(`${ev} ${(e.target&&e.target.id)||''} y=${Math.round(scrollY)}`); },true));
+  addEventListener('scroll',()=>{ if(D.shown||now()-D.t>3000) return; if(Math.abs(scrollY-D.y)<250) return; D.shown=true;
+    const ch=(D.snap||[]).filter(([e])=>e.isConnected).map(([e,h])=>[e,h,e.getBoundingClientRect().height]).filter(x=>Math.abs(x[2]-x[1])>=10).sort((a,b)=>Math.abs(b[2]-b[1])-Math.abs(a[2]-a[1])).slice(0,6).map(([e,a,b])=>`${nm(e)} ${Math.round(a)}→${Math.round(b)}px`);
+    const ae=document.activeElement;
+    const txt=[`ページが ${Math.round(D.y)} → ${Math.round(scrollY)} に移動（${Math.round(now()-D.t)} ms後）`,`ページの高さ ${D.h} → ${document.documentElement.scrollHeight}／画面 ${innerWidth}×${innerHeight}`,`入力中の欄：${ae?(ae.id||ae.tagName):'-'}`,
+      '【スクロール命令】'+(D.calls.length?'\n'+D.calls.slice(-6).join('\n'):'なし（指の動き・ブラウザ自身によるもの）'),
+      '【高さが変わった欄】'+(ch.length?'\n'+ch.join('\n'):'なし'),'【操作の記録】\n'+D.ev.slice(-10).join('\n')].join('\n');
+    let b=document.getElementById('dbgJump'); if(!b){ b=document.createElement('div'); b.id='dbgJump'; b.style.cssText='position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:100000;background:#111;color:#9f9;font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;max-height:60vh;overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.5)'; document.body.appendChild(b); }
+    b.innerHTML=''; const h=document.createElement('div'); h.style.cssText='color:#fff;font-weight:700;margin-bottom:4px'; h.textContent='揺れ調査（この画面をスクショして送ってください）'; const x=document.createElement('button'); x.textContent='閉じる'; x.style.cssText='float:right;font:12px sans-serif;padding:2px 10px'; x.onclick=()=>b.remove(); h.appendChild(x); const pre=document.createElement('div'); pre.textContent=txt; b.append(h,pre); },{passive:true});
 })();
 </script>
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
 </script>
-</body>
-</html>
+</body></html>
