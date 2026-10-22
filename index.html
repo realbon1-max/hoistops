@@ -692,6 +692,15 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 .wbolt{animation:wbolt 2.4s steps(1) infinite}@keyframes wbolt{0%,70%,100%{opacity:1}75%,85%{opacity:.2}}
 @media (prefers-reduced-motion:reduce){.wsun,.wdrop,.wflake,.wbolt{animation:none}}
 @container (min-width:520px){ #mInfo .mi.site{grid-template-columns:minmax(0,1fr) auto auto!important} }
+
+#mInfo .wxs{align-items:stretch!important}#mInfo .wxtop{flex-wrap:wrap;justify-content:center;gap:4px 12px!important}
+#mInfo .wxtx b.wx-d{color:var(--warn)}#mInfo .wxtx b.wx-w{color:var(--caution)}#mInfo .wxtx b.wx-ok{color:var(--ok)}#mInfo .wxtx b{font-size:16px!important;white-space:nowrap}
+#mInfo .wxtx span{font-size:11.5px!important}
+#mInfo .wxch{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:3px 0}#mInfo .wxch span{font-size:11.5px;padding:1px 7px;border-radius:10px;border:1px solid var(--rule);white-space:nowrap}
+#mInfo .wxch span.w{border-color:var(--caution);color:var(--caution)}#mInfo .wxch span.d{border-color:var(--warn);color:#fff;background:var(--warn)}
+#mInfo .llall .ll1{white-space:nowrap}#mInfo .mbe{display:flex;flex-direction:column;gap:0}#mInfo .mbe>span{font-size:11.5px!important;color:var(--muted);white-space:nowrap}
+@container (min-width:520px){ #mInfo .mi.site{grid-template-columns:auto minmax(0,1fr) auto!important} }
+@container (max-width:519px){ #mInfo .wxs{margin:6px 0;padding:6px 0;border-top:1px dashed var(--rule);border-bottom:1px dashed var(--rule)} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2449,7 +2458,7 @@ function mapInfo0(){
   ${flightHTML(p,site,hov,Hp,T)}
   <button type="button" class="small" id="mUse">この地点を現場に設定する</button>`;
   $('mUse').onclick=()=>applyPick(true);
-  try{ wxSite(p); }catch(e){ console.warn(e); }
+  try{ wxSite(p,hov); }catch(e){ console.warn(e); }
 }
 function applyPick(force){ const p=MAP.pick; if(!p||p.loading||p.err||isNaN(p.h)) return; if(!force&&!$('mApply').checked) return;
   const site=Math.round(p.h*FT+(+$('mObs').value||0)*FT);
@@ -4632,26 +4641,68 @@ function wxIcon(code,night){ const c=code==null?-1:code, id='wg'+Math.random().t
   else if(c>=95) g=cloud(true)+bolt+rain(2);
   else g=cloud(false);
   return `<svg class="wxic" viewBox="0 0 64 68" aria-hidden="true"><defs><radialGradient id="${id}s" cx=".4" cy=".35"><stop offset="0" stop-color="#fff59d"/><stop offset=".6" stop-color="#ffc107"/><stop offset="1" stop-color="#ff8f00"/></radialGradient><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffde7"/><stop offset="1" stop-color="#b0bec5"/></linearGradient><linearGradient id="${id}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd8e3"/></linearGradient><linearGradient id="${id}d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa7b6"/><stop offset="1" stop-color="#5f6d7c"/></linearGradient></defs>${g}</svg>`; }
-async function wxSite(p){ const box=$('wxSite'); if(!box||!p) return;
+async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
   const key=(Math.round(p.lat*20)/20).toFixed(2)+','+(Math.round(p.lon*20)/20).toFixed(2), C=WXS.c[key];
+  const LV=[1000,975,950,925,900,850,800,700,600,500];
   const draw=d=>{ const b=$('wxSite'); if(!b) return; const T=d.time, now=new Date(), nm=now.getHours()*60+now.getMinutes();
     let arr=window.FPARR!=null?window.FPARR:nm; let day=new Date(now); if(arr<nm-90) day=new Date(now.getTime()+864e5); const hh=Math.floor(((arr%1440)+1440)%1440/60);
     const j=new Date(day.getTime()+9*3600e3), ds=j.toISOString().slice(0,10), k0=T.indexOf(`${ds}T${String(hh).padStart(2,'0')}:00`), i=k0>=0?k0:T.reduce((bi,t,ii)=>t.slice(0,13)<=new Date(now.getTime()+9*3600e3).toISOString().slice(0,13)?ii:bi,0);
     const g=k=>d[k]&&d[k][i]!=null?d[k][i]:null, wc=g('weather_code'), wd=g('wind_direction_10m'), ws=g('wind_speed_10m'), gu=g('wind_gusts_10m'), t2=g('temperature_2m');
-    let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn.rise&&sn.set&&st>=sn.rise&&st<sn.set); }catch(e){}
-    const WN={0:'快晴',1:'晴れ',2:'晴れ時々曇り',3:'曇り',45:'霧',48:'着氷性の霧',51:'弱い霧雨',53:'霧雨',55:'強い霧雨',56:'着氷性の霧雨',57:'着氷性の霧雨',61:'弱い雨',63:'雨',65:'強い雨',66:'着氷性の雨',67:'着氷性の雨',71:'弱い雪',73:'雪',75:'強い雪',77:'霧雪',80:'にわか雨',81:'にわか雨',82:'激しいにわか雨',85:'にわか雪',86:'強いにわか雪',95:'雷雨',96:'雷雨・ひょう',99:'激しい雷雨'};
+    const vis=g('visibility'), rh2=g('relative_humidity_2m'), td2=g('dew_point_2m'), ccl=g('cloud_cover_low'), pr=g('precipitation');
+    const elFt=(d.__el!=null?d.__el:0)*3.28084, siteFt=isFinite(p.h)?p.h*3.28084:elFt, H=hovFt!=null?hovFt:siteFt+150;
+    // vertical profile (ft MSL)
+    const L=LV.map(l=>({p:l,z:g(`geopotential_height_${l}hPa`),t:g(`temperature_${l}hPa`),rh:g(`relative_humidity_${l}hPa`),cc:g(`cloud_cover_${l}hPa`)})).filter(q=>q.z!=null&&q.t!=null).map(q=>({...q,z:q.z*3.28084})).sort((a,b)=>a.z-b.z);
+    const cloudy=q=>(q.cc!=null?q.cc>=60:false)||(q.rh!=null&&q.rh>=95);
+    const at=k=>{ if(L.length<2) return null; let a=L[0],b2=L[L.length-1]; for(let n=0;n<L.length-1;n++){ if(L[n].z<=H&&L[n+1].z>=H){ a=L[n]; b2=L[n+1]; break; } } const f=b2.z===a.z?0:Math.max(0,Math.min(1,(H-a.z)/(b2.z-a.z))); const va=a[k],vb=b2[k]; return va==null||vb==null?(va!=null?va:vb):va+(vb-va)*f; };
+    const tH=at('t'), rhH=at('rh'), ccH=at('cc');
+    const inCloud=(ccH!=null&&ccH>=60)||(rhH!=null&&rhH>=95);
+    const below=L.filter(q=>q.z>siteFt-200&&q.z<H-100&&cloudy(q));
+    const above=L.filter(q=>q.z>H+100&&cloudy(q));
+    let fz=null; for(let n=0;n<L.length-1;n++){ const a=L[n],b2=L[n+1]; if((a.t>=0)!==(b2.t>=0)){ fz=a.z+(b2.z-a.z)*a.t/(a.t-b2.t); break; } }
+    const precip=(pr||0)>=0.1||(wc!=null&&(wc>=51&&wc<=67||wc>=71&&wc<=86||wc>=95));
+    const fzra=wc===56||wc===57||wc===66||wc===67, ts=wc!=null&&wc>=95, sn=wc!=null&&(wc>=71&&wc<=77||wc===85||wc===86), fog=wc===45||wc===48;
+    const icing=tH!=null&&tH<=2&&tH>=-20&&(inCloud||precip&&!sn);
+    const lowVis=(vis!=null&&vis<5000)||fog;
+    const spread=t2!=null&&td2!=null?t2-td2:null, cbAgl=spread!=null?Math.max(0,spread*400):null;
+    let base=null; { const c=L.find(q=>q.z>siteFt-100&&cloudy(q)); if(c) base=Math.max(0,c.z-siteFt); } if(base==null&&cbAgl!=null&&(ccl||0)>=50) base=cbAgl;
+    // headline (priority)
+    let hd,cls,ic=wc;
+    if(ts){ hd='雷雨 TS'; cls='d'; }
+    else if(fzra){ hd='着氷性の降水 FZRA'; cls='d'; ic=67; }
+    else if(icing&&inCloud){ hd='雲中・着氷 ICE'; cls='d'; ic=3; }
+    else if(inCloud){ hd='雲中 IMC'; cls='w'; ic=3; }
+    else if(lowVis){ hd=fog?'霧 FG':'低視程'; cls='w'; ic=45; }
+    else if(precip){ hd=sn?'降雪 SN':'雨域 RA'; cls='w'; }
+    else if(below.length){ hd='雲上 VMC on top'; cls='w'; ic=2; }
+    else { hd=wc!=null&&wc<=1?'VMC 快晴':'VMC'; cls='ok'; }
+    const fm=n=>Math.round(n).toLocaleString(), chips=[];
+    if(base!=null&&base<8000) chips.push([`雲底 ${fm(Math.round(base/100)*100)} ft AGL`,base<1000?'d':base<2000?'w':'']);
+    if(vis!=null) chips.push([`VIS ${vis>=10000?'10km+':(vis/1000).toFixed(1)+'km'}`,vis<1600?'d':vis<5000?'w':'']);
+    if(tH!=null) chips.push([`OAT ${tH.toFixed(0)}℃ @${fm(Math.round(H/100)*100)}`,'']);
+    if(fz!=null) chips.push([`0℃ ${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'']);
+    if(icing&&!(hd.includes('着氷'))) chips.push(['着氷のおそれ','d']);
+    if(above.length&&!inCloud) chips.push([`上空に雲 ${fm(Math.round((above[0].z-siteFt)/100)*100)} ft AGL〜`,'']);
+    if(precip&&!hd.match(/雨|雪|TS|FZ/)) chips.push([sn?'降雪':'降水','w']);
+    if(gu!=null&&ws!=null&&gu>=ws+8) chips.push([`突風 G${Math.round(gu)}`,gu>=30?'d':'w']);
+    let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
+    if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
-    b.innerHTML=`<div class="wxtop">${wxIcon(wc,night)}<div class="wxtx"><b>${wc!=null?(WN[wc]||''):'—'}</b>${t2!=null?`<span>${t2.toFixed(0)}℃</span>`:''}</div></div>
-      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" title="風が吹いていく向き" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div>
-      <div class="wxt">${window.FPARRset?'到着':'到着予定'} ${T[i].slice(11,16)} の予報（MSM）<button type="button" class="wxuse" title="この予報の風を風向・風速に入れる">風に反映</button></div>`;
+    b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?`・露点差 ${spread.toFixed(0)}℃`:''}</span></div>
+      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div></div>
+      ${chips.length?`<div class="wxch">${chips.map(([t,c])=>`<span class="${c}">${t}</span>`).join('')}</div>`:''}
+      <div class="wxt">${window.FPARRset?'到着':'到着予定'} ${T[i].slice(11,16)}・ホバリング高度 ${fm(Math.round(H/100)*100)} ft の予報（MSM）<button type="button" class="wxuse" title="この予報の地上風を風向・風速に入れる">風に反映</button></div>`;
     const u=b.querySelector('.wxuse'); if(u) u.onclick=()=>{ if(wd==null||ws==null) return; try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=Math.round(ws); if($('wsR')) $('wsR').value=Math.round(ws); update(); mapWind&&mapWind(); }catch(e){} u.textContent='反映しました'; }; };
   if(C&&Date.now()-C.t<3600e3){ draw(C.d); return; }
   if(navigator.onLine===false){ box.innerHTML='<div class="wxt">オフライン：予報は表示できません</div>'; return; }
   box.innerHTML='<div class="wxt">予報を読み込み中…</div>'; if(WXS.busy[key]) return; WXS.busy[key]=1;
-  try{ const url=`https://api.open-meteo.com/v1/jma?latitude=${p.lat.toFixed(3)}&longitude=${p.lon.toFixed(3)}&hourly=weather_code,temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m&models=jma_msm&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2`;
-    let r=await fetch(url); let d=r.ok?(await r.json()).hourly:null;
-    if(!d||!d.time){ r=await fetch(url.replace(',wind_gusts_10m','')); d=r.ok?(await r.json()).hourly:null; }
-    if(!d||!d.time) throw 0; WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
+  try{ const base=`https://api.open-meteo.com/v1/jma?latitude=${p.lat.toFixed(3)}&longitude=${p.lon.toFixed(3)}&models=jma_msm&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=2&hourly=`;
+    const s1=['weather_code','temperature_2m','wind_speed_10m','wind_direction_10m'], s2=['wind_gusts_10m','visibility','relative_humidity_2m','dew_point_2m','cloud_cover_low','precipitation'];
+    const pl=[]; LV.forEach(l=>pl.push(`temperature_${l}hPa`,`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`)); const pc=LV.map(l=>`cloud_cover_${l}hPa`);
+    let d=null, el=null;
+    for(const v of [s1.concat(s2,pl,pc),s1.concat(s2,pl),s1.concat(pl),s1]){ const r=await fetch(base+v.join(',')); if(!r.ok) continue; const j=await r.json(); if(j.hourly&&j.hourly.time){ d=j.hourly; el=j.elevation; break; } }
+    if(!d) throw 0; d.__el=el;
+    try{ const r=await fetch(base.replace('&hourly=','&hourly=')+s2.filter(x=>!d[x]).join(',')); if(s2.some(x=>!d[x])&&r.ok){ const j=await r.json(); if(j.hourly) s2.forEach(x=>{ if(!d[x]&&j.hourly[x]) d[x]=j.hourly[x]; }); } }catch(e){}
+    WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
   catch(e){ const b=$('wxSite'); if(b) b.innerHTML='<div class="wxt">予報を読み込めません</div>'; }
   finally{ WXS.busy[key]=0; } }
 // ---- メニューをピクトグラム＋短い文字に（全体をすっきり）
