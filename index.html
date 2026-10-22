@@ -712,6 +712,7 @@ body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area
 .mstick.stuck .drawbar{margin:4px 0 0;padding:3px 6px}
 .mstick.stuck .mlayers{margin:2px 0 0}.mstick.stuck .mlayers>*{flex:none}
 .mstickS{height:1px;margin-bottom:-1px}
+.mstick.nostick{position:relative!important;top:auto!important}
 </style>
 <style id="eliteCss">
 /* ===== ELITE RESCUE THEME (design only) ===== */
@@ -4570,9 +4571,9 @@ update();
 (function(){ const st=document.getElementById('mStick'), lay=document.querySelector('.mlayers'), nav=document.querySelector('nav.jump');
   if(!st) return; if(lay) st.insertBefore(lay, st.children[1]);
   const setJ=()=>{ document.documentElement.style.setProperty('--jh',(nav?nav.getBoundingClientRect().height:0)+'px'); };
-  setJ(); addEventListener('resize',setJ); addEventListener('orientationchange',()=>setTimeout(setJ,300));
+  setJ(); addEventListener('resize',setJ); try{ new ResizeObserver(setJ).observe(nav); }catch(e){} addEventListener('orientationchange',()=>setTimeout(setJ,300));
   const chk=()=>{ const t=st.getBoundingClientRect().top, j=nav?nav.getBoundingClientRect().height:0, sec=document.getElementById('mapsec').getBoundingClientRect();
-    const jb=nav?nav.getBoundingClientRect().bottom:0; const on = t<=jb+1 && sec.top<jb && sec.bottom>jb+st.offsetHeight+40; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
+    const jb=nav?nav.getBoundingClientRect().bottom:0; const mp=document.getElementById('map'), mb=mp?mp.getBoundingClientRect().bottom:sec.bottom; const past=mb<jb+st.offsetHeight+60; if(past!==st.classList.contains('nostick')) st.classList.toggle('nostick',past); const on = !past && t<=jb+1 && sec.top<jb; if(on!==st.classList.contains('stuck')) st.classList.toggle('stuck',on); };
   addEventListener('scroll',chk,{passive:true}); addEventListener('resize',chk); setTimeout(chk,300);
 })();
 
