@@ -2351,10 +2351,10 @@ function tilesOf(h){ const key=/到着予定|ホバリング可能|離脱リミ�
   const ic=l=>{ const q=IK.find(([r])=>r.test(l)); return q?tIco(q[1]):''; };
   return h.replace(/<table>/g,'<div class="tiles">').replace(/<\/table>/g,'</div>')
     .replace(/<tr><td>([\s\S]*?)<\/td><td class="r"(?: colspan="2")?>([\s\S]*?)<\/td><\/tr>/g,(m,l,v)=>`<div class="tl${key.test(l)?' key':''}${/OGE余裕/.test(l)?' wide':''}"><div class="l">${ic(l)}${l}</div><div class="v">${v}</div></div>`); }
-// 離陸時刻：設定があればそれ、なければ「地図で地点を選んだ時刻＋始動等」
+// 離陸時刻：設定があればそれ、なければ「地図で地点を選んだ時刻」（始動等は足さない）
 function fpT0(){ const hm=m=>{m=((Math.round(m)%1440)+1440)%1440; return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
   const v=$('fpTo')&&$('fpTo').value; if(v){ const m=(+v.split(':')[0])*60+(+v.split(':')[1]); return {m,hm:v,set:true}; }
-  const a=new Date(MAP.pick&&MAP.pick.at?MAP.pick.at:Date.now()), pm=a.getHours()*60+a.getMinutes(), su=+FP.su||0; return {m:pm+su,hm:hm(pm+su),set:false,pick:hm(pm),su}; }
+  const a=new Date(MAP.pick&&MAP.pick.at?MAP.pick.at:Date.now()), pm=a.getHours()*60+a.getMinutes(), su=+FP.su||0; return {m:pm,hm:hm(pm),set:false,pick:hm(pm),su}; }
 function flightHTML(p,site,hov,Hp,T){ return tilesOf(flightHTML0(p,site,hov,Hp,T)); }
 function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
   const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
@@ -2386,7 +2386,7 @@ function flightHTML0(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString(
   <tr><td>距離</td><td class="r">${g.nm.toFixed(1)} NM<small> ${(g.nm*1.852).toFixed(1)} km</small></td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間</td><td class="r">${Math.round(out.t)}分${su?`<small> ＋始動 ${su}分</small>`:''}</td></tr>
-  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ ${T0.pick} ＋始動等 ${T0.su}分（押して変更）`}">${T0.set?`<button type="button" class="etoClr" title="設定した離陸予定を消して、地点を選んだ時刻から数える">↺</button>`:`<i class="etoA">選択 ${T0.pick}＋${T0.su}分</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
+  <tr><td>到着予定</td><td class="r">${eta?`<b>${eta}</b><small class="eto">離陸 <input type="time" class="etoIn${T0.set?'':' auto'}" value="${tv}" aria-label="離陸予定時刻" title="${T0.set?'設定した離陸予定時刻':`地点を選んだ時刻 ${T0.pick} から計算（押して変更）`}">${T0.set?`<button type="button" class="etoClr" title="設定した離陸予定を消して、地点を選んだ時刻から数える">↺</button>`:`<i class="etoA">地点を選んだ時刻</i>`}</small>`:'<small class="eto">離陸 <input type="time" class="etoIn" aria-label="離陸予定時刻を入力"><button type="button" class="etoNow">今</button></small>'}</td></tr>
   ${DLX?`<tr><td>日没／薄明終了</td><td class="r"><b>${DLX.ss}</b><small> ／ ${DLX.du}</small></td></tr><tr><td>救助終了→帰投着</td><td class="r">${DLX.wend}<small> → ${DLX.home}</small></td></tr>`:''}
   <tr><td>消費燃料（往路）</td><td class="r">${fm(burnOut)} kg</td></tr>
   <tr><td>到着時 燃料／全備</td><td class="r">${fm(fArr)}<small> ／ ${fm(gwArr)} kg</small></td></tr>
@@ -2412,7 +2412,7 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
     for(let k=1;k<L.length;k++){ const a=L[k-1], b=L[k], g=gc(a.lat,a.lon,b.lat,b.lon); if(g.nm<0.2) continue; const [ax,ay]=P(a.lat,a.lon), [bx_,by_]=P(b.lat,b.lon); if(Math.hypot(bx_-ax,by_-ay)<70) continue;
       const mx=(ax+bx_)/2, my=(ay+by_)/2, an=Math.atan2(by_-ay,bx_-ax), ox=-Math.sin(an)*12, oy=Math.cos(an)*12;
       t+=g.nm/gs*60; h+=tag(mx+ox,my+oy+4,`${P3(g.crs+MAGVAR)}°M・${g.nm.toFixed(1)} NM・${Math.round(g.nm/gs*60)}分`,k===L.length-1&&DST?'#2e7d32':'#8e1b6e');
-      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?`（離陸 ${T0.hm}）`:`（${T0.pick}選択＋始動${T0.su}分）`}・${gs} kt`,'#15253a','start'); }
+      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?`（離陸 ${T0.hm}）`:`（${T0.pick}選択から）`}・${gs} kt`,'#15253a','start'); }
     if(gpsKt){ const [gla,glo]=GT.last, g=gc(gla,glo,site.lat,site.lon), [sx,sy]=P(site.lat,site.lon), [gx,gy]=P(gla,glo), m=g.nm/gpsKt*60;
       h+=`<line x1="${gx}" y1="${gy}" x2="${sx}" y2="${sy}" stroke="#0b63ce" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>`;
       h+=tag(sx+12,sy+18,`GPS ${Math.round(gpsKt)} kt・${P3(g.crs+MAGVAR)}°M ${g.nm.toFixed(1)} NM・ETA ${hm(nm0+m)}（${Math.round(m)}分）`,'#0b63ce','start');
