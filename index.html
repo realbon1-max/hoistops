@@ -2412,7 +2412,7 @@ function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z
     for(let k=1;k<L.length;k++){ const a=L[k-1], b=L[k], g=gc(a.lat,a.lon,b.lat,b.lon); if(g.nm<0.2) continue; const [ax,ay]=P(a.lat,a.lon), [bx_,by_]=P(b.lat,b.lon); if(Math.hypot(bx_-ax,by_-ay)<70) continue;
       const mx=(ax+bx_)/2, my=(ay+by_)/2, an=Math.atan2(by_-ay,bx_-ax), ox=-Math.sin(an)*12, oy=Math.cos(an)*12;
       t+=g.nm/gs*60; h+=tag(mx+ox,my+oy+4,`${P3(g.crs+MAGVAR)}°M・${g.nm.toFixed(1)} NM・${Math.round(g.nm/gs*60)}分`,k===L.length-1&&DST?'#2e7d32':'#8e1b6e');
-      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?`（離陸 ${T0.hm}）`:`（${T0.pick}選択から）`}・${gs} kt`,'#15253a','start'); }
+      if(!gpsKt) h+=tag(bx_+12,by_+18,`ETA ${hm(t)}${tv?`（離陸 ${T0.hm}）`:''}・${gs} kt`,'#15253a','start'); }
     if(gpsKt){ const [gla,glo]=GT.last, g=gc(gla,glo,site.lat,site.lon), [sx,sy]=P(site.lat,site.lon), [gx,gy]=P(gla,glo), m=g.nm/gpsKt*60;
       h+=`<line x1="${gx}" y1="${gy}" x2="${sx}" y2="${sy}" stroke="#0b63ce" stroke-width="1.6" stroke-dasharray="2 4" opacity=".8"/>`;
       h+=tag(sx+12,sy+18,`GPS ${Math.round(gpsKt)} kt・${P3(g.crs+MAGVAR)}°M ${g.nm.toFixed(1)} NM・ETA ${hm(nm0+m)}（${Math.round(m)}分）`,'#0b63ce','start');
