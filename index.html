@@ -555,6 +555,7 @@ footer{max-width:1400px;margin:0 auto;padding:0 24px 30px;font-size:12px;color:v
 #wpTab tr.near td{background:rgba(255,160,40,.16)}#wpTab button{font:inherit;width:28px;height:28px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--warn);cursor:pointer}
 .wpbtns{display:flex;gap:6px;margin:6px 0}.wpbtns button,#wpUse{font:inherit;font-size:12.5px;font-weight:700;padding:5px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);cursor:pointer}
 #wpTab td.wpbt{white-space:nowrap}
+.rtbar{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 6px}.rtx{font:inherit;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .etoIn{font:inherit;font-size:14px;font-weight:700;padding:2px 6px;border:1.5px solid #4a90e2;border-radius:6px;background:var(--paper);color:var(--ink);width:auto}.etoNow{font:inherit;font-size:12.5px;font-weight:800;margin-left:4px;padding:3px 9px;border-radius:6px;border:1px solid #4a90e2;background:transparent;color:#4a90e2;cursor:pointer}
 .mtctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 8px}.mtctl .hint{margin:0;font-size:12px}.mtctl select{font:inherit;font-size:13px;padding:3px 6px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .mtc{border:1px solid var(--rule);border-left:6px solid var(--cat,#888);border-radius:8px;padding:7px 10px;margin:0 0 8px;background:var(--paper)}
@@ -2005,6 +2006,12 @@ const BASE={name:'松本空港',lat:36.16667,lon:137.92278,elev:657};
 let FROM={...BASE};
 try{ const f=JSON.parse(localStorage.getItem('aw139from')||'null'); if(f&&isFinite(f.lat)) FROM=f; }catch(e){}
 function setFrom(f){ FROM=f; try{localStorage.setItem('aw139from',JSON.stringify(FROM));}catch(e){} $('fromName').textContent=FROM.name+'（標高 '+(isNaN(FROM.elev)?'不明':Math.round(FROM.elev).toLocaleString()+' m')+'）'; mapReq(); mapInfo(); }
+// relay (中継地点) and destination after the rescue (目的地＝搬送先・帰投先): set from heliports on the map
+let VIA=[], DST=null; try{ VIA=JSON.parse(localStorage.getItem('aw139via')||'[]')||[]; DST=JSON.parse(localStorage.getItem('aw139dst')||'null'); }catch(e){}
+function rtSave(){ try{ localStorage.setItem('aw139via',JSON.stringify(VIA)); localStorage.setItem('aw139dst',JSON.stringify(DST)); }catch(e){} try{ mapReq(); mapInfo(); }catch(e){} }
+const RET=()=>DST||BASE;
+function withElev(o){ elevAt(o.lat,o.lon).then(h=>{ o.elev=isFinite(h)?h:0; rtSave(); }).catch(()=>{}); return o; }
+function outPath(p){ const pts=[FROM,...VIA,p]; let nm=0; for(let k=1;k<pts.length;k++) nm+=gc(pts[k-1].lat,pts[k-1].lon,pts[k].lat,pts[k].lon).nm; return {nm,crs:gc(pts[0].lat,pts[0].lon,pts[1].lat,pts[1].lon).crs}; }
 function setFromLL(name,lat,lon){ FROM={name,lat,lon,elev:NaN}; setFrom(FROM); elevAt(lat,lon).then(h=>{ if(FROM.lat===lat&&FROM.lon===lon){ FROM.elev=isNaN(h)?0:h; setFrom(FROM);} }).catch(()=>{}); }
 const PEAKS=[['松本空港（信州まつもと空港）',36.16667,137.92278],['上高地（河童橋）',36.2511,137.6386],
 ['奥穂高岳',36.2892,137.6481],['北穂高岳',36.3011,137.6528],['前穂高岳',36.2836,137.6558],['西穂高岳',36.2717,137.6283],['槍ヶ岳',36.3420,137.6475],['大天井岳',36.3742,137.7106],['常念岳',36.3256,137.7272],['蝶ヶ岳',36.2869,137.7461],['燕岳',36.4031,137.7117],['焼岳',36.2272,137.5869],['乗鞍岳（剣ヶ峰）',36.1064,137.5536],['笠ヶ岳',36.3172,137.5508],['鷲羽岳',36.4031,137.6058],['水晶岳',36.4258,137.6031],
@@ -2082,16 +2089,16 @@ function gc(la1,lo1,la2,lo2){ const R=3440.065, r=Math.PI/180, p1=la1*r,p2=la2*r
 const FP={gs:130,roc:1000,rod:800,ff:600,su:5,work:30}; let DLX=null;
 try{ Object.assign(FP,JSON.parse(localStorage.getItem('aw139fp')||'{}')); }catch(e){}
 function fpLeg(nm,dh){ const tH=nm/(+FP.gs||1)*60, tV=dh>=0?dh/(+FP.roc||1):-dh/(+FP.rod||1); return {t:Math.max(tH,tV),tH,tV,orbit:tV>tH}; }
-function crsHTML(c,cb){ const P3=v=>String(Math.round(((v%360)+360)%360)%360||360).padStart(3,'0');
+function crsHTML(c,cb,rn){ const P3=v=>String(Math.round(((v%360)+360)%360)%360||360).padStart(3,'0');
   const mag=c+MAGVAR, cmp=['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'][Math.round(((c%360)+360)%360/22.5)%16];
   const a=c*Math.PI/180, x=Math.sin(a)*24, y=-Math.cos(a)*24;
   return `<div class="crs"><svg viewBox="-34 -34 68 68" width="68" height="68" aria-hidden="true"><circle r="30" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>${[0,90,180,270].map(d=>{const r=d*Math.PI/180;return `<line x1="${Math.sin(r)*26}" y1="${-Math.cos(r)*26}" x2="${Math.sin(r)*30}" y2="${-Math.cos(r)*30}" stroke="var(--muted)" stroke-width="1.5"/>`;}).join('')}<text y="-17" text-anchor="middle" font-size="10" font-weight="700" fill="var(--warn)">N</text><line x1="${-x*.55}" y1="${-y*.55}" x2="${x}" y2="${y}" stroke="#b0268c" stroke-width="3.5" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="#b0268c"/><circle r="2.5" fill="var(--ink)"/></svg>
-  <div><div class="crsT">真方位 <b>${P3(c)}°</b><span class="crsC">（${cmp}）</span></div><div class="crsM">磁方位 約 <b>${P3(mag)}°</b>（偏差 ${Math.abs(MAGVAR)}°W で概算）</div><div class="crsM">帰投（現場→${BASE.name}）真方位 ${P3(cb)}°／磁方位 約 ${P3(cb+MAGVAR)}°</div></div></div>`; }
+  <div><div class="crsT">真方位 <b>${P3(c)}°</b><span class="crsC">（${cmp}）</span></div><div class="crsM">磁方位 約 <b>${P3(mag)}°</b>（偏差 ${Math.abs(MAGVAR)}°W で概算）</div><div class="crsM">${rn&&rn!==BASE.name?'目的地':'帰投'}（現場→${rn||BASE.name}）真方位 ${P3(cb)}°／磁方位 約 ${P3(cb+MAGVAR)}°</div></div></div>`; }
 const MAGVAR=8; // 長野県付近の磁気偏差 約8°W（磁方位＝真方位＋8°）。正確な値は航空図・AIPで確認
 function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString();
-  const g=gc(FROM.lat,FROM.lon,p.lat,p.lon), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt;
-  const gb=gc(p.lat,p.lon,BASE.lat,BASE.lon);
-  const out=fpLeg(g.nm,dh), back=fpLeg(gb.nm,BASE.elev*FT-hov), su=+FP.su||0;
+  const g=outPath(p), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, dh=hov-fromFt, R_=RET();
+  const gb=gc(p.lat,p.lon,R_.lat,R_.lon);
+  const out=fpLeg(g.nm,dh), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), su=+FP.su||0;
   const tOut=out.t+su, burnOut=(+FP.ff)*tOut/60, burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
   const fArr=fuel-burnOut, gwArr=GW-burnOut, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0;
@@ -2109,11 +2116,11 @@ function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString()
     else if(arr>=ss){ cls='warn'; msg=`到着 ${hm(arr)} は日没（${hm(ss)}）後の薄明中。薄明終了 ${hm(du)} まで ${mn(du-arr)} しかありません`; }
     else if(wend>du){ cls='warn'; msg=`救助（見込み ${wk}分）の途中で薄明が終わります：到着 ${hm(arr)}→日没 ${hm(ss)}（到着から${mn(ss-arr)}）→薄明終了 ${hm(du)}（${mn(du-arr)}）`; }
     else if(wend>ss){ cls='caution'; msg=`救助中に日没になります：到着 ${hm(arr)}、日没 ${hm(ss)}（到着から${mn(ss-arr)}）、救助終了見込み ${hm(wend)}・薄明終了 ${hm(du)}`; }
-    else if(home>du){ cls='caution'; msg=`救助は日没前に終わる見込み（${hm(wend)}）ですが、${BASE.name}への帰投（${hm(home)}着）は薄明終了 ${hm(du)} 後です`; }
+    else if(home>du){ cls='caution'; msg=`救助は日没前に終わる見込み（${hm(wend)}）ですが、${R_.name}への${DST?'移動':'帰投'}（${hm(home)}着）は薄明終了 ${hm(du)} 後です`; }
     else msg=`日没前に救助を終えられる見込み：到着 ${hm(arr)}・救助終了 ${hm(wend)}（日没 ${hm(ss)} まで余裕 ${mn(ss-wend)}）`;
     dl=`<div class="dlbox ${cls}">${cls==='ok'?'☀':cls==='caution'?'🌇 注意':'🌙 警告'}　${msg}</div>`;
     dl+=`<!--dlrow-->`; DLX={ss:hm(ss),du:hm(du),wk,wend:hm(wend),home:hm(home)}; } else DLX=null;
-  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name} → 現場</div>${crsHTML(g.crs,gb.crs)}${dl}<div class="nowind">⚠ 時間・燃料はすべて無風での計算です。向かい風・追い風で大きく変わります（例：向かい風20 ktなら対地速度 ${Math.max(0,(+FP.gs||0)-20)} kt、所要時間は約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）。</div><table>
+  return `<div class="mi fp"><div style="font-weight:700;margin-bottom:4px">${FROM.name}${VIA.map(v=>' → '+esc(v.name)+'（中継）').join('')} → 現場${DST?' → '+esc(DST.name)+'（目的地）':''}</div>${VIA.length||DST?`<div class="rtbar">${VIA.map((v,i)=>`<button type="button" class="rtx" data-viax="${i}">中継 ${esc(v.name)} ×</button>`).join('')}${DST?`<button type="button" class="rtx" data-dstx="1">目的地 ${esc(DST.name)} ×</button>`:''}</div>`:''}${crsHTML(g.crs,gb.crs,R_.name)}${dl}<div class="nowind">⚠ 時間・燃料はすべて無風での計算です。向かい風・追い風で大きく変わります（例：向かい風20 ktなら対地速度 ${Math.max(0,(+FP.gs||0)-20)} kt、所要時間は約${Math.round((+FP.gs||1)/Math.max(1,(+FP.gs||0)-20)*100-100)}%増）。</div><table>
   <tr><td>水平距離</td><td class="r">${g.nm.toFixed(1)} NM（${(g.nm*1.852).toFixed(1)} km）</td></tr>
   <tr><td>高度差</td><td class="r">${dh>=0?'+':'−'}${fm(Math.abs(dh))} ft</td></tr>
   <tr><td>飛行時間（片道・無風）</td><td class="r">${mm(out.t)}${su?`＋始動等 ${su}分`:''}</td></tr>
@@ -2124,7 +2131,7 @@ function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString()
   <tr><td>到着時のOGE余裕 TOP</td><td class="r">${marg('p917')}${densAlt(Hp,T)>7000?'<div style="font-size:11px;color:var(--warn)">密度高度7,000 ft超のため、TOPでのホイスト運用は不可</div>':''}</td></tr>
   <tr><td>到着時のOGE余裕 MCP</td><td class="r">${marg('p918')}</td></tr>
   <tr><td>到着時のOGE余裕 OEI</td><td class="r">${marg('p444z')}</td></tr>
-  <tr><td>帰投燃料（現場→${BASE.name}）</td><td class="r">${fm(burnBack)} kg（${mm(back.t)}・${gb.nm.toFixed(1)} NM）</td></tr>
+  <tr><td>${DST?'目的地までの燃料':'帰投燃料'}（現場→${R_.name}）</td><td class="r">${fm(burnBack)} kg（${mm(back.t)}・${gb.nm.toFixed(1)} NM）</td></tr>
   <tr><td>現場でホバリングできる時間</td><td class="r"><b class="${hovMin>=10?'ok':hovMin>0?'caution':'warn'}">${hovMin>0?Math.floor(hovMin)+'分':'なし'}</b></td></tr>${lim?`<tr><td>現場を離れる最終時刻（無風）</td><td class="r"><b class="warn" style="font-size:15px">${lim}</b></td></tr>`:''}</table>
   ${out.orbit?`<div class="hint warn">高度差が大きく、水平距離の間に上がり切れません（上昇に ${Math.ceil(out.tV)}分）。時間は上昇時間で計算しています。</div>`:''}
   ${Math.abs(FROM.lat-BASE.lat)>1e-5||Math.abs(FROM.lon-BASE.lon)>1e-5?`<div class="hint">出発地が${BASE.name}以外です。飛行中に別の現場へ向かう場合は「始動〜離陸」を0分に、「出発時の燃料」を今の残燃料にしてください（出発時の燃料 ${fm(fuel)} kg${fv!==''?'':'＝搭載燃料'}）。</div>`:''}
@@ -2132,15 +2139,28 @@ function flightHTML(p,site,hov,Hp,T){ const fm=n=>Math.round(n).toLocaleString()
 function drawRoute(){ const sv=$('mRoute'), el=$('map'); if(!sv) return; const z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2;
   const P=(la,lo)=>[lon2x(lo,z)-x0, lat2y(la,z)-y0]; const [bx,by]=P(BASE.lat,BASE.lon), [fx,fy]=P(FROM.lat,FROM.lon); let h='';
   const same=Math.abs(FROM.lat-BASE.lat)<1e-5&&Math.abs(FROM.lon-BASE.lon)<1e-5;
-  if(MAP.pick){ const [px,py]=P(MAP.pick.lat,MAP.pick.lon); h+=`<line x1="${fx}" y1="${fy}" x2="${px}" y2="${py}" stroke="#b0268c" stroke-width="3" stroke-dasharray="9 6" opacity=".85"/>`;
-    if(!same) h+=`<line x1="${px}" y1="${py}" x2="${bx}" y2="${by}" stroke="#15253a" stroke-width="2" stroke-dasharray="3 6" opacity=".55"/>`; }
+  if(MAP.pick){ const [px,py]=P(MAP.pick.lat,MAP.pick.lon); const pts=[[fx,fy],...VIA.map(v=>P(v.lat,v.lon)),[px,py]]; h+=`<polyline points="${pts.map(q=>q.join(',')).join(' ')}" fill="none" stroke="#b0268c" stroke-width="3" stroke-dasharray="9 6" opacity=".85"/>`;
+    if(DST){ const [dx,dy]=P(DST.lat,DST.lon); h+=`<line x1="${px}" y1="${py}" x2="${dx}" y2="${dy}" stroke="#2e7d32" stroke-width="3" stroke-dasharray="9 6" opacity=".85"/>`; }
+    else if(!same) h+=`<line x1="${px}" y1="${py}" x2="${bx}" y2="${by}" stroke="#15253a" stroke-width="2" stroke-dasharray="3 6" opacity=".55"/>`; }
+  VIA.forEach((v,i)=>{ const [vx,vy]=P(v.lat,v.lon); h+=`<g transform="translate(${vx},${vy})"><rect x="-8" y="-8" width="16" height="16" rx="8" fill="#ef6c00" stroke="#fff" stroke-width="2.5"/><text y="4.5" font-size="10" font-weight="800" text-anchor="middle" fill="#fff">${i+1}</text><text x="12" y="4" font-size="12" font-weight="700" fill="#ef6c00" paint-order="stroke" stroke="#fff" stroke-width="3">中継：${v.name}</text></g>`; });
+  if(DST){ const [dx,dy]=P(DST.lat,DST.lon); h+=`<g transform="translate(${dx},${dy})"><rect x="-8" y="-8" width="16" height="16" rx="3" fill="#2e7d32" stroke="#fff" stroke-width="2.5"/><text y="4.5" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">H</text><text x="12" y="4" font-size="12" font-weight="700" fill="#2e7d32" paint-order="stroke" stroke="#fff" stroke-width="3">目的地：${DST.name}</text></g>`; }
   h+=`<g transform="translate(${bx},${by})"><circle r="9" fill="#15253a" stroke="#fff" stroke-width="2.5"/><path d="M0,-5 L1.6,-1 L6,1 L6,2.4 L1.6,1.4 L1.2,4 L2.8,5.2 L2.8,6 L0,5.2 L-2.8,6 L-2.8,5.2 L-1.2,4 L-1.6,1.4 L-6,2.4 L-6,1 L-1.6,-1 Z" fill="#fff"/><text x="12" y="4" font-size="12" font-weight="700" fill="#15253a" paint-order="stroke" stroke="#fff" stroke-width="3">${BASE.name}</text></g>`;
   if(!same) h+=`<g transform="translate(${fx},${fy})"><rect x="-8" y="-8" width="16" height="16" rx="3" fill="#b0268c" stroke="#fff" stroke-width="2.5"/><text x="0" y="4.5" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">H</text><text x="12" y="4" font-size="12" font-weight="700" fill="#b0268c" paint-order="stroke" stroke="#fff" stroke-width="3">出発：${FROM.name}</text></g>`;
   sv.innerHTML=h; }
 
 function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),d:()=>`N${la.toFixed(5)}° E${lo.toFixed(5)}°`,dms:()=>`${dmsTxt(la,true)} ${dmsTxt(lo,false)}`,utm:()=>fmtUTM(la,lo),mgrs:()=>fmtMGRS(la,lo)};
   return `<div class="llall"><div class="ll1">${alt[f]()}<span>${COORDN[f]}</span></div>${['dm','d','dms','utm','mgrs'].filter(k=>k!==f).map(k=>`<div class="ll2">${alt[k]()}<span>${COORDN[k]}</span></div>`).join('')}${mbeHTML(la,lo,altFt)}</div>`; }
-function mapInfo(){ mapInfo0(); destBtn(); }
+function hpBar(){ const p=MAP.pick, box=$('mInfo'); if(!p||p.loading||!box||typeof hpAt!=='function') return; const x=hpAt(p.lat,p.lon); if(!x) return;
+  const isF=Math.abs(FROM.lat-x[1])<1e-5&&Math.abs(FROM.lon-x[2])<1e-5, isD=DST&&Math.abs(DST.lat-x[1])<1e-5&&Math.abs(DST.lon-x[2])<1e-5, vi=VIA.findIndex(v=>Math.abs(v.lat-x[1])<1e-5&&Math.abs(v.lon-x[2])<1e-5);
+  const d=document.createElement('div'); d.className='destbar hpbar';
+  d.innerHTML=`<div class="destlab">🅷 ${esc(x[0])}（${esc(x[3]||'ヘリポート')}）を飛行経路に登録</div><div class="destbtns"><button type="button" class="destb${isF?' on':''}" data-hpr="from" style="--rc:#b0268c">🛫 出発地にする</button><button type="button" class="destb${vi>=0?' on':''}" data-hpr="via" style="--rc:#ef6c00">⤳ 中継地点${vi>=0?'（登録済み・押すと外す）':'に追加'}</button><button type="button" class="destb${isD?' on':''}" data-hpr="dst" style="--rc:#2e7d32">🏁 目的地${isD?'（登録済み・押すと外す）':'にする'}</button></div><div class="hint" style="font-size:11px;margin:2px 0 0">経路：出発地 → 中継地点 → 現場 → 目的地（搬送先・帰投先。未設定なら${esc(BASE.name)}へ帰投）。中継地点は通過点として距離・時間に入れます。</div>`;
+  box.prepend(d);
+  d.querySelectorAll('[data-hpr]').forEach(b=>b.onclick=()=>{ const k=b.dataset.hpr, o={name:x[0],lat:x[1],lon:x[2],elev:isFinite(p.h)?p.h:NaN};
+    if(k==='from'){ setFromLL(x[0],x[1],x[2]); mapMsg(`出発地を「${x[0]}」にしました`); }
+    else if(k==='via'){ if(vi>=0) VIA.splice(vi,1); else VIA.push(withElev(o)); rtSave(); mapMsg(vi>=0?`中継地点「${x[0]}」を外しました`:`中継地点に「${x[0]}」を追加しました（${VIA.length}か所目）。次に現場を選ぶと、ここを経由した時間・燃料になります`); }
+    else { DST=isD?null:withElev(o); rtSave(); mapMsg(isD?`目的地を外しました（${BASE.name}へ帰投）`:`目的地を「${x[0]}」にしました。現場の後はここへ向かう計算になります`); } }); }
+document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-viax],[data-dstx]'); if(!a) return; if(a.dataset.viax!=null) VIA.splice(+a.dataset.viax,1); else DST=null; rtSave(); });
+function mapInfo(){ mapInfo0(); destBtn(); hpBar(); }
 function destBtn0(){ const old=$('mInfo').querySelector('.destbar'); if(old) old.remove(); destBtn(); }
 // rescue roles recorded on the map: casualty (要救助者), crew hoist-down point (降下地点), hoist recovery point (ホイスト揚収地点)
 const ROLES={vic:{n:'要救助者',ic:'✕',col:'#d62828'},drop:{n:'降下地点',ic:'↓',col:'#1e8449'},lift:{n:'ホイスト揚収地点',ic:'↑',col:'#1565c0'}};
@@ -2792,8 +2812,8 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   g.fillStyle='#9fb3c8'; g.font=`11px ${FONT}`; g.fillText(`出典：国土地理院${Object.keys(GOV.on).some(k=>GOV.on[k]&&k==='geo')?'・産総研 地質調査総合センター':''}${opt.place?'　時間・燃料は無風での計算':''}　訓練・計画用の目安`,10,H+hdr+15,W-20);
   return await new Promise(r=>cv.toBlob(r,'image/png')); }
 function flightNums(la,lo,hM){ const site=(isFinite(hM)?hM:0)*FT+(+$('mObs').value||0)*FT, hov=site+(+$('hh').value||0);
-  const g=gc(FROM.lat,FROM.lon,la,lo), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, out=fpLeg(g.nm,hov-fromFt), su=+FP.su||0, tOut=out.t+su, burn=(+FP.ff)*tOut/60;
-  const gb=gc(la,lo,BASE.lat,BASE.lon), back=fpLeg(gb.nm,BASE.elev*FT-hov), burnBack=(+FP.ff)*back.t/60;
+  const g=outPath({lat:la,lon:lo}), fromFt=(isNaN(FROM.elev)?0:FROM.elev)*FT, out=fpLeg(g.nm,hov-fromFt), su=+FP.su||0, tOut=out.t+su, burn=(+FP.ff)*tOut/60;
+  const R_=RET(), gb=gc(la,lo,R_.lat,R_.lon), back=fpLeg(gb.nm,(isFinite(R_.elev)?R_.elev:0)*FT-hov), burnBack=(+FP.ff)*back.t/60;
   const fv=$('fpFuel').value, fuel=fv!==''?+fv:(+CFG.fuel||0), GW=totalGW()-(+CFG.fuel||0)+fuel, rsv=+CFG.rsv||0, ffh=+CFG.ff||0;
   const fArr=fuel-burn, onsite=fArr-burnBack-rsv, hovMin=ffh>0?onsite/ffh*60:0; let eta='';
   const tv=$('fpTo').value; if(tv){ const [a,b]=tv.split(':').map(Number); const m=((Math.round(a*60+b+out.t)%1440)+1440)%1440; eta=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
