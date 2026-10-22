@@ -859,6 +859,24 @@ section[aria-label="風の許容範囲"]{container-type:inline-size}
 .hlterr{border-left-width:5px!important;border-radius:8px!important;padding:6px 8px!important}
 .hlt3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.hlt3>div{background:var(--panel);border:1px solid var(--rule);border-radius:7px;padding:4px 7px}.hlt3 small{display:block;font-size:10.5px;color:var(--muted);line-height:1.25}.hlt3 b{font-size:17px;font-weight:800}
 .hlnote{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* 主項目とサブ項目の見出し */
+.grph.mainh,section.mainsec>h2.mainh2{display:flex!important;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.grph.mainh{margin:22px 0 2px!important;padding:8px 12px!important;border:0!important;border-radius:12px;background:linear-gradient(90deg,color-mix(in srgb,var(--path) 18%,transparent),transparent 70%)!important;letter-spacing:0!important;font-family:inherit!important}
+.mh-ic{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#ff8a2a,#d4560a);box-shadow:0 3px 10px rgba(212,86,10,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.mh-ic svg{width:28px;height:28px}
+.mh-tx{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;font-size:20px!important;font-weight:800;color:var(--ink);line-height:1.2}
+.mh-n{font-size:15px;font-weight:800;color:#e86a12;margin-right:-4px}
+.mh-tx small{font-size:12px!important;font-weight:500;color:var(--muted);letter-spacing:0;margin-left:0!important}
+section.mainsec>h2.mainh2{font-size:inherit!important;margin-bottom:6px}
+section.mainsec>h2.mainh2::before{display:none!important}
+section.subsec{margin-left:18px!important;position:relative}
+section.subsec::before{content:'';position:absolute;left:-12px;top:-10px;bottom:-10px;border-left:2px solid color-mix(in srgb,var(--path) 45%,transparent);pointer-events:none}
+section.subsec>h2{display:flex!important;align-items:center;gap:8px;font-size:15.5px!important}
+.sh-ic{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;color:#e86a12;background:color-mix(in srgb,#ff8a2a 14%,transparent);border:1px solid color-mix(in srgb,#ff8a2a 35%,transparent)}
+.sh-ic svg{width:20px;height:20px}
+section.subsec>h2::before{display:none!important}
+@media (max-width:560px){ section.subsec{margin-left:10px!important} section.subsec::before{left:-7px} .mh-ic{width:38px;height:38px} .mh-ic svg{width:24px;height:24px} .mh-tx{font-size:17px!important} }
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -4856,6 +4874,39 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
   catch(e){ const b=$('wxSite'); if(b) b.innerHTML='<div class="wxt">予報を読み込めません</div>'; }
   finally{ WXS.busy[key]=0; } }
+
+// ---- 主項目（①〜⑦）とサブ項目の見出しを、ピクトグラム付きで階層がわかるように
+(function(){ const P=(d,w)=>`<svg viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="${w||2}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const MAIN={
+    mapsec:['①','現場を選ぶ','地図・検索・飛行計画',P('<path d="M4 8l7-3 10 3 7-3v19l-7 3-10-3-7 3z"/><path d="M11 5v19M21 8v19"/><path d="M16 21s-4-4.2-4-7.2a4 4 0 0 1 8 0c0 3-4 7.2-4 7.2z" fill="currentColor" fill-opacity=".25"/><circle cx="16" cy="13.6" r="1.4" fill="currentColor"/>')],
+    g_cond:['②','条件','気圧・気温・重量・高度・風',P('<path d="M5 9h22M5 16h22M5 23h22"/><circle cx="11" cy="9" r="2.6" fill="currentColor" fill-opacity=".3"/><circle cx="21" cy="16" r="2.6" fill="currentColor" fill-opacity=".3"/><circle cx="14" cy="23" r="2.6" fill="currentColor" fill-opacity=".3"/>')],
+    g_hov:['③','ホバリングできるか','OGE重量・シーリング',P('<path d="M3 8h26M16 8v3"/><path d="M8 17c0-3 3-6 9-6s8 3 8 6-2 4-8 4h-5c-3 0-4-2-4-4z" fill="currentColor" fill-opacity=".2"/><path d="M25 15h4M12 21l-1 3M20 21l1 3M9 24h14"/><path d="M5 28h22" stroke-dasharray="2 3"/>')],
+    g_wind:['④','風・機首方位','許容範囲・VRS',P('<path d="M6 4v24"/><path d="M6 6l20 3v8L6 20z" fill="currentColor" fill-opacity=".2"/><path d="M12 7v12M18 8v10"/>')],
+    g_site:['⑤','地形・離脱','断面・吹き下ろし・片発・ワイヤー',P('<path d="M2 27l8-12 5 6 4-5 11 11z" fill="currentColor" fill-opacity=".2"/><path d="M14 3v9M11 9l3 3 3-3" /><path d="M9 3h10"/>')],
+    g_fuel:['⑥','重量・燃料','全備重量・ホバリング可能時間',P('<path d="M16 4v4M5 11h22"/><path d="M9 11l-4 9h8zM23 11l-4 9h8z" fill="currentColor" fill-opacity=".2"/><path d="M16 8v18M11 27h10"/>')],
+    g_ref:['⑦','参考','高度・気象・チャート',P('<path d="M6 5a2 2 0 0 1 2-2h17v23H8a2 2 0 0 0-2 2z" fill="currentColor" fill-opacity=".15"/><path d="M6 28a2 2 0 0 1 2-2h17M11 9h9M11 14h9M11 19h5"/>')]};
+  const SUB={'OGEホバリング可能重量':P('<path d="M4 24h24"/><rect x="6" y="14" width="5" height="10" rx="1"/><rect x="13.5" y="9" width="5" height="15" rx="1"/><rect x="21" y="17" width="5" height="7" rx="1"/><path d="M4 12h24" stroke-dasharray="2 2"/>',1.8),
+    'ホバーシーリング':P('<path d="M4 6h24" stroke-dasharray="3 2"/><path d="M16 26V10M11 15l5-5 5 5"/><path d="M6 27h20"/>',1.8),
+    '風の許容範囲':P('<circle cx="16" cy="16" r="12"/><path d="M16 4v3M16 25v3M4 16h3M25 16h3"/><path d="M16 16l6-8" stroke-width="2.4"/><path d="M16 16L9 10" stroke-dasharray="2 2"/>',1.8),
+    'ホイスト地点の詳細断面図':P('<path d="M2 26l7-9 5 4 5-8 11 13z" fill="currentColor" fill-opacity=".15"/><path d="M14 3v12" stroke-dasharray="2 2"/><path d="M10 7l4 4 4-4"/>',1.8),
+    '離脱中の高度低下':P('<path d="M3 8c6 0 8 12 13 12s7-10 13-12"/><path d="M16 20v6M3 27h26"/><circle cx="3" cy="8" r="1.6" fill="currentColor"/>',1.8),
+    'ホイストワイヤー':P('<path d="M4 5h16M13 5v3"/><path d="M13 8a2.5 2.5 0 1 1 0 5v12"/><path d="M10 25h6l-3 4z" fill="currentColor"/><path d="M24 6v20M22 8l2-2 2 2M22 24l2 2 2-2"/>',1.8),
+    '全備重量の内訳':P('<path d="M16 3c4 5.5 7 9 7 13a7 7 0 0 1-14 0c0-4 3-7.5 7-13z" fill="currentColor" fill-opacity=".2"/><path d="M5 28h22"/>',1.8),
+    '高度の関係':P('<path d="M3 27h26"/><path d="M8 27V9M16 27V5M24 27V13"/><path d="M6 9h4M14 5h4M22 13h4"/>',1.8),
+    '高度と許容風速':P('<path d="M5 27V5M5 27h22"/><path d="M5 22c6-1 10-5 12-10s5-6 9-7"/><path d="M19 22h8M22 18h5" stroke-dasharray="2 2"/>',1.8),
+    '気圧の対照表':P('<path d="M9 14h12a5 5 0 0 0 0-10 7 7 0 0 0-13 1A4.5 4.5 0 0 0 9 14z" fill="currentColor" fill-opacity=".2"/><path d="M7 26a9 9 0 0 1 18 0"/><path d="M16 26l4-6"/>',1.8),
+    'チャートで確認':P('<rect x="4" y="5" width="24" height="22" rx="2"/><path d="M4 11h24M8 23c4-1 6-8 10-8s5 4 8 3"/>',1.8)};
+  const head=(k)=>{ const m=MAIN[k]; return `<span class="mh-ic">${m[3]}</span><span class="mh-tx"><span class="mh-n">${m[0]}</span>${m[1]}<small>${m[2]}</small></span>`; };
+  ['g_hov','g_wind','g_site','g_fuel','g_ref'].forEach(id=>{ const g=document.getElementById(id); if(g){ g.classList.add('mainh'); g.innerHTML=head(id); } });
+  ['mapsec','g_cond'].forEach(id=>{ const sec=document.getElementById(id), h=sec&&sec.querySelector(':scope>h2'); if(h){ sec.classList.add('mainsec'); h.classList.add('mainh2'); h.innerHTML=head(id); } });
+  document.querySelectorAll('section.box').forEach(sec=>{ if(sec.classList.contains('mainsec')) return; const k=sec.getAttribute('aria-label'), h=sec.querySelector(':scope>h2'); if(!h) return; sec.classList.add('subsec'); if(SUB[k]&&!h.querySelector('.sh-ic')) h.insertAdjacentHTML('afterbegin',`<span class="sh-ic">${SUB[k]}</span>`); });
+  const wb=document.querySelector('section[aria-label="全備重量の内訳"]>h2'); if(wb&&/重量・燃料/.test(wb.textContent)) wb.lastChild.textContent='全備重量と燃料';
+  // 主項目の見出しを押すと、その下のサブ項目をまとめて開く・閉じる
+  document.querySelectorAll('.grph.mainh').forEach(g=>{ g.setAttribute('role','button'); g.tabIndex=0; g.title='押すと、この項目の欄をまとめて開く・閉じる';
+    const subs=()=>{ const r=[]; let n=g.nextElementSibling; while(n&&!n.classList.contains('grph')){ if(n.matches('section.box')) r.push(n); n=n.nextElementSibling; } return r; };
+    const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const ss=subs(); const anyOpen=ss.some(x=>!x.classList.contains('sfold')); ss.forEach(x=>{ const h=x.querySelector(':scope>h2.sfh'); if(h&&x.classList.contains('sfold')!==anyOpen) h.click(); }); };
+    g.addEventListener('click',tg); g.addEventListener('keydown',tg); });
+})();
 // ---- メニューをピクトグラム＋短い文字に（全体をすっきり）
 const ICO=(()=>{ const P=(d,ex='')=>`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}${ex}</svg>`;
   return {
