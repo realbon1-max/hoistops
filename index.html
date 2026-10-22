@@ -2063,7 +2063,9 @@ const HELIP=/*HELIP*/[["佐久合同庁舎駐車場", 36.229878, 138.460773, "�
 const BTRK=/*BTRK*/{"lines":[],"poi":[]}/*BTRK_END*/;
 const BT={on:true}; try{ const v=localStorage.getItem('aw139bt'); if(v!==null) BT.on=v==='1'; }catch(e){}
 const BT_IC={S:['△','#5d4037'],P:['P','#1565c0'],J:['◆','#ad1457'],A:['水','#0277bd'],W:['滝','#0277bd'],L:['沼','#0277bd'],V:['望','#6a1b9a']};
-const HP={on:true}; try{ const v=localStorage.getItem('aw139hp'); if(v!==null) HP.on=v==='1'; }catch(e){}
+const HP={on:true,fav:['相澤病院','観音橋']};
+try{ const f=JSON.parse(localStorage.getItem('aw139hpfav')||'null'); if(Array.isArray(f)) HP.fav=f; }catch(e){}
+const hpFav=x=>HP.fav.includes(x[0]); try{ const v=localStorage.getItem('aw139hp'); if(v!==null) HP.on=v==='1'; }catch(e){}
 function hpCol(k){ return /飛行場（|^飛行場$/.test(k)?'#6a1b9a':/拠点/.test(k)?'#c62828':/消防/.test(k)?'#e65100':/災害/.test(k)?'#1565c0':'#2e7d32'; }
 function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2; let h='';
   if(BT.on&&z>=9&&BTRK.lines.length){ let d=''; BTRK.lines.forEach(L=>{ d+='M'+L.map(q=>(lon2x(q[1],z)-x0).toFixed(1)+','+(lat2y(q[0],z)-y0).toFixed(1)).join('L'); });
@@ -2073,6 +2075,8 @@ function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=
   if(!HP.on||MAP.z<9){ sv.innerHTML=h; return; }
   const r=z>=12?8:6.5, lab=z>=12;
   HELIP.forEach(x=>{ const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const c=hpCol(x[3]);
+    if(hpFav(x)){ const R=r+3; h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="${R+2}" fill="none" stroke="#ffd600" stroke-width="2.5"/><circle r="${R}" fill="#0d47a1" stroke="#fff" stroke-width="1.8"/><text y="${(R*0.42).toFixed(1)}" font-size="${(R*1.25).toFixed(1)}" font-weight="900" fill="#ffd600" text-anchor="middle">H</text></g>`;
+      if(z>=10) h+=`<text x="${(px+R+5).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12.5" font-weight="900" fill="#0d47a1" paint-order="stroke" stroke="#ffd600" stroke-width="3.5">★${x[0]}</text>`; return; }
     h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/><text y="${(r*0.42).toFixed(1)}" font-size="${(r*1.25).toFixed(1)}" font-weight="900" fill="${c}" text-anchor="middle">H</text></g>`;
     if(lab) h+=`<text x="${(px+r+3).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11" font-weight="700" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${x[0]}</text>`; });
   sv.innerHTML=h; }
@@ -2167,9 +2171,10 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
 function hpBar(){ const p=MAP.pick, box=$('mInfo'); if(!p||p.loading||!box||typeof hpAt!=='function') return; const x=hpAt(p.lat,p.lon); if(!x) return;
   const isF=Math.abs(FROM.lat-x[1])<1e-5&&Math.abs(FROM.lon-x[2])<1e-5, isD=DST&&Math.abs(DST.lat-x[1])<1e-5&&Math.abs(DST.lon-x[2])<1e-5, vi=VIA.findIndex(v=>Math.abs(v.lat-x[1])<1e-5&&Math.abs(v.lon-x[2])<1e-5);
   const d=document.createElement('div'); d.className='destbar hpbar';
-  d.innerHTML=`<div class="destlab">🅷 ${esc(x[0])}（${esc(x[3]||'ヘリポート')}）を飛行経路に登録</div><div class="destbtns"><button type="button" class="destb${isF?' on':''}" data-hpr="from" style="--rc:#b0268c">🛫 出発地にする</button><button type="button" class="destb${vi>=0?' on':''}" data-hpr="via" style="--rc:#ef6c00">⤳ 中継地点${vi>=0?'（登録済み・押すと外す）':'に追加'}</button><button type="button" class="destb${isD?' on':''}" data-hpr="dst" style="--rc:#2e7d32">🏁 目的地${isD?'（登録済み・押すと外す）':'にする'}</button></div><div class="hint" style="font-size:11px;margin:2px 0 0">経路：出発地 → 中継地点 → 現場 → 目的地（搬送先・帰投先。未設定なら${esc(BASE.name)}へ帰投）。中継地点は通過点として距離・時間に入れます。</div>`;
+  d.innerHTML=`<div class="destlab">🅷 ${esc(x[0])}（${esc(x[3]||'ヘリポート')}）を飛行経路に登録</div><div class="destbtns"><button type="button" class="destb${isF?' on':''}" data-hpr="from" style="--rc:#b0268c">🛫 出発地にする</button><button type="button" class="destb${vi>=0?' on':''}" data-hpr="via" style="--rc:#ef6c00">⤳ 中継地点${vi>=0?'（登録済み・押すと外す）':'に追加'}</button><button type="button" class="destb${hpFav(x)?' on':''}" data-hpr="fav" style="--rc:#0d47a1">★ よく使う${hpFav(x)?'（押すと外す）':''}</button><button type="button" class="destb${isD?' on':''}" data-hpr="dst" style="--rc:#2e7d32">🏁 目的地${isD?'（登録済み・押すと外す）':'にする'}</button></div><div class="hint" style="font-size:11px;margin:2px 0 0">経路：出発地 → 中継地点 → 現場 → 目的地（搬送先・帰投先。未設定なら${esc(BASE.name)}へ帰投）。中継地点は通過点として距離・時間に入れます。</div>`;
   box.prepend(d);
   d.querySelectorAll('[data-hpr]').forEach(b=>b.onclick=()=>{ const k=b.dataset.hpr, o={name:x[0],lat:x[1],lon:x[2],elev:isFinite(p.h)?p.h:NaN};
+    if(k==='fav'){ const i=HP.fav.indexOf(x[0]); if(i>=0) HP.fav.splice(i,1); else HP.fav.push(x[0]); try{ localStorage.setItem('aw139hpfav',JSON.stringify(HP.fav)); }catch(e){} hpDraw(); mapInfo(); return; }
     if(k==='from'){ setFromLL(x[0],x[1],x[2]); mapMsg(`出発地を「${x[0]}」にしました`); }
     else if(k==='via'){ if(vi>=0) VIA.splice(vi,1); else VIA.push(withElev(o)); rtSave(); mapMsg(vi>=0?`中継地点「${x[0]}」を外しました`:`中継地点に「${x[0]}」を追加しました（${VIA.length}か所目）。次に現場を選ぶと、ここを経由した時間・燃料になります`); }
     else { DST=isD?null:withElev(o); rtSave(); mapMsg(isD?`目的地を外しました（${BASE.name}へ帰投）`:`目的地を「${x[0]}」にしました。現場の後はここへ向かう計算になります`); } }); }
