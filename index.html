@@ -601,7 +601,7 @@ details.dwfold[open]>summary::before,details.hzfold[open]>summary::before{conten
 .dwsum{font-size:12.5px;color:var(--muted)}details.dwfold[open] .dwsum{display:none}
 details.hzfold>summary .lv{margin:0}
 details .more{font-size:11.5px;color:var(--muted);border:1px solid var(--rule);border-radius:10px;padding:0 7px;margin-left:6px;font-weight:400}
-details[open]>summary .more{display:none}
+details[open]>summary .more{display:inline-block}details[open]>summary .more::before{content:'閉じる ▴';}details[open]>summary .more{font-size:0}details[open]>summary .more::before{font-size:11.5px}
 details.notice>summary{cursor:pointer;list-style:none}details.notice>summary::-webkit-details-marker{display:none}
 details.notice[open]>summary{margin-bottom:4px}details.notice .about{color:inherit;opacity:.85}
 /* 地図操作ボタンの固定（スクロールしても上に残す） */
@@ -979,8 +979,8 @@ a{color:#7cc4ff}
     </section>
   </div>
 </main>
-<footer>
-気圧高度＝標高＋換算値（換算値は標準大気の式：145,442×(1−(QNH/29.92)^0.1903)、FAAの密度高度チャートの換算表と一致）。出典：レオナルド式AW139型 飛行規程 第4章（第4-6・4-7・4-12・4-13・4-14・4-43・4-44図）、第9章 9.6.1（第9-117・9-118図、NR102%、航空局承認対象外）、追加飛行規程No.11（1.7.2、4.1、第4-1・4-2図）。密度高度は標準大気の式（気圧と気温から空気密度を求めて換算）。このアプリはローター回転数102%の図（第9-117・9-118・4-44図）を主に表示します。追加飛行規程No.11はホイスト運用の重量をNR100%の第4-12〜4-14図で決めるよう指定しているため、その値も参考として並べています。IGE・上昇率のチャートは次の版で追加予定です。
+<footer><details class="nfold" id="footD"><summary>計算の根拠・出典</summary>
+気圧高度＝標高＋換算値（換算値は標準大気の式：145,442×(1−(QNH/29.92)^0.1903)、FAAの密度高度チャートの換算表と一致）。出典：レオナルド式AW139型 飛行規程 第4章（第4-6・4-7・4-12・4-13・4-14・4-43・4-44図）、第9章 9.6.1（第9-117・9-118図、NR102%、航空局承認対象外）、追加飛行規程No.11（1.7.2、4.1、第4-1・4-2図）。密度高度は標準大気の式（気圧と気温から空気密度を求めて換算）。このアプリはローター回転数102%の図（第9-117・9-118・4-44図）を主に表示します。追加飛行規程No.11はホイスト運用の重量をNR100%の第4-12〜4-14図で決めるよう指定しているため、その値も参考として並べています。IGE・上昇率のチャートは次の版で追加予定です。</details>
 </footer>
 <script>
 // top-view AW139 line drawing (user supplied); 506x640 px, main rotor hub at (247.6,260.8)
@@ -4419,7 +4419,7 @@ update();
     ap(FOLDS.get('h:'+k,!!DEFC[k]));
     const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const c=!h.classList.contains('fc'); ap(c); FOLDS.set('h:'+k,c); };
     h.addEventListener('click',tg); h.addEventListener('keydown',tg); });
-  const nd=document.getElementById('noticeD'); if(nd){ nd.open=FOLDS.get('notice',false); nd.addEventListener('toggle',()=>FOLDS.set('notice',nd.open)); }
+  const nd=document.getElementById('noticeD'); if(nd) nd.open=false;
 })();
 </script>
 <script>
