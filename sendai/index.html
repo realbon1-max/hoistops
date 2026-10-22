@@ -749,6 +749,42 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .tl.og .m2{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
 #mInfo .tl.og .m2 .now{font-size:12px;font-weight:700;opacity:.85}#mInfo .tl.og .m2 .ar{font-size:11px;color:var(--muted)}
 #mInfo .tl.og .m2 .arr{font-size:12px;font-weight:700}#mInfo .tl.og .m2 .arr b{font-size:17px;font-weight:800}
+
+/* ホイストワイヤー欄：コンパクトなタイル */
+#wireSec{display:grid;grid-template-columns:1fr;gap:10px}
+#wireSec>h2{grid-column:1/-1}
+@media (min-width:900px){ #wireSec:not(.sfold){grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:start} #wireSec>details,#wireSec>p{grid-column:1/-1} }
+.hlim{margin:0!important;padding:10px!important;border-radius:10px!important}
+.hlhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.hlim h3{display:flex;align-items:center;gap:5px;margin:0!important;font-size:14px!important}
+.hico{width:17px;height:17px;flex:none;vertical-align:-3px}
+.hlcab{display:flex!important;align-items:center;gap:4px;margin:0!important;color:var(--muted)}.hlcab select{font-size:12px;padding:2px 4px;max-width:230px}
+.hlrows{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;gap:5px!important}
+.hlit{display:flex;align-items:center;gap:5px;padding:4px 6px;border:1.5px dashed var(--rule);border-radius:8px;background:var(--panel);margin:0;cursor:pointer;color:var(--muted)}
+.hlit.on{border-style:solid;border-color:var(--c-load);color:var(--ink)}.hlit.on .hli{color:var(--c-load)}
+.hlit input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px}
+.hlit .hli .hico{width:20px;height:20px}
+.hlit input[type=text]{flex:1;min-width:0;font:inherit;font-size:12.5px;border:0;background:transparent;color:inherit;padding:2px}
+.hlkg{display:flex;align-items:baseline;gap:2px}.hlkg input{width:52px!important;font:inherit;font-size:14px;font-weight:700;text-align:right;padding:2px 4px;border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink)}.hlkg i{font-style:normal;font-size:11px;color:var(--muted)}
+.hlsum{margin-top:6px!important}.hlt2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.hlt{border:1px solid var(--rule);border-radius:8px;padding:6px 9px;background:var(--panel)}
+.hlt .l,.pt .l{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hlt .v,.pt .v{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}.hlt .v small,.pt .v small{font-size:11.5px;font-weight:600;color:var(--muted)}
+.hlt.bad .v{color:var(--warn)}.hlt.cau .v{color:var(--caution)}
+.hlt .hlbar{height:6px!important;margin:4px 0 0!important}
+.hlbtn{margin-top:6px;font-size:12px!important}.hlbtn small{color:var(--muted);font-weight:400}
+.hlmssh{display:flex;align-items:center;gap:6px;margin-top:6px!important;font-size:12.5px}.hlmssh small{color:var(--muted);font-size:11px}.hlmssh input{width:70px!important}
+.hldet{margin-top:6px}
+.pend{margin:0!important;padding:10px!important;border-radius:10px!important}
+.pendtop{gap:10px!important}.pendsv{width:150px!important;flex:0 0 150px!important}
+.pt3{display:grid;grid-template-columns:1fr;gap:6px}
+.pt{border:1px solid var(--rule);border-left:4px solid var(--rule);border-radius:8px;padding:6px 9px;background:var(--panel)}
+.pt.ok{border-left-color:var(--ok)}.pt.ok .v{color:var(--ok)}.pt.bad{border-left-color:var(--warn)}.pt.bad .v{color:var(--warn)}.pt.per{border-left-color:#c25a00}.pt.per .v{color:#e07a1f}
+.pt .s{font-size:11px;color:var(--muted)}
+.ptbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:6px}.ptbar .pendsnd{margin:0}.ptbar .chk{font-size:12px;margin:0}
+.pend{container-type:inline-size}
+@container (min-width:720px){ .pt3{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.hlit input[type=text]{border:0!important;background:transparent!important;box-shadow:none!important}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -4074,11 +4110,11 @@ function pendHTML(wft){ const L=Math.max(1,wft/FT+RC.pc), d=RC.po, P=pendCalc(L,
    <text x="${Q.W-16}" y="${Q.H-18}" font-size="32" fill="#fff" text-anchor="end">${f1(P.T)} 秒</text></g></svg>`;
   const need=Math.round(wft), ok=need<=RC.cable; XS.need=need; setTimeout(()=>{ try{ hlimRender(); }catch(e){} },0);
   return `<div class="pend"><div class="pendtop">${svg}<div class="pendsum">
-   <div class="wrow"><span>ワイヤーに要る長さ</span><b class="${ok?'ok':'warn'}">${need} ft</b><small>／${RC.cable} ft ${ok?'✓':'✗ 足りない'}</small></div>
-   <div class="wrow"><span>揺れの周期（1往復）</span><b class="pendT">${f1(P.T)} 秒</b><small>真下まで ${f1(P.q)} 秒</small></div>
-   <div class="wrow"><span>${f1(d)} m ずれて放すと</span><b>${f1(deg)}°</b><small>真下で ${f1(P.v)} m/s</small></div>
-   <button type="button" class="pendsnd" aria-pressed="${PEND.snd}">${PEND.snd?'🔊 真下で音：オン':'🔈 真下で音を鳴らす'}</button></div></div>
-   <label class="chk"><input type="checkbox" id="rcGnd" ${RC.gnd?'checked':''}> 要救助者は樹木・障害物の下（地表）にいる</label>
+   <div class="pt3"><div class="pt ${ok?'ok':'bad'}"><div class="l">${hIco('len')}ワイヤーに要る長さ</div><div class="v">${need}<small> ft</small></div><div class="s">${Math.round(need/FT)} m ／ ケーブル ${RC.cable} ft ${ok?'✓':'✗ 足りない'}</div></div>
+   <div class="pt per"><div class="l">${hIco('per')}揺れの周期（1往復）</div><div class="v">${f1(P.T)}<small> 秒</small></div><div class="s">真下まで ${f1(P.q)} 秒</div></div>
+   <div class="pt"><div class="l">${hIco('ang')}${f1(d)} m ずれて放すと</div><div class="v">${f1(deg)}<small>°</small></div><div class="s">真下で ${f1(P.v)} m/s</div></div></div>
+   <div class="ptbar"><button type="button" class="pendsnd" aria-pressed="${PEND.snd}">${PEND.snd?'🔊 真下で音：オン':'🔈 真下で音を鳴らす'}</button>
+   <label class="chk"><input type="checkbox" id="rcGnd" ${RC.gnd?'checked':''}> 要救助者は樹木・障害物の下（地表）</label></div></div></div>
    <details class="wdet" ${WDOPEN?'open':''}><summary>計算と揺れの詳細</summary>
    <div class="wirecalc">ワイヤーに要る長さ ＝ ホバリング高度 <b>${XS.hft} ft</b>${RC.gnd?` ＋ 樹木・障害物の高さ <b>${need-XS.hft} ft</b>`:'（要救助者は障害物の上）'} ＝ <b>${need} ft</b><br>
    振り子の長さ ＝ ワイヤー ${f1(wft/FT)} m ＋ フックから吊り荷の重心 ${RC.pc} m ＝ <b>${f1(L)} m</b>・片道 ${f1(P.T/2)} 秒・反対側へ ${f1(d)} m 振れる</div>
@@ -4203,13 +4239,27 @@ const HL0={rows:[[1,'救助隊員',''],[1,'要救助者',''],[0,'担架・バス
 let HLD; try{ HLD=JSON.parse(localStorage.getItem('sd139hl'))||null; }catch(e){ HLD=null; } if(!HLD||!Array.isArray(HLD.rows)) HLD=JSON.parse(JSON.stringify(HL0));
 const HLMAX=272, hlSave=()=>{ try{ localStorage.setItem('sd139hl',JSON.stringify(HLD)); }catch(e){} };
 const hlSum=()=>HLD.rows.reduce((a,r)=>a+(r[0]?(+r[2]||0):0),0);
+
+function hIco(k){ const P=d=>`<svg class="hico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  return P(({crew:'<circle cx="12" cy="5" r="2.4"/><path d="M12 1v1.6M8 21l2-7h4l2 7M8.5 10.5l3.5 1.5 3.5-1.5M12 7.5v6.5"/><path d="M9 12h6" stroke-width="2.6"/>',
+    vic:'<circle cx="12" cy="5" r="2.4"/><path d="M6.5 9l5.5 2 5.5-2M12 11v4M12 15l-3 6M12 15l3 6"/>',
+    lit:'<path d="M3 14h18l-2 4H5z"/><path d="M6 14l6-9 6 9M12 2v3"/>',
+    strop:'<path d="M12 2v4"/><path d="M8 6h8l-1 3a5 5 0 1 1-6 0z"/>',
+    box:'<path d="M3 8l9-4 9 4v9l-9 4-9-4zM3 8l9 4 9-4M12 12v9"/>',
+    cable:'<path d="M4 4h10M9 4v2M9 6a2 2 0 1 1 0 4M9 10v10M6.5 20h5l-2.5 3z"/><path d="M18 3v18M16 5l2-2 2 2M16 19l2 2 2-2"/>',
+    load:'<path d="M12 4v3M4 9h16M7 9l-3 7h6zM17 9l-3 7h6zM12 7v13M8 20h8"/>',
+    gw:'<path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/>',
+    mshh:'<path d="M3 21h18M12 3v14M8 7l4-4 4 4"/><path d="M5 17h14" stroke-dasharray="2 2"/>',
+    len:'<path d="M12 2v20M8 6l4-4 4 4M8 18l4 4 4-4"/>',
+    per:'<path d="M12 3v3M12 6l-6 11M6 17a2 2 0 1 0 0 .1"/><path d="M4 21a10 10 0 0 1 16 0" stroke-dasharray="2 2.5"/>',
+    ang:'<path d="M12 3l-7 17M12 3v17"/><path d="M8.5 12a4 4 0 0 1 3.5-.5"/>'})[k]||''); }
 function hlimBuild(){ const b=$('hlim'); if(!b) return;
   const cab=RC.cable<=245?'245':'295';
-  b.innerHTML=`<h3>吊り荷重量とホイスト限界 <small>追加飛行規程No.11 §1.10</small></h3>
-  <div class="hlcab"><label for="hlCab">ケーブル</label><select id="hlCab"><option value="245"${cab==='245'?' selected':''}>P/N 3G2591F00111・00112：75 m（245 ft）</option><option value="295"${cab==='295'?' selected':''}>P/N 3G2591F00113：90 m（295 ft）</option></select></div>
-  <div class="hlrows">${HLD.rows.map((r,i)=>`<input type="checkbox" data-hl="${i}" data-k="0" ${r[0]?'checked':''} aria-label="吊る"><input type="text" data-hl="${i}" data-k="1" value="${String(r[1]).replace(/"/g,'&quot;')}"><input type="number" inputmode="decimal" min="0" step="1" data-hl="${i}" data-k="2" value="${r[2]}" placeholder="kg">`).join('')}</div>
+  const HK=['crew','vic','lit','strop','box'];
+  b.innerHTML=`<div class="hlhead"><h3>${hIco('load')}吊り荷 <small>追加飛行規程No.11 §1.10</small></h3><div class="hlcab">${hIco('cable')}<select id="hlCab" aria-label="ケーブル"><option value="245"${cab==='245'?' selected':''}>P/N 3G2591F00111・00112：75 m（245 ft）</option><option value="295"${cab==='295'?' selected':''}>P/N 3G2591F00113：90 m（295 ft）</option></select></div></div>
+  <div class="hlrows">${HLD.rows.map((r,i)=>`<label class="hlit${r[0]?' on':''}"><input type="checkbox" data-hl="${i}" data-k="0" ${r[0]?'checked':''} aria-label="吊る"><span class="hli">${hIco(HK[i]||'box')}</span><input type="text" data-hl="${i}" data-k="1" value="${String(r[1]).replace(/"/g,'&quot;')}" aria-label="品目"><span class="hlkg"><input type="number" inputmode="decimal" min="0" step="1" data-hl="${i}" data-k="2" value="${r[2]}" placeholder="—" aria-label="重量"><i>kg</i></span></label>`).join('')}</div>
   <div id="hlSum" class="hlsum"></div>
-  <div class="hlmssh"><label for="hlMs">部隊基準の最低ホバリング高度（MSHH）</label><input id="hlMs" type="number" inputmode="decimal" min="0" step="5" value="${HLD.mshh}" placeholder="未設定"><span>ft</span></div>
+  <div class="hlmssh">${hIco('mshh')}<label for="hlMs">MSHH <small>部隊基準の最低ホバリング高度</small></label><input id="hlMs" type="number" inputmode="decimal" min="0" step="5" value="${HLD.mshh}" placeholder="未設定"><span>ft</span></div>
   <details class="nfold hldet"><summary>その他のホイスト運用限界（RFM）</summary><ul class="hllim">
    <li>荷物の上げ下げ：安定したホバー、または前進飛行 <b>80 KIAS</b> まで（§1.7.1）</li>
    <li>機体の姿勢：ピッチ <b>−9°〜＋21°</b>、ロール <b>±15°</b></li>
@@ -4219,7 +4269,7 @@ function hlimBuild(){ const b=$('hlim'); if(!b) return;
    <li>オートパイロット：手動操縦、またはFD（4軸改良型）装備でHOV・RHT（又はALT）をエンゲージ（§1.11.1）</li>
    <li>HOはハーネス装着・ケーブルをガイド・手動カッター（BQRS）を常に使用可能に（§1.4.1）</li>
    <li>HEC運用ではPCDSの使用が必要。リフト回数はログ・ブックに記録（§1.1・§1.2）</li></ul></details>`;
-  b.querySelectorAll('[data-hl]').forEach(inp=>{ const ev=inp.type==='checkbox'?'change':'input'; inp.addEventListener(ev,()=>{ const r=HLD.rows[+inp.dataset.hl], k=+inp.dataset.k; r[k]=k===0?(inp.checked?1:0):inp.value; hlSave(); hlimRender(); }); });
+  b.querySelectorAll('[data-hl]').forEach(inp=>{ const ev=inp.type==='checkbox'?'change':'input'; inp.addEventListener(ev,()=>{ const r=HLD.rows[+inp.dataset.hl], k=+inp.dataset.k; r[k]=k===0?(inp.checked?1:0):inp.value; if(k===0){ const lb=inp.closest('.hlit'); if(lb) lb.classList.toggle('on',inp.checked); } hlSave(); hlimRender(); }); });
   $('hlCab').onchange=e=>{ RC.cable=+e.target.value; try{localStorage.setItem('sd139rc',JSON.stringify(RC));}catch(_){} if(XS&&XS.H!=null){ try{ drawXsec(XS.H,XS.T,XS.W); }catch(_){} } hlimRender(); };
   $('hlMs').addEventListener('input',e=>{ HLD.mshh=e.target.value; hlSave(); hlimRender(); });
   hlimRender(); }
@@ -4229,11 +4279,11 @@ function hlimRender(){ const el=$('hlSum'); if(!el) return; const L=hlSum(), pct
   if(gwl>lim) al.push(['','⚠ 吊り荷を含めた全備重量 '+Math.round(gwl).toLocaleString()+' kg が '+lim.toLocaleString()+' kg を超過']);
   if(ms&&hh&&hh<ms) al.push(['','⚠ ホバリング高度 '+hh+' ft が部隊基準 MSHH '+ms+' ft 未満']);
   const nd=XS&&XS.need; if(nd&&nd>RC.cable) al.push(['','⚠ ワイヤーに要る長さ '+nd+' ft がケーブル '+RC.cable+' ft を超過']);
-  el.innerHTML=`<div class="wrow"><span>1回で吊る重量（チェックした行の合計）</span><b class="hlbig ${cls==='bad'?'warn':''}">${Math.round(L)} kg</b><small>／${HLMAX} kg（600 lb）</small></div>
-   <div class="hlbar" role="img" aria-label="最大ホイスト荷重に対する割合 ${Math.round(pct)}%"><i class="${cls}" style="width:${Math.min(100,pct)}%"></i></div>
+  const gpct=gwl/lim*100, gcls=gwl>lim?'bad':gpct>=98?'cau':'ok';
+  el.innerHTML=`<div class="hlt2"><div class="hlt ${cls}"><div class="l">${hIco('load')}1回の吊り重量</div><div class="v">${Math.round(L)}<small> / ${HLMAX} kg</small></div><div class="hlbar" role="img" aria-label="最大ホイスト荷重に対する割合 ${Math.round(pct)}%"><i class="${cls}" style="width:${Math.min(100,pct)}%"></i></div></div>
+   <div class="hlt ${gcls}"><div class="l">${hIco('gw')}吊り荷込みの全備</div><div class="v">${Math.round(gwl).toLocaleString()}<small> / ${lim.toLocaleString()} kg</small></div><div class="hlbar"><i class="${gcls}" style="width:${Math.min(100,gpct)}%"></i></div></div></div>
    ${al.map(a=>`<div class="hlalert ${a[0]}" role="alert">${a[1]}</div>`).join('')}
-   <div class="wrow"><span>吊り荷を含めた全備重量</span><b>${Math.round(gwl).toLocaleString()} kg</b><small>／${lim.toLocaleString()} kg</small></div>
-   ${Math.round(L)!==Math.round(+CFG.load||0)?`<button type="button" class="small hlbtn" id="hlToLoad">この合計 ${Math.round(L)} kg を全備重量の「吊荷」に入れる（今 ${Math.round(+CFG.load||0)} kg）</button>`:''}`;
+   ${Math.round(L)!==Math.round(+CFG.load||0)?`<button type="button" class="small hlbtn" id="hlToLoad">↓ 合計 ${Math.round(L)} kg を「吊荷」に入れる <small>今 ${Math.round(+CFG.load||0)} kg</small></button>`:''}`;
   const tb=$('hlToLoad'); if(tb) tb.onclick=()=>{ CFG.load=Math.round(L); const w=$('w_load'); if(w) w.value=CFG.load; save(); update(); }; }
 setTimeout(()=>{ try{ hlimBuild(); }catch(e){} },0);
 function wireHint(t){ try{ XS.need=0; }catch(e){} const wb=$('wireBody'); if(wb) wb.innerHTML=`<div class="hint">${t}</div>`; }
