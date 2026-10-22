@@ -2479,8 +2479,10 @@ function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
 })();
 
 // ==== display settings: coordinate format, MGRS grid, distance / altitude units, centre scale ====
-const DISP={coord:'dm',mgrs:false,dist:'m',alt:'m',ret:'none'};
+const DISP={coord:'dm',mgrs:false,dist:'m',alt:'ft',ret:'none'};
 try{ Object.assign(DISP,JSON.parse(localStorage.getItem('sd139disp')||'{}')); }catch(e){}
+// 高度の表示は ft を基本に（以前の保存が m のままでも一度だけ ft に切り替え）
+try{ if(!localStorage.getItem('sd139altft')){ DISP.alt='ft'; localStorage.setItem('sd139altft','1'); localStorage.setItem('sd139disp',JSON.stringify(DISP)); } }catch(e){}
 LLF.f=DISP.coord;
 function dispSave(){ try{ localStorage.setItem('sd139disp',JSON.stringify(DISP)); }catch(e){} }
 // --- UTM / MGRS (WGS84)
