@@ -4908,11 +4908,17 @@ function iconizeAll(){
 iconizeAll(); setTimeout(iconizeAll,500);
 // ブラウザの自動スクロール補正を止める（スライダー操作中の揺れ対策）
 // ボタン・選択・チェックを押したとき、押した場所が画面上で動かないようにする（上の欄の高さが変わっても位置を保つ）
-(function(){ let el=null, top=0, until=0, raf=0;
-  const loop=()=>{ if(el&&el.isConnected){ const d=el.getBoundingClientRect().top-top; if(Math.abs(d)>0.5) window.scrollBy(0,d); } if(performance.now()<until) raf=requestAnimationFrame(loop); else { raf=0; el=null; } };
-  const hold=t=>{ const r=t.getBoundingClientRect(); if(r.bottom<0||r.top>innerHeight) return; el=t; top=r.top; until=performance.now()+(t.matches('h2.sfh,h3.fh,summary')?3000:1500); if(!raf) raf=requestAnimationFrame(loop); };
-  const pick=e=>{ const t=e.target&&e.target.closest&&e.target.closest('button,select,input[type=checkbox],input[type=radio],label.chk,.card,.eqc,.hlit,h2.sfh,h3.fh,summary'); if(!t) return; if(t.closest('nav.jump,#map,.mstick,.mmsg,dialog,.wfs,.snapbox')) return; if(t.matches('a')) return; hold(t); };
-  document.addEventListener('pointerdown',pick,true); document.addEventListener('click',pick,true); document.addEventListener('change',pick,true);
+// 指やホイールで画面を動かし始めたら、すぐに止める（スクロールの邪魔をしない）
+(function(){ let el=null, top=0, until=0, raf=0, sx=0, sy=0;
+  const stop=()=>{ el=null; until=0; };
+  const loop=()=>{ if(el&&el.isConnected){ const d=el.getBoundingClientRect().top-top; if(Math.abs(d)>0.5) window.scrollBy(0,d); } if(el&&performance.now()<until) raf=requestAnimationFrame(loop); else { raf=0; el=null; } };
+  const hold=t=>{ const r=t.getBoundingClientRect(); if(r.bottom<0||r.top>innerHeight) return; el=t; top=r.top; until=performance.now()+(t.matches('h2.sfh,h3.fh,summary')?1200:800); if(!raf) raf=requestAnimationFrame(loop); };
+  const pick=e=>{ const t=e.target&&e.target.closest&&e.target.closest('button,select,input[type=checkbox],input[type=radio],label.chk,.card,.eqc,.hlit,h2.sfh,h3.fh,summary'); if(!t) return; if(t.closest('nav.jump,#map,.mstick,.mmsg,dialog,.wfs,.snapbox')) return; hold(t); };
+  // 押した直後（指を離したとき）だけ固定する。押しただけ・スクロールの開始では固定しない
+  document.addEventListener('click',pick,true); document.addEventListener('change',e=>{ if(e.target&&e.target.matches&&e.target.matches('select')) pick(e); },true);
+  document.addEventListener('touchstart',e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; if(el) stop(); },{capture:true,passive:true});
+  document.addEventListener('touchmove',e=>{ const t=e.touches[0]; if(Math.hypot(t.clientX-sx,t.clientY-sy)>6) stop(); },{capture:true,passive:true});
+  document.addEventListener('wheel',stop,{capture:true,passive:true}); document.addEventListener('keydown',e=>{ if(/Page|Arrow|Home|End| /.test(e.key)) stop(); },true);
 })();
 document.documentElement.style.overflowAnchor='none'; document.body.style.overflowAnchor='none';
 </script>
