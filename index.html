@@ -897,6 +897,7 @@ section.subsec>h2::before{display:none!important}
 .lpdot{position:absolute;z-index:59;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:3px solid #ff7a1a;background:rgba(255,122,26,.25);pointer-events:none;animation:lpp 1s ease-out infinite}@keyframes lpp{50%{transform:scale(1.4)}}
 #map{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .lpring{position:absolute;z-index:59;width:96px;height:96px;margin:-48px 0 0 -48px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));pointer-events:none}.lpring svg{width:100%;height:100%}@keyframes lpfill{to{stroke-dashoffset:0}}
+#mInfo .wxmt{flex-basis:100%;font-size:12px;color:var(--ink);padding:4px 8px;border-radius:8px;background:var(--paper);border:1px dashed var(--rule)}#mInfo .wxmt small{display:block;color:var(--muted);font-size:10.5px}#mInfo .wxmt .mtcat{color:#fff;font-weight:800;font-size:10.5px;padding:0 6px;border-radius:7px;margin-left:4px}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -4918,8 +4919,14 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
   const draw=d=>{ const b=$('wxSite'); if(!b) return; const T=d.time, now=new Date(), nm=now.getHours()*60+now.getMinutes();
     let arr=window.FPARR!=null?window.FPARR:nm; let day=new Date(now); if(arr<nm-90) day=new Date(now.getTime()+864e5); const hh=Math.round(((arr%1440)+1440)%1440/60)%24; if(Math.round(((arr%1440)+1440)%1440/60)>=24) day=new Date(day.getTime()+864e5);
     const j=new Date(day.getTime()+9*3600e3), ds=j.toISOString().slice(0,10), k0=T.indexOf(`${ds}T${String(hh).padStart(2,'0')}:00`), i=k0>=0?k0:T.reduce((bi,t,ii)=>t.slice(0,13)<=new Date(now.getTime()+9*3600e3).toISOString().slice(0,13)?ii:bi,0);
-    const g=k=>d[k]&&d[k][i]!=null?d[k][i]:null, wc=g('weather_code'), wd=g('wind_direction_10m'), ws=g('wind_speed_10m'), gu=g('wind_gusts_10m'), t2=g('temperature_2m');
-    const vis=g('visibility'), rh2=g('relative_humidity_2m'), td2=g('dew_point_2m'), ccl=g('cloud_cover_low'), pr=g('precipitation');
+    const g=k=>d[k]&&d[k][i]!=null?d[k][i]:null; let wc=g('weather_code'), wd=g('wind_direction_10m'), ws=g('wind_speed_10m'), gu=g('wind_gusts_10m'), t2=g('temperature_2m');
+    // 近くの空港（10 NM 以内）の新しい METAR（90分以内）があり、到着が今から2時間以内なら、地上の風・視程・雲は実況を優先
+    let MX=null; try{ const D=MT.d, ahead=((arr-nm)%1440+1440)%1440; if(D&&D.metar&&ahead<=120){ const c=D.metar.filter(m=>m.lat!=null&&m.raw&&m.obs&&Date.now()/1000-m.obs<=90*60).map(m=>({m,nm:mtNm(p.lat,p.lon,m.lat,m.lon)[0]})).filter(x=>x.nm<=10).sort((a,b)=>a.nm-b.nm)[0]; if(c){ MX={...c,p:mtParse(c.m.raw)}; } } }catch(e){}
+    if(MX){ const q=MX.p; if(q.ws!=null){ ws=q.ws; wd=q.wd; gu=q.wg; } if(q.t!=null) t2=q.t; }
+    if(MX){ const W=MX.m.raw; if(/\bTS/.test(W)) wc=95; else if(/\bFZ(RA|DZ)/.test(W)) wc=67; else if(/\bFG\b/.test(W)) wc=45; else if(/(^|\s)[-+]?(SH)?SN/.test(W)&&wc<71) wc=73; else if(/(^|\s)[-+]?(SH)?(RA|DZ)/.test(W)&&(wc==null||wc<51)) wc=61; }
+    const precip2=MX?/(^|\s)[-+]?(SH|TS|FZ)?(RA|DZ|SN|GR|GS|PL)/.test(MX.m.raw):null;
+    let vis=g('visibility'), rh2=g('relative_humidity_2m'), td2=g('dew_point_2m'), ccl=g('cloud_cover_low'), pr=g('precipitation');
+    if(MX){ if(MX.p.vis!=null) vis=MX.p.vis; if(MX.p.td!=null) td2=MX.p.td; }
     const elFt=(d.__el!=null?d.__el:0)*3.28084, siteFt=isFinite(p.h)?p.h*3.28084:elFt, H=hovFt!=null?hovFt:siteFt+150;
     // vertical profile (ft MSL)
     const L=LV.map(l=>({p:l,z:g(`geopotential_height_${l}hPa`),t:g(`temperature_${l}hPa`),rh:g(`relative_humidity_${l}hPa`),cc:g(`cloud_cover_${l}hPa`)})).filter(q=>q.z!=null&&q.t!=null).map(q=>({...q,z:q.z*3.28084})).sort((a,b)=>a.z-b.z);
@@ -4930,12 +4937,14 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const below=L.filter(q=>q.z>siteFt-200&&q.z<H-100&&cloudy(q));
     const above=L.filter(q=>q.z>H+100&&cloudy(q));
     let fz=null; for(let n=0;n<L.length-1;n++){ const a=L[n],b2=L[n+1]; if((a.t>=0)!==(b2.t>=0)){ fz=a.z+(b2.z-a.z)*a.t/(a.t-b2.t); break; } }
-    const precip=(pr||0)>=0.1||(wc!=null&&(wc>=51&&wc<=67||wc>=71&&wc<=86||wc>=95));
+    const precip=precip2!=null?precip2:((pr||0)>=0.1||(wc!=null&&(wc>=51&&wc<=67||wc>=71&&wc<=86||wc>=95)));
     const fzra=wc===56||wc===57||wc===66||wc===67, ts=wc!=null&&wc>=95, sn=wc!=null&&(wc>=71&&wc<=77||wc===85||wc===86), fog=wc===45||wc===48;
     const icing=tH!=null&&tH<=2&&tH>=-20&&(inCloud||precip&&!sn);
     const lowVis=(vis!=null&&vis<5000)||fog;
     const spread=t2!=null&&td2!=null?t2-td2:null, cbAgl=spread!=null?Math.max(0,spread*400):null;
     let base=null; { const c=L.find(q=>q.z>siteFt-100&&cloudy(q)); if(c) base=Math.max(0,c.z-siteFt); } if(base==null&&cbAgl!=null&&(ccl||0)>=50) base=cbAgl;
+    if(MX&&MX.p.ceil!=null){ const ae=(MX.m.elev!=null?MX.m.elev:0)*3.28084; base=Math.max(0,MX.p.ceil+ae-siteFt); } else if(MX&&(MX.p.cavok||(MX.p.cl&&!MX.p.cl.length))) base=null;
+    const mxw=MX&&MX.p.wx&&MX.p.wx.length?MX.p.wx.join('、'):'';
     // headline (priority)
     let hd,cls,ic=wc;
     if(ts){ hd='雷雨 TS'; cls='d'; }
@@ -4961,6 +4970,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div></div>
       ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}${t}</span>`).join('')}</div>`:''}
+      ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${T[i].slice(11,16)} 予報<button type="button" class="wxuse" title="この予報の地上風を風向・風速に入れる">風に反映</button></div>`;
     const u=b.querySelector('.wxuse'); if(u) u.onclick=()=>{ if(wd==null||ws==null) return; try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=Math.round(ws); if($('wsR')) $('wsR').value=Math.round(ws); update(); mapWind&&mapWind(); }catch(e){} u.textContent='反映しました'; }; };
   if(C&&Date.now()-C.t<3600e3){ draw(C.d); return; }
