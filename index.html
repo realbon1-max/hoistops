@@ -3484,18 +3484,25 @@ setInterval(()=>{ try{ sunDraw(); document.querySelectorAll('[data-sunla]').forE
 // 見ている場所（画面の上から1/3付近の要素）を覚えておき、計算し直しで上の欄の高さが変わっても、その要素が画面上で動かないようにページをずらす。
 // 指で触っている間・ボタンを押した直後（別の仕組みが押した場所を保持）は補正せず、覚え直すだけ。
 const VK={a:null,touch:false,skip:0,busy:false,q:false};
-function vkRec(){ const y=Math.min(innerHeight*0.35,260); let el=document.elementFromPoint(innerWidth/2,y); if(!el||el===document.body||el===document.documentElement) return null;
+const vkCl=k=>{ const c=k.getAttribute&&k.getAttribute('class'); return c?c.trim().split(/\s+/)[0]:''; };
+function vkOne(y){ let el=document.elementFromPoint(innerWidth/2,y); if(!el||el===document.body||el===document.documentElement) return null;
   if(el.closest('nav.jump,.mstick,#map,dialog,.mmsg')) return null; const sv=el.closest('svg'); if(sv&&sv.parentElement) el=sv.parentElement;
-  const path=[]; let n=el; while(n&&n!==document.body&&!n.id){ const pa=n.parentElement; if(!pa) break; path.unshift([Array.prototype.indexOf.call(pa.children,n),n.tagName,n.getBoundingClientRect().top]); n=pa; }
+  const path=[]; let n=el; while(n&&n!==document.body&&!n.id){ const pa=n.parentElement; if(!pa) break; const cl=vkCl(n); path.unshift([[...pa.children].filter(k=>k.tagName===n.tagName&&vkCl(k)===cl).indexOf(n),n.tagName,n.getBoundingClientRect().top,cl]); n=pa; }
   if(!n||n===document.body) return null; return {el,top:el.getBoundingClientRect().top,rid:n.id,rtop:n.getBoundingClientRect().top,path}; }
-function vkRes(a){ if(a.el.isConnected) return [a.el,a.top]; const root=document.getElementById(a.rid); if(!root) return null; let n=root, t=a.rtop;
-  for(const [i,tg,tp] of a.path){ const k=n.children[i]; if(!k||k.tagName!==tg) break; n=k; t=tp; } return [n,t]; }
+// 画面の高さの何か所かで覚えておき、描き直し後にそのまま見つかったもの（同じ要素か、同じ並びの要素）を優先して使う
+function vkRec(){ const H=innerHeight, L=[0.35,0.2,0.5,0.65,0.8].map(f=>vkOne(Math.round(H*f))).filter(Boolean); return L.length?L:null; }
+function vkRes1(a){ if(a.el.isConnected) return [a.el,a.top,true]; const root=document.getElementById(a.rid); if(!root) return null; let n=root, t=a.rtop, ok=true;
+  for(const [i,tg,tp,cl] of a.path){ const k=[...n.children].filter(c=>c.tagName===tg&&vkCl(c)===cl)[i]; if(!k){ ok=false; break; } n=k; t=tp; } return [n,t,ok]; }
+function vkRes(L){ let part=null; for(const a of L){ const r=vkRes1(a); if(!r) continue; if(r[2]) return r; if(!part) part=r; } return part; }
 function vkFix(){ VK.q=false; if(VK.busy) return; VK.busy=true; try{
     if(VK.touch||performance.now()<VK.skip||!VK.a){ VK.a=vkRec(); return; }
     const r=vkRes(VK.a); if(r){ const d=r[0].getBoundingClientRect().top-r[1]; if(Math.abs(d)>0.5) window.scrollBy(0,d); }
     VK.a=vkRec(); } finally { VK.busy=false; } }
 function keepView(fn){ return fn(); }
-new MutationObserver(()=>{ if(!VK.q&&!VK.busy){ VK.q=true; queueMicrotask(vkFix); } }).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+const vkQ=()=>{ if(!VK.q&&!VK.busy){ VK.q=true; queueMicrotask(vkFix); } };
+new MutationObserver(vkQ).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['viewBox','hidden','open','class','height','width','src','href']});
+try{ new ResizeObserver(vkQ).observe(document.body); }catch(e){}
+document.addEventListener('load',vkQ,true);
 window.addEventListener('scroll',()=>{ if(!VK.busy) VK.a=vkRec(); },{passive:true});
 window.addEventListener('resize',()=>{ VK.a=vkRec(); });
 document.addEventListener('touchstart',()=>{ VK.touch=true; },{capture:true,passive:true});
@@ -5145,7 +5152,9 @@ function cutDraw(){ const box=$('cutBox'); if(!box) return; const hl=state.hl, h
   // 上の「高度低下」の図に重ねる：ホバリング中のワイヤー・最低点でのワイヤー・地形込みの地面・✂ の線
   const hlOver=()=>{ const sv=$('hlsvg'), Q=window.HLG; if(!sv) return; const old=sv.querySelector('#hlcut'); if(old) old.remove(); sv.setAttribute('viewBox','0 0 520 220'); if(!Q||Q.ym==null) return;
     const {G,sc,yH,ym,xm,x0}=Q, xc=xm+34, ys=ym+clr*sc, yb=ym+(w+loadL)*sc, hit=yb>ys, col=hit?'#e53935':gap<20?'#f9a825':'#2e7d32'; let o='';
-    const VH=Math.round(Math.min(560,Math.max(220,(terrOk?ys:0)+38))); if(VH>220) sv.setAttribute('viewBox',`0 0 520 ${VH}`);
+    // 図の高さは同じ地点では縮めない（HDGを回すたびに図の高さが変わって揺れないように）
+    const pk=MAP.pick?MAP.pick.lat.toFixed(5)+','+MAP.pick.lon.toFixed(5)+','+hh:''; if(CUT.vk!==pk){ CUT.vk=pk; CUT.vh=220; }
+    const VH=CUT.vh=Math.max(CUT.vh||220,Math.round(Math.min(560,Math.max(220,(terrOk?ys:0)+38))/20)*20); if(VH>220) sv.setAttribute('viewBox',`0 0 520 ${VH}`);
     if(terrOk&&ys<8){ const a=xm-120, z=xm+150;
       o+=`<rect x="${a}" y="0" width="${z-a}" height="${G}" fill="#8d6e4a" opacity=".3"/><text x="${(a+z)/2}" y="16" font-size="11.5" font-weight="900" fill="#6d4c2f" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="3">離脱方向の地形・障害物が最低点より ${fm(-clr)} ft 高い</text>`; }
     else if(terrOk&&Math.abs(ys-G)>3){ const a=xm-120, z=xm+150, up=ys<G;
