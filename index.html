@@ -1251,7 +1251,7 @@ a{color:#7cc4ff}
         <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/></svg>航空機の本当の高度</div><div class="v" id="r5"></div><div class="s" id="r5s"></div></div>
         <div class="rc"><div class="l"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>現場との間隔</div><div class="v" id="r6"></div><div class="s" id="r6s"></div></div>
       </div>
-      <p class="legend">機体のマークと山頂は、図の上で上下にドラッグできます。現場の標高（0〜12,400 ft）を動かしても大気（QNHとISAとの気温差）は同じとして扱うので、現場の気温は標高に合わせて変わり（1,000 ftごとに約2℃）、航空機の本当の高度は変わりません。変わるのは現場そのものの値（気圧高度・密度高度・気圧・気温）と現場との間隔です。ここのスライダーは左の入力欄（標高・QNH・外気温度）と連動します。黒のものさし：海抜（0は海面で固定）。青のものさし：標準大気の高さ（0は1013 hPaの面で、QNHによって上下）。この青いものさしで現場を読むと気圧高度、空気の密度で読むと密度高度になります。縦の目盛りは、今の値に合わせて自動で拡大します。</p>
+      <p class="legend">機体のマークと現場の印は、図の上で上下にドラッグできます。現場の標高（0〜12,400 ft）を動かしても大気（QNHとISAとの気温差）は同じとして扱うので、現場の気温は標高に合わせて変わり（1,000 ftごとに約2℃）、航空機の本当の高度は変わりません。変わるのは現場そのものの値（気圧高度・密度高度・気圧・気温）と現場との間隔です。ここのスライダーは左の入力欄（標高・QNH・外気温度）と連動します。黒のものさし：海抜（0は海面で固定）。青のものさし：標準大気の高さ（0は1013 hPaの面で、QNHによって上下）。この青いものさしで現場を読むと気圧高度、空気の密度で読むと密度高度になります。縦の目盛りは、今の値に合わせて自動で拡大します。</p>
     </section>
     <section class="box" aria-label="高度と許容風速">
       <h2>高度と許容風速</h2>
@@ -1849,13 +1849,13 @@ function drawRel(Happ,T){
   // mountain
   const sx=230, sy=Y(c.eft);
   h+=`<polygon points="20,${Y(0)} 80,${Y(0)-18} 160,${sy+60} ${sx},${sy} 280,${sy+40} 360,${Y(0)-14} 400,${Y(0)}" fill="#888780" opacity=".55"/>`;
-  h+=`<circle cx="${sx}" cy="${sy}" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="2" style="cursor:ns-resize"/><text x="${sx}" y="${sy-16}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">現場（山頂）</text>`;
+  h+=`<circle cx="${sx}" cy="${sy}" r="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="2" style="cursor:ns-resize"/><text x="${sx}" y="${sy-16}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">現場</text>`;
   // aircraft
   const ax=110, yi=Y(c.ind), yt=Y(c.tru);
   h+=`<line x1="${ax-34}" y1="${yi}" x2="${ax+34}" y2="${yi}" stroke="var(--muted)" stroke-width="2" stroke-dasharray="4 4"/><text x="${ax-40}" y="${yi+5}" text-anchor="end" font-size="13" fill="var(--muted)">指示</text>`;
   if(Math.abs(yt-yi)>3) h+=`<line x1="${ax}" y1="${yi}" x2="${ax}" y2="${yt}" stroke="${cc}" stroke-width="2"/>`;
   h+=`<g transform="translate(${ax},${yt})" style="cursor:ns-resize"><circle r="28" fill="transparent"/><g transform="translate(0,-11)">${heliSideImg(84)}</g><circle cx="-2" cy="12" r="4" fill="${cc}" stroke="var(--panel)" stroke-width="1.5"/></g><text x="${ax-40}" y="${yt-8}" text-anchor="end" font-size="13" font-weight="700" fill="${cc}">本当</text>`;
-  h+=`<line x1="${ax+40}" y1="${yt}" x2="${sx}" y2="${yt}" stroke="${cc}" stroke-dasharray="3 3"/><line x1="${sx}" y1="${yt}" x2="${sx}" y2="${sy-10}" stroke="${cc}" stroke-width="2"/><text x="${sx+8}" y="${(yt+sy)/2+5}" font-size="14" font-weight="700" fill="${cc}">間隔 ${fm(c.clr)} ft</text>`;
+  h+=`<line x1="${ax+40}" y1="${yt}" x2="${sx}" y2="${yt}" stroke="${cc}" stroke-dasharray="3 3"/><line x1="${sx}" y1="${yt}" x2="${sx}" y2="${sy-10}" stroke="${cc}" stroke-width="2"/><text x="${sx+14}" y="${Math.abs(sy-yt)<36?Math.min(yt,sy)-14:(yt+sy)/2+5}" font-size="14" font-weight="700" fill="${cc}" paint-order="stroke" stroke="var(--panel)" stroke-width="3">間隔 ${fm(c.clr)} ft</text>`;
   // isobars (true height of each pressure surface today)
   { const pst=span>14000?100:span>7000?50:25; for(let p=1050;p>=200;p-=pst){ const z=(HstdP(p)-HstdP(c.qh))*c.k; const y=Y(z); if(y<T0||y>B0) continue;
     h+=`<line x1="700" y1="${y}" x2="760" y2="${y}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 4" opacity=".7"/><text x="756" y="${y-3}" text-anchor="end" font-size="11" fill="var(--muted)">${p} hPa</text>`; } }
