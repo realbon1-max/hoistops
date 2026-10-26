@@ -1193,7 +1193,7 @@ a{color:#7cc4ff}
       <div class="hl">
         <svg id="hlsvg" viewBox="0 0 520 220" role="img" aria-label="高度低下の側面図"></svg>
         <div>
-          <div class="hlk"><div class="l">↓ 高度低下</div><div class="big" id="hlv">–</div></div>
+          <div class="hlk"><div class="l">↓ 高度低下（平らな地面）</div><div class="big" id="hlv">–</div></div>
           <p id="hlmsg" style="margin:8px 0 0;font-size:13px"></p><div id="hlTerr" class="hlterr" hidden></div>
         </div>
       </div>
@@ -2018,7 +2018,7 @@ function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(
     const ft=hl.ft, clr=hh-ft;
     $('hlv').innerHTML=`${Math.round(ft)}<small> ft（${Math.round(ft*0.3048)} m）</small>`;
     const cls=clr>=50?'ok':clr>=0?'caution':'warn';
-    $('hlmsg').innerHTML=`<span class="hlk2"><span class="l">最低到達（ホバリング ${hh} ft から）</span><b class="${cls}">${Math.round(clr)} ft</b></span>`+(clr<0?'<br><b class="warn">💥 離脱中に障害物・地面に激突する計算です。</b>':'')+(hl.clampW?'<br><span class="caution">重量は4,400〜6,400 kgの範囲で計算</span>':'')+(hl.clampWind?'<br><span class="caution">向かい風は0〜40 ktで計算</span>':'');
+    $('hlmsg').innerHTML=`<span class="hlk2"><span class="l">最低到達（ホバリング ${hh} ft から）</span><b class="${cls}">${Math.round(clr)} ft</b></span>`+(clr<0?'<br><b class="warn" id="hlCrash">💥 平らな地面なら、離脱中に障害物・地面に激突する計算です。</b>':'')+(hl.clampW?'<br><span class="caution">重量は4,400〜6,400 kgの範囲で計算</span>':'')+(hl.clampWind?'<br><span class="caution">向かい風は0〜40 ktで計算</span>':'');
     drawHL(ft,hh);
   }
   drawChart();
@@ -2028,7 +2028,7 @@ function drawHL(ft,hh){
   const s=$('hlsvg'); const G=190, top=20; const maxh=Math.max(hh,(ft||0))*1.15+20; const sc=(G-top)/maxh;
   const yH=G-hh*sc; const yL=ft==null?null:G-(hh-ft)*sc;
   let h=`<rect x="0" y="${G}" width="520" height="30" fill="var(--tape)"/><line x1="0" y1="${G}" x2="520" y2="${G}" stroke="var(--ink)" stroke-width="2"/>`;
-  h+=`<text x="8" y="${G+20}" font-size="12" fill="var(--muted)">地表・障害物上面</text>`;
+  h+=`<text x="8" y="${G+20}" font-size="12" fill="var(--muted)">地表・障害物上面（平らと仮定）</text>`;
   // helicopter glyph at hover
   h+=`<g transform="translate(70,${yH-13})">${heliSideImg(100)}</g>`;
   h+=`<line x1="40" y1="${yH}" x2="40" y2="${G}" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="8" y="${(yH+G)/2}" font-size="12" fill="var(--muted)">${hh} ft</text>`;
@@ -4334,7 +4334,7 @@ function escHTML(E,hft){ const mg=RC.mg/FT, ok=x=>x&&x.minC>=mg, fm=n=>Math.roun
     g+=`<g clip-path="url(#hbC)">${z}</g><rect x="16" y="30" width="428" height="24" rx="12" fill="none" stroke="#cfe3ff" stroke-opacity=".35"/>`+g2;
     if(hi>lo) g+=`<rect x="${X(lo)}" y="28" width="${X(Math.min(hi,mx))-X(lo)}" height="28" rx="4" fill="none" stroke="#3ff0a8" stroke-width="1.5" filter="url(#hbGl)" opacity=".8"/>`;
     for(let v=0;v<=mx;v+=50) g+=`<line x1="${X(v)}" y1="56" x2="${X(v)}" y2="${v%100?60:64}" stroke="#cfe3ff" stroke-opacity=".6"/>${v%100?'':`<text x="${X(v)}" y="75" font-size="10.5" fill="#cfe3ff" fill-opacity=".8" text-anchor="middle">${v}</text>`}`;
-    if(E.hMinV!=null) g+=`<line x1="${X(E.hMinV)}" y1="24" x2="${X(E.hMinV)}" y2="58" stroke="#7fd4ff" stroke-width="2" stroke-dasharray="3 2"/><text x="${X(E.hMinV)}" y="20" font-size="10" font-weight="700" fill="#7fd4ff" text-anchor="middle">VRS ${E.hMinV}</text>`;
+    if(E.hMinV!=null) g+=`<line x1="${X(E.hMinV)}" y1="24" x2="${X(E.hMinV)}" y2="58" stroke="#7fd4ff" stroke-width="2" stroke-dasharray="3 2"/><text x="${X(E.hMinV)}" y="20" font-size="10" font-weight="700" fill="#7fd4ff" text-anchor="middle">ヴィチャード ${E.hMinV}</text>`;
     const inW=E.hMinO!=null&&hft>=E.hMinO&&hft<=E.hMax, pc=inW?'#3ff0a8':'#ff6b6b';
     g+=`<g filter="url(#hbGl)"><line x1="${X(hft)}" y1="24" x2="${X(hft)}" y2="60" stroke="${pc}" stroke-width="3"/><path d="M${X(hft)},24 l-6,-8 h12 z" fill="${pc}"/></g><text x="${Math.min(430,Math.max(30,X(hft)))}" y="92" font-size="12" font-weight="900" fill="${pc}" text-anchor="middle">今 ${hft} ft</text><text x="452" y="92" font-size="9.5" fill="#cfe3ff" fill-opacity=".7" text-anchor="end">ft（障害物の上）</text>`;
     return `<svg viewBox="0 0 460 100" class="hhbar" role="img" aria-label="ホバリング高度の判定">${g}</svg>`; })();
@@ -4402,6 +4402,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   if(E&&p) roseTerrain(p.lat,p.lon,E.hdg,()=>drawXsec(XS.H,XS.T,XS.W));
   { const ht=$('hlTerr'); if(ht){ if(E&&E.hMinO!=null&&!isNaN(E.oLoss)){ const flat=Math.ceil((E.oLoss*FT+RC.mg)/5)*5, ok=hft>=E.hMinO;
       ht.hidden=false; ht.className='hlterr '+(ok?'ok':'bad');
+      { const cr=$('hlCrash'); if(cr){ if(ok){ cr.className='caution'; cr.innerHTML=`⚠ 平らな地面なら激突する高さですが、離脱方向（${dirTxt(E.oOff)}）は下っているため、<b>地形込みでは通過できます</b>（要る高さ ${E.hMinO} ft）。離脱方向を守ること。`; } else { cr.className='warn'; cr.innerHTML=`💥 離脱中に障害物・地面に激突する計算です（地形込みで要る高さ ${E.hMinO} ft）。`; } } }
       ht.innerHTML=`<div class="hlt3"><div><small>片発で要るホバリング高度（地形込み）</small><b class="${ok?'ok':'warn'}">${E.hMinO} ft</b></div><div><small>平らな地面なら</small><b>${flat} ft</b></div><div><small>今 ${hft} ft</small><b class="${ok?'ok':'warn'}">${ok?'✓ 足りる':`✗ ${E.hMinO-hft} ft 不足`}</b></div></div><div class="hlnote">図は平らな地面・余裕0。地形込みは離脱方向（${dirTxt(E.oOff)}）の上り・樹木と余裕 ${RC.mg} ft を含む → <a href="#g_site">⑤ 断面</a></div>`; } else ht.hidden=true; } }
   box.querySelectorAll('[data-rc]').forEach(inp=>inp.onchange=()=>{ const v=+inp.value; if(!isNaN(v)) RC[inp.dataset.rc]=v; try{localStorage.setItem('sd139rc',JSON.stringify(RC));}catch(e){} const op=box.querySelector('.rcset')?.open; drawXsec(XS.H,XS.T,XS.W); const d2=box.querySelector('.rcset'); if(d2&&op) d2.open=true; });
   box.querySelectorAll('[data-sethh]').forEach(b=>b.onclick=()=>{ const v=+b.dataset.sethh; $('hh').value=v; if($('hhR')) $('hhR').value=hhV2P(v); update(); });
