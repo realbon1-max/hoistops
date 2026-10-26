@@ -902,6 +902,8 @@ section.subsec>h2::before{display:none!important}
 #map{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .lpring{position:absolute;z-index:59;width:96px;height:96px;margin:-48px 0 0 -48px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));pointer-events:none}.lpring svg{width:100%;height:100%}@keyframes lpfill{to{stroke-dashoffset:0}}
 #mInfo .wxmt{flex-basis:100%;font-size:12px;color:var(--ink);padding:4px 8px;border-radius:8px;background:var(--paper);border:1px dashed var(--rule)}#mInfo .wxmt small{display:block;color:var(--muted);font-size:10.5px}#mInfo .wxmt .mtcat{color:#fff;font-weight:800;font-size:10.5px;padding:0 6px;border-radius:7px;margin-left:4px}
+#ptab>.wprof{margin:0 0 8px;padding:0!important;border:0!important;background:none!important}#ptab .ptabs{gap:8px!important}#ptab .pt{border:0!important;padding:0!important;background:none!important;box-shadow:none!important}#ptab h3.fh{font-size:15px!important;font-weight:800}
+#ptab h3.fh{padding:8px 10px;margin:0;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}#ptab h3.fh:not(.fc){border-radius:8px 8px 0 0}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -1260,7 +1262,23 @@ a{color:#7cc4ff}
       <p class="legend">青の階段線：低速度IGE（第4-7図）。緑の破線：選んだ出力でのホイスト運用の上限（No.11 第4-1図・第4-2図、機首±10°以外の風）。黒い点が今の条件です。</p>
     </section>
     <section class="box" id="ptab" aria-label="気圧の対照表">
-      <h2>気象・気圧 <small>METAR/TAF・上空の風・QNH</small></h2>
+      <h2>気象・気圧 <small>上空の風・METAR/TAF・QNH</small></h2>
+          <div class="wprof" id="wprof">
+            <h3 class="fh" data-fk="wprof">高度ごとの気温と風（エマグラム・高層天気図などから入力）</h3>
+            <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
+              <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
+            <div class="wpscroll"><table id="wpTab"></table></div>
+            <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><label class="chk" style="flex-basis:100%;font-size:12.5px"><input type="checkbox" id="humOn"> 湿度を密度高度に含める（湿った空気は軽いので、密度高度が少し高くなる・安全側）</label><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
+            <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
+            <div class="wpres" id="wpRes"></div>
+          </div>
+          <div class="wprof" id="mtBox">
+            <h3 class="fh" data-fk="mt">空港・飛行場の METAR / TAF（現場の近い順）</h3>
+            <div class="mtctl"><button type="button" class="pri" id="mtGo">✈ 最新の METAR / TAF を読み込む</button><span class="hint" id="mtMsg"></span>
+              <label class="chk"><input type="checkbox" id="mtTaf" checked> TAF も表示</label><select id="mtN" aria-label="表示する数"><option value="3">近い 3 か所</option><option value="5" selected>近い 5 か所</option><option value="8">近い 8 か所</option></select></div>
+            <div id="mtList"></div>
+            <p class="legend">気象庁が発表した METAR（定時・特別観測）と TAF（運航用飛行場予報）を、米国 NOAA の航空気象センター（aviationweather.gov）が中継しているものを、10 分ごとに取得して表示します。自衛隊の飛行場などは含まれないことがあります。色は VFR（緑）・MVFR（青：シーリング 3,000 ft 以下か視程 8 km 以下）・IFR（赤：1,000 ft 未満か 5 km 未満）・LIFR（紫：500 ft 未満か 1.6 km 未満）の目安です。運航判断には正式な気象情報（MetAir など）を使ってください。</p>
+          </div>
       <div class="ptabs">
         <div class="pt">
           <h3 class="fh" data-fk="qnh">QNH換算表</h3><div class="fb">
@@ -1274,22 +1292,8 @@ a{color:#7cc4ff}
           <div class="pscroll" id="psc"><table id="pTab"></table></div>
           <p class="legend">気圧高度とISA気温は標準大気の値（どの日も同じ）。「今日の海抜」は、今のQNHと気温（ISA偏差 <b id="pDev"></b>）で、その気圧の面が海抜何ftにあるかの概算。黄色＝現場の気圧、青＝航空機の高さの気圧。</p>
           </div>
-          <div class="wprof" id="wprof">
-            <h3 class="fh" data-fk="wprof">高度ごとの気温と風（エマグラム・高層天気図などから入力）</h3>
-            <div class="wpctl"><span class="seg" id="wpBase"><button type="button" data-b="hpa">気圧 hPa で入力</button><button type="button" data-b="ft">海抜高度 ft で入力</button></span>
-              <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
-            <div class="wpscroll"><table id="wpTab"></table></div>
-            <div class="jmabox"><button type="button" class="pri" id="jmaGo">🌐 気象庁の予報（MSM）を読み込む</button><select id="jmaT" aria-label="時刻" hidden></select><select id="jmaM" aria-label="モデル"><option value="jma_msm">MSM（メソモデル・5 km・39時間先まで）</option><option value="jma_gsm">GSM（全球モデル・長い先まで）</option></select><label class="chk" style="flex-basis:100%;font-size:12.5px"><input type="checkbox" id="humOn"> 湿度を密度高度に含める（湿った空気は軽いので、密度高度が少し高くなる・安全側）</label><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">地図で選んだ地点の上空の気温・風向・風速を、気象庁の数値予報（Open-Meteo経由）から各気圧面に入れます。オンラインのときだけ使えます。</div></div>
-            <div class="wpbtns"><button type="button" id="wpAdd">行を追加</button><button type="button" id="wpClr">入力を消す</button></div>
-            <div class="wpres" id="wpRes"></div>
-          </div>
-          <div class="wprof" id="mtBox">
-            <h3>空港・飛行場の METAR / TAF（現場の近い順）</h3>
-            <div class="mtctl"><button type="button" class="pri" id="mtGo">✈ 最新の METAR / TAF を読み込む</button><span class="hint" id="mtMsg"></span>
-              <label class="chk"><input type="checkbox" id="mtTaf" checked> TAF も表示</label><select id="mtN" aria-label="表示する数"><option value="3">近い 3 か所</option><option value="5" selected>近い 5 か所</option><option value="8">近い 8 か所</option></select></div>
-            <div id="mtList"></div>
-            <p class="legend">気象庁が発表した METAR（定時・特別観測）と TAF（運航用飛行場予報）を、米国 NOAA の航空気象センター（aviationweather.gov）が中継しているものを、10 分ごとに取得して表示します。自衛隊の飛行場などは含まれないことがあります。色は VFR（緑）・MVFR（青：シーリング 3,000 ft 以下か視程 8 km 以下）・IFR（赤：1,000 ft 未満か 5 km 未満）・LIFR（紫：500 ft 未満か 1.6 km 未満）の目安です。運航判断には正式な気象情報（MetAir など）を使ってください。</p>
-          </div>
+
+
         </div>
       </div>
     </section>
