@@ -896,7 +896,7 @@ section.subsec>h2::before{display:none!important}
 .lpmenu [data-lp=pick]{grid-column:1/-1}
 .lpdot{position:absolute;z-index:59;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:3px solid #ff7a1a;background:rgba(255,122,26,.25);pointer-events:none;animation:lpp 1s ease-out infinite}@keyframes lpp{50%{transform:scale(1.4)}}
 #map{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.lpring{position:absolute;z-index:59;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none}.lpring svg{width:100%;height:100%}@keyframes lpfill{to{stroke-dashoffset:0}}
+.lpring{position:absolute;z-index:59;width:96px;height:96px;margin:-48px 0 0 -48px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));pointer-events:none}.lpring svg{width:100%;height:100%}@keyframes lpfill{to{stroke-dashoffset:0}}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2711,7 +2711,7 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
     if(pts.size===1){ st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
       const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
       if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字',area:'面積の点',tmp:'点',meas:'距離・方位'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); }
-      else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; const ms=Math.round((+DISP.lp||3)*1000); lpRing(px,py,ms); st.lp=setTimeout(()=>{ lpRingOff(); if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },ms); } }
+      else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; const ms=Math.round((+DISP.lp||2)*1000); lpRing(px,py,ms); st.lp=setTimeout(()=>{ lpRingOff(); if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },ms); } }
     if(pts.size===2){ lpRingOff(); if(st.lp){ clearTimeout(st.lp); st.lp=0; } const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
@@ -2890,7 +2890,7 @@ function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
 })();
 
 // ==== display settings: coordinate format, MGRS grid, distance / altitude units, centre scale ====
-const DISP={coord:'dm',mgrs:false,dist:'m',alt:'ft',ret:'none',lp:3};
+const DISP={coord:'dm',mgrs:false,dist:'m',alt:'ft',ret:'none',lp:2};
 try{ Object.assign(DISP,JSON.parse(localStorage.getItem('aw139disp')||'{}')); }catch(e){}
 // 高度の表示は ft を基本に（以前の保存が m のままでも一度だけ ft に切り替え）
 try{ if(!localStorage.getItem('aw139altft')){ DISP.alt='ft'; localStorage.setItem('aw139altft','1'); localStorage.setItem('aw139disp',JSON.stringify(DISP)); } }catch(e){}
@@ -5011,7 +5011,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
 })();
 
 // ---- 地図の長押しメニュー：その場所にポイント・救助地点を記録
-(function(){ const sl=$('dLp'); if(!sl) return; sl.value=String(DISP.lp||3); sl.onchange=()=>{ DISP.lp=+sl.value; try{ dispSave(); }catch(e){} }; })();
+(function(){ const sl=$('dLp'); if(!sl) return; try{ if(!localStorage.getItem('aw139lp2')){ DISP.lp=2; localStorage.setItem('aw139lp2','1'); dispSave(); } }catch(e){} sl.value=String(DISP.lp||2); sl.onchange=()=>{ DISP.lp=+sl.value; try{ dispSave(); }catch(e){} }; })();
 function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z);
   const m=document.createElement('div'); m.className='lpmenu'; m.innerHTML=`<div class="lph">${fmtLL(la,lo,'dm')}<button type="button" class="lpx" aria-label="閉じる">×</button></div>
    <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button>`;
@@ -5028,7 +5028,7 @@ function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientW
   setTimeout(()=>document.addEventListener('pointerdown',lpOut,true),0); }
 // 長押し中の進み具合（輪が一周するとメニュー）
 let LPR=0; function lpRing(px,py,ms){ lpRingOff(); LPR=setTimeout(()=>{ const el=$('map'); const d=document.createElement('div'); d.className='lpring'; d.style.left=px+'px'; d.style.top=py+'px';
-  d.innerHTML=`<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.5)" stroke-width="3"/><circle cx="22" cy="22" r="18" fill="none" stroke="#ff7a1a" stroke-width="4" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1" transform="rotate(-90 22 22)" style="animation:lpfill ${Math.max(100,ms-250)}ms linear forwards"/></svg>`; el.appendChild(d); },250); }
+  d.innerHTML=`<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.6)" stroke-width="4"/><circle cx="22" cy="22" r="18" fill="none" stroke="#ff7a1a" stroke-width="5" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1" transform="rotate(-90 22 22)" style="animation:lpfill ${Math.max(100,ms-250)}ms linear forwards"/></svg>`; el.appendChild(d); },250); }
 function lpRingOff(){ clearTimeout(LPR); document.querySelectorAll('.lpring').forEach(x=>x.remove()); }
 function lpOut(e){ if(e.target.closest&&e.target.closest('.lpmenu')) return; lpClose(); }
 function lpClose(){ document.removeEventListener('pointerdown',lpOut,true); document.querySelectorAll('.lpmenu,.lpdot').forEach(x=>x.remove()); }
