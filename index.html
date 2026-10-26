@@ -883,7 +883,8 @@ section.subsec>h2::before{display:none!important}
 @media (max-width:560px){ .bsa{display:none} .bsc{flex-basis:100px} .bst{font-size:20px} }
 #burn{margin-top:4px!important}
 #dialOut .dlab{font-size:11px;font-weight:700;padding:1px 6px;margin-right:6px;border-radius:8px;border:1px solid currentColor;opacity:.8;vertical-align:3px}
-#dialOut .dsub{margin-left:14px}
+#dialOut .dsub{margin-right:14px}#dialOut .dmain{margin-right:14px}
+#dialOut.nodm{color:var(--muted)!important;font-weight:400!important;font-size:15px!important}#dialOut.nodm .dsub{color:var(--muted)!important;font-size:15px!important}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2854,7 +2855,8 @@ function dmsTxt(v,isLat){ const h=isLat?'N':'E'; let N=Math.round(v*360000), d=M
 function dialRead(){ const [la,lo]=dialVal(); const F={dm:['度分',fmtLL(la,lo,'dm')],d:['度',`N${la.toFixed(5)}° E${lo.toFixed(5)}°`],dms:['度分秒',`${dmsTxt(la,true)} ${dmsTxt(lo,false)}`]};
   // ダイヤルで選んでいない2つの単位を表示（ダイヤル自体が3つ目）：度分秒→度分＋度、度分→度分秒＋度、度→度分＋度分秒
   const [mk,sk]={dms:['dm','d'],dm:['dms','d'],d:['dm','dms']}[DIAL.mode]||['dm','d'];
-  $('dialOut').innerHTML=`<span class="dlab">${F[mk][0]}</span>${F[mk][1]}<span class="dsub"><span class="dlab">${F[sk][0]}</span>${F[sk][1]}</span>`; }
+  const one=k=>k==='dm'?`<span class="dmain"><span class="dlab">${F[k][0]}</span>${F[k][1]}</span>`:`<span class="dsub"><span class="dlab">${F[k][0]}</span>${F[k][1]}</span>`;
+  $('dialOut').innerHTML=one(mk)+one(sk); $('dialOut').classList.toggle('nodm',mk!=='dm'); }
 function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
   dialDefs().forEach((grp,gi)=>{ let r=Math.round((gi?lo:la)*U); grp.forEach(([k,,vals,,mult])=>{ const q=Math.floor(r/mult); r-=q*mult; dialSet(k,vals.indexOf(q)>=0?vals.indexOf(q):Math.max(0,q-vals[0])); }); });
   dialRead(); }
