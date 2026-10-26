@@ -888,6 +888,7 @@ section.subsec>h2::before{display:none!important}
 #dialBtn[aria-expanded=true]{background:linear-gradient(180deg,#ff8a2a,#e0650f)!important;border-color:#ff8a2a!important;color:#fff!important;box-shadow:0 0 0 2px rgba(255,138,42,.35),0 0 14px rgba(255,122,26,.35)}
 #dialBtn[aria-expanded=true] .ico{color:#fff}
 #dialPanel:not([hidden]){border:1.5px solid #ff8a2a;box-shadow:0 0 0 1px rgba(255,138,42,.25)}
+.dmk{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}.dmkl{font-size:12px;color:var(--muted)}.dmk button{border:1.5px solid var(--rc)!important;color:var(--rc)!important;font-weight:700;border-radius:14px!important;padding:4px 9px!important;font-size:12.5px!important}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -990,7 +991,7 @@ a{color:#7cc4ff}
         <div id="dialPanel" class="dialp" hidden>
           <div class="dmode" id="dialMode">ダイヤル：<button type="button" data-m="d">度（小数5桁）</button><button type="button" data-m="dm">度・分（小数3桁）</button><button type="button" data-m="dms">度・分・秒（小数2桁）</button></div>
           <div class="dialw" id="dialWheels"></div>
-          <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
+          <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="dmk"><span class="dmkl">マーク：</span><button type="button" data-dmk="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-dmk="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-dmk="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-dmk="lift" style="--rc:#1565c0">↑ 揚収地点</button></span><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
         </div>
         <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button></div>
 
@@ -2870,6 +2871,11 @@ function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
     DIAL.mode=b.dataset.m; try{localStorage.setItem('aw139dial',DIAL.mode);}catch(e){} if(cur) requestAnimationFrame(()=>dialFrom(cur[0],cur[1])); else dialBuild(); });
   $('dialGo').onclick=()=>{ const [la,lo]=dialVal(); $('mLL').value=fmtLL(la,lo,'dm'); $('mGo').click(); };
   $('dialFrom').onclick=()=>{ const [la,lo]=dialVal(); setFromLL(fmtLL(la,lo,'dm'),la,lo); };
+  document.querySelectorAll('[data-dmk]').forEach(b=>b.onclick=()=>{ const [la,lo]=dialVal(), k=b.dataset.dmk; let it;
+    if(k==='pt'){ const n=DRAW.items.filter(x=>x.t==='pt').length+1; it={t:'pt',lat:la,lon:lo,label:'P'+n}; }
+    else it={t:'dest',role:k,lat:la,lon:lo,label:roleLabel(k),h:null,at:new Date().toTimeString().slice(0,5)};
+    DRAW.items.push(it); try{ drawSave(); }catch(e){} mapSetView(la,lo,Math.max(MAP.z,13)); try{ drawLayer(); drawPanel(); }catch(e){}
+    mapMsg(`「${it.label}」を ${fmtLL(la,lo,'dm')} に置きました（長押しで移動・作図一覧で名前を変更できます）`); });
 })();
 
 // ==== display settings: coordinate format, MGRS grid, distance / altitude units, centre scale ====
