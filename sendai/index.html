@@ -886,6 +886,8 @@ section.subsec>h2::before{display:none!important}
 .bsa{align-self:center;color:var(--muted);font-size:18px}
 @media (max-width:560px){ .bsa{display:none} .bsc{flex-basis:100px} .bst{font-size:20px} }
 #burn{margin-top:4px!important}
+#dialOut .dlab{font-size:11px;font-weight:700;padding:1px 6px;margin-right:6px;border-radius:8px;border:1px solid currentColor;opacity:.8;vertical-align:3px}
+#dialOut .dsub{margin-left:14px}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2851,8 +2853,10 @@ function dialSnap(k){ const el=DIAL.w[k].el, i=dialIdx(k); if(Math.abs(el.scroll
 function dialSet(k,i,smooth){ const w=DIAL.w[k]; i=Math.max(0,Math.min(w.vals.length-1,i)); w.el.scrollTo({top:i*DIAL.IH,behavior:smooth?'smooth':'auto'}); dialMark(k); if(!smooth) dialRead(); }
 function dialVal(){ const U=DIALMODES[DIAL.mode].U; return dialDefs().map(grp=>grp.reduce((s,[k])=>s+DIAL.w[k].vals[dialIdx(k)]*DIAL.w[k].mult,0)/U); }
 function dmsTxt(v,isLat){ const h=isLat?'N':'E'; let N=Math.round(v*360000), d=Math.floor(N/360000), r=N%360000, m=Math.floor(r/6000), s=(r%6000)/100; return `${h}${d}°${P2(m)}′${s.toFixed(2).padStart(5,'0')}″`; }
-function dialRead(){ const [la,lo]=dialVal(); const sub=DIAL.mode==='dms'?`度分秒 ${dmsTxt(la,true)} ${dmsTxt(lo,false)}`:DIAL.mode==='d'?`度 N${la.toFixed(5)}° E${lo.toFixed(5)}°`:'';
-  $('dialOut').innerHTML=fmtLL(la,lo,'dm')+(sub?`<span class="dsub">（${sub}）</span>`:''); }
+function dialRead(){ const [la,lo]=dialVal(); const F={dm:['度分',fmtLL(la,lo,'dm')],d:['度',`N${la.toFixed(5)}° E${lo.toFixed(5)}°`],dms:['度分秒',`${dmsTxt(la,true)} ${dmsTxt(lo,false)}`]};
+  // ダイヤルで選んでいない2つの単位を表示（ダイヤル自体が3つ目）：度分秒→度分＋度、度分→度分秒＋度、度→度分＋度分秒
+  const [mk,sk]={dms:['dm','d'],dm:['dms','d'],d:['dm','dms']}[DIAL.mode]||['dm','d'];
+  $('dialOut').innerHTML=`<span class="dlab">${F[mk][0]}</span>${F[mk][1]}<span class="dsub"><span class="dlab">${F[sk][0]}</span>${F[sk][1]}</span>`; }
 function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
   dialDefs().forEach((grp,gi)=>{ let r=Math.round((gi?lo:la)*U); grp.forEach(([k,,vals,,mult])=>{ const q=Math.floor(r/mult); r-=q*mult; dialSet(k,vals.indexOf(q)>=0?vals.indexOf(q):Math.max(0,q-vals[0])); }); });
   dialRead(); }
