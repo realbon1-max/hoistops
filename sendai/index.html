@@ -877,6 +877,15 @@ section.subsec>h2{display:flex!important;align-items:center;gap:8px;font-size:15
 .sh-ic svg{width:20px;height:20px}
 section.subsec>h2::before{display:none!important}
 @media (max-width:560px){ section.subsec{margin-left:10px!important} section.subsec::before{left:-7px} .mh-ic{width:38px;height:38px} .mh-ic svg{width:24px;height:24px} .mh-tx{font-size:17px!important} }
+
+/* 燃料消費の時点カード */
+.bstrip{display:flex;align-items:stretch;gap:6px;margin:12px 0 2px;flex-wrap:wrap}
+.bsc{flex:1 1 150px;border:1px solid var(--rule);border-top:4px solid var(--bc);border-radius:10px;padding:6px 10px;background:var(--panel);min-width:0}
+.bsl{font-size:12.5px;font-weight:800;color:var(--bc)}.bst{font-size:24px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.bsw,.bsf{font-size:12px;color:var(--muted)}.bsw b,.bsf b{font-size:15px;color:var(--ink)}
+.bsa{align-self:center;color:var(--muted);font-size:18px}
+@media (max-width:560px){ .bsa{display:none} .bsc{flex-basis:100px} .bst{font-size:20px} }
+#burn{margin-top:4px!important}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -1200,7 +1209,7 @@ a{color:#7cc4ff}
         </div>
         <div class="timebox" id="timebox"></div>
       </div>
-      <svg id="burn" viewBox="0 0 900 200" role="img" aria-label="燃料消費による全備重量の変化"></svg>
+      <svg id="burn" viewBox="0 0 900 250" role="img" aria-label="燃料消費による全備重量の変化"></svg>
       <p class="legend">燃料消費率はRFMにホバリング時の値が示されていないため、自隊の実績値を入力してください（初期値は仮の値）。装備品の重量も、自隊の重量重心の記録の値に置き換えてください。入力した内訳は、この端末のブラウザに保存されます。</p>
     </section>
     <div class="grph" id="g_ref">⑦ 参考（高度・気圧・チャート）</div>
@@ -2155,19 +2164,40 @@ function drawBurn(GW){
   if(over<=0){box.className='timebox ok';box.innerHTML=`<div class="tbh">✅ 今の重量でホバリングできます</div><div class="tbsub">判定：${tn}</div>${eqn}<div class="tbr"><span class="tbk">ホバリングを続けられる時間</span><b class="tbbig">${ff>0?Math.floor(tRsv):'–'}<small> 分</small></b><span class="tbn">予備 ${rsv} kg を残して使える燃料 ${fmk(usable)} kg ÷ ${ff} kg/h${ff>0?`（今から始めると ${hm(tRsv)} まで）`:''}</span></div>`;}
   else if(over>usable){box.className='timebox warn';box.innerHTML=`<div class="tbh">⛔ 燃料を使い切っても重すぎます</div><div class="tbsub">判定：${tn}</div>${eqn}<div class="tbr"><span class="tbk">あと減らす重量</span><b class="tbbig">${fmk(over-usable)}<small> kg</small></b><span class="tbn">予備を残して使える燃料は ${fmk(usable)} kg だけ。吊荷・搭乗者・装備・搭載燃料を見直してください</span></div>`;}
   else{box.className='timebox caution';box.innerHTML=`<div class="tbh">⏳ 今は重すぎます。燃料が減ればホバリングできます</div><div class="tbsub">判定：${tn}</div>${eqn}<div class="tbr"><span class="tbk">ホバリングできるようになるまで</span><b class="tbbig">${Math.ceil(tHover)}<small> 分後</small></b><span class="tbn">${ff} kg/h で燃料が ${fmk(over)} kg 減るまで（今から ${hm(tHover)}）。そこから予備 ${rsv} kg まで ${Math.floor(tRsv-tHover)} 分</span></div>`;}
-  // chart: GW over time
-  const L=60,Rr=880,Tp=16,B=160; const tmax=Math.max(10,Math.min(120,Math.ceil((isFinite(tRsv)?tRsv:60)/10)*10));
-  const wmin=Math.min(lim,GW-usable)-100, wmax=Math.max(GW,lim)+100;
-  const X=t=>L+t/tmax*(Rr-L), Y=w=>B-(w-wmin)/(wmax-wmin)*(B-Tp);
+  // chart: GW over time（今・ホバリング可能になる時点・予備に達する時点を、時刻・重量・残燃料つきで表示）
+  const clk=m=>{ const d=new Date(Date.now()+m*60000); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+  const tR=isFinite(tRsv)?tRsv:60, tmax=Math.max(20,Math.min(240,Math.ceil(tR*1.08/10)*10));
+  const L=64,Rr=880,Tp=26,B=196;
+  const wEnd=GW-ff*Math.min(tmax,tR)/60, span0=Math.max(GW,lim)-Math.min(lim,wEnd), pad=Math.max(120,span0*.18), wmin=Math.min(lim,wEnd)-pad, wmax=Math.max(GW,lim)+pad;
+  const X=t=>L+Math.min(tmax,Math.max(0,t))/tmax*(Rr-L), Y=w=>B-(w-wmin)/(wmax-wmin)*(B-Tp);
   let h='';
-  for(let t=0;t<=tmax;t+=10){h+=`<line x1="${X(t)}" y1="${Tp}" x2="${X(t)}" y2="${B}" stroke="var(--rule)"/><text x="${X(t)}" y="${B+15}" font-size="11" text-anchor="middle" fill="var(--muted)">${t}分</text>`;}
-  const step=(wmax-wmin)>800?200:100; for(let w=Math.ceil(wmin/step)*step;w<=wmax;w+=step){h+=`<line x1="${L}" y1="${Y(w)}" x2="${Rr}" y2="${Y(w)}" stroke="var(--rule)"/><text x="${L-6}" y="${Y(w)+4}" font-size="11" text-anchor="end" fill="var(--muted)">${w}</text>`;}
-  h+=`<rect x="${X(Math.min(tmax,tRsv))}" y="${Tp}" width="${Math.max(0,Rr-X(Math.min(tmax,tRsv)))}" height="${B-Tp}" fill="var(--warn)" opacity=".1"/>`;
-  if(isFinite(tRsv)&&tRsv<=tmax) h+=`<line x1="${X(tRsv)}" y1="${Tp}" x2="${X(tRsv)}" y2="${B}" stroke="var(--warn)" stroke-dasharray="5 3"/><text x="${X(tRsv)-4}" y="${Tp+12}" font-size="11" text-anchor="end" fill="var(--warn)">予備燃料 ${rsv} kg</text>`;
-  h+=`<line x1="${L}" y1="${Y(lim)}" x2="${Rr}" y2="${Y(lim)}" stroke="var(--ok)" stroke-width="2.5"/><text x="${Rr}" y="${Y(lim)-6}" font-size="12" text-anchor="end" fill="var(--ok)" font-weight="700">ホバリング可能な上限 ${Math.round(lim)} kg</text>`;
-  const tEnd=Math.min(tmax,tRsv); h+=`<line x1="${X(0)}" y1="${Y(GW)}" x2="${X(tEnd)}" y2="${Y(GW-ff*tEnd/60)}" stroke="var(--ink)" stroke-width="3"/>`;
-  if(over>0&&over<=usable){h+=`<circle cx="${X(tHover)}" cy="${Y(lim)}" r="7" fill="var(--path)"/><line x1="${X(tHover)}" y1="${Y(lim)}" x2="${X(tHover)}" y2="${B}" stroke="var(--path)" stroke-dasharray="4 3"/><text x="${X(tHover)+8}" y="${Y(lim)+18}" font-size="12" font-weight="700" fill="var(--path)">${Math.ceil(tHover)}分後</text>`;}
-  h+=`<text x="${L}" y="${B+32}" font-size="11" fill="var(--muted)">燃料消費 ${ff} kg/h でホバリングを続けたときの全備重量</text>`;
+  // zones
+  const yl=Math.max(Tp,Math.min(B,Y(lim)));
+  h+=`<rect x="${L}" y="${Tp}" width="${Rr-L}" height="${yl-Tp}" fill="var(--warn)" opacity=".10"/><rect x="${L}" y="${yl}" width="${Rr-L}" height="${B-yl}" fill="var(--ok)" opacity=".10"/>`;
+  h+=`<text x="${Rr-6}" y="${Tp+13}" font-size="11.5" font-weight="700" text-anchor="end" fill="var(--warn)" opacity=".85">重すぎる（ホバリング不可）</text><text x="${Rr-6}" y="${B-6}" font-size="11.5" font-weight="700" text-anchor="end" fill="var(--ok)" opacity=".9">ホバリング可能</text>`;
+  // grid
+  const tst=tmax<=60?10:tmax<=120?20:30;
+  for(let t=0;t<=tmax;t+=tst){ h+=`<line x1="${X(t)}" y1="${Tp}" x2="${X(t)}" y2="${B}" stroke="var(--rule)" opacity=".6"/><text x="${X(t)}" y="${B+15}" font-size="11" text-anchor="middle" fill="var(--muted)">${t}分</text><text x="${X(t)}" y="${B+29}" font-size="10" text-anchor="middle" fill="var(--muted)" opacity=".8">${clk(t)}</text>`; }
+  const step=(wmax-wmin)>800?200:100; for(let w=Math.ceil(wmin/step)*step;w<=wmax;w+=step){ h+=`<line x1="${L}" y1="${Y(w)}" x2="${Rr}" y2="${Y(w)}" stroke="var(--rule)" opacity=".5"/><text x="${L-6}" y="${Y(w)+4}" font-size="11" text-anchor="end" fill="var(--muted)">${fmk(w)}</text>`; }
+  h+=`<text x="${L-6}" y="${Tp-8}" font-size="10.5" text-anchor="end" fill="var(--muted)">全備 kg</text>`;
+  // limit line
+  h+=`<line x1="${L}" y1="${Y(lim)}" x2="${Rr}" y2="${Y(lim)}" stroke="var(--ok)" stroke-width="2.5"/><text x="${(L+Rr)/2}" y="${Y(lim)-5}" font-size="12" font-weight="700" text-anchor="middle" fill="var(--ok)" paint-order="stroke" stroke="var(--panel)" stroke-width="3">上限 ${fmk(lim)} kg</text>`;
+  // reserve area
+  if(isFinite(tRsv)&&tRsv<tmax) h+=`<rect x="${X(tRsv)}" y="${Tp}" width="${Rr-X(tRsv)}" height="${B-Tp}" fill="#000" opacity=".18"/><line x1="${X(tRsv)}" y1="${Tp}" x2="${X(tRsv)}" y2="${B}" stroke="var(--warn)" stroke-width="2" stroke-dasharray="5 3"/>`;
+  // weight line（超過中は赤、可能になってからは緑）
+  const tEnd=Math.min(tmax,tR), tX=over>0?Math.min(tEnd,tHover):0;
+  if(tX>0) h+=`<line x1="${X(0)}" y1="${Y(GW)}" x2="${X(tX)}" y2="${Y(GW-ff*tX/60)}" stroke="var(--warn)" stroke-width="4" stroke-linecap="round"/>`;
+  if(tEnd>tX) h+=`<line x1="${X(tX)}" y1="${Y(GW-ff*tX/60)}" x2="${X(tEnd)}" y2="${Y(GW-ff*tEnd/60)}" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>`;
+  // markers with callouts（上の帯に、時刻・全備・残燃料）
+  const pins=[]; pins.push({t:0,w:GW,c:'var(--ink)',lab:'今',short:'今',time:clk(0),gw:fmk(GW),fu:fmk(fuel)});
+  if(over>0&&over<=usable) pins.push({t:tHover,w:lim,c:'#e07a1f',lab:`${Math.ceil(tHover)}分後 ホバリング可`,short:`${Math.ceil(tHover)}分後`,time:clk(tHover),gw:fmk(lim),fu:fmk(fuel-over)});
+  if(isFinite(tRsv)&&tRsv<=tmax) pins.push({t:tRsv,w:GW-usable,c:'var(--warn)',lab:`${Math.floor(tRsv)}分後 予備燃料に達する`,short:`${Math.floor(tRsv)}分後`,time:clk(tRsv),gw:fmk(GW-usable),fu:fmk(rsv)});
+  let lastX=-1e9, lv=0; pins.forEach((q,i)=>{ const x=X(q.t), y=Y(q.w); lv=(x-lastX<70)?lv+1:0; lastX=x; const ly=y-14-lv*16;
+    h+=`<circle cx="${x}" cy="${y}" r="7" fill="${q.c}" stroke="var(--panel)" stroke-width="2.5"/><text x="${x+(i===0?-2:0)}" y="${ly}" font-size="13" font-weight="800" text-anchor="${i===0?'start':x>Rr-40?'end':'middle'}" fill="${q.c}" paint-order="stroke" stroke="var(--panel)" stroke-width="4">${q.short}</text>`; });
+  // 時点カード（今・ホバリング可・予備燃料）
+  let st=document.getElementById('burnStrip'); if(!st){ st=document.createElement('div'); st.id='burnStrip'; st.className='bstrip'; s.parentNode.insertBefore(st,s); }
+  st.innerHTML=pins.map((q,i)=>`${i?'<span class="bsa">→</span>':''}<div class="bsc" style="--bc:${q.c}"><div class="bsl">${q.lab}</div><div class="bst">${q.time}</div><div class="bsw">全備 <b>${q.gw}</b> kg</div><div class="bsf">燃料 <b>${q.fu}</b> kg</div></div>`).join('');
+  h+=`<text x="${L}" y="${B+46}" font-size="11" fill="var(--muted)">ホバリング（燃料消費 ${ff} kg/h）を続けたときの全備重量。赤の線＝重すぎる間、緑の線＝ホバリングできる間、灰色＝予備燃料 ${rsv} kg を割る時間帯。</text>`;
   s.innerHTML=h;
 }
 
