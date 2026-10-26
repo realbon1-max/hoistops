@@ -3480,6 +3480,18 @@ function sunDraw(){ const el=$('mSun'); if(!el) return; const [la,lo,pk]=sunPos(
 setInterval(()=>{ try{ sunDraw(); document.querySelectorAll('[data-sunla]').forEach(b=>{ b.textContent=sunText(+b.dataset.sunla,+b.dataset.sunlo); }); }catch(e){} },30000);
 
 // ==== heading follow: device compass (iPhone / iPad / Android), GPS track when moving ====
+// 自動で再計算されたとき（コンパスの機首方位追従・地形の読み込み後など）、見ている場所が画面上で動かないようにする
+const VK={a:null,until:0,raf:0,touch:false};
+function vkRec(){ const y=Math.min(innerHeight*0.35,260), el=document.elementFromPoint(innerWidth/2,y); if(!el||el===document.body||el.closest('nav.jump,.mstick,#map,dialog')) return null;
+  const path=[]; let n=el; while(n&&n!==document.body&&!n.id){ const pa=n.parentElement; if(!pa) break; path.unshift([Array.prototype.indexOf.call(pa.children,n),n.tagName,n.getBoundingClientRect().top]); n=pa; }
+  if(!n||n===document.body) return null; return {el,top:el.getBoundingClientRect().top,rid:n.id,rtop:n.getBoundingClientRect().top,path}; }
+function vkRes(a){ if(a.el.isConnected) return [a.el,a.top]; const root=document.getElementById(a.rid); if(!root) return null; let n=root, t=a.rtop;
+  for(const [i,tg,tp] of a.path){ const k=n.children[i]; if(!k||k.tagName!==tg) break; n=k; t=tp; } return [n,t]; }
+function vkLoop(){ VK.raf=0; if(!VK.a||VK.touch||performance.now()>VK.until){ VK.a=null; return; } const r=vkRes(VK.a); if(r){ const d=r[0].getBoundingClientRect().top-r[1]; if(Math.abs(d)>0.5) window.scrollBy(0,d); } VK.raf=requestAnimationFrame(vkLoop); }
+function keepView(fn){ if(!VK.touch){ if(!VK.a) VK.a=vkRec(); VK.until=performance.now()+900; } const r=fn(); if(VK.a){ const x=vkRes(VK.a); if(x){ const d=x[0].getBoundingClientRect().top-x[1]; if(Math.abs(d)>0.5) window.scrollBy(0,d); } if(!VK.raf) VK.raf=requestAnimationFrame(vkLoop); } return r; }
+document.addEventListener('touchstart',()=>{ VK.touch=true; VK.a=null; },{capture:true,passive:true});
+['touchend','touchcancel'].forEach(ev=>document.addEventListener(ev,()=>{ setTimeout(()=>{ VK.touch=false; },700); },{capture:true,passive:true}));
+document.addEventListener('wheel',()=>{ VK.a=null; },{capture:true,passive:true});
 const HF={on:false,src:'',last:0,sm:null,gpsAt:0,watch:null,got:false,off:0,acc:null,raw:null};
 try{ HF.off=+localStorage.getItem('sd139hfoff')||0; }catch(e){}
 function hfScreenAngle(){ // rotation of the screen's "up" from the device top, judged from the real viewport shape (some iPads report angle 90 while upright)
@@ -3493,7 +3505,7 @@ function hfSet(h,src){ if(!HF.on||!isFinite(h)) return; h=((h%360)+360)%360; HF.
   if(HF.sm==null) HF.sm=h; else { let d=((h-HF.sm+540)%360)-180; HF.sm=((HF.sm+d*0.35)+360)%360; }
   HF.src=src; const now=Date.now(); const cur=+$('hdg').value||0, v=Math.round(HF.sm)%360||360, diff=Math.abs(((v-cur+540)%360)-180);
   if(now-HF.last<400||diff<2) { hfBadge(); return; } HF.last=now;
-  $('hdg').value=v; $('hdg').dispatchEvent(new Event('input')); hfBadge(); }
+  keepView(()=>{ $('hdg').value=v; $('hdg').dispatchEvent(new Event('input')); }); hfBadge(); }
 function hfOri(e){ if(Date.now()-HF.gpsAt<5000) return; let h=null;
   if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)) h=e.webkitCompassHeading;            // iOS: magnetic, device top
   else if(e.absolute&&typeof e.alpha==='number') h=360-e.alpha;                                                       // Android absolute
@@ -4422,7 +4434,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const p=MAP.pick; if(!p||p.loading){ box.innerHTML='<div class="hint">上の地図でホイスト地点をタップすると、その地点の断面図を描きます。</div>'; wireHint('上の地図でホイスト地点をタップすると、その地点の樹木・障害物の高さから、ワイヤーに要る長さと吊り下げ中の揺れを出します。'); return; }
   const hdg=((+$('hdg').value%360)+360)%360, key=[p.lat.toFixed(6),p.lon.toFixed(6),hdg,XS.range].join(',');
   if(key!==XS.key){ XS.key=key; XS.prof=null; box.innerHTML='<div class="hint">地形を読み取り中…</div>'; wireHint('地形を読み取り中…'); const k=key;
-    xsLoad(p.lat,p.lon,hdg,XS.range).then(pr=>{ if(XS.key!==k) return; XS.prof=pr; drawXsec(XS.H,XS.T,XS.W); xsStatus(); }).catch(e=>{ box.innerHTML='<div class="hint warn">地形を読み取れませんでした</div>'; }); return; }
+    xsLoad(p.lat,p.lon,hdg,XS.range).then(pr=>{ if(XS.key!==k) return; XS.prof=pr; keepView(()=>drawXsec(XS.H,XS.T,XS.W)); xsStatus(); }).catch(e=>{ box.innerHTML='<div class="hint warn">地形を読み取れませんでした</div>'; }); return; }
   if(!XS.prof) return;
   const obs=+$('mObs').value||0, hft=+$('hh').value||0, hAGL=obs+hft/FT, d=downwash(H,T,W);
   XS.w=Math.round(Math.max(460,Math.min(760,(box.clientWidth||760)*1.3)));
@@ -4447,7 +4459,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   <div class="xleg note">${DWB.map((b,i)=>`<span><i style="background:${b[1]}"></i>${i===0?'5 m/s未満':b[0]<999?DWB[i-1][0]+'〜'+b[0]+' m/s':DWB[i-1][0]+' m/s以上'}：${b[2]}</span>`).join('')}</div>
   <div class="xleg note"><span><i style="background:#2c7a4b"></i>クラシック法の経路</span><span><i style="background:#2f6fb0"></i>ヴィチャード法の経路</span><span><i style="background:#c0392b"></i>片発離脱の経路</span><span>降下地点の傾斜：緑 15°未満（緩い）・黄 15〜30°（急）・橙 30〜45°（とても急）・赤 45°以上（崖）</span></div>
   ${E?escHTML(E,hft):''}`;
-  if(E&&p) roseTerrain(p.lat,p.lon,E.hdg,()=>drawXsec(XS.H,XS.T,XS.W));
+  if(E&&p) roseTerrain(p.lat,p.lon,E.hdg,()=>keepView(()=>drawXsec(XS.H,XS.T,XS.W)));
   { const ht=$('hlTerr'); if(ht){ if(E&&E.hMinO!=null&&!isNaN(E.oLoss)){ const flat=Math.ceil((E.oLoss*FT+RC.mg)/5)*5, ok=hft>=E.hMinO;
       ht.hidden=false; ht.className='hlterr '+(ok?'ok':'bad');
       { const cr=$('hlCrash'); if(cr){ if(ok){ cr.className='caution'; cr.innerHTML=`⚠ 平らな地面なら激突する高さですが、離脱方向（${dirTxt(E.oOff)}）は下っているため、<b>地形込みでは通過できます</b>（要る高さ ${E.hMinO} ft）。離脱方向を守ること。`; } else { cr.className='warn'; cr.innerHTML=`💥 離脱中に障害物・地面に激突する計算です（地形込みで要る高さ ${E.hMinO} ft）。`; } } }
@@ -4523,7 +4535,7 @@ function wireHint(t){ try{ XS.need=0; }catch(e){} const wb=$('wireBody'); if(wb)
   $('xsSave').onclick=xsExport; })();
 // redraw only the cross-section (not the whole page), once per frame, so quick toggles never pile up
 let xsRaf=0; function xsRedraw(){ if(xsRaf) return; const st=$('xsSt'); if(st) st.textContent='描き直し中…';
-  xsRaf=requestAnimationFrame(()=>requestAnimationFrame(()=>{ xsRaf=0; if(XS.W) drawXsec(XS.H,XS.T,XS.W); xsStatus(); })); }
+  xsRaf=requestAnimationFrame(()=>requestAnimationFrame(()=>{ xsRaf=0; if(XS.W) keepView(()=>drawXsec(XS.H,XS.T,XS.W)); xsStatus(); })); }
 function xsStatus(){ const st=$('xsSt'); if(st) st.textContent=XS.key&&!XS.prof?'地形を読み取り中…（読み終わると切り替わります）':''; }
 function xsExport(){ const svgs=[...document.querySelectorAll('#xsBody .xsvg')]; if(!svgs.length) return;
   const LV={'--ink':'#15253a','--muted':'#56657a','--rule':'#c9d0d8','--panel':'#ffffff','--paper':'#e8ebee'}, cs={getPropertyValue:v=>LV[v]||''}, vars=Object.keys(LV);
