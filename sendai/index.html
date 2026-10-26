@@ -5045,7 +5045,7 @@ document.documentElement.style.overflowAnchor='none'; document.body.style.overfl
   document.addEventListener('touchstart',e=>{ const el=e.target; if(!isR(el)||e.touches.length!==1) return; e.preventDefault();
     const t=e.touches[0]; S={el,x0:t.clientX,y0:t.clientY,y:t.clientY,mode:null,moved:false}; },{capture:true,passive:false});
   document.addEventListener('touchmove',e=>{ if(!S) return; e.preventDefault(); const t=e.touches[0]; const dx=t.clientX-S.x0, dy=t.clientY-S.y0;
-    if(!S.mode&&Math.hypot(dx,dy)>6) S.mode=Math.abs(dx)>=Math.abs(dy)?'h':'v';
+    if(!S.mode&&Math.hypot(dx,dy)>8) S.mode=Math.abs(dy)>Math.abs(dx)*1.8?'v':'h';
     if(S.mode==='h'){ if(setFrom(S.el,t.clientX)) S.moved=true; }
     else if(S.mode==='v'){ window.scrollBy(0,S.y-t.clientY); }
     S.y=t.clientY; },{capture:true,passive:false});
@@ -5055,30 +5055,7 @@ document.documentElement.style.overflowAnchor='none'; document.body.style.overfl
 })();
 </script>
 <style>input[type=range]{touch-action:none!important;-webkit-user-select:none;user-select:none}</style>
-<script>
-// TEMPORARY diagnostic: if the page jumps while a slider is being used, show a small report box (to screenshot) explaining what moved it.
-(function(){ const D={t:-1e9,y:0,h:0,calls:[],snap:null,shown:false,ev:[]};
-  const now=()=>performance.now(), stk=()=>{ try{ return (new Error().stack||'').split('\n').slice(2,5).map(x=>x.trim().replace(/^at /,'').replace(/https?:\/\/[^)\s]*\//,'').slice(0,70)).join(' ← '); }catch(e){ return ''; } };
-  const wrap=(o,k,label)=>{ const f=o[k]; if(typeof f!=='function') return; o[k]=function(){ if(now()-D.t<3000) D.calls.push(`${label}(${[...arguments].map(a=>typeof a==='object'?JSON.stringify(a):a).join(',').slice(0,40)}) ${this&&this.id?'#'+this.id:''} ← ${stk()}`); return f.apply(this,arguments); }; };
-  wrap(window,'scrollTo','window.scrollTo'); wrap(window,'scrollBy','window.scrollBy'); wrap(window,'scroll','window.scroll');
-  wrap(Element.prototype,'scrollIntoView','scrollIntoView'); wrap(HTMLElement.prototype,'focus','focus');
-  const pick=()=>[...document.querySelectorAll('header, .jump, main > *, main section, main details, .col > *, #map, .mstick, footer')].slice(0,400);
-  const nm=e=>{ const h=e.querySelector&&e.querySelector('h2,summary,.msh'); return (e.id?'#'+e.id:e.tagName.toLowerCase()+(e.className&&typeof e.className==='string'?'.'+e.className.split(' ')[0]:''))+(h?'「'+h.textContent.trim().slice(0,18)+'」':''); };
-  const start=(why)=>{ D.t=now(); D.y=scrollY; D.h=document.documentElement.scrollHeight; D.calls=[]; D.ev=[why]; D.shown=false; D.snap=pick().map(e=>[e,e.getBoundingClientRect().height]); };
-  const isR=t=>t&&t.tagName==='INPUT'&&t.type==='range';
-  ['touchstart','pointerdown'].forEach(ev=>document.addEventListener(ev,e=>{ if(isR(e.target)) start(ev+' '+(e.target.id||'')); else D.t=-1e9; },{capture:true,passive:true}));
-  document.addEventListener('input',e=>{ if(isR(e.target)){ if(now()-D.t>3000) start('input '+e.target.id); else D.t=now(); D.ev.push(`input ${e.target.id}=${e.target.value} y=${Math.round(scrollY)} H=${document.documentElement.scrollHeight}`); if(D.ev.length>14) D.ev.splice(1,1); } },true);
-  ['touchend','touchcancel','pointerup','pointercancel','blur','focusin','focusout'].forEach(ev=>document.addEventListener(ev,e=>{ if(now()-D.t<3000) D.ev.push(`${ev} ${(e.target&&e.target.id)||''} y=${Math.round(scrollY)}`); },true));
-  addEventListener('scroll',()=>{ if(D.shown||now()-D.t>3000) return; if(Math.abs(scrollY-D.y)<250) return; D.shown=true;
-    const ch=(D.snap||[]).filter(([e])=>e.isConnected).map(([e,h])=>[e,h,e.getBoundingClientRect().height]).filter(x=>Math.abs(x[2]-x[1])>=10).sort((a,b)=>Math.abs(b[2]-b[1])-Math.abs(a[2]-a[1])).slice(0,6).map(([e,a,b])=>`${nm(e)} ${Math.round(a)}→${Math.round(b)}px`);
-    const ae=document.activeElement;
-    const txt=[`ページが ${Math.round(D.y)} → ${Math.round(scrollY)} に移動（${Math.round(now()-D.t)} ms後）`,`ページの高さ ${D.h} → ${document.documentElement.scrollHeight}／画面 ${innerWidth}×${innerHeight}`,`入力中の欄：${ae?(ae.id||ae.tagName):'-'}`,
-      '【スクロール命令】'+(D.calls.length?'\n'+D.calls.slice(-6).join('\n'):'なし（指の動き・ブラウザ自身によるもの）'),
-      '【高さが変わった欄】'+(ch.length?'\n'+ch.join('\n'):'なし'),'【操作の記録】\n'+D.ev.slice(-10).join('\n')].join('\n');
-    let b=document.getElementById('dbgJump'); if(!b){ b=document.createElement('div'); b.id='dbgJump'; b.style.cssText='position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:100000;background:#111;color:#9f9;font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;max-height:60vh;overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.5)'; document.body.appendChild(b); }
-    b.innerHTML=''; const h=document.createElement('div'); h.style.cssText='color:#fff;font-weight:700;margin-bottom:4px'; h.textContent='揺れ調査（この画面をスクショして送ってください）'; const x=document.createElement('button'); x.textContent='閉じる'; x.style.cssText='float:right;font:12px sans-serif;padding:2px 10px'; x.onclick=()=>b.remove(); h.appendChild(x); const pre=document.createElement('div'); pre.textContent=txt; b.append(h,pre); },{passive:true});
-})();
-</script>
+
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}); }); }
 </script>
