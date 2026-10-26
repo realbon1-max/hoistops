@@ -2369,7 +2369,7 @@ function mapThresholds(){
   return {at:M.at,atTop:Tq.at,b:[M.cross(300),M.cross(100),M.cross(0),Tq.cross(0)],dev,f,add,hh,W,sig:[Math.round(W),dev.toFixed(1),Math.round(add),Math.round(hh),Math.round(f)].join(',')};
 }
 const OVC=[[40,105,205],[40,160,70],[245,205,30],[240,120,25],[205,25,35]];
-const OVN=['余裕 300 kg以上','余裕 100〜300 kg','余裕 0〜100 kg（ぎりぎり）','MCPでは不足・TOPなら可','TOPでも不可'];
+const OVN=['MCP 余裕 300 kg以上','MCP 余裕 100〜300 kg','MCP 余裕 0〜100 kg（ぎりぎり）','MCPでは不足・TOPなら可','TOPでも不可'];
 function classify(h,t){ if(isNaN(h)) return -1; const m=t.at(h); if(isNaN(m)) return -1; if(m>=300) return 0; if(m>=100) return 1; if(m>=0) return 2; return t.atTop(h)>=0?3:4; }
 function netTile(z,tx,ty){ const zz=Math.min(z,14), k=Math.pow(2,z-zz), ptx=Math.floor(tx/k), pty=Math.floor(ty/k);
   return getDem(zz,ptx,pty).then(a=>{ if(k===1) return a; const o=new Float32Array(65536), ox=(tx-ptx*k)*256/k, oy=(ty-pty*k)*256/k;
