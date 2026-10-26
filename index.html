@@ -1004,7 +1004,7 @@ a{color:#7cc4ff}
           <div class="dialw" id="dialWheels"></div>
           <div class="mrow" style="margin-top:6px"><b id="dialOut" class="dialout"></b><button type="button" id="dialGo">この座標へ移動</button><button type="button" id="dialFrom">この座標を出発地に</button><span class="dmk"><span class="dmkl">マーク：</span><button type="button" data-dmk="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-dmk="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-dmk="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-dmk="lift" style="--rc:#1565c0">↑ 揚収地点</button></span><span class="hint note" style="margin:0">指で上下に回して数字を合わせます（度：0.00001°＝約1 m／度分：0.001分＝約2 m／度分秒：0.01秒＝約0.3 m）。結果は度分で表示します</span></div>
         </div>
-        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button></div>
+        <div class="mrow mlayers"><span class="mlab">地図：</span><span class="mseg" id="mBase"><button data-b="local" aria-pressed="false">内蔵の地形</button><button data-b="std" aria-pressed="true">標準地図</button><button data-b="pale" aria-pressed="false">淡色</button><button data-b="hillshademap" aria-pressed="false">陰影起伏</button><button data-b="seamlessphoto" aria-pressed="false">写真</button></span><button type="button" id="gOpen" class="gopen" title="Googleマップで開く">Googleマップ ↗</button><button type="button" id="wOpen" class="gopen" title="Windyで開く">Windy ↗</button><button type="button" id="svOpen" class="gopen" title="SkyVectorで開く（航空図）">SkyVector ↗</button></div>
 
       </div>
       <div id="mStick" class="mstick"><div id="mStickS" class="mstickS" aria-hidden="true"></div>
@@ -2750,6 +2750,8 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
   document.querySelectorAll('#mBase button').forEach(b=>b.onclick=()=>mapSetBase(b.dataset.b));
   $('wOpen').onclick=()=>{ const la=MAP.pick?MAP.pick.lat:y2lat(MAP.cy,MAP.z), lo=MAP.pick?MAP.pick.lon:x2lon(MAP.cx,MAP.z), z=Math.max(5,Math.min(13,MAP.z-1)), a=la.toFixed(3), b=lo.toFixed(3);
     window.open(`https://www.windy.com/${a}/${b}?wind,${a},${b},${z}`,'_blank','noopener'); };
+  $('svOpen').onclick=()=>{ const la=MAP.pick?MAP.pick.lat:y2lat(MAP.cy,MAP.z), lo=MAP.pick?MAP.pick.lon:x2lon(MAP.cx,MAP.z), z=Math.max(1,Math.min(9,13-MAP.z));
+    window.open(`https://skyvector.com/?ll=${la.toFixed(5)},${lo.toFixed(5)}&chart=302&zoom=${z}`,'_blank','noopener'); };
   $('gOpen').onclick=()=>{ const el=$('map'); const la=MAP.pick?MAP.pick.lat:y2lat(MAP.cy,MAP.z), lo=MAP.pick?MAP.pick.lon:x2lon(MAP.cx,MAP.z);
     const u=MAP.pick?`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`:`https://www.google.com/maps/@?api=1&map_action=map&center=${la.toFixed(6)},${lo.toFixed(6)}&zoom=${Math.min(20,MAP.z)}&basemap=${/sat|photo/.test(MAP.base)?'satellite':/ter|hill/.test(MAP.base)?'terrain':'roadmap'}`;
     window.open(u,'_blank','noopener'); };
@@ -5085,7 +5087,7 @@ function iconizeAll(){
   iconize($('mGo'),'go','移動'); iconize($('mHere'),'here','現在地'); iconize($('dialBtn'),'dial','ダイヤル');
   const B={local:['local','地形'],std:['std','標準'],pale:['pale','淡色'],hillshademap:['hill','陰影'],seamlessphoto:['photo','写真']};
   document.querySelectorAll('#mBase button').forEach(b=>{ const q=B[b.dataset.b]; if(q) iconize(b,q[0],q[1]); });
-  iconize($('gOpen'),'google','Google','Googleマップで開く'); iconize($('wOpen'),'windy','Windy','Windyで開く');
+  iconize($('gOpen'),'google','Google','Googleマップで開く'); iconize($('wOpen'),'windy','Windy','Windyで開く'); iconize($('svOpen'),'ifr','SkyVector','SkyVector（航空図）で開く');
   const T={gov:['layers','重ねる'],disp:['disp','表示'],ifr:['ifr','航空図'],site:['site','現場'],fp:['fp','飛行']};
   document.querySelectorAll('.mtabs button[data-mt]').forEach(b=>{ const q=T[b.dataset.mt]; if(q) iconize(b,q[0],q[1]); });
   const D={pick:'性能',pt:'ポイント',txt:'文字',meas:'距離',area:'面積',route:'ルート',circ:'同心円',grid:'グリッド'};
