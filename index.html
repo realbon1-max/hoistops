@@ -889,6 +889,13 @@ section.subsec>h2::before{display:none!important}
 #dialBtn[aria-expanded=true] .ico{color:#fff}
 #dialPanel:not([hidden]){border:1.5px solid #ff8a2a;box-shadow:0 0 0 1px rgba(255,138,42,.25)}
 .dmk{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}.dmkl{font-size:12px;color:var(--muted)}.dmk button{border:1.5px solid var(--rc)!important;color:var(--rc)!important;font-weight:700;border-radius:14px!important;padding:4px 9px!important;font-size:12.5px!important}
+.lpmenu{position:absolute;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.lpmenu .lph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lpmenu .lpx{font:inherit;font-size:16px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
+.lpmenu [data-lp]{font:inherit;font-size:13px;font-weight:700;padding:7px 6px;border:1.5px solid var(--rc);color:var(--rc);background:var(--paper);border-radius:10px;cursor:pointer}
+.lpmenu [data-lp=pick]{grid-column:1/-1}
+.lpdot{position:absolute;z-index:59;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:3px solid #ff7a1a;background:rgba(255,122,26,.25);pointer-events:none;animation:lpp 1s ease-out infinite}@keyframes lpp{50%{transform:scale(1.4)}}
+#map{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -2701,7 +2708,8 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
   el.addEventListener('pointerdown',e=>{ if(e.target.closest('.mzoom,.mattr,.mmsg,.mwind')) return; el.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1){ st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
       const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
-      if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字',area:'面積の点',tmp:'点',meas:'距離・方位'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); } }
+      if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字',area:'面積の点',tmp:'点',meas:'距離・方位'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); }
+      else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; st.lp=setTimeout(()=>{ if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },550); } }
     if(pts.size===2){ const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
@@ -2712,6 +2720,7 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
   const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
     if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; { const mm=$('mMsg'); if(mm&&/移動中/.test(mm.textContent)) mm.hidden=true; } st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
+    if(pts.size===0&&st&&st.menu){ st=null; return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
         const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; let la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { const hp=hpHit(px,py); if(hp){ la=hp[1]; lo=hp[2]; } mapPick(la,lo); pickSync(la,lo); if(hp) mapMsg(hp[3]==='山の目印'?`<b>${hp[0]}</b><br><small>${hp[4]}</small>`:`<b>${hp[0]}</b>（${hp[3]||'ヘリポート'}）<br><small>${hp[4]}・管理 ${hp[5]}・広さ ${hp[6]}</small>`); } }
       st=null; }
@@ -4998,6 +5007,24 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const tg=e=>{ if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ') return; e.preventDefault(); const ss=subs(); const anyOpen=ss.some(x=>!x.classList.contains('sfold')); ss.forEach(x=>{ const h=x.querySelector(':scope>h2.sfh'); if(h&&x.classList.contains('sfold')!==anyOpen) h.click(); }); };
     g.addEventListener('click',tg); g.addEventListener('keydown',tg); });
 })();
+
+// ---- 地図の長押しメニュー：その場所にポイント・救助地点を記録
+function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z);
+  const m=document.createElement('div'); m.className='lpmenu'; m.innerHTML=`<div class="lph">${fmtLL(la,lo,'dm')}<button type="button" class="lpx" aria-label="閉じる">×</button></div>
+   <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button>`;
+  const dot=document.createElement('div'); dot.className='lpdot'; dot.style.left=px+'px'; dot.style.top=py+'px';
+  el.appendChild(dot); el.appendChild(m);
+  const W=el.clientWidth, H=el.clientHeight, mw=m.offsetWidth, mh=m.offsetHeight; m.style.left=Math.max(6,Math.min(W-mw-6,px-mw/2))+'px'; m.style.top=(py+16+mh<H-6?py+16:Math.max(6,py-16-mh))+'px';
+  const stop=e=>e.stopPropagation(); ['pointerdown','pointerup','click'].forEach(ev=>m.addEventListener(ev,stop));
+  m.querySelector('.lpx').onclick=lpClose;
+  m.querySelectorAll('[data-lp]').forEach(b=>b.onclick=()=>{ const k=b.dataset.lp; lpClose();
+    if(k==='pick'){ mapPick(la,lo); pickSync(la,lo); return; }
+    let it; if(k==='pt'){ const n=DRAW.items.filter(x=>x.t==='pt').length+1; it={t:'pt',lat:la,lon:lo,label:'P'+n}; }
+    else { it={t:'dest',role:k,lat:la,lon:lo,label:roleLabel(k),h:null,at:new Date().toTimeString().slice(0,5)}; elevAt(la,lo).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); }
+    DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); mapMsg(`「${it.label}」を記録しました（長押しで移動できます）`); });
+  setTimeout(()=>document.addEventListener('pointerdown',lpOut,true),0); }
+function lpOut(e){ if(e.target.closest&&e.target.closest('.lpmenu')) return; lpClose(); }
+function lpClose(){ document.removeEventListener('pointerdown',lpOut,true); document.querySelectorAll('.lpmenu,.lpdot').forEach(x=>x.remove()); }
 // ---- メニューをピクトグラム＋短い文字に（全体をすっきり）
 const ICO=(()=>{ const P=(d,ex='')=>`<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}${ex}</svg>`;
   return {
