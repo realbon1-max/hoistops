@@ -900,6 +900,7 @@ section.subsec>h2::before{display:none!important}
 .lpmenu [data-lp=pick]{grid-column:1/-1}
 .lpdot{position:absolute;z-index:59;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:3px solid #ff7a1a;background:rgba(255,122,26,.25);pointer-events:none;animation:lpp 1s ease-out infinite}@keyframes lpp{50%{transform:scale(1.4)}}
 #map{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.lpring{position:absolute;z-index:59;width:44px;height:44px;margin:-22px 0 0 -22px;pointer-events:none}.lpring svg{width:100%;height:100%}@keyframes lpfill{to{stroke-dashoffset:0}}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
@@ -1023,6 +1024,7 @@ a{color:#7cc4ff}
           <div class="mrow"><span class="mlab">高度単位</span><span class="mseg" id="dAlt"><button type="button" data-v="m">メートル</button><button type="button" data-v="ft">フィート</button></span></div>
           <div class="mrow"><span class="mlab">レーダー</span>円 <select id="dRdrRing"><option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="1852">1 NM</option><option value="2000">2 km</option></select>　扇（±40°）<select id="dRdrFan"><option value="1000">1 km</option><option value="2000">2 km</option><option value="3000">3 km</option><option value="3704">2 NM</option><option value="5000">5 km</option><option value="9260">5 NM</option></select><span class="hint" style="margin:0 0 0 6px">この中に入ると赤で点滅</span></div>
           <div class="mrow"><span class="mlab">GPS追従</span>更新 <select id="dGpsIv"><option value="1">1秒</option><option value="3">3秒</option><option value="5">5秒</option><option value="10">10秒</option><option value="30">30秒</option></select>　地図を動かした後、中心に戻すまで <select id="dGpsBack"><option value="0">すぐ</option><option value="5">5秒</option><option value="10">10秒</option><option value="30">30秒</option><option value="-1">戻さない</option></select></div>
+          <div class="mrow"><span class="mlab">長押し</span>地図を <select id="dLp" aria-label="長押しの時間"><option value="0.5">0.5秒</option><option value="1">1秒</option><option value="1.5">1.5秒</option><option value="2">2秒</option><option value="3">3秒</option></select> 押し続けると記録メニュー</div>
           <div class="mrow"><span class="mlab">スケール</span><span class="mseg" id="dRet"><button type="button" data-v="none">なし</button><button type="button" data-v="cross">十字</button><button type="button" data-v="box">四角</button><button type="button" data-v="circle">円</button><button type="button" data-v="line">単線</button><button type="button" data-v="ticks">目盛円</button></span></div>
           <p class="legend">座標形式は、選んだ地点・作図の一覧・検索欄の表示に使います（検索欄には度・度分・度分秒・UTM・MGRSのどれでも入力できます）。距離単位は地図の縮尺・作図の距離・スケール、高度単位は選んだ地点の標高の表示に使います（性能計算は今までどおりフィート）。スケールは地図の中心に、縮尺に合わせた区切りのよい長さで表示します。</p>
         </div>
@@ -2711,15 +2713,15 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
     if(pts.size===1){ st={x:e.clientX,y:e.clientY,cx:MAP.cx,cy:MAP.cy,t:Date.now(),moved:false};
       const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
       if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字',area:'面積の点',tmp:'点',meas:'距離・方位'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); }
-      else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; st.lp=setTimeout(()=>{ if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },550); } }
-    if(pts.size===2){ const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
+      else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; const ms=Math.round((+DISP.lp||3)*1000); lpRing(px,py,ms); st.lp=setTimeout(()=>{ lpRingOff(); if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },ms); } }
+    if(pts.size===2){ lpRingOff(); if(st.lp){ clearTimeout(st.lp); st.lp=0; } const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
       { const la=y2lat(MAP.cy-el.clientHeight/2+py,MAP.z), lo=x2lon(MAP.cx-el.clientWidth/2+px,MAP.z); if(st.drag.k===-1){ const a=it.pts[0], b=it.pts[1], dla=la-(a[0]+b[0])/2, dlo=lo-(a[1]+b[1])/2; it.pts=it.pts.map(q=>[q[0]+dla,q[1]+dlo]); } else if(st.drag.k!=null) it.pts[st.drag.k]=[la,lo]; else { it.lat=la; it.lon=lo; } } if(!st.raf) st.raf=requestAnimationFrame(()=>{ if(st) st.raf=0; drawLayer(); }); return; }
-    if(pts.size===1){ const dx=e.clientX-st.x, dy=e.clientY-st.y; if(Math.hypot(dx,dy)>5){st.moved=true; el.classList.add('drag'); if(st.lp){ clearTimeout(st.lp); st.lp=0; }} MAP.cx=st.cx-dx; MAP.cy=st.cy-dy; mapReq(); }
+    if(pts.size===1){ const dx=e.clientX-st.x, dy=e.clientY-st.y; if(Math.hypot(dx,dy)>5){st.moved=true; el.classList.add('drag'); if(st.lp){ clearTimeout(st.lp); st.lp=0; lpRingOff(); }} MAP.cx=st.cx-dx; MAP.cy=st.cy-dy; mapReq(); }
     else if(pts.size===2&&st.pinch){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), r=el.getBoundingClientRect(); const mx=(a.x+b.x)/2-r.left, my=(a.y+b.y)/2-r.top;
       if(d/st.pinch>1.6){mapZoom(1,mx,my); st.pinch=d;} else if(d/st.pinch<0.62){mapZoom(-1,mx,my); st.pinch=d;} } });
-  const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
+  const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); lpRingOff(); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
     if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; { const mm=$('mMsg'); if(mm&&/移動中/.test(mm.textContent)) mm.hidden=true; } st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st&&st.menu){ st=null; return; }
@@ -2890,7 +2892,7 @@ function dialFrom(la,lo){ dialBuild(); const U=DIALMODES[DIAL.mode].U;
 })();
 
 // ==== display settings: coordinate format, MGRS grid, distance / altitude units, centre scale ====
-const DISP={coord:'dm',mgrs:false,dist:'m',alt:'ft',ret:'none'};
+const DISP={coord:'dm',mgrs:false,dist:'m',alt:'ft',ret:'none',lp:3};
 try{ Object.assign(DISP,JSON.parse(localStorage.getItem('sd139disp')||'{}')); }catch(e){}
 // 高度の表示は ft を基本に（以前の保存が m のままでも一度だけ ft に切り替え）
 try{ if(!localStorage.getItem('sd139altft')){ DISP.alt='ft'; localStorage.setItem('sd139altft','1'); localStorage.setItem('sd139disp',JSON.stringify(DISP)); } }catch(e){}
@@ -4970,6 +4972,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
 })();
 
 // ---- 地図の長押しメニュー：その場所にポイント・救助地点を記録
+(function(){ const sl=$('dLp'); if(!sl) return; sl.value=String(DISP.lp||3); sl.onchange=()=>{ DISP.lp=+sl.value; try{ dispSave(); }catch(e){} }; })();
 function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z);
   const m=document.createElement('div'); m.className='lpmenu'; m.innerHTML=`<div class="lph">${fmtLL(la,lo,'dm')}<button type="button" class="lpx" aria-label="閉じる">×</button></div>
    <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button>`;
@@ -4984,6 +4987,10 @@ function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientW
     else { it={t:'dest',role:k,lat:la,lon:lo,label:roleLabel(k),h:null,at:new Date().toTimeString().slice(0,5)}; elevAt(la,lo).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); }
     DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); mapMsg(`「${it.label}」を記録しました（長押しで移動できます）`); });
   setTimeout(()=>document.addEventListener('pointerdown',lpOut,true),0); }
+// 長押し中の進み具合（輪が一周するとメニュー）
+let LPR=0; function lpRing(px,py,ms){ lpRingOff(); LPR=setTimeout(()=>{ const el=$('map'); const d=document.createElement('div'); d.className='lpring'; d.style.left=px+'px'; d.style.top=py+'px';
+  d.innerHTML=`<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="rgba(0,0,0,.25)" stroke="rgba(255,255,255,.5)" stroke-width="3"/><circle cx="22" cy="22" r="18" fill="none" stroke="#ff7a1a" stroke-width="4" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="113.1" transform="rotate(-90 22 22)" style="animation:lpfill ${Math.max(100,ms-250)}ms linear forwards"/></svg>`; el.appendChild(d); },250); }
+function lpRingOff(){ clearTimeout(LPR); document.querySelectorAll('.lpring').forEach(x=>x.remove()); }
 function lpOut(e){ if(e.target.closest&&e.target.closest('.lpmenu')) return; lpClose(); }
 function lpClose(){ document.removeEventListener('pointerdown',lpOut,true); document.querySelectorAll('.lpmenu,.lpdot').forEach(x=>x.remove()); }
 // ---- メニューをピクトグラム＋短い文字に（全体をすっきり）
