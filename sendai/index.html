@@ -1221,7 +1221,7 @@ a{color:#7cc4ff}
         <div class="rs"><label for="r_t"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></svg>気温</label><input type="range" id="r_t" min="-30" max="45" step="1"><output id="r_to"></output></div>
         <div class="rs"><label for="r_ia"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12l-4-5M12 4v2M20 12h-2M12 20v-2M4 12h2"/></svg>高度計</label><input type="range" id="r_ia" min="0" max="15000" step="1" value="8000"><output id="r_iao"></output></div>
         <div class="rs"><label for="r_st"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>規正値</label><input type="range" id="r_st" min="920" max="1060" step="1" value="1013"><output id="r_sto"></output></div>
-        <label class="chk rchk"><input type="checkbox" id="r_lk" checked> 規正値をQNHに合わせる</label>
+        <label class="chk rchk"><input type="checkbox" id="r_lk" checked> 規正値をQNHに合わせる</label><label class="chk rchk rhl"><input type="checkbox" id="r_hlk"> ヘリをホバリング高度に連動</label>
       </div>
       <div class="rbtns"><span class="rpl">例：</span><button type="button" data-p="std"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>標準大気</button><button type="button" data-p="sum"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.5"/><path d="M9 2v1.5M2 9h1.5M4 4l1 1M14 4l-1 1"/><text x="17" y="21" font-size="9" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle">L</text></svg>夏・低気圧</button><button type="button" data-p="win"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v12M3 6l10 6M3 12l10-6"/><text x="18" y="21" font-size="9" font-weight="800" fill="currentColor" stroke="none" text-anchor="middle">H</text></svg>冬・高気圧</button><button type="button" data-p="forget"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17v.5"/></svg>規正し忘れ</button></div>
       <div class="rbtns2"><button type="button" id="relWx" class="mwmsm" style="margin:0 8px 0 0;padding:5px 10px">🌐 気象庁MSMの雲・0℃高度・雨を重ねる</button><span class="rpl"><svg class="rico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20M12 6v3M5 13c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3zM9 16l-1 3M15 16l1 3"/></svg>ヘリの高さ：</span><button type="button" id="acSite">現場の標高</button><button type="button" id="acHover">現場＋ホバリング</button><span id="acNote"></span></div>
@@ -1748,13 +1748,17 @@ $('r_el').addEventListener('change',()=>{if(REL.drag==='slider'){REL.drag=null;u
 $('r_el').addEventListener('input',()=>setElev(+$('r_el').value));
 $('r_q').addEventListener('input',()=>setMaster(null,+$('r_q').value,null));
 $('r_t').addEventListener('input',()=>setMaster(null,null,+$('r_t').value));
-['r_ia','r_st'].forEach(id=>$(id).addEventListener('input',update));
+['r_st'].forEach(id=>$(id).addEventListener('input',update));
+$('r_ia').addEventListener('input',()=>{ if($('r_hlk').checked){ $('r_hlk').checked=false; relHlSave(); } update(); });
+function relHlSave(){ try{ localStorage.setItem('sd139relhl',$('r_hlk').checked?'1':'0'); }catch(e){} }
+try{ $('r_hlk').checked=localStorage.getItem('sd139relhl')!=='0'; }catch(e){ $('r_hlk').checked=true; }
+$('r_hlk').addEventListener('change',()=>{ relHlSave(); update(); });
 $('r_lk').addEventListener('change',update);
 // put the helicopter (true altitude) at the site, or at the site plus the hover height
 function acTo(trueFt){ const c=REL.c||relCalc(+$('hp').value,+$('oat').value); let ind=trueFt/c.k+HstdP(c.qh)-HstdP(c.st);
   ind=Math.max(0,Math.min(15000,Math.round(ind))); $('r_ia').value=ind; update(); }
-$('acSite').onclick=()=>{const c=REL.c||relCalc(+$('hp').value,+$('oat').value); acTo(c.eft);};
-$('acHover').onclick=()=>{const c=REL.c||relCalc(+$('hp').value,+$('oat').value); acTo(c.eft+(+$('hh').value||0));};
+$('acSite').onclick=()=>{ $('r_hlk').checked=false; relHlSave(); const c=REL.c||relCalc(+$('hp').value,+$('oat').value); acTo(c.eft);};
+$('acHover').onclick=()=>{ $('r_hlk').checked=true; relHlSave(); update(); };
 document.querySelectorAll('.rbtns button').forEach(bt=>bt.onclick=()=>{
   const el=+$('elev').value||6562, p=bt.dataset.p;
   const isaAt=(e,q)=>ISA(e+HstdP(q));
@@ -1772,6 +1776,8 @@ function relCalc(Happ,T){
   return {qh,eft,hp,ps,dt,da,ind,st,k,tru,clr:tru-eft,off:HstdP(qh)};
 }
 function drawRel(Happ,T){
+  // 連動ON：ヘリ（本当の高度）＝現場の標高＋OGEホバリング高度 になるよう高度計の指示を合わせる
+  if($('r_hlk')&&$('r_hlk').checked){ try{ const c0=relCalc(Happ,T); let ind=(c0.eft+(+$('hh').value||0))/c0.k+HstdP(c0.qh)-HstdP(c0.st); ind=Math.max(0,Math.min(15000,Math.round(ind))); $('r_ia').value=ind; }catch(e){} }
   const fm=n=>(Math.round(n)||0).toLocaleString(); const c=relCalc(Happ,T);
   const act=document.activeElement;
   [['r_el',c.eft],['r_q',c.qh],['r_t',T]].forEach(([id,v])=>{if(act!==$(id))$(id).value=Math.round(v);});
@@ -1864,7 +1870,8 @@ function drawRel(Happ,T){
    if(Math.abs(p.x-110)<60&&Math.abs(p.y-yt)<30) REL.drag='ac'; else if(Math.abs(p.x-230)<60&&Math.abs(p.y-sy)<30) REL.drag='sum'; else return;
    s.setPointerCapture(e.pointerId);});
  s.addEventListener('pointermove',e=>{if(REL.drag!=='ac'&&REL.drag!=='sum')return; const p=yOf(e), ft=ftAt(p.y), c=REL.c;
-   if(REL.drag==='ac'){ let ind=ft/c.k+HstdP(c.qh)-HstdP(c.st); ind=Math.max(0,Math.min(15000,Math.round(ind/50)*50)); $('r_ia').value=ind; update(); }
+   if(REL.drag==='ac'&&$('r_hlk').checked){ const v=Math.max(0,Math.min(5000,Math.round((ft-c.eft)/10)*10)); $('hh').value=v; if($('hhR')) $('hhR').value=hhV2P(v); update(); }
+   else if(REL.drag==='ac'){ let ind=ft/c.k+HstdP(c.qh)-HstdP(c.st); ind=Math.max(0,Math.min(15000,Math.round(ind/50)*50)); $('r_ia').value=ind; update(); }
    else if(REL.drag==='sum'){ setElev(Math.round(ft/50)*50); } });
  const end=()=>{if(REL.drag==='ac'||REL.drag==='sum'){REL.drag=null;update();}}; s.addEventListener('pointerup',end); s.addEventListener('pointercancel',end);
 })();
