@@ -3298,7 +3298,7 @@ async function snapInset(g,W,H,it,FONT){ const iw=Math.round(Math.min(W*0.44,230
   g.restore(); g.strokeStyle='#fff'; g.lineWidth=2; g.strokeRect(ox,oy,iw,ih); g.font=`700 9.5px ${FONT}`; g.fillStyle='#fff'; g.strokeStyle='rgba(0,0,0,.6)'; g.lineWidth=2.5; g.strokeText('広域図',ox+5,oy+ih+12); g.fillText('広域図',ox+5,oy+ih+12); }
 async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidth, H=el.clientHeight, S=Math.min(3,Math.max(2,window.devicePixelRatio||2));
   const FONT='-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif';
-  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hpx=opt.place?hpAt(opt.place.lat,opt.place.lon):pk?hpAt(pk.lat,pk.lon):null, hdr=(opt.place?104:pk?98:76)+(hpx?46:0), ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
+  const pk=MAP.pick&&!MAP.pick.loading?MAP.pick:null, hpx=opt.place?hpAt(opt.place.lat,opt.place.lon):pk?hpAt(pk.lat,pk.lon):null, hdr=(opt.place?124:pk?98:76)+(hpx?46:0), ftr=22, cv=document.createElement('canvas'); cv.width=W*S; cv.height=(H+hdr+ftr)*S; const g=cv.getContext('2d'); g.scale(S,S);
   g.fillStyle='#0d1b2a'; g.fillRect(0,0,W,H+hdr+ftr);
   // map body
   g.save(); g.translate(0,hdr); g.beginPath(); g.rect(0,0,W,H); g.clip(); g.fillStyle='#d6dce2'; g.fillRect(0,0,W,H);
@@ -3323,7 +3323,7 @@ async function mapSnapshot(opt){ opt=opt||{}; const el=$('map'), W=el.clientWidt
   if(opt.place){ const fl=placeFlightTxt(flightNums(opt.place.lat,opt.place.lon,opt.place.h),true); g.fillStyle='#9fd0ff'; fit('✈ '+fl[0],10,41,W-20,'600',12.5); g.fillStyle='#ffd27a'; fit('⛽ '+fl[1],10,62,W-20,'600',12.5); g.fillStyle='#e8eef5'; }
   else { const sp=sunPos(); fit(`風 ${String(Math.round(wd)).padStart(3,'0')}°/${Math.round(ws)} kt　機首 ${String(Math.round(hd)).padStart(3,'0')}°　ズーム${MAP.z}　${(()=>{ const t=SUN.times(jstDay(new Date()),sp[0],sp[1]); return `日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}`; })()}`,10,41,W-20,'600',12.5); }
   const p=pk; let y=opt.place?86:64;
-  if(opt.place){ const it=opt.place, r=roleOf(it); g.fillStyle=ROLES[r].col; g.beginPath(); g.arc(17,y-4,6.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; fit(`${it.label||ROLES[r].n}　${fmtLL(it.lat,it.lon)}${it.h!=null&&isFinite(it.h)?`　標高 ${DISP.alt==='ft'?Math.round(it.h*FT).toLocaleString()+' ft':Math.round(it.h).toLocaleString()+' m'}`:''}　${mbeFix(it.lat,it.lon).str}`,28,y,W-38,'800',13.5); }
+  if(opt.place){ const it=opt.place, r=roleOf(it); g.fillStyle=ROLES[r].col; g.beginPath(); g.arc(17,y-4,6.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke(); g.fillStyle='#fff'; fit(`${it.label||ROLES[r].n}　度分 ${fmtAny(it.lat,it.lon,'dm')}${it.h!=null&&isFinite(it.h)?`　標高 ${DISP.alt==='ft'?Math.round(it.h*FT).toLocaleString()+' ft':Math.round(it.h).toLocaleString()+' m'}`:''}　${mbeFix(it.lat,it.lon).str}`,28,y,W-38,'800',13.5); g.fillStyle='#c9d6e3'; fit(`度分秒 ${dmsTxt(it.lat,true)} ${dmsTxt(it.lon,false)}　／　度 N${it.lat.toFixed(5)}° E${it.lon.toFixed(5)}°`,28,y+20,W-38,'600',12.5); }
   else { if(p){ g.fillStyle='#e05bc0'; g.beginPath(); g.arc(17,y-4,6,0,7); g.fill(); g.fillStyle='#fff'; fit(`ヘリ ${fmtLL(p.lat,p.lon)}${isFinite(p.h)?`　標高 ${DISP.alt==='ft'?Math.round(p.h*FT).toLocaleString()+' ft':Math.round(p.h).toLocaleString()+' m'}`:''}　${mbeFix(p.lat,p.lon).str}`,28,y,W-38,'700',13); y+=22; }
   g.strokeStyle='#ff5a5a'; g.lineWidth=2; g.beginPath(); g.moveTo(11,y-4); g.lineTo(23,y-4); g.moveTo(17,y-10); g.lineTo(17,y+2); g.stroke();
   g.fillStyle=p?'#c9d6e3':'#fff'; fit(`画面中心 ${fmtLL(c[0],c[1])}　${mbeFix(c[0],c[1]).str}${p?`　ヘリから ${(()=>{ const q=gc(p.lat,p.lon,c[0],c[1]); return fmtDist(q.nm*1852).split('（')[0]+'・'+String(Math.round(q.crs)%360).padStart(3,'0')+'°T'; })()}`:''}`,28,y,W-38,p?'600':'700',p?12:13); }
@@ -3344,9 +3344,7 @@ function placeFlightTxt(f,short){ const fm=n=>Math.round(n).toLocaleString(), mm
   return [`${f.from}→現場 ${f.nm.toFixed(1)} NM・磁方位 ${String(f.mag).padStart(3,'0')}°・離陸から約${mm(f.tAir)}（始動〜離陸${f.su}分を含め約${mm(f.tOut)}）${f.eta?`・到着予定 ${f.eta}`:''}`,
     `燃料 ${fm(f.fuel)}→${fm(f.fArr)} kg（−${fm(f.burn)} kg）・全備 ${fm(f.GW)}→${fm(f.gwArr)} kg で臨場・現場で使える時間 約${f.hovMin>0?mm(f.hovMin):'0分'}（帰投・予備を残して）`]; }
 function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www.google.com/maps/search/?api=1&query=${la.toFixed(6)},${lo.toFixed(6)}`;
-  const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`]; { const hx=hpAt(la,lo); if(hx) L.push('■ 場外離着陸場・ヘリポート',...hpLines(hx).map(t=>'　'+t)); } L.push(`座標 ${fmtAny(la,lo,'dm')}（WGS84）`);
-  if(DISP.coord!=='dm'&&DISP.coord!=='mgrs') L.push(`${COORDN[DISP.coord]} ${fmtAny(la,lo,DISP.coord)}`);
-  L.push(`度 ${la.toFixed(6)}, ${lo.toFixed(6)}`, `MGRS ${fmtMGRS(la,lo)}`);
+  const L=[`【${ROLES[r].n}】${it.label||ROLES[r].n}`]; { const hx=hpAt(la,lo); if(hx) L.push('■ 場外離着陸場・ヘリポート',...hpLines(hx).map(t=>'　'+t)); } L.push('座標（WGS84）',`　度分　 ${fmtAny(la,lo,'dm')}`,`　度分秒 ${dmsTxt(la,true)} ${dmsTxt(lo,false)}`,`　度　　 N${la.toFixed(6)}° E${lo.toFixed(6)}°`,`　MGRS　 ${fmtMGRS(la,lo)}`);
   if(it.h!=null&&isFinite(it.h)) L.push(`標高 ${Math.round(it.h).toLocaleString()} m（${Math.round(it.h*FT).toLocaleString()} ft）`);
   L.push(`${mbeFix(la,lo).str}（仙台VOR/DMEから 磁方位/NM）`); if(it.at) L.push(`記録 ${it.at}`);
   { const fl=placeFlightTxt(flightNums(la,lo,it.h)); L.push(...fl, '（時間・燃料は無風での計算）'); }
