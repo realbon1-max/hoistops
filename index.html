@@ -885,6 +885,9 @@ section.subsec>h2::before{display:none!important}
 #dialOut .dlab{font-size:11px;font-weight:700;padding:1px 6px;margin-right:6px;border-radius:8px;border:1px solid currentColor;opacity:.8;vertical-align:3px}
 #dialOut .dsub{margin-right:14px}#dialOut .dmain{margin-right:14px}
 #dialOut.nodm{color:var(--muted)!important;font-weight:400!important;font-size:15px!important}#dialOut.nodm .dsub{color:var(--muted)!important;font-size:15px!important}
+#dialBtn[aria-expanded=true]{background:linear-gradient(180deg,#ff8a2a,#e0650f)!important;border-color:#ff8a2a!important;color:#fff!important;box-shadow:0 0 0 2px rgba(255,138,42,.35),0 0 14px rgba(255,122,26,.35)}
+#dialBtn[aria-expanded=true] .ico{color:#fff}
+#dialPanel:not([hidden]){border:1.5px solid #ff8a2a;box-shadow:0 0 0 1px rgba(255,138,42,.25)}
 /* 折りたたみ */
 h2.sfh{cursor:pointer;user-select:none;position:relative;padding-right:30px}
 h2.sfh::after{content:'▴';position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);border:1px solid var(--rule);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;line-height:1}
