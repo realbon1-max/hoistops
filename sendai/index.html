@@ -456,6 +456,7 @@ details.mset>summary.msh{cursor:pointer}
 .mstx{font-size:11px;font-weight:700;margin-top:1px;white-space:nowrap}
 .mnorth{position:absolute;right:10px;bottom:30px;z-index:6;pointer-events:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.85);border-radius:6px;padding:2px 3px}.mnorth b{font-size:13px;color:#d62828;line-height:1;margin-top:-4px}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.mlayer .otile{position:absolute;width:256px;height:256px;overflow:hidden}.mlayer .otile img{position:absolute}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
 #mMark{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;pointer-events:none;z-index:5}
 #mMark svg{display:block;width:100%;height:100%;transition:transform .2s,filter .2s}
@@ -1063,7 +1064,7 @@ a{color:#7cc4ff}
       </div>
       <div class="mapwrap">
         <div id="map" tabindex="0" aria-label="地図。ドラッグで移動、ホイールまたは＋−で拡大縮小、クリックで地点を選ぶ"><div class="mlayer" id="mBaseL"></div><div class="mlayer" id="mGOv"></div><svg id="mGeo" aria-hidden="true"></svg><div class="mlayer" id="mOvL"></div><svg id="mGrid" aria-hidden="true"></svg><svg id="mIfr"></svg><svg id="mRoute"></svg><svg id="mOei" aria-hidden="true"></svg><svg id="mRadar" aria-hidden="true"></svg><svg id="mRadio" aria-hidden="true"></svg><svg id="mEdge" aria-hidden="true"></svg><svg id="mDraw"></svg><svg id="mHp" aria-hidden="true"></svg><svg id="mRet" aria-hidden="true"></svg><div id="mMark" hidden></div>
-          <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><div class="mzjog" id="mZjog" role="slider" aria-label="ズーム（上へ引くと拡大・下へ引くと縮小）" aria-valuemin="6" aria-valuemax="16" tabindex="0"><i class="mzk"><b id="mZlv"></b></i></div><button type="button" id="mZout" aria-label="縮小">−</button></div>
+          <div class="mzoom"><button type="button" id="mZin" aria-label="拡大">＋</button><div class="mzjog" id="mZjog" role="slider" aria-label="ズーム（上へ引くと拡大・下へ引くと縮小）" aria-valuemin="6" aria-valuemax="18" tabindex="0"><i class="mzk"><b id="mZlv"></b></i></div><button type="button" id="mZout" aria-label="縮小">−</button></div>
           <div class="mattr">出典：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院（地理院タイル・標高タイル）</a></div>
           <div class="mmsg" id="mMsg" hidden></div><svg id="mWindF" class="mwindf" aria-hidden="true"></svg><div class="mscale" id="mScale"></div><div class="mctr" id="mCtr" aria-label="画面中心の座標"></div><div class="mctr msun" id="mSun" aria-label="日の出・日没"></div><div class="mwind" id="mWind"></div>
         </div>
@@ -2295,9 +2296,10 @@ const DEMP={"lat1": 39.166666666666664, "lon0": 140.25, "dlat": 0.00055555555555
 
 // ---- map: GSI tiles + DEM (dem_png, 10 m mesh), self-contained slippy map
 const GSI='https://cyberjapandata.gsi.go.jp/xyz/';
-const BASES={local:{max:15},std:{ext:'png',max:18},pale:{ext:'png',max:18},hillshademap:{ext:'png',max:16},seamlessphoto:{ext:'jpg',max:18},};
+const BASES={local:{max:18},std:{ext:'png',max:18},pale:{ext:'png',max:18},hillshademap:{ext:'png',max:16},seamlessphoto:{ext:'jpg',max:18},};
+const MAPMAXZ=18;
 
-const MAP={z:10,cx:0,cy:0,base:'std',ver:0,thr:null,pick:null,minZ:6,maxZ:16,ok:0,ng:0};
+const MAP={z:10,cx:0,cy:0,base:'std',ver:0,thr:null,pick:null,minZ:6,maxZ:18,ok:0,ng:0};
 const FT=3.28084;
 const lon2x=(lon,z)=>(lon+180)/360*256*Math.pow(2,z);
 const lat2y=(lat,z)=>{const r=lat*Math.PI/180; return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*256*Math.pow(2,z);};
@@ -2408,6 +2410,13 @@ function mapRender(){
     const bk=MAP.base+'/'+z+'/'+tx+'/'+ty; want.add(bk);
     let im=bl.querySelector(`[data-k="${bk}"]`);
     if(!im&&MAP.base==='local'){ im=document.createElement('canvas'); im.width=im.height=256; im.dataset.k=bk; bl.appendChild(im); drawShade(im,z,tx,ty); }
+    if(!im&&z>B.max){ // 拡大しすぎ：最大ズームのタイルを拡大して表示
+      const zz=B.max, k=Math.pow(2,z-zz), px=Math.floor(tx/k), py=Math.floor(ty/k), pk=MAP.base+'/'+zz+'/'+px+'/'+py;
+      const dv=document.createElement('div'); dv.dataset.k=bk; dv.className='otile'; const ig=document.createElement('img'); ig.alt=''; ig.draggable=false;
+      ig.style.width=ig.style.height=(256*k)+'px'; ig.style.left=(-(tx-px*k)*256)+'px'; ig.style.top=(-(ty-py*k)*256)+'px';
+      const net=GSI+pk+'.'+B.ext; ig.onload=()=>{MAP.ok++; mapMsg();}; ig.onerror=()=>{ MAP.ng++; mapMsg(); };
+      if(TS.known.has(pk)) tsGet(pk).then(b=>{ ig.src=b?URL.createObjectURL(b):net; }); else ig.src=net;
+      dv.appendChild(ig); bl.appendChild(dv); im=dv; }
     if(!im){ im=document.createElement('img'); im.dataset.k=bk; im.alt=''; im.draggable=false;
       const net=GSI+MAP.base+'/'+z+'/'+tx+'/'+ty+'.'+B.ext, el_=im, zz=z, xx=tx, yy=ty;
       im.onload=()=>{MAP.ok++; mapMsg();};
@@ -2439,7 +2448,7 @@ function mapMsg(text){ const m=$('mMsg'); if(!m.onclick) m.onclick=()=>{ m.hidde
   if(text){ m.hidden=false; if(/<(br|small|b)>/.test(text)) m.innerHTML=text; else m.textContent=text; return; }
   if(MAP.ok===0&&MAP.ng>=3&&MAP.base!=='local'&&![...TS.known].some(k=>k.startsWith(MAP.base+'/'))){ mapSetBase('local'); m.hidden=false; m.textContent='地理院の地図を読み込めないため、内蔵の標高データから作った地形図で表示しています。標高とホバリングの判定は、内蔵データの範囲内ならネット接続なしで使えます。'; setTimeout(()=>{m.hidden=true;},9000); }
   else if(MAP.ok>0) m.hidden=true; }
-function mapSetBase(k){ MAP.base=k; document.querySelectorAll('#mBase button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.b===k)); MAP.maxZ=Math.min(16,BASES[k].max); if(MAP.z>MAP.maxZ) mapZoom(MAP.maxZ-MAP.z); $('mBaseL').innerHTML=''; mapReq(); }
+function mapSetBase(k){ MAP.base=k; document.querySelectorAll('#mBase button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.b===k)); MAP.maxZ=MAPMAXZ; if(MAP.z>MAP.maxZ) mapZoom(MAP.maxZ-MAP.z); $('mBaseL').innerHTML=''; mapReq(); }
 // picked point drawn as a small top-view helicopter whose nose follows the heading (HDG)
 function mkHeli(){ const mk=$('mMark'); if(!mk) return; if(!mk.firstChild||mk.dataset.v!=='h'){ mk.dataset.v='h';
     mk.innerHTML=`<svg viewBox="-26 -26 52 52" aria-hidden="true"><circle r="21" fill="rgba(176,38,140,.18)" stroke="#b0268c" stroke-width="2.2"/><circle r="22.5" fill="none" stroke="#fff" stroke-width="1.2"/><g class="mkh"><path d="M0,-25 L4.5,-18 L-4.5,-18 Z" fill="#b0268c" stroke="#fff" stroke-width="1"/><g stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><g stroke="#15253a" stroke-width="1.6" stroke-linecap="round">${[0,72,144,216,288].map(a=>`<line x1="0" y1="0" x2="${(17*Math.sin((a+18)*RAD)).toFixed(1)}" y2="${(-17*Math.cos((a+18)*RAD)).toFixed(1)}"/>`).join('')}</g><path d="M0,-13 C4.5,-13 5.5,-6 5,1 C4.6,6 2.5,8 1.6,9 L1.2,19 L5,20.5 L5,22.5 L-5,22.5 L-5,20.5 L-1.2,19 L-1.6,9 C-2.5,8 -4.6,6 -5,1 C-5.5,-6 -4.5,-13 0,-13 Z" fill="#1d4d9a" stroke="#fff" stroke-width="1.3"/><path d="M-2.6,-9.5 Q0,-12 2.6,-9.5 L2.2,-6.5 L-2.2,-6.5 Z" fill="#9fd0ff"/><circle r="2" fill="#fff" stroke="#15253a" stroke-width="1"/></g></svg>`; }
