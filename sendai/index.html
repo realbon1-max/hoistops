@@ -471,6 +471,14 @@ details.mset>summary.msh{cursor:pointer}
 .msbar{height:7px;border:2px solid #111;border-top:none;display:flex}.msbar i{flex:1}.msbar i:first-child{background:#111}
 .mstx{font-size:11px;font-weight:700;margin-top:1px;white-space:nowrap}
 .mnorth{position:absolute;right:10px;bottom:30px;z-index:6;pointer-events:none;display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.85);border-radius:6px;padding:2px 3px}.mnorth b{font-size:13px;color:#d62828;line-height:1;margin-top:-4px}
+.logbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:4px 0 8px}.logf button small{opacity:.7;margin-left:2px}.logact{display:flex;flex-wrap:wrap;gap:6px}.logact button,.logb button{font:inherit;font-size:12.5px;padding:5px 10px;border-radius:14px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.arm{background:#d62828!important;color:#fff!important;border-color:#d62828!important;font-weight:800}
+.loglist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}.logday{grid-column:1/-1;font-size:12.5px;font-weight:800;color:var(--muted);border-bottom:1px solid var(--rule);padding:4px 2px;margin-top:4px}
+.logc{border:1px solid var(--rule);border-left:6px solid var(--lc);border-radius:10px;padding:8px 10px;background:var(--paper);display:flex;flex-direction:column;gap:5px}.logc.gone{opacity:.62;border-left-style:dashed}
+.logt{display:flex;align-items:center;gap:8px}.logi{flex:0 0 30px;height:30px;border-radius:50%;background:var(--lc);color:#fff;display:grid;place-items:center;font-weight:900;font-size:16px}.logn{flex:1;min-width:0}.logn input{font:inherit;font-size:15px;font-weight:800;width:100%;border:none;border-bottom:1px dashed var(--rule);background:transparent;color:var(--ink);padding:1px 0}.logn small{display:block;font-size:11px;color:var(--muted)}.logtm{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--lc)}
+.logll{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}.logll b{font-size:15px;font-variant-numeric:tabular-nums}.logll span{font-size:12px;color:var(--muted)}.logll span:first-of-type{color:#7b3fd0;font-weight:700}
+.logmore summary{font-size:11.5px;color:var(--muted);cursor:pointer}.logmore div{font-size:12px;font-variant-numeric:tabular-nums;padding:3px 0 0 12px}.logb{display:flex;flex-wrap:wrap;gap:5px}.logb .logdel{margin-left:auto}
+.logempty{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px;padding:8px}.logempty svg{width:42px;height:42px;flex:none}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mlayer .otile{position:absolute;width:256px;height:256px;overflow:hidden}.mlayer .otile img{position:absolute}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
@@ -1039,7 +1047,7 @@ a{color:#7cc4ff}
   <h1 class="brand"><svg class="blogo" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/><path d="M20 20 L36 15 M20 20 L4 25 M20 20 L15 4 M20 20 L25 36" stroke="#ff9f1c" stroke-width="3" stroke-linecap="round"/><circle cx="20" cy="20" r="3.2" fill="currentColor"/><path d="M20 23 V35" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2"/></svg><span class="bname">HOIST<b>OPS</b></span><span class="btag">AW139</span><span class="bsub">ホバリング・風・地形・離脱</span><button type="button" id="skinBtn" class="skinbtn" aria-label="デザインの切り替え"></button></h1>
 </header>
 
-<nav class="jump" aria-label="ページ内の移動"><a href="#mapsec">① 現場・地図</a><a href="#g_cond">② 条件</a><a href="#g_hov">③ ホバリング</a><a href="#g_wind">④ 風・HDG</a><a href="#g_site">⑤ 断面・離脱</a><a href="#g_fuel">⑥ 重量・燃料</a><a href="#g_ref">⑦ 参考</a></nav>
+<nav class="jump" aria-label="ページ内の移動"><a href="#mapsec">① 現場・地図</a><a href="#logsec">記録</a><a href="#g_cond">② 条件</a><a href="#g_hov">③ ホバリング</a><a href="#g_wind">④ 風・HDG</a><a href="#g_site">⑤ 断面・離脱</a><a href="#g_fuel">⑥ 重量・燃料</a><a href="#g_ref">⑦ 参考</a></nav>
 <div class="topmap">
     <section class="box" id="mapsec" aria-label="地図で地点を選ぶ">
       <h2>① 現場を選ぶ</h2>
@@ -1134,6 +1142,10 @@ a{color:#7cc4ff}
         <p class="legend">地図をクリック（タップ）するか、検索欄に山名または緯度経度を入れると、その地点の地表の標高を読み取ります。緯度経度は世界測地系（WGS84。地理院地図のJGD2011とは実用上同じ）で、度・度分・度分秒のどれで入れても読み取れます（入れた形式にかかわらず度分で表示。「ダイヤルで入力」で指で回して入力もできます）。右の欄には、出発地（初期値は霞目飛行場。山名・緯度経度や「選択中の地点を出発地に」で、場外離着陸場や別の現場からにも変えられます）からの距離・飛行時間・燃料、離陸予定時刻を入れると到着予定時刻と現場を離れる最終時刻（帰投は霞目飛行場へ）、到着時の重量でのホバリングの余裕も出ます（風は考えていません。速度・燃料消費の初期値は仮の値なので自隊の値に変えてください）。宮城県と周辺（北緯37°40′〜39°10′、東経140°15′〜141°45′）は、国土地理院の5 mメッシュ標高（基盤地図情報）をアプリに内蔵しているので、ネット接続なしで使えます。内蔵データは約60 m四方ごとの最高点で、安全側（高め）の値です。データのない所（一部の山岳部など）と範囲の外は、地理院の標高タイルをネットから読みます。「内蔵の地形」は内蔵データから描いた地形図で、電波がないときは自動でこちらに切り替わります。性能は、地表に樹木・障害物の高さを足した「現場」の気圧高度で計算します（ほかの欄と同じ考え方）。「基準点」には、麓の空港やアメダスなど気温がわかる地点の標高と気温を入れます。現場の気温は、基準点から1,000 ftごとに約2℃（標準大気の減率）下がるとして推定します。色分けは今の全備重量・QNH・気温で、その地点の上でOGEホバリングができるかを示します。地理院の地図（標準・淡色・陰影・写真）は、上の「地図を端末に保存」で保存した範囲ならネット接続なしで表示され、保存していない所は内蔵の地形図で埋めます。</p>
         </details>
       </div>
+    </section>
+    <section class="box" id="logsec" aria-label="記録">
+      <h2>記録 <small>ポイント・要救助者の一覧</small></h2>
+      <div id="logBox"></div>
     </section>
 </div>
 <div class="aboutbar">
@@ -3424,6 +3436,57 @@ function placeText(it){ const r=roleOf(it), la=it.lat, lo=it.lon, g=`https://www
   { const t=SUN.times(jstDay(new Date()),la,lo); L.push(`日の出 ${sunHM(t.rise)}・日没 ${sunHM(t.set)}・薄明終了 ${sunHM(t.dusk)}（今日・平地の値）`, `→ ${sunText(la,lo)}`); }
   L.push(`Googleマップ ${g}`, `HOIST OPSで開く（地図に自動で取り込み） ${placeLink(it)}`);
   return {title:it.label||ROLES[r].n, text:L.join('\n'), gmap:g}; }
+// ==== 記録：地図に入れたポイント・要救助者・降下・揚収地点を、時刻つきの一覧として残す（地図から消しても一覧には残る） ====
+const LOG={e:[],f:'all',del:null}; try{ const o=JSON.parse(localStorage.getItem('sd139log')||'null'); if(o&&Array.isArray(o.e)) LOG.e=o.e; }catch(e){}
+const logSave=()=>{ try{ localStorage.setItem('sd139log',JSON.stringify({e:LOG.e})); }catch(e){} };
+const logKind=x=>x.t==='pt'?{n:'ポイント',ic:'●',col:'#7b3fd0'}:ROLES[x.role||'vic'];
+function logSync(){ let ch=false; const now=new Date(), live=new Set();
+  DRAW.items.forEach(it=>{ if(it.t!=='pt'&&it.t!=='dest') return; if(!it.lid){ it.lid='L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+    live.add(it.lid); let e=LOG.e.find(x=>x.id===it.lid);
+    if(!e){ let ts=now; if(/^\d\d:\d\d$/.test(it.at||'')){ const d=new Date(now); d.setHours(+it.at.slice(0,2),+it.at.slice(3,5),0,0); if(d<=now) ts=d; } e={id:it.lid,ts:ts.toISOString(),t:it.t,lat:it.lat,lon:it.lon}; LOG.e.push(e); ch=true; }
+    const v={t:it.t,role:it.t==='dest'?(it.role||'vic'):null,label:it.label||'',lat:it.lat,lon:it.lon,h:it.h!=null&&isFinite(it.h)?it.h:e.h??null,imp:it.imp?1:0,gone:false};
+    if(e.lat!==v.lat||e.lon!==v.lon) v.h=it.h!=null&&isFinite(it.h)?it.h:null;
+    for(const k in v){ if(e[k]!==v[k]){ e[k]=v[k]; ch=true; if(k==='lat'||k==='lon') e.mv=now.toISOString(); } } });
+  LOG.e.forEach(e=>{ if(!e.gone&&!live.has(e.id)){ e.gone=true; e.goneAt=now.toISOString(); ch=true; } });
+  if(ch){ logSave(); logDraw(); } }
+{ const _ds=drawSave; drawSave=function(){ try{ logSync(); }catch(e){ console.warn(e); } return _ds.apply(this,arguments); }; }
+function logTxt(e){ const k=logKind(e), d=new Date(e.ts), P=n=>String(n).padStart(2,'0');
+  const L=[`【${k.n}】${e.label||k.n}　${d.getMonth()+1}/${d.getDate()} ${P(d.getHours())}:${P(d.getMinutes())} 記録${e.gone?'（地図から消去済み）':''}`,`　度分 ${fmtAny(e.lat,e.lon,'dm')}`,`　度分秒 ${dmsTxt(e.lat,true)} ${dmsTxt(e.lon,false)}`,`　度 N${e.lat.toFixed(6)}° E${e.lon.toFixed(6)}°`,`　MGRS ${fmtMGRS(e.lat,e.lon)}`];
+  if(e.h!=null) L.push(`　標高 ${Math.round(e.h).toLocaleString()} m（${Math.round(e.h*FT).toLocaleString()} ft）`); L.push(`　${mbeFix(e.lat,e.lon).str}`); return L.join('\n'); }
+function logDraw(){ const box=$('logBox'); if(!box) return; const P=n=>String(n).padStart(2,'0'), fm=n=>Math.round(n).toLocaleString();
+  const F=[['all','すべて'],['vic','✕ 要救助者'],['pt','● ポイント'],['dl','↓↑ 降下揚収']], match=e=>LOG.f==='all'||(LOG.f==='pt'?e.t==='pt':LOG.f==='vic'?e.t==='dest'&&e.role==='vic':e.t==='dest'&&e.role!=='vic');
+  const L=LOG.e.filter(match), cnt=k=>LOG.e.filter(e=>k==='all'||(k==='pt'?e.t==='pt':k==='vic'?e.t==='dest'&&e.role==='vic':e.t==='dest'&&e.role!=='vic')).length;
+  if(!LOG.e.length){ box.innerHTML=`<div class="logempty"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M8 5.5H5.5V21h13V5.5H16"/><path d="M12 10.2a2.3 2.3 0 0 1 2.3 2.3c0 1.8-2.3 4.2-2.3 4.2s-2.3-2.4-2.3-4.2a2.3 2.3 0 0 1 2.3-2.3z"/></svg><div>まだ記録はありません。<br>地図の「ポイント」、長押しメニュー、または ✕要救助者・↓降下地点・↑揚収地点 のボタンで地図に入れると、ここに時刻つきで残ります。</div></div>`; return; }
+  let day='', h='';
+  L.slice().reverse().forEach(e=>{ const d=new Date(e.ts), dk=`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`, k=logKind(e), i=LOG.e.indexOf(e);
+    if(dk!==day){ day=dk; h+=`<div class="logday">${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）</div>`; }
+    h+=`<div class="logc${e.gone?' gone':''}" style="--lc:${k.col}"><div class="logt"><span class="logi">${k.ic}</span><div class="logn"><input type="text" value="${esc(e.label||'')}" placeholder="${k.n}" data-lgn="${i}" aria-label="名前"><small>${k.n}${e.mv?'・移動あり':''}${e.imp?'・共有から':''}${e.gone?'・<b>地図から消去済み</b>':''}</small></div><span class="logtm">${P(d.getHours())}:${P(d.getMinutes())}</span></div>
+      <div class="logll"><b>${fmtAny(e.lat,e.lon,'dm')}</b><span>${mbeFix(e.lat,e.lon).str}</span>${e.h!=null?`<span>⛰ ${fm(e.h*FT)} ft（${fm(e.h)} m）</span>`:''}</div>
+      <details class="logmore"><summary>他の座標形式</summary><div>度分秒 ${dmsTxt(e.lat,true)} ${dmsTxt(e.lon,false)}<br>度 N${e.lat.toFixed(6)}° E${e.lon.toFixed(6)}°<br>MGRS ${fmtMGRS(e.lat,e.lon)}</div></details>
+      <div class="logb"><button type="button" data-lgo="${i}">🗺 ${e.gone?'地図に戻す':'地図で見る'}</button><button type="button" data-lsh="${i}">⤴ 共有</button><button type="button" data-lcp="${i}">📋 コピー</button><button type="button" class="logdel${LOG.del===e.id?' arm':''}" data-ldel="${i}">${LOG.del===e.id?'もう一度押すと削除':'🗑'}</button></div></div>`; });
+  box.innerHTML=`<div class="logbar"><span class="seg logf">${F.map(([k,t])=>`<button type="button" data-lf="${k}" aria-pressed="${LOG.f===k}">${t} <small>${cnt(k)}</small></button>`).join('')}</span>
+    <span class="logact"><button type="button" id="logCopyAll">📋 一覧をコピー</button><button type="button" id="logCsv">⬇ CSV</button><button type="button" id="logClr" class="${LOG.del==='all'?'arm':''}">${LOG.del==='all'?'もう一度押すとすべて削除':'🗑 すべて削除'}</button></span></div>
+    <div class="loglist">${h||'<div class="hint">この種類の記録はありません。</div>'}</div>
+    <div class="hint">地図に入れた時刻で自動的に残ります。地図から消しても一覧には残り（「地図から消去済み」）、「地図に戻す」で戻せます。この端末のブラウザに保存されます。</div>`;
+  const E=i=>LOG.e[+i];
+  box.querySelectorAll('[data-lf]').forEach(b=>b.onclick=()=>{ LOG.f=b.dataset.lf; LOG.del=null; logDraw(); });
+  box.querySelectorAll('[data-lgn]').forEach(inp=>inp.onchange=()=>{ const e=E(inp.dataset.lgn); if(!e) return; e.label=inp.value.trim(); const it=DRAW.items.find(x=>x.lid===e.id); if(it){ it.label=e.label; drawSave(); drawLayer(); drawPanel(); } logSave(); });
+  box.querySelectorAll('[data-lgo]').forEach(b=>b.onclick=()=>{ const e=E(b.dataset.lgo); if(!e) return;
+    if(e.gone){ const it={t:e.t,lat:e.lat,lon:e.lon,label:e.label,lid:e.id}; if(e.t==='dest'){ it.role=e.role; it.h=e.h; it.at=new Date(e.ts).toTimeString().slice(0,5); } DRAW.items.push(it); e.gone=false; delete e.goneAt; drawSave(); drawLayer(); drawPanel(); }
+    mapSetView(e.lat,e.lon,Math.max(MAP.z,14)); mapPick(e.lat,e.lon); pickSync(e.lat,e.lon); $('mapsec').scrollIntoView({behavior:'smooth',block:'start'}); logDraw(); });
+  box.querySelectorAll('[data-lsh]').forEach(b=>b.onclick=async()=>{ const e=E(b.dataset.lsh); if(!e) return; const it={t:e.t,role:e.t==='dest'?e.role:'vic',lat:e.lat,lon:e.lon,label:e.label||logKind(e).n,h:e.h,at:new Date(e.ts).toTimeString().slice(0,5)};
+    if(e.t==='pt'){ const o=placeText; placeText=x=>{ const r=o(x); r.text=r.text.replace(/^【[^】]*】/,'【ポイント】'); return r; }; try{ await placeShare(it,b); } finally { placeText=o; } } else await placeShare(it,b); });
+  box.querySelectorAll('[data-lcp]').forEach(b=>b.onclick=async()=>{ const e=E(b.dataset.lcp); if(!e) return; try{ await navigator.clipboard.writeText(logTxt(e)); b.textContent='✓ コピー済み'; }catch(err){ b.textContent='コピー不可'; } setTimeout(()=>{ b.textContent='📋 コピー'; },1800); });
+  box.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=()=>{ const e=E(b.dataset.ldel); if(!e) return; if(LOG.del!==e.id){ LOG.del=e.id; logDraw(); setTimeout(()=>{ if(LOG.del===e.id){ LOG.del=null; logDraw(); } },4000); return; }
+    LOG.e=LOG.e.filter(x=>x!==e); LOG.del=null; logSave(); logDraw(); });
+  $('logCopyAll').onclick=async()=>{ const t='HOIST OPS 記録\n\n'+L.map(logTxt).join('\n\n'); try{ await navigator.clipboard.writeText(t); $('logCopyAll').textContent='✓ コピーしました'; }catch(err){ $('logCopyAll').textContent='コピーできません'; } setTimeout(()=>logDraw(),1800); };
+  $('logCsv').onclick=()=>{ const q=v=>`"${String(v??'').replace(/"/g,'""')}"`, rows=[['記録日時','種類','名前','緯度','経度','度分','MGRS','標高m','標高ft','MBE','状態']];
+    L.forEach(e=>{ const d=new Date(e.ts); rows.push([`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,logKind(e).n,e.label||'',e.lat.toFixed(6),e.lon.toFixed(6),fmtAny(e.lat,e.lon,'dm'),fmtMGRS(e.lat,e.lon),e.h!=null?Math.round(e.h):'',e.h!=null?Math.round(e.h*FT):'',mbeFix(e.lat,e.lon).str,e.gone?'地図から消去済み':'地図にあり']); });
+    const blob=new Blob(['﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'}), a=document.createElement('a'), n=new Date(); a.href=URL.createObjectURL(blob); a.download=`HOISTOPS_記録_${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),30000); };
+  $('logClr').onclick=()=>{ if(LOG.del!=='all'){ LOG.del='all'; logDraw(); setTimeout(()=>{ if(LOG.del==='all'){ LOG.del=null; logDraw(); } },4000); return; } LOG.e=[]; LOG.del=null; logSave(); logDraw(); };
+  // 標高がない記録は、内蔵・地理院の標高から補う（1回だけ）
+  LOG.e.filter(e=>e.h==null&&!e._hq).forEach(e=>{ e._hq=1; elevAt(e.lat,e.lon).then(v=>{ if(isFinite(v)){ e.h=Math.round(v); logSave(); logDraw(); } }).catch(()=>{}); }); }
+setTimeout(()=>{ try{ logSync(); logDraw(); }catch(e){ console.warn(e); } },400);
 // ---- share / import of rescue points between HOIST OPS users: https://…/hoistops/#pt&r=vic&ll=lat,lon&n=label&h=m&at=hh:mm&d=yyyy-mm-dd
 const HOPS_URL='https://realbon1-max.github.io/hoistops/sendai/';
 function placeLink(it){ const q=new URLSearchParams(); q.set('r',roleOf(it)); q.set('ll',it.lat.toFixed(6)+','+it.lon.toFixed(6)); q.set('n',it.label||ROLES[roleOf(it)].n);
@@ -5262,6 +5325,7 @@ const ICO=(()=>{ const P=(d,ex='')=>`<svg class="ico" viewBox="0 0 24 24" aria-h
   nav5:P('<path d="M2 20l6-10 4 5 3-4 7 9z"/><path d="M12 3v7" stroke-dasharray="2 2"/>'),
   nav6:P('<path d="M12 4v3M4 9h16M7 9l-3 7h6zM17 9l-3 7h6zM12 7v13M8 20h8"/>'),
   nav7:P('<path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M4 17a2 2 0 0 1 2-2h12M8 7h6"/>'),
+  nav8:P('<path d="M9 4h6v3H9z"/><path d="M8 5.5H5.5V21h13V5.5H16"/><path d="M12 10.2a2.3 2.3 0 0 1 2.3 2.3c0 1.8-2.3 4.2-2.3 4.2s-2.3-2.4-2.3-4.2a2.3 2.3 0 0 1 2.3-2.3z"/>'),
 }; })();
 function iconize(el,ico,short,full){ if(!el||el.dataset.icz) return; full=full||el.textContent.trim(); el.dataset.icz='1'; el.classList.add('ib'); el.title=full; el.setAttribute('aria-label',full); el.innerHTML=ICO[ico]+(short?`<span>${short}</span>`:''); }
 function iconizeAll(){
@@ -5273,8 +5337,8 @@ function iconizeAll(){
   document.querySelectorAll('.mtabs button[data-mt]').forEach(b=>{ const q=T[b.dataset.mt]; if(q) iconize(b,q[0],q[1]); });
   const D={pick:'性能',pt:'ポイント',txt:'文字',meas:'距離',area:'面積',route:'ルート',circ:'同心円',grid:'グリッド'};
   document.querySelectorAll('#drawModes button[data-m]').forEach(b=>{ if(D[b.dataset.m]) iconize(b,b.dataset.m,D[b.dataset.m]); });
-  const N=['地図','条件','ホバー','風','断面','重量','参考'];
-  document.querySelectorAll('nav.jump a').forEach((a,i)=>{ if(N[i]) iconize(a,'nav'+(i+1),N[i]); });
+  const N=[['地図','nav1'],['記録','nav8'],['条件','nav2'],['ホバー','nav3'],['風','nav4'],['断面','nav5'],['重量','nav6'],['参考','nav7']];
+  document.querySelectorAll('nav.jump a').forEach((a,i)=>{ if(N[i]) iconize(a,N[i][1],N[i][0]); });
   const hint=$('llHint'); if(hint){ hint.hidden=true; const inp=$('mLL'); if(inp) inp.title=hint.textContent; }
   document.querySelectorAll('.mlayers .mlab, .drawbar .drawh').forEach(x=>x.hidden=true);
 }
