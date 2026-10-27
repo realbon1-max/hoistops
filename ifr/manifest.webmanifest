@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "IFRブリーフィング",
+  "short_name": "IFRブリーフィング",
+  "description": "日本国内IFR飛行計画のワンストップ・チェックリスト（ルート・気象・SID/STAR・進入・燃料・飛行計画・FMS・管制交信）",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#12324a",
+  "theme_color": "#12324a",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
