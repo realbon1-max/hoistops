@@ -761,6 +761,17 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
 #mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 100%;align-items:center}@container (max-width:519px){ #mInfo .wxs{position:relative} #mInfo .wxv{position:absolute;top:6px;right:8px} #mInfo .wxtx,#mInfo .wxwind{margin-right:70px} }
 #mInfo .wxv{flex:none;display:flex;flex-direction:column;align-items:center;font-style:normal;margin-left:auto;padding-left:6px}#mInfo .wxv svg{width:62px;height:82px;border-radius:7px;background:linear-gradient(#e3f0fb,#f6fafd);border:1px solid var(--rule)}#mInfo .wxv b{font-size:12px;line-height:1.25;color:var(--ink)}#mInfo .wxv small{font-size:10px;color:var(--muted);white-space:nowrap}#mInfo .wxv.d b{color:#d62828}#mInfo .wxv.w b{color:#b7790f}
+@container (min-width:520px){
+ #mInfo .wxs{display:grid!important;grid-template-columns:auto max-content minmax(0,1fr) 132px;grid-template-areas:"ic tx wd vv" "ch ch ch vv" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important}
+ #mInfo .wxtop>.wxic{grid-area:ic;width:80px!important;height:84px!important}
+ #mInfo .wxtx{grid-area:tx;margin:0!important}#mInfo .wxtx span{white-space:nowrap}#mInfo .wxtx b{font-size:22px!important}#mInfo .wxtx span{font-size:13px!important}
+ #mInfo .wxwind{grid-area:wd;justify-self:start;margin:0!important}#mInfo .wxwind b{font-size:38px!important}#mInfo .wxwind small{font-size:15px!important}#mInfo .wxarr{width:30px!important;height:30px!important}#mInfo .wxwl{font-size:12px!important}
+ #mInfo .wxv{grid-area:vv;align-self:stretch;justify-content:center;margin:0;padding:0}
+ #mInfo .wxv svg{width:118px!important;height:150px!important;border-radius:12px}
+ #mInfo .wxv b{font-size:15px!important}#mInfo .wxv small{font-size:12px!important}
+ #mInfo .wxch{grid-area:ch}#mInfo .wxmt{grid-area:mt}#mInfo .wxstrip{grid-area:sp}#mInfo .wxt{grid-area:tt;justify-self:end}
+}
+@container (max-width:519px){ #mInfo .wxv svg{width:70px!important;height:92px!important} #mInfo .wxtx,#mInfo .wxwind{margin-right:84px!important} #mInfo .wxtx{flex:1 1 0;min-width:0} #mInfo .wxtx b{white-space:normal!important} #mInfo .wxch{padding-right:84px} #mInfo .wxtop>.wxic{width:60px!important;height:64px!important} #mInfo .wxwind b{font-size:30px!important} }
 #mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
 #mInfo .wxp{width:15px;height:15px;flex:none}.wxcl{display:inline-flex;flex-direction:column;line-height:1.05;font-style:normal}.wxcl small{font-size:9.5px;font-weight:600;opacity:.8;white-space:nowrap}.wxcl small:empty{display:none}
 #mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
