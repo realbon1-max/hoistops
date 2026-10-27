@@ -5194,6 +5194,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     if(fz!=null) chips.push([`${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'','fz','0℃高度（フリージングレベル）']);
     if(icing&&!(hd.includes('着氷'))) chips.push(['着氷','d','ice','着氷のおそれ']);
     if(above.length&&!inCloud&&!(base!=null&&Math.abs((above[0].z-siteFt)-base)<300)) chips.push([`${fm(Math.round((above[0].z-siteFt)/100)*100)} ft〜`,'','top','上空の雲（地上から）']);
+    if(spread!=null&&spread<=2&&(precip||(rh2!=null&&rh2>=95))&&!fog&&!/霧|IMC/.test(hd)) chips.push(['霧・ちぎれ雲',spread<=1?'w':'','vis',`地上の露点差 ${spread.toFixed(0)}℃：空気が湿りきっていて、谷や斜面に低いちぎれ雲・霧が局地的に出やすい（雲底は格子平均）`,`地上 露点差 ${spread.toFixed(0)}℃`]);
     if(precip&&!hd.match(/雨|雪|TS|FZ/)) chips.push([sn?'雪':'雨','w',sn?'sn':'ra',sn?'降雪':'降水']);
     
     let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
@@ -5201,7 +5202,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}<span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div></div>
-      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??''}</small>${t}</i></span>`).join('')}</div>`:''}
+      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti,lb])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${lb||(({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??'')}</small>${t}</i></span>`).join('')}</div>`:''}
       ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       ${(()=>{ // 予報の帯：24時間先までは1時間ごと、その先は3時間ごと。タップでその時刻の予報をこのカードに表示
         const DOW='日月火水木金土'; let h='', dd0=T[iNow].slice(0,10);
