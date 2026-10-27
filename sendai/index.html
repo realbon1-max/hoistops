@@ -761,7 +761,7 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
 #mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 220px}
 #mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
-#mInfo .wxp{width:15px;height:15px;flex:none}
+#mInfo .wxp{width:15px;height:15px;flex:none}.wxcl{display:inline-flex;flex-direction:column;line-height:1.05;font-style:normal}.wxcl small{font-size:9.5px;font-weight:600;opacity:.8;white-space:nowrap}.wxcl small:empty{display:none}
 #mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
 @container (max-width:519px){ #mInfo .mi.site{grid-template-columns:1fr!important;grid-template-areas:"ll" "sv" "wx"} #mInfo .mi.site .sitev{text-align:left} #mInfo .hchips{justify-content:flex-start!important} #mInfo .wxs{border-top:1px solid var(--rule)!important;border-bottom:1px solid var(--rule)!important} #mInfo .wxt{margin-left:0} }
 
@@ -5144,6 +5144,8 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     else if(inCloud){ hd='雲中 IMC'; cls='w'; ic=3; }
     else if(lowVis){ hd=fog?'霧 FG':'低視程'; cls='w'; ic=45; }
     else if(precip){ hd=sn?'降雪 SN':'雨域 RA'; cls='w'; }
+    else if(base!=null&&base<100){ hd='現場に雲 IMC'; cls='d'; ic=45; }
+    else if(base!=null&&base<500){ hd='低い雲 LOW CLD'; cls='w'; ic=3; }
     else if(below.length){ hd='雲上 VMC on top'; cls='w'; ic=2; }
     else { hd=wc!=null&&wc<=1?'VMC 快晴':'VMC'; cls='ok'; }
     const fm=n=>Math.round(n).toLocaleString(), chips=[];
@@ -5160,7 +5162,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}<span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div></div>
-      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}${t}</span>`).join('')}</div>`:''}
+      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??''}</small>${t}</i></span>`).join('')}</div>`:''}
       ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       ${(()=>{ // 予報の帯：24時間先までは1時間ごと、その先は3時間ごと。タップでその時刻の予報をこのカードに表示
         const DOW='日月火水木金土'; let h='', dd0=T[iNow].slice(0,10);
