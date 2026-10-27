@@ -759,7 +759,7 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxic{width:50px!important;height:52px!important;flex:none}
 #mInfo .wxtx{min-width:0}#mInfo .wxtx b{font-size:17px!important}
 #mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
-#mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 220px}
+#mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 100%;align-items:center}#mInfo .wxv{flex:none;display:flex;flex-direction:column;align-items:center;font-style:normal;margin-right:2px}#mInfo .wxv svg{width:50px;height:66px;border-radius:7px;background:linear-gradient(#e3f0fb,#f6fafd);border:1px solid var(--rule)}#mInfo .wxv b{font-size:10px;line-height:1.2;color:var(--muted)}#mInfo .wxv b.d{color:#d62828}#mInfo .wxv b.w{color:#b7790f}
 #mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
 #mInfo .wxp{width:15px;height:15px;flex:none}.wxcl{display:inline-flex;flex-direction:column;line-height:1.05;font-style:normal}.wxcl small{font-size:9.5px;font-weight:600;opacity:.8;white-space:nowrap}.wxcl small:empty{display:none}
 #mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
@@ -5163,7 +5163,22 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}<span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div></div>
-      ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti,lb])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${lb||(({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??'')}</small>${t}</i></span>`).join('')}</div>`:''}
+      <div class="wxch">${(()=>{ // 縦の小さな図：地面・機体・雲の層・0℃高度の位置関係（地面からの高さ）
+        const hA=Math.max(0,H-siteFt), bands=[]; let cur=null;
+        L.forEach(q=>{ const a=q.z-siteFt; if(a<-150) return; if(cloudy(q)){ if(!cur){ cur=[Math.max(0,a),a]; bands.push(cur); } else cur[1]=a; } else cur=null; });
+        if(base!=null){ if(bands.length&&bands[0][0]>base) bands[0][0]=base; else if(!bands.length) bands.push([base,base+600]); }
+        bands.forEach(b=>{ if(b[1]-b[0]<400) b[1]=b[0]+400; });
+        const first=bands.find(b=>b[1]>0), Vm=Math.min(9000,Math.max(1500,hA*2.2,first?Math.min(first[0]*1.6,first[0]+2500):0)), Y=v=>78-Math.max(0,Math.min(1,v/Vm))*70;
+        let g=`<path d="M0 84 L0 78 L10 74 L18 77 L30 70 L40 76 L52 72 L64 77 L64 84Z" fill="#8d6e4a"/>`;
+        const drawB=()=>bands.forEach(b=>{ if(b[0]>Vm) return; const yt=Math.max(4,Y(b[1])), yb=Y(b[0]); g+=`<rect x="2" y="${yt}" width="60" height="${Math.max(5,yb-yt)}" rx="5" fill="#b8c4d0" opacity=".85"/><path d="M6 ${yb} q4 3 8 0 q4 3 8 0 q4 3 8 0 q4 3 8 0 q4 3 8 0 q4 3 8 0 q4 3 8 0" fill="none" stroke="#8a98a8" stroke-width="1.2"/>`; });
+        if(fz!=null){ const fa=fz-siteFt; if(fa>-200&&fa<Vm) g+=`<path d="M0 ${Y(Math.max(0,fa))}H64" stroke="#2f80ed" stroke-width="1.3" stroke-dasharray="3 2"/><text x="63" y="${Y(Math.max(0,fa))-2}" font-size="7" text-anchor="end" fill="#2f80ed" font-weight="700">0℃</text>`; }
+        const yh=Y(hA), inC=inCloud||bands.some(b=>hA>=b[0]&&hA<=b[1]); if(inC&&!bands.some(b=>hA>=b[0]&&hA<=b[1])){ const nb=bands.find(b=>b[0]>hA); if(nb) nb[0]=Math.max(0,hA-150); else bands.push([Math.max(0,hA-150),hA+400]); }
+        drawB();
+        g+=`<g transform="translate(24 ${yh})"><path d="M-9 -4h18M0 -4v2" stroke="#15253a" stroke-width="1.6" stroke-linecap="round"/><path d="M-6 -2h7a4 3 0 0 1 0 6h-7a3 3 0 0 1 0-6z" fill="${inC?'#d62828':'#15253a'}"/><path d="M-6 1h-7l-1-3" fill="none" stroke="${inC?'#d62828':'#15253a'}" stroke-width="1.6" stroke-linecap="round"/></g>`;
+        const nx=bands.find(b=>b[0]>hA+50);
+        if(nx&&nx[0]<=Vm){ const yb=Y(nx[0]); if(yh-yb>16) g+=`<path d="M48 ${yh-2}V${yb+3}M45.5 ${yb+6}l2.5-3 2.5 3M45.5 ${yh-5}l2.5 3 2.5-3" stroke="#455a64" stroke-width="1.1" fill="none"/><text x="44" y="${(yh+yb)/2+3}" font-size="7.5" text-anchor="end" font-weight="800" fill="#455a64">${fm(Math.round((nx[0]-hA)/100)*100)}</text>`; }
+        const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=inC?'雲中':below&&!nx?'雲上':nx?'雲の下':'雲なし';
+        return `<i class="wxv" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b class="${inC?'d':below&&!nx?'w':''}">${st}</b></i>`; })()}${chips.map(([t,c,k,ti,lb])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${lb||(({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??'')}</small>${t}</i></span>`).join('')}</div>
       ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       ${(()=>{ // 予報の帯：24時間先までは1時間ごと、その先は3時間ごと。タップでその時刻の予報をこのカードに表示
         const DOW='日月火水木金土'; let h='', dd0=T[iNow].slice(0,10);
