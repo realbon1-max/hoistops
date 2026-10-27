@@ -5021,7 +5021,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
       wind:d=>`<svg class="jti" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(${Math.round(d||0)} 12 12)"><path d="M12 21V5M7 10l5-6 5 6" fill="none" stroke="#2f6fb0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 12 12)"/></g></svg>`,
       qnh:SV('<circle cx="12" cy="13" r="8"/><path d="M12 13l4-4M8 5l-1-2M16 5l1-2"/>')};
     const tile=(lab,val,sub,cls,ic)=>`<div${cls?` class="${cls}"`:''}>${ic?`<span class="jtic">${ic}</span>`:''}<span><small>${lab}</small><b>${val}</b>${sub?`<small>${sub}</small>`:''}</span></div>`;
-    if(S){ sfc+=tile('天気',wc!=null?(WMO[wc]||('コード'+wc)):'—','',wc!=null&&(wc>=95||wc===66||wc===67||wc===56||wc===57||wc===48)?'d':wc!=null&&(wc===45||wc>=63)?'w':'',wc!=null?wxIcon(wc,(()=>{ const h=+(($('jmaT').selectedOptions[0]||{}).textContent||'').replace('（今）','').slice(-5,-3); return h<6||h>=18; })()):'');
+    if(S){ sfc+=tile('天気',wc!=null?(WMO[wc]||('コード'+wc)):'—','',wc!=null&&(wc>=95||wc===66||wc===67||wc===56||wc===57||wc===48)?'d':wc!=null&&(wc===45||wc>=63)?'w':'',wc!=null?wxIcon(wc,(()=>{ const tt=(H.time&&H.time[i])||''; const h=+tt.slice(11,13); return tt&&(h<6||h>=18)?new Date(tt+':00+09:00').getTime():false; })()):'');
       sfc+=tile('気温／露点',`${f1(t2)}／${f1(d2)}℃`,spr!=null?`差 ${f1(spr)}℃${spr<=2?'：霧・低い雲':spr<=4?'：雲底低め':''}`:'',spr!=null&&spr<=2?'w':'',wxPic('oat'));
       sfc+=tile('湿度',sv('relative_humidity_2m')!=null?`${Math.round(sv('relative_humidity_2m'))} %`:'—','','',IC.rh);
       sfc+=tile('雲底（推定）',spr!=null?`約 ${f0(Math.max(0,spr)*400)} ft`:'—','地上から・(気温−露点)×400',spr!=null&&spr*400<1000?'w':'',wxPic('base'));
@@ -5059,7 +5059,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
       if(dd!==day){ day=dd; const dt=new Date(dd+'T00:00:00'); h+=`<span class="jday"><b>${+dd.slice(8,10)}</b><small>${+dd.slice(5,7)}月<br>${DOW[dt.getDay()]}</small></span>`; }
       const wc=v(S,'weather_code',i), t2=v(S,'temperature_2m',i)??v(H,'temperature_2m',i), wd=v(S,'wind_direction_10m',i), ws=v(S,'wind_speed_10m',i), gu=v(S,'wind_gusts_10m',i), vis=v(S,'visibility',i), lo=v(S,'cloud_cover_low',i);
       const bad=wc!=null&&(wc>=95||wc===66||wc===67||wc===56||wc===57)||vis!=null&&vis<1600, cau=!bad&&(wc===45||wc===48||wc!=null&&wc>=63&&wc<95||vis!=null&&vis<5000||gu!=null&&gu>=25||lo!=null&&lo>=80);
-      h+=`<button type="button" class="jc${i===cur?' on':''}${i===JMA.best?' now':''}${bad?' bad':cau?' cau':''}" data-i="${i}"><small class="jh">${i===JMA.best?'今':hr+'時'}</small>${wc!=null?wxIcon(wc,hr<6||hr>=18):'<span class="jno">—</span>'}<b>${t2!=null?Math.round(t2)+'°':'—'}</b><small class="jw">${wd!=null&&ws!=null?`<i style="transform:rotate(${Math.round(wd)}deg)">↓</i>${Math.round(ws)}`:''}</small></button>`; });
+      h+=`<button type="button" class="jc${i===cur?' on':''}${i===JMA.best?' now':''}${bad?' bad':cau?' cau':''}" data-i="${i}"><small class="jh">${i===JMA.best?'今':hr+'時'}</small>${wc!=null?wxIcon(wc,(hr<6||hr>=18)?new Date(T[i]+':00+09:00').getTime():false):'<span class="jno">—</span>'}<b>${t2!=null?Math.round(t2)+'°':'—'}</b><small class="jw">${wd!=null&&ws!=null?`<i style="transform:rotate(${Math.round(wd)}deg)">↓</i>${Math.round(ws)}`:''}</small></button>`; });
     const sl=st.scrollLeft; st.innerHTML=h; st.hidden=false; st.scrollLeft=sl;
     const on=st.querySelector('.jc.on'); if(on&&(on.offsetLeft<st.scrollLeft||on.offsetLeft+on.offsetWidth>st.scrollLeft+st.clientWidth)) st.scrollLeft=on.offsetLeft-st.clientWidth/2+on.offsetWidth/2;
     st.querySelectorAll('.jc').forEach(b=>b.onclick=()=>{ sel.value=b.dataset.i; jmaApply(); }); };
@@ -5128,7 +5128,13 @@ update();
 const WXS={c:{},busy:{}};
 function wxIcon(code,night){ const c=code==null?-1:code, id='wg'+Math.random().toString(36).slice(2,7);
   const sun=`<g class="wsun"><circle cx="32" cy="30" r="11" fill="url(#${id}s)"/>${[...Array(8)].map((_,k)=>`<path d="M32 13v-6" transform="rotate(${k*45} 32 30)" stroke="#ffb300" stroke-width="3.2" stroke-linecap="round"/>`).join('')}</g>`;
-  const moon=`<path d="M38 14a14 14 0 1 0 12 20a11 11 0 0 1-12-20z" fill="url(#${id}m)"/><circle cx="50" cy="14" r="1.3" fill="#fff"/><circle cx="18" cy="20" r="1" fill="#fff"/>`;
+  // 月：その時刻の月齢で満ち欠けを描く（night に時刻を渡せばその時刻、true なら今）
+  const moon=(()=>{ const t=typeof night==='number'?night:night instanceof Date?night.getTime():Date.now(), p=((((t/864e5+2440587.5)-2451550.1)/29.530588853)%1+1)%1;
+    const cx=34, cy=26, r=14, k=Math.cos(2*Math.PI*p), wax=p<0.5, lit=(1-k)/2;
+    let g=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#90a4ae" opacity=".28" stroke="#cfd8dc" stroke-opacity=".5" stroke-width=".8"/>`;
+    if(lit>0.97) g+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id}m)"/>`;
+    else if(lit>0.03){ const s2=wax?(k>0?0:1):(k>0?1:0); g+=`<path d="M${cx} ${cy-r}A${r} ${r} 0 0 ${wax?1:0} ${cx} ${cy+r}A${(Math.abs(k)*r).toFixed(2)} ${r} 0 0 ${s2} ${cx} ${cy-r}Z" fill="url(#${id}m)"/>`; }
+    return `<g class="wmoon" data-age="${(p*29.53).toFixed(1)}">${g}<circle cx="54" cy="12" r="1.3" fill="#fff"/><circle cx="12" cy="18" r="1" fill="#fff"/></g>`; })();
   const cloud=(dark,y=0)=>`<path transform="translate(0 ${y})" d="M18 50h30a10 10 0 0 0 0-20a14 14 0 0 0-26-3a10 10 0 0 0-4 23z" fill="url(#${id}${dark?'d':'c'})" stroke="rgba(0,0,0,.08)"/>`;
   const rain=n=>[...Array(n)].map((_,k)=>`<path class="wdrop" style="animation-delay:${k*0.25}s" d="M${22+k*8} 54l-3 7" stroke="#3aa0ff" stroke-width="2.6" stroke-linecap="round"/>`).join('');
   const snow=n=>[...Array(n)].map((_,k)=>`<circle class="wflake" style="animation-delay:${k*0.3}s" cx="${22+k*9}" cy="57" r="2.3" fill="#e8f4ff" stroke="#9cc8ef"/>`).join('');
@@ -5218,7 +5224,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
     if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
-    b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
+    b.innerHTML=`<div class="wxtop">${wxIcon(ic,night?new Date(T[i]+':00+09:00').getTime():false)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><span class="wxwm"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</span><span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div>${(()=>{ // 縦の小さな図：地面・機体・雲の層・0℃高度の位置関係（地面からの高さ）
         const hA=Math.max(0,H-siteFt), bands=[]; let cur=null;
         L.forEach(q=>{ const a=q.z-siteFt; if(a<-150) return; if(cloudy(q)){ if(!cur){ cur=[Math.max(0,a),a]; bands.push(cur); } else cur[1]=a; } else cur=null; });
@@ -5242,7 +5248,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
         for(let k=iNow;k<T.length;k++){ if(k-iNow>24&&+T[k].slice(11,13)%3) continue; const t=T[k], hr=+t.slice(11,13), w=d.weather_code?d.weather_code[k]:null, tt=d.temperature_2m?d.temperature_2m[k]:null, hw=windAt(k,H), a=hw?hw.wd:d.wind_direction_10m?d.wind_direction_10m[k]:null, sp=hw?hw.ws:d.wind_speed_10m?d.wind_speed_10m[k]:null, gg=d.wind_gusts_10m?d.wind_gusts_10m[k]:null, vv=d.visibility?d.visibility[k]:null;
           if(t.slice(0,10)!==dd0){ dd0=t.slice(0,10); h+=`<span class="wsd">${+dd0.slice(8,10)}<small>${DOW[new Date(dd0+'T00:00:00').getDay()]}</small></span>`; }
           const bad=w!=null&&(w>=95||w===66||w===67||w===56||w===57)||vv!=null&&vv<1600, cau=!bad&&(w===45||w===48||w!=null&&w>=63&&w<95||vv!=null&&vv<5000||gg!=null&&gg>=25);
-          h+=`<button type="button" class="wsc${k===i?' on':''}${bad?' bad':cau?' cau':''}" data-k="${k}"><small>${k===iNow?'今':hr+'時'}</small>${k===iEta&&iEta!==iNow?'<em>到着</em>':''}${w!=null?wxIcon(w,hr<6||hr>=18):''}<b>${tt!=null?Math.round(tt)+'°':''}</b><small class="wsw">${a!=null&&sp!=null?`<i style="transform:rotate(${Math.round(a)}deg)">↓</i>${Math.round(sp)}`:''}</small></button>`; }
+          h+=`<button type="button" class="wsc${k===i?' on':''}${bad?' bad':cau?' cau':''}" data-k="${k}"><small>${k===iNow?'今':hr+'時'}</small>${k===iEta&&iEta!==iNow?'<em>到着</em>':''}${w!=null?wxIcon(w,(hr<6||hr>=18)?new Date(t+':00+09:00').getTime():false):''}<b>${tt!=null?Math.round(tt)+'°':''}</b><small class="wsw">${a!=null&&sp!=null?`<i style="transform:rotate(${Math.round(a)}deg)">↓</i>${Math.round(sp)}`:''}</small></button>`; }
         return `<div class="wxstrip" data-key="${key}">${h}</div>`; })()}
       <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${man!=null?`${+T[i].slice(8,10)}日 `:''}${T[i].slice(11,16)} 予報${man!=null?`<button type="button" class="wxeta">✈ 到着時刻に戻す</button>`:''}<button type="button" class="wxuse" title="この予報の風（ホバリング高度・海抜）を風向・風速に入れる">風に反映</button></div>`;
     { const st=b.querySelector('.wxstrip'); if(st){ if(WXS.sl&&WXS.sl[0]===key) st.scrollLeft=WXS.sl[1]; else { const on=st.querySelector('.wsc.on'); if(on) st.scrollLeft=Math.max(0,on.offsetLeft-st.clientWidth/3); }
