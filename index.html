@@ -761,15 +761,21 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
  #mInfo .wxs{display:grid!important;grid-template-columns:auto max-content minmax(0,1fr) 132px;grid-template-areas:"ic tx wd vv" "ch ch ch vv" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important}
  #mInfo .wxtop>.wxic{grid-area:ic;width:80px!important;height:84px!important}
  #mInfo .wxtx{grid-area:tx;margin:0!important}#mInfo .wxtx span{white-space:nowrap}#mInfo .wxtx b{font-size:22px!important}#mInfo .wxtx span{font-size:13px!important}
- #mInfo .wxwind{grid-area:wd;justify-self:start;margin:0!important}#mInfo .wxwind b{font-size:38px!important}#mInfo .wxwind small{font-size:15px!important}#mInfo .wxarr{width:30px!important;height:30px!important}#mInfo .wxwl{font-size:12px!important}
+ #mInfo .wxwind{grid-area:wd;justify-self:start;margin:0!important;min-width:0}#mInfo .wxwind b{font-size:clamp(24px,5.2cqw,38px)!important}#mInfo .wxwind small{font-size:15px!important}#mInfo .wxarr{width:30px!important;height:30px!important}#mInfo .wxwl{font-size:12px!important}
  #mInfo .wxv{grid-area:vv;align-self:stretch;justify-content:center;margin:0;padding:0}
  #mInfo .wxv svg{width:118px!important;height:150px!important;border-radius:12px}
  #mInfo .wxv b{font-size:15px!important}#mInfo .wxv small{font-size:12px!important}
  #mInfo .wxch{grid-area:ch}#mInfo .wxmt{grid-area:mt}#mInfo .wxstrip{grid-area:sp}#mInfo .wxt{grid-area:tt;justify-self:end}
 }
+@container (min-width:520px) and (max-width:759px){
+ #mInfo .wxs{grid-template-columns:auto minmax(0,1fr) 132px;grid-template-areas:"ic tx vv" "wd wd vv" "ch ch ch" "mt mt mt" "sp sp sp" "tt tt tt"}
+ #mInfo .wxtx span{white-space:normal}
+ #mInfo .wxwind b{font-size:clamp(26px,7cqw,38px)!important}
+}
 @container (max-width:519px){ #mInfo .wxv svg{width:70px!important;height:92px!important} #mInfo .wxtx,#mInfo .wxwind{margin-right:84px!important} #mInfo .wxtx{flex:1 1 0;min-width:0} #mInfo .wxtx b{white-space:normal!important} #mInfo .wxch{padding-right:84px} #mInfo .wxtop>.wxic{width:60px!important;height:64px!important} #mInfo .wxwind b{font-size:30px!important} }
 #mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
-#mInfo .wxp{width:15px;height:15px;flex:none}.wxcl{display:inline-flex;flex-direction:column;line-height:1.05;font-style:normal}.wxcl small{font-size:9.5px;font-weight:600;opacity:.8;white-space:nowrap}.wxcl small:empty{display:none}
+#mInfo .wxp{width:15px;height:15px;flex:none}.wxwm{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap;flex-wrap:nowrap}.wxwm .wxarr{align-self:center}
+.wxcl{display:inline-flex;flex-direction:column;line-height:1.05;font-style:normal}.wxcl small{font-size:9.5px;font-weight:600;opacity:.8;white-space:nowrap}.wxcl small:empty{display:none}
 #mInfo .wxt{flex:none;margin-left:auto;display:flex;align-items:center;gap:6px;white-space:nowrap}
 @container (max-width:519px){ #mInfo .mi.site{grid-template-columns:1fr!important;grid-template-areas:"ll" "sv" "wx"} #mInfo .mi.site .sitev{text-align:left} #mInfo .hchips{justify-content:flex-start!important} #mInfo .wxs{border-top:1px solid var(--rule)!important;border-bottom:1px solid var(--rule)!important} #mInfo .wxt{margin-left:0} }
 
@@ -5213,7 +5219,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
-      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}<span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div>${(()=>{ // 縦の小さな図：地面・機体・雲の層・0℃高度の位置関係（地面からの高さ）
+      <div class="wxwind"><span class="wxwm"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</span><span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div>${(()=>{ // 縦の小さな図：地面・機体・雲の層・0℃高度の位置関係（地面からの高さ）
         const hA=Math.max(0,H-siteFt), bands=[]; let cur=null;
         L.forEach(q=>{ const a=q.z-siteFt; if(a<-150) return; if(cloudy(q)){ if(!cur){ cur=[Math.max(0,a),a]; bands.push(cur); } else cur[1]=a; } else cur=null; });
         if(base!=null){ if(bands.length&&bands[0][0]>base) bands[0][0]=base; else if(!bands.length) bands.push([base,base+600]); }
