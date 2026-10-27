@@ -762,19 +762,30 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
 #mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 100%;align-items:center}@container (max-width:519px){ #mInfo .wxs{position:relative} #mInfo .wxv{position:absolute;top:6px;right:8px} #mInfo .wxtx,#mInfo .wxwind{margin-right:70px} }
 #mInfo .wxv{flex:none;display:flex;flex-direction:column;align-items:center;font-style:normal;margin-left:auto;padding-left:6px}#mInfo .wxv svg{width:62px;height:82px;border-radius:7px;background:linear-gradient(#e3f0fb,#f6fafd);border:1px solid var(--rule)}#mInfo .wxv b{font-size:12px;line-height:1.25;color:var(--ink)}#mInfo .wxv small{font-size:10px;color:var(--muted);white-space:nowrap}#mInfo .wxv.d b{color:#d62828}#mInfo .wxv.w b{color:#b7790f}
+#mInfo .wxsun{display:flex;flex-direction:column;font-style:normal;min-width:0;width:100%;color:var(--ink)}#mInfo .wxsun svg{width:100%;height:auto;display:block}#mInfo .wxsm{font-size:12.5px;text-align:center;line-height:1.3}#mInfo .wxsm b.xsw{color:#d97706}#mInfo .wxsm b.xsn{color:#5c6bc0}
+@container (max-width:519px){ #mInfo .wxsun{flex-basis:100%;order:0;max-width:340px;margin:0 auto} }
+#mInfo .wxs.wxp-tw .wxsm b.xsw{color:#fff3c4}
+#mInfo .wxs.wxp-tw{--sunt:#fff3c4;background:linear-gradient(175deg,#4a5785 0%,#8e7aa8 60%,#d9926a 100%)!important;--ink:#f3f1fa;--muted:#e2dcef;--curve:#fff3c4;color:#f3f1fa}
+#mInfo .wxs.wxp-night{background:linear-gradient(180deg,#0b1626 0%,#16253d 100%)!important;--ink:#e6edf6;--muted:#a9b8cc;--curve:#8fc7ff;color:#e6edf6}
+#mInfo .wxs.wxp-tw .wsc,#mInfo .wxs.wxp-night .wsc{background:rgba(255,255,255,.08)}#mInfo .wxs.wxp-tw .wxch span,#mInfo .wxs.wxp-night .wxch span{border-color:rgba(255,255,255,.3)}#mInfo .wxs.wxp-night .wxsm b.xsn{color:#b4c2ff}
 @container (min-width:520px){
- #mInfo .wxs{display:grid!important;grid-template-columns:auto max-content minmax(0,1fr) 132px;grid-template-areas:"ic tx wd vv" "ch ch ch vv" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important}
+ #mInfo .wxs{display:grid!important;grid-template-columns:auto minmax(170px,max-content) minmax(220px,1fr) 132px;grid-template-areas:"ic tx su vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important}
  #mInfo .wxtop>.wxic{grid-area:ic;width:80px!important;height:84px!important}
  #mInfo .wxtx{grid-area:tx;margin:0!important}#mInfo .wxtx span{white-space:nowrap}#mInfo .wxtx b{font-size:22px!important}#mInfo .wxtx span{font-size:13px!important}
  #mInfo .wxwind{grid-area:wd;justify-self:start;margin:0!important;min-width:0}#mInfo .wxwind b{font-size:clamp(24px,5.2cqw,38px)!important}#mInfo .wxwind small{font-size:15px!important}#mInfo .wxarr{width:30px!important;height:30px!important}#mInfo .wxwl{font-size:12px!important}
+ #mInfo .wxsun{grid-area:su;align-self:center;justify-self:stretch;max-width:300px;margin:0 auto}
  #mInfo .wxv{grid-area:vv;align-self:stretch;justify-content:center;margin:0;padding:0}
  #mInfo .wxv svg{width:118px!important;height:150px!important;border-radius:12px}
  #mInfo .wxv b{font-size:15px!important}#mInfo .wxv small{font-size:12px!important}
  #mInfo .wxch{grid-area:ch}#mInfo .wxmt{grid-area:mt}#mInfo .wxstrip{grid-area:sp}#mInfo .wxt{grid-area:tt;justify-self:end}
 }
 @container (min-width:520px) and (max-width:759px){
- #mInfo .wxs{grid-template-columns:auto minmax(0,1fr) 132px;grid-template-areas:"ic tx vv" "wd wd vv" "ch ch ch" "mt mt mt" "sp sp sp" "tt tt tt"}
+ #mInfo .wxs{grid-template-columns:auto minmax(130px,max-content) minmax(150px,1fr) 112px;column-gap:10px!important;grid-template-areas:"ic tx su vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt"}
  #mInfo .wxtx span{white-space:normal}
+ #mInfo .wxtx b{white-space:normal!important;font-size:19px!important}
+ #mInfo .wxtop>.wxic{width:62px!important;height:66px!important}
+ #mInfo .wxv svg{width:100px!important;height:128px!important}
+ #mInfo .wxwind b{font-size:clamp(24px,6cqw,34px)!important}
  #mInfo .wxwind b{font-size:clamp(26px,7cqw,38px)!important}
 }
 @container (max-width:519px){ #mInfo .wxv svg{width:70px!important;height:92px!important} #mInfo .wxtx,#mInfo .wxwind{margin-right:84px!important} #mInfo .wxtx{flex:1 1 0;min-width:0} #mInfo .wxtx b{white-space:normal!important} #mInfo .wxch{padding-right:84px} #mInfo .wxtop>.wxic{width:60px!important;height:64px!important} #mInfo .wxwind b{font-size:30px!important} }
@@ -5287,6 +5298,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
     if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
+    { let ph2='day'; try{ const tS=new Date(T[i]+':00+09:00'), st=SUN.times(jstDay(tS),p.lat,p.lon); ph2=st.rise&&st.set&&tS>=st.rise&&tS<st.set?'day':(st.dawn&&tS>=st.dawn&&tS<st.rise)||(st.dusk&&tS>=st.set&&tS<st.dusk)?'tw':'night'; }catch(e){} b.classList.remove('wxp-day','wxp-tw','wxp-night'); b.classList.add('wxp-'+ph2); }
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night?new Date(T[i]+':00+09:00').getTime():false)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
       <div class="wxwind"><span class="wxwm"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</span><span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div>${(()=>{ // 縦の小さな図：地面・機体・雲の層・0℃高度の位置関係（地面からの高さ）
         const hA=Math.max(0,H-siteFt), bands=[]; let cur=null;
@@ -5303,7 +5315,27 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
         const nx=bands.find(b=>b[0]>hA+50);
         if(nx&&nx[0]<=Vm){ const yb=Y(nx[0]); if(yh-yb>16) g+=`<path d="M48 ${yh-2}V${yb+3}M45.5 ${yb+6}l2.5-3 2.5 3M45.5 ${yh-5}l2.5 3 2.5-3" stroke="#455a64" stroke-width="1.1" fill="none"/><text x="44" y="${(yh+yb)/2+3}" font-size="7.5" text-anchor="end" font-weight="800" fill="#455a64">${fm(Math.round((nx[0]-hA)/100)*100)}</text>`; }
         const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=inC?'雲中':below&&!nx?'雲上':nx?'雲の下':'雲なし';
-        return `<i class="wxv${inC?' d':below&&!nx?' w':''}" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b>${st}</b>${nx?`<small>雲まで ${fm(Math.round((nx[0]-hA)/100)*100)} ft</small>`:''}</i>`; })()}</div>
+        return `<i class="wxv${inC?' d':below&&!nx?' w':''}" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b>${st}</b>${nx?`<small>雲まで ${fm(Math.round((nx[0]-hA)/100)*100)} ft</small>`:''}</i>`; })()}${(()=>{ // 日の出・日没・薄明のグラフィック（表示中の予報時刻の位置）
+        try{ const tS=new Date(T[i]+':00+09:00'), st=SUN.times(jstDay(tS),p.lat,p.lon); if(!st.rise||!st.set) return '';
+          const hh=d=>{ const j=new Date(d.getTime()+9*3600e3); return j.getUTCHours()+j.getUTCMinutes()/60; }, X=h=>12+Math.max(0,Math.min(24,h))/24*216, hR=hh(st.rise), hS=hh(st.set), hD=st.dawn?hh(st.dawn):hR-0.45, hK=st.dusk?hh(st.dusk):hS+0.45, hT=hh(tS);
+          const ph=tS>=st.rise&&tS<st.set?'day':(st.dawn&&tS>=st.dawn&&tS<st.rise)||(st.dusk&&tS>=st.set&&tS<st.dusk)?'tw':'night';
+          const yH=86, top=20, arc=(a,b)=>{ let d=''; for(let k=0;k<=24;k++){ const h=a+(b-a)*k/24, f=(h-hR)/(hS-hR); d+=(k?'L':'M')+X(h).toFixed(1)+' '+(yH-Math.sin(Math.PI*Math.max(0,Math.min(1,f)))*(yH-top)).toFixed(1); } return d; };
+          let g=`<defs><linearGradient id="sgd${i}" x1="0" x2="1"><stop offset="0" stop-color="#1c2541"/><stop offset="${(hD/24).toFixed(3)}" stop-color="#1c2541"/><stop offset="${(hR/24).toFixed(3)}" stop-color="#f4a261"/><stop offset="${((hR+0.8)/24).toFixed(3)}" stop-color="#ffd166"/><stop offset="${((hS-0.8)/24).toFixed(3)}" stop-color="#ffd166"/><stop offset="${(hS/24).toFixed(3)}" stop-color="#f4a261"/><stop offset="${(hK/24).toFixed(3)}" stop-color="#1c2541"/><stop offset="1" stop-color="#1c2541"/></linearGradient></defs>`;
+          g+=`<path d="${arc(hR,hS)}" fill="none" stroke="#f4a261" stroke-width="1.6" stroke-dasharray="3 3" opacity=".7"/>`;
+          if(ph==='day') g+=`<path d="${arc(hR,hT)}" fill="none" stroke="#f4a261" stroke-width="2.6"/>`;
+          g+=`<line x1="8" y1="${yH}" x2="232" y2="${yH}" stroke="currentColor" stroke-opacity=".35"/><rect x="12" y="${yH+3}" width="216" height="7" rx="3.5" fill="url(#sgd${i})"/>`;
+          [0,6,12,18,24].forEach(h=>{ g+=`<line x1="${X(h)}" y1="${yH+11}" x2="${X(h)}" y2="${yH+14}" stroke="currentColor" stroke-opacity=".4"/>`; });
+          const xt=X(hT); g+=`<line x1="${xt.toFixed(1)}" y1="${yH-2}" x2="${xt.toFixed(1)}" y2="${yH+12}" stroke="#e63946" stroke-width="2"/><path d="M${(xt-4).toFixed(1)} ${yH+17}h8l-4-5z" fill="#e63946"/>`;
+          if(ph==='day'){ const f=(hT-hR)/(hS-hR), y=yH-Math.sin(Math.PI*f)*(yH-top); g+=`<circle cx="${xt.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="#ffd166" opacity=".35"/><circle cx="${xt.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#ffb703" stroke="#fb8500" stroke-width="1"/>`; }
+          else { const mx=Math.max(16,Math.min(224,xt)); g+=`<g transform="translate(${(mx-13).toFixed(1)} 34) scale(.42)">${wxIcon(0,tS.getTime()).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</g>`; }
+          const lab=(x,a,t1,t2,c)=>`<text x="${x.toFixed(1)}" y="${yH+27}" font-size="9.5" text-anchor="${a}" fill="currentColor" opacity=".75">${t1}</text><text x="${x.toFixed(1)}" y="${yH+39}" font-size="11.5" font-weight="800" text-anchor="${a}" style="fill:var(--sunt,${c})">${t2}</text>`;
+          g+=lab(Math.max(12,X(hR)-2),'middle','日の出',sunHM(st.rise),'#e76f51')+lab(Math.min(228,X(hS)),'middle','日没',sunHM(st.set),'#e76f51');
+          if(st.dusk) g+=`<text x="${Math.min(232,X(hK)+3).toFixed(1)}" y="${yH-4}" font-size="8.5" fill="#7b6fb3" text-anchor="start">薄明${sunHM(st.dusk)}</text>`;
+          const mins=m=>{ m=Math.round(m); return m>=60?`${Math.floor(m/60)}時間${m%60?m%60+'分':''}`:`${m}分`; }, dm=(a,b)=>(b-a)/6e4;
+          let msg; if(ph==='day'){ const r=dm(tS,st.set); msg=r<=60?`<b class="xsw">☀ 日没まで ${mins(r)}</b>`:`☀ 日没まで ${mins(r)}`; }
+          else if(ph==='tw') msg=tS<st.rise?`<b class="xsw">🌅 薄明（日の出まで ${mins(dm(tS,st.rise))}）</b>`:`<b class="xsw">🌆 薄暮（薄明終了まで ${mins(dm(tS,st.dusk))}）</b>`;
+          else { const nr=tS<st.rise?st.rise:SUN.times(jstDay(tS,1),p.lat,p.lon).rise; msg=`<b class="xsn">🌙 夜間（日の出まで ${mins(dm(tS,nr))}）</b>`; }
+          return `<i class="wxsun ${ph}" title="日の出 ${sunHM(st.rise)}・日没 ${sunHM(st.set)}${st.dusk?'・薄明終了 '+sunHM(st.dusk):''}（この地点・${T[i].slice(5,10).replace('-','/')}）"><span class="wxsm">${msg}</span><svg viewBox="0 0 240 128" aria-hidden="true">${g}</svg></i>`; }catch(e){ return ''; } })()}</div>
       <div class="wxch">${chips.map(([t,c,k,ti,lb])=>`<span class="${c}" title="${ti}">${wxPic(k)}<i class="wxcl"><small>${lb||(({base:'雲底 AGL',vis:'視程',oat:'機体高度の気温',fz:'0℃高度 MSL',ice:'',top:'上の雲 AGL',ra:'',sn:''})[k]??'')}</small>${t}</i></span>`).join('')}</div>
       ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       ${(()=>{ // 予報の帯：24時間先までは1時間ごと、その先は3時間ごと。タップでその時刻の予報をこのカードに表示
