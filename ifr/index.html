@@ -583,8 +583,8 @@ function extractReports(text){
 function newerOf(a,b){const ta=(a.match(/\s(\d{6})Z/)||[])[1],tb=(b.match(/\s(\d{6})Z/)||[])[1];if(!ta)return b;if(!tb)return a;
   const da=+ta.slice(0,2),db=+tb.slice(0,2);if(Math.abs(da-db)>15)return da<db?a:b;return tb>=ta?b:a}
 /* ---------- auto fetch (reference only) ---------- */
-const AWC='https://aviationweather.gov/api/data/',WXJSON='https://raw.githubusercontent.com/realbon1-max/hoistops/wx/wx.json';let wxTimer=null,wxBusy=false;
-async function wxFromRepo(ids){const r=await fetch(WXJSON+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();
+const AWC='https://aviationweather.gov/api/data/',WXJSON='https://raw.githubusercontent.com/realbon1-max/IFR/wx/wx.json',WXJSON2='https://raw.githubusercontent.com/realbon1-max/hoistops/wx/wx.json';let wxTimer=null,wxBusy=false;
+async function wxFromRepo(ids){let r;try{r=await fetch(WXJSON+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0}catch(e){r=await fetch(WXJSON2+'?t='+Date.now(),{cache:'no-store'})}if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();
   const want=new Set(ids),lines=[...(d.metar||[]),...(d.taf||[])].filter(x=>want.has(x.id)&&x.raw).map(x=>x.raw);
   return {txt:lines.join('\n'),at:d.t?new Date(d.t*1000):null,via:'GitHub（10分ごとに自動巡回）'}}
 async function wxFromAwc(ids){const q='ids='+ids.join(',')+'&format=raw';
