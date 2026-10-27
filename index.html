@@ -4281,10 +4281,10 @@ async function vtTile(z,x,y){ const k=z+'/'+x+'/'+y; if(VT.c.has(k)) return VT.c
     try{ if('caches' in window){ const ca=await caches.open('aw139vt'); let r=await ca.match(url); if(!r){ const n=await fetch(url); if(!n.ok) return null; await ca.put(url,n.clone()); r=n; } buf=await r.arrayBuffer(); } else { const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); } }
     catch(e){ try{ const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); }catch(_){ return null; } }
     let u=new Uint8Array(buf); if(u[0]===0x1f&&u[1]===0x8b&&typeof DecompressionStream!=='undefined'){ buf=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(); }
-    const L=mvtDecode(buf,['symbol','landforma','landforml','landformp','waterarea']), o={pt:[],ln:[],pg:[]};
+    const L=mvtDecode(buf,['symbol','landforma','landforml','landformp','waterarea','structurel','railway']), o={pt:[],ln:[],pg:[]};
     for(const nm in L){ const ly=L[nm], ext=ly.ext||4096;
-      for(const F of ly.feats){ let code=null; for(let t=0;t<F.tags.length;t+=2){ if(ly.keys[F.tags[t]]==='ftCode'){ code=+ly.vals[F.tags[t+1]]; break; } } if(code==null) continue;
-        let cat=null; if(nm==='waterarea'){ if(code===5000||code===55000) cat='wa'; } else if(nm==='symbol') cat=VTSYM[code]; else if(code===7401) cat='ws'; else if(code===7402) cat='sn'; else if(code===7403||code===7601) cat='gr'; else if(code===7521||code===7621) cat='gu'; else if([7501,7502,7509,7511,7512,7541].includes(code)) cat='rk';
+      for(const F of ly.feats){ let code=null, rt=''; for(let t=0;t<F.tags.length;t+=2){ const kk=ly.keys[F.tags[t]]; if(kk==='ftCode') code=+ly.vals[F.tags[t+1]]; else if(kk==='rtCode'||kk==='rtCode1') rt=rt||String(ly.vals[F.tags[t+1]]); } if(code==null) continue;
+        let cat=null; if(nm==='waterarea'){ if(code===5000||code===55000) cat='wa'; } else if(nm==='structurel'){ if(code===8202) cat='pw'; else if(code===4201) cat='ht'; } else if(nm==='railway'){ if(code===2821||(code===8201&&rt>='40206000000'&&rt<'40207000000')) cat='rw'; } else if(nm==='symbol'){ cat=code===8105?'rt':VTSYM[code]; } else if(code===7401) cat='ws'; else if(code===7402) cat='sn'; else if(code===7403||code===7601) cat='gr'; else if(code===7521||code===7621) cat='gu'; else if([7501,7502,7509,7511,7512,7541].includes(code)) cat='rk';
         if(!cat) continue; const toLL=q=>[y2lat((y+q[1]/ext)*256,z),x2lon((x+q[0]/ext)*256,z)], R=mvtGeom(F).map(r=>r.map(toLL));
         if(F.type===1) R.forEach(r=>r.forEach(q=>o.pt.push({cat,q}))); else if(F.type===2) R.forEach(r=>o.ln.push({cat,r})); else if(F.type===3) o.pg.push({cat,R}); } }
     return o; })().catch(()=>null);
@@ -4309,6 +4309,18 @@ async function vtProfile(prof,key){ const pick=MAP.pick; if(!pick) return; const
       for(const o of ptx) if(vtDist(la,lo,o.q[0],o.q[1])<70) return o.cat;
       for(const o of pg) if(o.cat==='ws'&&vtIn(la,lo,o.R)) return 'ws';
       let best=null,bd=380; for(const o of veg){ const d=vtDist(la,lo,o.q[0],o.q[1]); if(d<bd){ bd=d; best=o.cat; } } return best||'un'; }); });
+    // 送電線・索道・高塔・電波塔：断面の線と交わる所、断面のすぐ横（±45 m）の鉄塔、現場からの最寄り距離
+  { const la0=pick.lat, lo0=pick.lon, kx=111320*Math.cos(la0*RAD), ky=110540, M=q=>[(q[1]-lo0)*kx,(q[0]-la0)*ky];
+    const W=ln.filter(o=>o.cat==='pw'||o.cat==='rw'), Hts=[...ln.filter(o=>o.cat==='ht').map(o=>({cat:'ht',q:o.r[0]})),...pt.filter(o=>o.cat==='rt')];
+    let near=null; W.forEach(o=>{ for(let k=1;k<o.r.length;k++){ const a=M(o.r[k-1]), b=M(o.r[k]), dx=b[0]-a[0], dy=b[1]-a[1], L2=dx*dx+dy*dy; let t=L2?-(a[0]*dx+a[1]*dy)/L2:0; t=Math.max(0,Math.min(1,t)); const px=a[0]+t*dx, py=a[1]+t*dy, d=Math.hypot(px,py); if(o.cat==='pw'&&(!near||d<near.d)) near={d,brg:((Math.atan2(px,py)/RAD)+360)%360}; } });
+    prof.pwNear=near;
+    all.forEach(P=>{ const b=P.brg*RAD, ux=Math.sin(b), uy=Math.cos(b), R=Math.abs(P.ds[0]), S=q=>{ const m=M(q); return [m[0]*ux+m[1]*uy, m[0]*uy-m[1]*ux]; }, out=[];
+      W.forEach(o=>{ const V=o.r.map(S);
+        for(let k=1;k<V.length;k++){ const [s1,l1]=V[k-1],[s2,l2]=V[k]; if((l1>0)!==(l2>0)&&l1!==l2){ const t=l1/(l1-l2), sx=s1+t*(s2-s1); if(Math.abs(sx)<=R) out.push({k:o.cat==='rw'?'rx':'x',s:sx}); }
+          if(o.cat==='pw'&&Math.abs(l1)<45&&Math.abs(l2)<45&&(Math.abs(s1)<=R||Math.abs(s2)<=R)) out.push({k:'span',s1,s2}); }
+        if(o.cat==='pw') V.forEach(([sv,lv],k)=>{ if(Math.abs(lv)<45&&Math.abs(sv)<=R) out.push({k:'t',s:sv,lat:lv}); }); });
+      Hts.forEach(o=>{ const [sv,lv]=S(o.q); if(Math.abs(lv)<45&&Math.abs(sv)<=R) out.push({k:o.cat==='rt'?'rt':'ht',s:sv}); });
+      P.pw=out; }); }
   prof.vt='ok'; }
 // 断面図に描く1本（1つ）の絵。x：中心、y：地面、h：高さ(px)、w：幅(px)
 function vtGlyph(c,x,y,h,w,op){ const C=VTC[c]||VTC.un, col=C[1], f=n=>n.toFixed(1); let g='';
@@ -4377,6 +4389,18 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
       const C=VTC[c], tall=['bl','nl','bb','pa','or','un'].includes(c), hm=tall?(obs>0?obs:C[2]):C[2], hp=Math.max(tall?7:2.5,Math.min(ph*0.45,hm*sy)), wp=tall?Math.max(6,Math.min(26,(c==='nl'?0.42:c==='bb'?0.5:0.62)*hp*(sx/sy)*1.0+ (c==='nl'?3:5))):Math.max(9,Math.min(22,10));
       const zz2=zI(s2); if(!isNaN(zz2)) h+=vtGlyph(c,px,Y(zz2),hp,tall?Math.min(wp,Math.max(6,hp*0.8)):wp,tall&&obs<=0?0.55:1);
       px+=(tall?Math.max(6,Math.min(wp,hp*0.8))*0.78:wp*0.95)+(c==='rk'||c==='gr'?0:1); } }
+  // 送電線・鉄塔・索道（高さは地図からは分からないため想定：鉄塔 45 m、電線 地表から 15〜60 m）
+  if(pr.pw&&pr.pw.length){ const zI2=s=>{ const k=(s+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; const za=pr.z[a], zb=pr.z[a+1]; return isNaN(za)?zb:isNaN(zb)?za:za*(1-t)+zb*t; }, TWH=45;
+    const tower=(sv,lbl)=>{ const zg=zI2(sv); if(isNaN(zg)) return; const x=X(sv), y0=Y(zg), y1=Y(zg+TWH), w=Math.max(5,Math.min(16,8*sx)), a=y1+(y0-y1)*0.12;
+      let g=`<path d="M${(x-w).toFixed(1)} ${y0.toFixed(1)} L${(x-w*0.25).toFixed(1)} ${y1.toFixed(1)} L${(x+w*0.25).toFixed(1)} ${y1.toFixed(1)} L${(x+w).toFixed(1)} ${y0.toFixed(1)}" fill="none" stroke="#5b6470" stroke-width="1.6"/>`;
+      for(let f=0.15;f<0.95;f+=0.17){ const yy=y1+(y0-y1)*f, ww=w*0.25+(w*0.75)*f, yn=y1+(y0-y1)*Math.min(1,f+0.17), wn=w*0.25+(w*0.75)*Math.min(1,f+0.17); g+=`<path d="M${(x-ww).toFixed(1)} ${yy.toFixed(1)} L${(x+wn).toFixed(1)} ${yn.toFixed(1)} M${(x+ww).toFixed(1)} ${yy.toFixed(1)} L${(x-wn).toFixed(1)} ${yn.toFixed(1)}" stroke="#5b6470" stroke-width=".8"/>`; }
+      g+=`<path d="M${(x-w*1.3).toFixed(1)} ${a.toFixed(1)} H${(x+w*1.3).toFixed(1)} M${(x-w*1.1).toFixed(1)} ${(a+(y0-y1)*0.12).toFixed(1)} H${(x+w*1.1).toFixed(1)}" stroke="#5b6470" stroke-width="1.4"/>`;
+      g+=`<text x="${x.toFixed(1)}" y="${(y1-5).toFixed(1)}" font-size="10.5" font-weight="800" text-anchor="middle" fill="#c0392b" paint-order="stroke" stroke="#fff" stroke-width="3">${lbl}</text>`; h+=g; };
+    const pts=pr.pw.filter(o=>o.k==='t'||o.k==='ht'||o.k==='rt');
+    pr.pw.filter(o=>o.k==='span').forEach(o=>{ const a=Math.max(-range,Math.min(range,o.s1)), b2=Math.max(-range,Math.min(range,o.s2)); const za=zI2(o.s1), zb=zI2(o.s2); if(isNaN(za)||isNaN(zb)) return; let d=''; for(let k=0;k<=20;k++){ const f=k/20, sv=o.s1+(o.s2-o.s1)*f; if(sv<-range||sv>range) continue; const zt=za+(zb-za)*f+TWH*0.88-4*TWH*0.35*f*(1-f); d+=(d?'L':'M')+X(sv).toFixed(1)+' '+Y(zt).toFixed(1)+' '; } if(d) h+=`<path d="${d}" fill="none" stroke="#2b2b2b" stroke-width="1.4"/>`; });
+    pr.pw.filter(o=>o.k==='x'||o.k==='rx').forEach(o=>{ if(pts.some(q=>Math.abs(q.s-o.s)<15)) return; const zg=zI2(o.s); if(isNaN(zg)) return; const x=X(o.s), yA=Y(zg+60), yB=Y(zg+15), yc=Y(zg+30);
+      h+=`<rect x="${(x-3).toFixed(1)}" y="${yA.toFixed(1)}" width="6" height="${Math.max(2,yB-yA).toFixed(1)}" rx="3" fill="#ff9800" opacity=".28"/><line x1="${x.toFixed(1)}" y1="${yA.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yB.toFixed(1)}" stroke="#ef6c00" stroke-width="1.2" stroke-dasharray="3 3"/><circle cx="${x.toFixed(1)}" cy="${yc.toFixed(1)}" r="5" fill="#fff" stroke="#c0392b" stroke-width="2"/><path d="M${(x+1).toFixed(1)} ${(yc-3.5).toFixed(1)} l-2.5 4 h2.5 l-2 4" fill="none" stroke="#c0392b" stroke-width="1.3"/><text x="${(x+8).toFixed(1)}" y="${(yA+10).toFixed(1)}" font-size="10.5" font-weight="800" fill="#c0392b" paint-order="stroke" stroke="#fff" stroke-width="3">${o.k==='rx'?'索道':'送電線'}（高さ不明）</text>`; });
+    pts.forEach(o=>tower(o.s,o.k==='t'?'鉄塔':o.k==='rt'?'電波塔':'高塔')); }
   // downwash column (drifted downwind by the wind)
   const D=ROTOR_D, s0=FL.s0, zAt=v=>{ const k=(v+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; return pr.z[a]*(1-t)+pr.z[a+1]*t; };
   const yr=Y(zr), yg=Y(zAt(s0));
@@ -4445,8 +4469,9 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
   h+=`<text x="${L+6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)">${lab[0]}</text><text x="${L+pw-6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)" text-anchor="end">${lab[1]}</text>`;
   h+=`<text x="${L+pw/2}" y="${Hh-8}" font-size="10.5" fill="var(--muted)" text-anchor="middle">${which==='fa'?`機首 ${P3d(hdg)}°（真）`:`左右 ${P3d(hdg-90)}°〜${P3d(hdg+90)}°（真）`}・縦×${vx}${big?'・赤い点＝機体':''}</text>`;
   h+=hel;
-  const vleg=(()=>{ const ks=Object.keys(vseen); if(!ks.length) return ''; const ci=(XN-1)/2, cc=vcat?vcat[ci]:null;
-     return `<div class="vtleg">${cc&&VTC[cc]?`<b>${vtIcon(cc)}降下地点：${VTC[cc][0]}</b>`:''}${cc==='wa'&&opt.obs>0?`<span class="vtwarn">⚠ 水面の上：樹木・障害物の高さ（入力 ${opt.obs} m）は 0 が実際に近い <button type="button" data-obs0="1">0 m にする</button></span>`:''}${ks.filter(k=>k!==cc).map(k=>`<span>${vtIcon(k)}${VTC[k][0]}</span>`).join('')}<small>${vcat?'地図記号（地理院ベクトルタイル）から推定・木の高さは入力値':'地図記号を読み込み中、またはオフライン：入力の樹木・障害物の高さで描画'}</small></div>`; })();
+  const vleg=(()=>{ const ks=Object.keys(vseen); if(!ks.length&&!(pr.pw&&pr.pw.length)&&!(which==='fa'&&XS.prof&&XS.prof.pwNear&&XS.prof.pwNear.d<1000)) return ''; const ci=(XN-1)/2, cc=vcat?vcat[ci]:null;
+     return `<div class="vtleg">${cc&&VTC[cc]?`<b>${vtIcon(cc)}降下地点：${VTC[cc][0]}</b>`:''}${(()=>{ const P=pr.pw||[], xs=P.filter(o=>o.k==='x'||o.k==='rx'||o.k==='t'), n=XS.prof&&XS.prof.pwNear; let t2=''; if(xs.length){ const c=xs.slice().sort((a,b)=>Math.abs(a.s)-Math.abs(b.s))[0]; const lb=which==='fa'?(c.s<0?'後方':'前方'):(c.s<0?'左':'右'); t2+=`<span class="vtwarn">⚡ ${c.k==='rx'?'索道':c.k==='t'?'送電線の鉄塔':'送電線'}：${lb} ${Math.round(Math.abs(c.s))} m</span>`; }
+      if(which==='fa'&&n&&n.d<1000) t2+=`<span class="${n.d<300?'vtwarn':''}">⚡ 最寄りの送電線 ${Math.round(n.d)} m・方位 ${String(Math.round(n.brg)).padStart(3,'0')}°（真）</span>`; return t2; })()}${cc==='wa'&&opt.obs>0?`<span class="vtwarn">⚠ 水面の上：樹木・障害物の高さ（入力 ${opt.obs} m）は 0 が実際に近い <button type="button" data-obs0="1">0 m にする</button></span>`:''}${ks.filter(k=>k!==cc).map(k=>`<span>${vtIcon(k)}${VTC[k][0]}</span>`).join('')}<small>${vcat?'地図記号（地理院ベクトルタイル）から推定・木の高さは入力値'+(pr.pw&&pr.pw.length?'・送電線の高さは地図に無いため鉄塔 約45 m・電線 地表から15〜60 mの想定で描画（必ず目視確認）':''):'地図記号を読み込み中、またはオフライン：入力の樹木・障害物の高さで描画'}</small></div>`; })();
   return {vleg,slope:SLP,svg:`<svg viewBox="0 0 ${W} ${Hh}" class="xsvg"${XS.aa?'':' shape-rendering="crispEdges" text-rendering="optimizeSpeed"'} role="img" aria-label="${which==='fa'?'機首方向':'左右方向'}の断面図">${h}</svg>`,notes,r10,r17,vmax:Math.max(...flow.filter((f,i)=>Math.abs(pr.ds[i])>ROTOR_D).map(f=>f.v))}; }
 // ---- escape paths: VRS recovery (classic forward / Vuichard to the advancing side) and OEI fly-away, against the terrain
 const RC0={gnd:1,ca:30,cl:300,cd:150,vl:50,vd:30,aroc:1000,aspd:60,ol:0,od:200,oroc:150,ovy:80,mg:30,cable:295,po:3,pc:1};
