@@ -479,7 +479,7 @@ details.mset>summary.msh{cursor:pointer}
 .logll{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}.logll b{font-size:15px;font-variant-numeric:tabular-nums}.logll span{font-size:12px;color:var(--muted)}.logll span:first-of-type{color:#7b3fd0;font-weight:700}
 .logmore summary{font-size:11.5px;color:var(--muted);cursor:pointer}.logmore div{font-size:12px;font-variant-numeric:tabular-nums;padding:3px 0 0 12px}.logb{display:flex;flex-wrap:wrap;gap:5px}.logb .logdel{margin-left:auto}
 .logempty{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px;padding:8px}.logempty svg{width:42px;height:42px;flex:none}
-.vtleg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;margin:2px 4px 4px}.vtleg b,.vtleg span{display:inline-flex;align-items:center;gap:3px}.vtleg b{font-size:13px}.vtleg small{flex-basis:100%;font-size:10.5px;color:var(--muted)}.vti{width:22px;height:22px;flex:none;background:linear-gradient(transparent 75%,#b49a76 75%);border-radius:4px}
+.vtleg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;margin:2px 4px 4px}.vtleg b,.vtleg span{display:inline-flex;align-items:center;gap:3px}.vtleg b{font-size:13px}.vtwarn{color:#c0392b;font-weight:700}.vtwarn button{font:inherit;font-size:12px;margin-left:4px;padding:2px 10px;border-radius:12px;border:1px solid #c0392b;background:#fff;color:#c0392b;cursor:pointer}.vtleg small{flex-basis:100%;font-size:10.5px;color:var(--muted)}.vti{width:22px;height:22px;flex:none;background:linear-gradient(transparent 75%,#b49a76 75%);border-radius:4px}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mlayer .otile{position:absolute;width:256px;height:256px;overflow:hidden}.mlayer .otile img{position:absolute}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
@@ -4244,7 +4244,7 @@ function xsFlow(pr,hAGL,vi,U){ const D=ROTOR_D, Vd=2*vi, Vg=Vd*wakeF(hAGL/D);
 // ==== 地図記号（地理院ベクトルタイル）から、断面に沿った植生・岩・雪などを推定 ====
 // 植生記号（symbol）：6311田 6312畑 6313茶畑 6314果樹園 6321広葉樹林 6322針葉樹林 6323竹林 6324ヤシ科樹林 6325ハイマツ地 6326笹地 6327荒地
 // 地形（landforma/l/p）：7401湿地 7402万年雪 7403砂礫地 7501〜7541岩・崖 7521雨裂 7601砂礫地(点) 7621雨裂(下部)
-const VTC={bl:['広葉樹林','#4f8f3a',15],nl:['針葉樹林','#2f6b3a',20],bb:['竹林','#7cb342',12],pa:['ヤシ科樹林','#689f38',8],hm:['ハイマツ地','#2e5e34',1.5],sa:['笹地','#8bc34a',1.2],wl:['荒地','#a5a03c',0.6],
+const VTC={wa:['水面（湖・川・海）','#4fa3d1',0],bl:['広葉樹林','#4f8f3a',15],nl:['針葉樹林','#2f6b3a',20],bb:['竹林','#7cb342',12],pa:['ヤシ科樹林','#689f38',8],hm:['ハイマツ地','#2e5e34',1.5],sa:['笹地','#8bc34a',1.2],wl:['荒地','#a5a03c',0.6],
   rf:['田','#7fb8d8',0.4],fd:['畑','#a1887f',0.5],te:['茶畑','#6b8e23',1],or:['果樹園','#7cb342',4],rk:['岩・崖','#7d7d7d',0],gr:['砂礫地（がれ場）','#a1887f',0],gu:['雨裂（崩れ）','#795548',0],sn:['万年雪・雪渓','#e3f2fd',0],ws:['湿地','#4fa3d1',0.6],un:['樹木・障害物（入力値）','#5d8a4e',10]};
 const VTSYM={6311:'rf',6312:'fd',6313:'te',6314:'or',6321:'bl',6322:'nl',6323:'bb',6324:'pa',6325:'hm',6326:'sa',6327:'wl'};
 const VT={c:new Map()};
@@ -4281,10 +4281,10 @@ async function vtTile(z,x,y){ const k=z+'/'+x+'/'+y; if(VT.c.has(k)) return VT.c
     try{ if('caches' in window){ const ca=await caches.open('aw139vt'); let r=await ca.match(url); if(!r){ const n=await fetch(url); if(!n.ok) return null; await ca.put(url,n.clone()); r=n; } buf=await r.arrayBuffer(); } else { const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); } }
     catch(e){ try{ const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); }catch(_){ return null; } }
     let u=new Uint8Array(buf); if(u[0]===0x1f&&u[1]===0x8b&&typeof DecompressionStream!=='undefined'){ buf=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(); }
-    const L=mvtDecode(buf,['symbol','landforma','landforml','landformp']), o={pt:[],ln:[],pg:[]};
+    const L=mvtDecode(buf,['symbol','landforma','landforml','landformp','waterarea']), o={pt:[],ln:[],pg:[]};
     for(const nm in L){ const ly=L[nm], ext=ly.ext||4096;
       for(const F of ly.feats){ let code=null; for(let t=0;t<F.tags.length;t+=2){ if(ly.keys[F.tags[t]]==='ftCode'){ code=+ly.vals[F.tags[t+1]]; break; } } if(code==null) continue;
-        let cat=null; if(nm==='symbol') cat=VTSYM[code]; else if(code===7401) cat='ws'; else if(code===7402) cat='sn'; else if(code===7403||code===7601) cat='gr'; else if(code===7521||code===7621) cat='gu'; else if([7501,7502,7509,7511,7512,7541].includes(code)) cat='rk';
+        let cat=null; if(nm==='waterarea'){ if(code===5000||code===55000) cat='wa'; } else if(nm==='symbol') cat=VTSYM[code]; else if(code===7401) cat='ws'; else if(code===7402) cat='sn'; else if(code===7403||code===7601) cat='gr'; else if(code===7521||code===7621) cat='gu'; else if([7501,7502,7509,7511,7512,7541].includes(code)) cat='rk';
         if(!cat) continue; const toLL=q=>[y2lat((y+q[1]/ext)*256,z),x2lon((x+q[0]/ext)*256,z)], R=mvtGeom(F).map(r=>r.map(toLL));
         if(F.type===1) R.forEach(r=>r.forEach(q=>o.pt.push({cat,q}))); else if(F.type===2) R.forEach(r=>o.ln.push({cat,r})); else if(F.type===3) o.pg.push({cat,R}); } }
     return o; })().catch(()=>null);
@@ -4301,6 +4301,7 @@ async function vtProfile(prof,key){ const pick=MAP.pick; if(!pick) return; const
   const pt=tiles.flatMap(t=>t.pt), ln=tiles.flatMap(t=>t.ln), pg=tiles.flatMap(t=>t.pg);
   const veg=pt.filter(o=>!['gr','gu'].includes(o.cat)), ptx=pt.filter(o=>['gr','gu'].includes(o.cat));
   all.forEach(P=>{ const sp=Math.abs(P.ds[1]-P.ds[0]); P.cat=P.ll.map(([la,lo])=>{
+      for(const o of pg) if(o.cat==='wa'&&vtIn(la,lo,o.R)) return 'wa';
       for(const o of pg) if(o.cat==='sn'&&vtIn(la,lo,o.R)) return 'sn';
       for(const o of ln) if(o.cat==='rk'){ for(let i=1;i<o.r.length;i++) if(vtSegD(la,lo,o.r[i-1],o.r[i])<Math.max(18,sp*0.8)) return 'rk'; }
       for(const o of pg) if(o.cat==='gr'&&vtIn(la,lo,o.R)) return 'gr';
@@ -4329,7 +4330,7 @@ function vtGlyph(c,x,y,h,w,op){ const C=VTC[c]||VTC.un, col=C[1], f=n=>n.toFixed
   else if(c==='sn'){ g=`<path d="M${f(x-w/2)} ${f(y+.5)} q${f(w*0.25)} -5 ${f(w*0.5)} -4 q${f(w*0.25)} 1 ${f(w*0.5)} 4Z" fill="#f5fbff" stroke="#90caf9" stroke-width="1"/>`; }
   else if(c==='ws'){ g=[-.3,0,.3].map(k=>`<path d="M${f(x+k*w-2.5)} ${f(y-1.2)} h5" stroke="#4fa3d1" stroke-width="1.2"/><path d="M${f(x+k*w)} ${f(y-1.5)} l-1 -4 M${f(x+k*w)} ${f(y-1.5)} l1 -4" stroke="#7cb342" stroke-width=".9"/>`).join(''); }
   return op!=null&&op<1?`<g opacity="${op}">${g}</g>`:g; }
-function vtIcon(c){ const g=vtGlyph(c,12,20,c==='bl'||c==='un'||c==='or'||c==='nl'||c==='pa'||c==='bb'?16:7,14); return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true">${g}</svg>`; }
+function vtIcon(c){ if(c==='wa') return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true"><rect x="0" y="14" width="24" height="10" fill="#4fa3d1"/><path d="M3 18q3-3 6 0t6 0t6 0" fill="none" stroke="#fff" stroke-width="1.3"/></svg>`; const g=vtGlyph(c,12,20,c==='bl'||c==='un'||c==='or'||c==='nl'||c==='pa'||c==='bb'?16:7,14); return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true">${g}</svg>`; }
 function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760,Hh=W<600?382:352, L=56, Rm=54, T=26, B=62, pw=W-L-Rm, ph=Hh-T-B;
   const c=(XN-1)/2, zg=pr.z[c], zr=zg+hAGL; const zs=pr.z.filter(x=>!isNaN(x));
   if(zs.length<XN*0.6) return `<svg viewBox="0 0 ${W} 120"><text x="20" y="60" font-size="14" fill="var(--warn)">この地点の標高データを読めません（内蔵データの範囲外で、ネットにもつながっていません）</text></svg>`;
@@ -4365,9 +4366,14 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
   // 地図記号から推定した植生・岩・雪などを、地面の上に絵で描く（記号が読めない所は入力の樹木の高さで一般的な木）
   const vcat=pr.cat||null, vseen={};
   { const zI=s=>{ const k=(s+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; const za=pr.z[a], zb=pr.z[a+1]; return isNaN(za)?zb:isNaN(zb)?za:za*(1-t)+zb*t; };
+    if(vcat&&vcat.includes('wa')){ vseen.wa=1; let i0=-1; const flushW=i1=>{ if(i0<0) return; const a=X(pr.ds[i0]-hs), b2=X(pr.ds[i1]+hs); let top=''; for(let k=i0;k<=i1;k++){ const zk=isNaN(pr.z[k])?z0:pr.z[k]; top+=`${k===i0?'M'+a.toFixed(1):'L'+X(pr.ds[k]).toFixed(1)} ${Y(zk).toFixed(1)} `; } const zl=isNaN(pr.z[i1])?z0:pr.z[i1];
+        h+=`<path d="${top}L${b2.toFixed(1)} ${Y(zl).toFixed(1)} L${b2.toFixed(1)} ${T+ph} L${a.toFixed(1)} ${T+ph}Z" fill="url(#xwat_${which})"/><path d="${top}L${b2.toFixed(1)} ${Y(zl).toFixed(1)}" fill="none" stroke="#1e88e5" stroke-width="2"/>`;
+        for(let x=a+6;x<b2-8;x+=22){ const k=Math.max(0,Math.min(XN-1,Math.round(((x-L)/sx)/(2*range)*(XN-1)))), yy=Y(isNaN(pr.z[k])?z0:pr.z[k])+6; h+=`<path d="M${x.toFixed(1)} ${yy.toFixed(1)} q3 -3 6 0 t6 0" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>`; } i0=-1; };
+      for(let k=0;k<XN;k++){ if(vcat[k]==='wa'){ if(i0<0) i0=k; } else if(i0>=0) flushW(k-1); } flushW(XN-1);
+      h=h.replace('</defs>',`<linearGradient id="xwat_${which}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb0e8"/><stop offset="1" stop-color="#1c5f9e"/></linearGradient></defs>`); }
     let px=X(-range)+3; let guard=0;
     while(px<X(range)-2&&guard++<600){ const s2=(px-L)/sx-range, i=Math.max(0,Math.min(XN-1,Math.round((s2+range)/(2*range)*(XN-1)))), c=vcat?vcat[i]:(obs>0?'un':null);
-      if(!c||(c==='un'&&obs<=0)){ px+=8; continue; } vseen[c]=(vseen[c]||0)+1;
+      if(!c||c==='wa'||(c==='un'&&obs<=0)){ px+=8; continue; } vseen[c]=(vseen[c]||0)+1;
       const C=VTC[c], tall=['bl','nl','bb','pa','or','un'].includes(c), hm=tall?(obs>0?obs:C[2]):C[2], hp=Math.max(tall?7:2.5,Math.min(ph*0.45,hm*sy)), wp=tall?Math.max(6,Math.min(26,(c==='nl'?0.42:c==='bb'?0.5:0.62)*hp*(sx/sy)*1.0+ (c==='nl'?3:5))):Math.max(9,Math.min(22,10));
       const zz2=zI(s2); if(!isNaN(zz2)) h+=vtGlyph(c,px,Y(zz2),hp,tall?Math.min(wp,Math.max(6,hp*0.8)):wp,tall&&obs<=0?0.55:1);
       px+=(tall?Math.max(6,Math.min(wp,hp*0.8))*0.78:wp*0.95)+(c==='rk'||c==='gr'?0:1); } }
@@ -4440,7 +4446,7 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
   h+=`<text x="${L+pw/2}" y="${Hh-8}" font-size="10.5" fill="var(--muted)" text-anchor="middle">${which==='fa'?`機首 ${P3d(hdg)}°（真）`:`左右 ${P3d(hdg-90)}°〜${P3d(hdg+90)}°（真）`}・縦×${vx}${big?'・赤い点＝機体':''}</text>`;
   h+=hel;
   const vleg=(()=>{ const ks=Object.keys(vseen); if(!ks.length) return ''; const ci=(XN-1)/2, cc=vcat?vcat[ci]:null;
-     return `<div class="vtleg">${cc&&VTC[cc]?`<b>${vtIcon(cc)}降下地点：${VTC[cc][0]}</b>`:''}${ks.filter(k=>k!==cc).map(k=>`<span>${vtIcon(k)}${VTC[k][0]}</span>`).join('')}<small>${vcat?'地図記号（地理院ベクトルタイル）から推定・木の高さは入力値':'地図記号を読み込み中、またはオフライン：入力の樹木・障害物の高さで描画'}</small></div>`; })();
+     return `<div class="vtleg">${cc&&VTC[cc]?`<b>${vtIcon(cc)}降下地点：${VTC[cc][0]}</b>`:''}${cc==='wa'&&opt.obs>0?`<span class="vtwarn">⚠ 水面の上：樹木・障害物の高さ（入力 ${opt.obs} m）は 0 が実際に近い <button type="button" data-obs0="1">0 m にする</button></span>`:''}${ks.filter(k=>k!==cc).map(k=>`<span>${vtIcon(k)}${VTC[k][0]}</span>`).join('')}<small>${vcat?'地図記号（地理院ベクトルタイル）から推定・木の高さは入力値':'地図記号を読み込み中、またはオフライン：入力の樹木・障害物の高さで描画'}</small></div>`; })();
   return {vleg,slope:SLP,svg:`<svg viewBox="0 0 ${W} ${Hh}" class="xsvg"${XS.aa?'':' shape-rendering="crispEdges" text-rendering="optimizeSpeed"'} role="img" aria-label="${which==='fa'?'機首方向':'左右方向'}の断面図">${h}</svg>`,notes,r10,r17,vmax:Math.max(...flow.filter((f,i)=>Math.abs(pr.ds[i])>ROTOR_D).map(f=>f.v))}; }
 // ---- escape paths: VRS recovery (classic forward / Vuichard to the advancing side) and OEI fly-away, against the terrain
 const RC0={gnd:1,ca:30,cl:300,cd:150,vl:50,vd:30,aroc:1000,aspd:60,ol:0,od:200,oroc:150,ovy:80,mg:30,cable:295,po:3,pc:1};
@@ -4701,6 +4707,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const pth=E?{fa:[[E.cl0,'#2c7a4b','クラシック（正面）'],[E.oei0,'#c0392b','片発離脱（正面）']],lr:[[E.vu,'#2f6fb0','ヴィチャード']]}:{fa:[],lr:[]};
   const fa=xsSvg(pv('fa'),'fa',{hAGL,vi:d.vi,obs,hft,hdg,U:Ufa,paths:pth.fa}), lr=xsSvg(pv('lr'),'lr',{hAGL,vi:d.vi,obs,hft,hdg,U:Ulr,paths:pth.lr});
   if(typeof fa==='string'){ box.innerHTML=fa; return; }
+  setTimeout(()=>{ document.querySelectorAll('#xsBody [data-obs0]').forEach(b=>b.onclick=()=>{ const o=$('mObs'); o.value=0; o.dispatchEvent(new Event('input',{bubbles:true})); o.dispatchEvent(new Event('change',{bubbles:true})); }); },0);
   const hd=hAGL/ROTOR_D, Vg=2*d.vi*wakeF(hd), drift=Math.hypot(Ufa,Ulr)*hAGL/Math.max(1,(2*d.vi+Vg)/2);
   const rng=(r,lb)=>{ const a=Math.abs(Math.round(r[0])), b2=Math.round(r[1]); return a===0&&b2===0?'なし':`${lb[0]} ${a?a+' m':'なし'}・${lb[1]} ${b2?b2+' m':'なし'}`+'（中心から）'; };
   const card=(t,o,lb)=>{ const S=o.slope; return `<div class="xcard"><div class="xct">${t}</div>${o.svg}${o.vleg||''}
