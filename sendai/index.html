@@ -479,6 +479,7 @@ details.mset>summary.msh{cursor:pointer}
 .logll{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline}.logll b{font-size:15px;font-variant-numeric:tabular-nums}.logll span{font-size:12px;color:var(--muted)}.logll span:first-of-type{color:#7b3fd0;font-weight:700}
 .logmore summary{font-size:11.5px;color:var(--muted);cursor:pointer}.logmore div{font-size:12px;font-variant-numeric:tabular-nums;padding:3px 0 0 12px}.logb{display:flex;flex-wrap:wrap;gap:5px}.logb .logdel{margin-left:auto}
 .logempty{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px;padding:8px}.logempty svg{width:42px;height:42px;flex:none}
+.vtleg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;margin:2px 4px 4px}.vtleg b,.vtleg span{display:inline-flex;align-items:center;gap:3px}.vtleg b{font-size:13px}.vtleg small{flex-basis:100%;font-size:10.5px;color:var(--muted)}.vti{width:22px;height:22px;flex:none;background:linear-gradient(transparent 75%,#b49a76 75%);border-radius:4px}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mlayer .otile{position:absolute;width:256px;height:256px;overflow:hidden}.mlayer .otile img{position:absolute}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
@@ -4207,7 +4208,7 @@ async function xsLoad(lat,lon,hdg,range){
     const step=25, far=400, nS=far/step;
     const w=await Promise.all(pts.map((p,i)=>{ const qs=[]; for(let j=1;j<=nS;j++){ qs.push(xsWide(...destLL(p[0],p[1],brg+90,j*step))); qs.push(xsWide(...destLL(p[0],p[1],brg-90,j*step))); }
       return Promise.all(qs).then(v=>{ let wl=far,wr=far; for(let j=0;j<nS;j++){ if(wr===far&&v[2*j]>z[i]+10) wr=(j+1)*step; if(wl===far&&v[2*j+1]>z[i]+10) wl=(j+1)*step; } return wl+wr; }); }));
-    out[k]={ds,z,zr,w,brg}; }
+    out[k]={ds,z,zr,w,brg,ll:pts}; }
   // long profiles (±1,500 m, 10 m step) for the escape / fly-away evaluation
   for(const [k,brg] of [['efa',hdg],['elr',hdg+90]]){ const n=301, ds=[...Array(n)].map((_,i)=>-1500+10*i);
     const z=await Promise.all(ds.map(d=>{ const q=d>=0?destLL(lat,lon,brg,d):destLL(lat,lon,brg+180,-d); return xsElev(q[0],q[1]); })); out[k]={ds,z}; }
@@ -4229,6 +4230,95 @@ function xsFlow(pr,hAGL,vi,U){ const D=ROTOR_D, Vd=2*vi, Vg=Vd*wakeF(hAGL/D);
     const net=dir*v0+U; return {v:Math.abs(net),dir:Math.sign(net)||dir,v0,A,cnf,sep,under:r<=0.25*D}; });
   let gv=null; if(Math.abs(U)>0.5){ const up=-Math.sign(U); pr.ds.forEach((s,i)=>{ const f=flow[i]; if(Math.sign(s-s0)!==up||Math.abs(s-s0)<=ROTOR_D) return; if(f.v0<=Math.abs(U)&&(!gv||Math.abs(s-s0)<Math.abs(gv.s-s0))) gv={s,i}; }); }
   return {flow,s0,Vg,gv}; }
+// ==== 地図記号（地理院ベクトルタイル）から、断面に沿った植生・岩・雪などを推定 ====
+// 植生記号（symbol）：6311田 6312畑 6313茶畑 6314果樹園 6321広葉樹林 6322針葉樹林 6323竹林 6324ヤシ科樹林 6325ハイマツ地 6326笹地 6327荒地
+// 地形（landforma/l/p）：7401湿地 7402万年雪 7403砂礫地 7501〜7541岩・崖 7521雨裂 7601砂礫地(点) 7621雨裂(下部)
+const VTC={bl:['広葉樹林','#4f8f3a',15],nl:['針葉樹林','#2f6b3a',20],bb:['竹林','#7cb342',12],pa:['ヤシ科樹林','#689f38',8],hm:['ハイマツ地','#2e5e34',1.5],sa:['笹地','#8bc34a',1.2],wl:['荒地','#a5a03c',0.6],
+  rf:['田','#7fb8d8',0.4],fd:['畑','#a1887f',0.5],te:['茶畑','#6b8e23',1],or:['果樹園','#7cb342',4],rk:['岩・崖','#7d7d7d',0],gr:['砂礫地（がれ場）','#a1887f',0],gu:['雨裂（崩れ）','#795548',0],sn:['万年雪・雪渓','#e3f2fd',0],ws:['湿地','#4fa3d1',0.6],un:['樹木・障害物（入力値）','#5d8a4e',10]};
+const VTSYM={6311:'rf',6312:'fd',6313:'te',6314:'or',6321:'bl',6322:'nl',6323:'bb',6324:'pa',6325:'hm',6326:'sa',6327:'wl'};
+const VT={c:new Map()};
+function pbfR(buf){ const b=new Uint8Array(buf); let p=0; const R={b,get pos(){return p},set pos(v){p=v},
+  vint(){ let r=0,s=1,c; do{ c=b[p++]; r+=(c&127)*s; s*=128; }while(c>=128); return r; },
+  skip(t){ if(t===0) R.vint(); else if(t===1) p+=8; else if(t===2){ const l=R.vint(); p+=l; } else if(t===5) p+=4; },
+  str(){ const l=R.vint(), s2=new TextDecoder().decode(b.subarray(p,p+l)); p+=l; return s2; } }; return R; }
+function mvtDecode(buf,want){ const R=pbfR(buf), b=R.b, out={};
+  while(R.pos<b.length){ const k=R.vint(), f=k>>3, t=k&7; if(f!==3||t!==2){ R.skip(t); continue; } const len=R.vint(), end=R.pos+len;
+    const L={name:'',keys:[],vals:[],feats:[],ext:4096};
+    while(R.pos<end){ const k2=R.vint(), f2=k2>>3, t2=k2&7;
+      if(f2===1) L.name=R.str();
+      else if(f2===3) L.keys.push(R.str());
+      else if(f2===5) L.ext=R.vint();
+      else if(f2===4){ const l=R.vint(), e=R.pos+l; let v=null; while(R.pos<e){ const k3=R.vint(), f3=k3>>3, t3=k3&7;
+          if(f3===1) v=R.str(); else if(f3===4||f3===5) v=R.vint(); else if(f3===6){ const n=R.vint(); v=(n%2)?-(n+1)/2:n/2; } else if(f3===7) v=!!R.vint();
+          else if(f3===2){ v=new DataView(b.buffer,b.byteOffset+R.pos,4).getFloat32(0,true); R.pos+=4; } else if(f3===3){ v=new DataView(b.buffer,b.byteOffset+R.pos,8).getFloat64(0,true); R.pos+=8; } else R.skip(t3); } L.vals.push(v); }
+      else if(f2===2){ const l=R.vint(), e=R.pos+l, F={tags:[],type:0,geom:[]}; while(R.pos<e){ const k3=R.vint(), f3=k3>>3, t3=k3&7;
+          if(f3===2&&t3===2){ const e2=R.vint()+R.pos; while(R.pos<e2) F.tags.push(R.vint()); }
+          else if(f3===3) F.type=R.vint();
+          else if(f3===4&&t3===2){ const e2=R.vint()+R.pos; while(R.pos<e2) F.geom.push(R.vint()); }
+          else R.skip(t3); } L.feats.push(F); }
+      else R.skip(t2); }
+    R.pos=end; if(!want||want.includes(L.name)) out[L.name]=L; }
+  return out; }
+function mvtGeom(F){ const g=F.geom, rings=[]; let x=0,y=0,i=0,cur=null; const zz=n=>(n>>>1)^-(n&1);
+  while(i<g.length){ const c=g[i++], id=c&7, n=c>>3;
+    if(id===1){ for(let k=0;k<n;k++){ x+=zz(g[i++]); y+=zz(g[i++]); cur=[[x,y]]; rings.push(cur); } }
+    else if(id===2){ for(let k=0;k<n;k++){ x+=zz(g[i++]); y+=zz(g[i++]); if(cur) cur.push([x,y]); } }
+    else if(id===7){ if(cur&&cur.length) cur.push(cur[0].slice()); } else break; }
+  return rings; }
+async function vtTile(z,x,y){ const k=z+'/'+x+'/'+y; if(VT.c.has(k)) return VT.c.get(k);
+  const pr=(async()=>{ const url=`https://cyberjapandata.gsi.go.jp/xyz/experimental_bvmap/${z}/${x}/${y}.pbf`; let buf=null;
+    try{ if('caches' in window){ const ca=await caches.open('sd139vt'); let r=await ca.match(url); if(!r){ const n=await fetch(url); if(!n.ok) return null; await ca.put(url,n.clone()); r=n; } buf=await r.arrayBuffer(); } else { const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); } }
+    catch(e){ try{ const n=await fetch(url); if(!n.ok) return null; buf=await n.arrayBuffer(); }catch(_){ return null; } }
+    let u=new Uint8Array(buf); if(u[0]===0x1f&&u[1]===0x8b&&typeof DecompressionStream!=='undefined'){ buf=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer(); }
+    const L=mvtDecode(buf,['symbol','landforma','landforml','landformp']), o={pt:[],ln:[],pg:[]};
+    for(const nm in L){ const ly=L[nm], ext=ly.ext||4096;
+      for(const F of ly.feats){ let code=null; for(let t=0;t<F.tags.length;t+=2){ if(ly.keys[F.tags[t]]==='ftCode'){ code=+ly.vals[F.tags[t+1]]; break; } } if(code==null) continue;
+        let cat=null; if(nm==='symbol') cat=VTSYM[code]; else if(code===7401) cat='ws'; else if(code===7402) cat='sn'; else if(code===7403||code===7601) cat='gr'; else if(code===7521||code===7621) cat='gu'; else if([7501,7502,7509,7511,7512,7541].includes(code)) cat='rk';
+        if(!cat) continue; const toLL=q=>[y2lat((y+q[1]/ext)*256,z),x2lon((x+q[0]/ext)*256,z)], R=mvtGeom(F).map(r=>r.map(toLL));
+        if(F.type===1) R.forEach(r=>r.forEach(q=>o.pt.push({cat,q}))); else if(F.type===2) R.forEach(r=>o.ln.push({cat,r})); else if(F.type===3) o.pg.push({cat,R}); } }
+    return o; })().catch(()=>null);
+  VT.c.set(k,pr); return pr; }
+function vtDist(la,lo,a,b){ const kx=111320*Math.cos(la*RAD), ky=110540; return Math.hypot((a-la)*ky,(b-lo)*kx); }
+function vtSegD(la,lo,p,q){ const kx=111320*Math.cos(la*RAD), ky=110540, ax=(p[1]-lo)*kx, ay=(p[0]-la)*ky, bx=(q[1]-lo)*kx, by=(q[0]-la)*ky, dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy; let t=L2?-(ax*dx+ay*dy)/L2:0; t=Math.max(0,Math.min(1,t)); return Math.hypot(ax+t*dx,ay+t*dy); }
+function vtIn(la,lo,R){ let c=false; for(const r of R) for(let i=0,j=r.length-1;i<r.length;j=i++){ const a=r[i],b=r[j]; if((a[0]>la)!==(b[0]>la)&&lo<(b[1]-a[1])*(la-a[0])/(b[0]-a[0])+a[1]) c=!c; } return c; }
+async function vtProfile(prof,key){ const pick=MAP.pick; if(!pick) return; const all=['fa','lr'].map(k=>prof[k]).filter(Boolean); if(!all.length||!all[0].ll){ prof.vt='none'; return; }
+  const range=Math.abs(all[0].ds[0]), z=range>500?15:16, T=new Set();
+  all.forEach(P=>P.ll.forEach(q=>{ for(const [dy,dx] of [[0,0],[.003,0],[-.003,0],[0,.004],[0,-.004]]){ const tx=Math.floor(lon2x(q[1]+dx,z)/256), ty=Math.floor(lat2y(q[0]+dy,z)/256); T.add(tx+','+ty); } }));
+  if(T.size>40){ prof.vt='none'; return; }
+  const tiles=(await Promise.all([...T].map(s2=>{ const [tx,ty]=s2.split(',').map(Number); return vtTile(z,tx,ty); }))).filter(Boolean);
+  if(XS.prof!==prof) return; if(!tiles.length){ prof.vt='none'; return; }
+  const pt=tiles.flatMap(t=>t.pt), ln=tiles.flatMap(t=>t.ln), pg=tiles.flatMap(t=>t.pg);
+  const veg=pt.filter(o=>!['gr','gu'].includes(o.cat)), ptx=pt.filter(o=>['gr','gu'].includes(o.cat));
+  all.forEach(P=>{ const sp=Math.abs(P.ds[1]-P.ds[0]); P.cat=P.ll.map(([la,lo])=>{
+      for(const o of pg) if(o.cat==='sn'&&vtIn(la,lo,o.R)) return 'sn';
+      for(const o of ln) if(o.cat==='rk'){ for(let i=1;i<o.r.length;i++) if(vtSegD(la,lo,o.r[i-1],o.r[i])<Math.max(18,sp*0.8)) return 'rk'; }
+      for(const o of pg) if(o.cat==='gr'&&vtIn(la,lo,o.R)) return 'gr';
+      for(const o of ln) if(o.cat==='gu'){ for(let i=1;i<o.r.length;i++) if(vtSegD(la,lo,o.r[i-1],o.r[i])<Math.max(15,sp*0.7)) return 'gu'; }
+      for(const o of ptx) if(vtDist(la,lo,o.q[0],o.q[1])<70) return o.cat;
+      for(const o of pg) if(o.cat==='ws'&&vtIn(la,lo,o.R)) return 'ws';
+      let best=null,bd=380; for(const o of veg){ const d=vtDist(la,lo,o.q[0],o.q[1]); if(d<bd){ bd=d; best=o.cat; } } return best||'un'; }); });
+  prof.vt='ok'; }
+// 断面図に描く1本（1つ）の絵。x：中心、y：地面、h：高さ(px)、w：幅(px)
+function vtGlyph(c,x,y,h,w,op){ const C=VTC[c]||VTC.un, col=C[1], f=n=>n.toFixed(1); let g='';
+  if(c==='bl'||c==='un'||c==='or'){ const tr=h*0.28, r=Math.max(2.5,Math.min(w/2,h*0.42)), cy=y-tr-r*0.85;
+    g=`<line x1="${f(x)}" y1="${f(y)}" x2="${f(x)}" y2="${f(y-tr-r*0.4)}" stroke="#6d4c2f" stroke-width="${Math.max(1,w*0.12).toFixed(1)}"/><circle cx="${f(x-r*0.45)}" cy="${f(cy+r*0.2)}" r="${f(r*0.72)}" fill="${col}"/><circle cx="${f(x+r*0.45)}" cy="${f(cy+r*0.15)}" r="${f(r*0.7)}" fill="${col}"/><circle cx="${f(x)}" cy="${f(cy-r*0.25)}" r="${f(r*0.8)}" fill="${col}"/><circle cx="${f(x-r*0.25)}" cy="${f(cy-r*0.45)}" r="${f(r*0.3)}" fill="#fff" opacity=".18"/>`;
+    if(c==='un') g=`<g opacity=".75">${g}</g>`; }
+  else if(c==='nl'){ const tr=h*0.12, hw=Math.max(2,w/2); g=`<line x1="${f(x)}" y1="${f(y)}" x2="${f(x)}" y2="${f(y-tr-2)}" stroke="#6d4c2f" stroke-width="${Math.max(1,w*0.1).toFixed(1)}"/>`;
+    for(const [a,b2,k] of [[0,.55,1],[.3,.8,.78],[.55,1,.55]]) g+=`<path d="M${f(x-hw*k)} ${f(y-tr-(h-tr)*a)} L${f(x)} ${f(y-tr-(h-tr)*b2)} L${f(x+hw*k)} ${f(y-tr-(h-tr)*a)}Z" fill="${col}"/>`; }
+  else if(c==='bb'){ for(const dx of [-w*0.3,0,w*0.3]){ const hh=h*(dx?0.85:1); g+=`<line x1="${f(x+dx)}" y1="${f(y)}" x2="${f(x+dx*1.2)}" y2="${f(y-hh)}" stroke="${col}" stroke-width="1.3"/><path d="M${f(x+dx*1.2)} ${f(y-hh)} q${f(w*0.2)} ${f(h*0.05)} ${f(w*0.3)} ${f(h*0.15)} M${f(x+dx*1.1)} ${f(y-hh*0.7)} q${f(-w*0.2)} ${f(h*0.05)} ${f(-w*0.3)} ${f(h*0.13)}" stroke="#558b2f" stroke-width="1" fill="none"/>`; } }
+  else if(c==='pa'){ const ty=y-h; g=`<path d="M${f(x)} ${f(y)} Q${f(x+w*0.15)} ${f(y-h*0.5)} ${f(x)} ${f(ty)}" stroke="#795548" stroke-width="${Math.max(1,w*0.1).toFixed(1)}" fill="none"/>`+[-1,-.5,.5,1].map(k=>`<path d="M${f(x)} ${f(ty)} q${f(k*w*0.3)} ${f(-h*0.08)} ${f(k*w*0.55)} ${f(h*0.15)}" stroke="${col}" stroke-width="1.6" fill="none"/>`).join(''); }
+  else if(c==='hm'){ const hh=Math.max(3,h); g=`<path d="M${f(x-w*0.55)} ${f(y)} q${f(w*0.12)} ${f(-hh)} ${f(w*0.3)} ${f(-hh*0.7)} q${f(w*0.12)} ${f(-hh*0.5)} ${f(w*0.25)} ${f(-hh*0.2)} q${f(w*0.12)} ${f(-hh*0.6)} ${f(w*0.27)} ${f(hh*0.1)} q${f(w*0.08)} ${f(hh*0.3)} ${f(w*0.28)} ${f(hh*0.8)}Z" fill="${col}"/>`+[-.3,0,.3].map(k=>`<path d="M${f(x+k*w)} ${f(y-hh*0.6)} l${f(-w*0.08)} ${f(-hh*0.35)} M${f(x+k*w)} ${f(y-hh*0.6)} l${f(w*0.08)} ${f(-hh*0.35)}" stroke="#1b3d22" stroke-width=".8"/>`).join(''); }
+  else if(c==='sa'||c==='wl'){ const hh=Math.max(c==='sa'?3.5:2.5,h), n=c==='sa'?5:3; for(let k=0;k<n;k++){ const dx=(k-(n-1)/2)*w*0.22; g+=`<path d="M${f(x+dx)} ${f(y)} l${f(-w*0.08)} ${f(-hh)} M${f(x+dx)} ${f(y)} l${f(w*0.02)} ${f(-hh*1.1)} M${f(x+dx)} ${f(y)} l${f(w*0.1)} ${f(-hh*0.85)}" stroke="${col}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`; } }
+  else if(c==='rf'){ g=`<path d="M${f(x-w/2)} ${f(y-1)} H${f(x+w/2)}" stroke="#4fa3d1" stroke-width="1.6"/>`+[-.25,.25].map(k=>`<path d="M${f(x+k*w)} ${f(y-1)} l-1.5 -4 M${f(x+k*w)} ${f(y-1)} l1.5 -4" stroke="#7cb342" stroke-width="1"/>`).join(''); }
+  else if(c==='fd'){ g=[-.3,0,.3].map(k=>`<path d="M${f(x+k*w-2)} ${f(y-0.5)} q2 -3.5 4 0" stroke="#8d6e63" stroke-width="1.3" fill="none"/>`).join(''); }
+  else if(c==='te'){ g=`<path d="M${f(x-w*0.45)} ${f(y)} q0 -6 ${f(w*0.45)} -6 q${f(w*0.45)} 0 ${f(w*0.45)} 6Z" fill="${col}"/>`; }
+  else if(c==='rk'){ const hh=Math.max(5,Math.min(14,w*0.8)); g=`<path d="M${f(x-w*0.55)} ${f(y+1)} L${f(x-w*0.35)} ${f(y-hh*0.75)} L${f(x-w*0.15)} ${f(y-hh*0.35)} L${f(x+w*0.05)} ${f(y-hh)} L${f(x+w*0.25)} ${f(y-hh*0.45)} L${f(x+w*0.4)} ${f(y-hh*0.8)} L${f(x+w*0.55)} ${f(y+1)}Z" fill="#8a8a8a" stroke="#4e4e4e" stroke-width=".9" stroke-linejoin="round"/><path d="M${f(x+w*0.05)} ${f(y-hh)} L${f(x)} ${f(y-hh*0.4)}" stroke="#bdbdbd" stroke-width=".8"/>`; }
+  else if(c==='gr'){ for(const [dx,dy,r] of [[-.35,-1.6,2.2],[-.1,-2.6,2.8],[.18,-1.8,2.1],[.38,-2.4,2.5],[.05,-.8,1.6]]) g+=`<path d="M${f(x+dx*w-r)} ${f(y+dy+r*0.5)} l${f(r*0.6)} ${f(-r*1.2)} l${f(r*1.1)} ${f(r*0.2)} l${f(r*0.4)} ${f(r*1)}Z" fill="#b0a196" stroke="#6d5f55" stroke-width=".7"/>`; }
+  else if(c==='gu'){ g=`<path d="M${f(x-w*0.4)} ${f(y-1)} L${f(x-w*0.1)} ${f(y+6)} L${f(x+w*0.05)} ${f(y+1)} L${f(x+w*0.25)} ${f(y+7)} L${f(x+w*0.45)} ${f(y-1)}" stroke="#4e342e" stroke-width="1.4" fill="#3e2723" fill-opacity=".35"/>`; }
+  else if(c==='sn'){ g=`<path d="M${f(x-w/2)} ${f(y+.5)} q${f(w*0.25)} -5 ${f(w*0.5)} -4 q${f(w*0.25)} 1 ${f(w*0.5)} 4Z" fill="#f5fbff" stroke="#90caf9" stroke-width="1"/>`; }
+  else if(c==='ws'){ g=[-.3,0,.3].map(k=>`<path d="M${f(x+k*w-2.5)} ${f(y-1.2)} h5" stroke="#4fa3d1" stroke-width="1.2"/><path d="M${f(x+k*w)} ${f(y-1.5)} l-1 -4 M${f(x+k*w)} ${f(y-1.5)} l1 -4" stroke="#7cb342" stroke-width=".9"/>`).join(''); }
+  return op!=null&&op<1?`<g opacity="${op}">${g}</g>`:g; }
+function vtIcon(c){ const g=vtGlyph(c,12,20,c==='bl'||c==='un'||c==='or'||c==='nl'||c==='pa'||c==='bb'?16:7,14); return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true">${g}</svg>`; }
 function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760,Hh=W<600?382:352, L=56, Rm=54, T=26, B=62, pw=W-L-Rm, ph=Hh-T-B;
   const c=(XN-1)/2, zg=pr.z[c], zr=zg+hAGL; const zs=pr.z.filter(x=>!isNaN(x));
   if(zs.length<XN*0.6) return `<svg viewBox="0 0 ${W} 120"><text x="20" y="60" font-size="14" fill="var(--warn)">この地点の標高データを読めません（内蔵データの範囲外で、ネットにもつながっていません）</text></svg>`;
@@ -4256,11 +4346,20 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
     for(let i=0;i<P.length-1;i++){ const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
       d+=` C${(p1[0]+(p2[0]-p0[0])/6).toFixed(1)},${(p1[1]+(p2[1]-p0[1])/6).toFixed(1)} ${(p2[0]-(p3[0]-p1[0])/6).toFixed(1)},${(p2[1]-(p3[1]-p1[1])/6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`; } return d; };
   if(XS.aa){
-    if(obs>0) h+=`<path d="${curve(obs)}" fill="none" stroke="#3f7d3a" stroke-width="2" stroke-dasharray="2 3" opacity=".8"/>`;
+    if(obs>0) h+=`<path d="${curve(obs)}" fill="none" stroke="#3f7d3a" stroke-width="1.2" stroke-dasharray="2 4" opacity=".45"/>`;
     h+=`<path d="${curve(0)} L${X(range)},${T+ph} L${X(-range)},${T+ph} Z" fill="#b49a76" stroke="#6e5a3e" stroke-width="2" stroke-linejoin="round" class="xground"/>`;
   } else { const tp=line(0);
-    if(obs>0) h+=`<polyline points="${line(obs)}" fill="none" stroke="#3f7d3a" stroke-width="2" stroke-dasharray="2 3" opacity=".8"/>`;
+    if(obs>0) h+=`<polyline points="${line(obs)}" fill="none" stroke="#3f7d3a" stroke-width="1.2" stroke-dasharray="2 4" opacity=".45"/>`;
     h+=`<polygon points="${X(-range)},${T+ph} ${tp} ${X(range)},${T+ph}" fill="#b49a76" stroke="#6e5a3e" stroke-width="2" class="xground"/>`; }
+  // 地図記号から推定した植生・岩・雪などを、地面の上に絵で描く（記号が読めない所は入力の樹木の高さで一般的な木）
+  const vcat=pr.cat||null, vseen={};
+  { const zI=s=>{ const k=(s+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; const za=pr.z[a], zb=pr.z[a+1]; return isNaN(za)?zb:isNaN(zb)?za:za*(1-t)+zb*t; };
+    let px=X(-range)+3; let guard=0;
+    while(px<X(range)-2&&guard++<600){ const s2=(px-L)/sx-range, i=Math.max(0,Math.min(XN-1,Math.round((s2+range)/(2*range)*(XN-1)))), c=vcat?vcat[i]:(obs>0?'un':null);
+      if(!c||(c==='un'&&obs<=0)){ px+=8; continue; } vseen[c]=(vseen[c]||0)+1;
+      const C=VTC[c], tall=['bl','nl','bb','pa','or','un'].includes(c), hm=tall?(obs>0?obs:C[2]):C[2], hp=Math.max(tall?7:2.5,Math.min(ph*0.45,hm*sy)), wp=tall?Math.max(6,Math.min(26,(c==='nl'?0.42:c==='bb'?0.5:0.62)*hp*(sx/sy)*1.0+ (c==='nl'?3:5))):Math.max(9,Math.min(22,10));
+      const zz2=zI(s2); if(!isNaN(zz2)) h+=vtGlyph(c,px,Y(zz2),hp,tall?Math.min(wp,Math.max(6,hp*0.8)):wp,tall&&obs<=0?0.55:1);
+      px+=(tall?Math.max(6,Math.min(wp,hp*0.8))*0.78:wp*0.95)+(c==='rk'||c==='gr'?0:1); } }
   // downwash column (drifted downwind by the wind)
   const D=ROTOR_D, s0=FL.s0, zAt=v=>{ const k=(v+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; return pr.z[a]*(1-t)+pr.z[a+1]*t; };
   const yr=Y(zr), yg=Y(zAt(s0));
@@ -4329,7 +4428,9 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
   h+=`<text x="${L+6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)">${lab[0]}</text><text x="${L+pw-6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)" text-anchor="end">${lab[1]}</text>`;
   h+=`<text x="${L+pw/2}" y="${Hh-8}" font-size="10.5" fill="var(--muted)" text-anchor="middle">${which==='fa'?`機首 ${P3d(hdg)}°（真）`:`左右 ${P3d(hdg-90)}°〜${P3d(hdg+90)}°（真）`}・縦×${vx}${big?'・赤い点＝機体':''}</text>`;
   h+=hel;
-  return {slope:SLP,svg:`<svg viewBox="0 0 ${W} ${Hh}" class="xsvg"${XS.aa?'':' shape-rendering="crispEdges" text-rendering="optimizeSpeed"'} role="img" aria-label="${which==='fa'?'機首方向':'左右方向'}の断面図">${h}</svg>`,notes,r10,r17,vmax:Math.max(...flow.filter((f,i)=>Math.abs(pr.ds[i])>ROTOR_D).map(f=>f.v))}; }
+  const vleg=(()=>{ const ks=Object.keys(vseen); if(!ks.length) return ''; const ci=(XN-1)/2, cc=vcat?vcat[ci]:null;
+     return `<div class="vtleg">${cc&&VTC[cc]?`<b>${vtIcon(cc)}降下地点：${VTC[cc][0]}</b>`:''}${ks.filter(k=>k!==cc).map(k=>`<span>${vtIcon(k)}${VTC[k][0]}</span>`).join('')}<small>${vcat?'地図記号（地理院ベクトルタイル）から推定・木の高さは入力値':'地図記号を読み込み中、またはオフライン：入力の樹木・障害物の高さで描画'}</small></div>`; })();
+  return {vleg,slope:SLP,svg:`<svg viewBox="0 0 ${W} ${Hh}" class="xsvg"${XS.aa?'':' shape-rendering="crispEdges" text-rendering="optimizeSpeed"'} role="img" aria-label="${which==='fa'?'機首方向':'左右方向'}の断面図">${h}</svg>`,notes,r10,r17,vmax:Math.max(...flow.filter((f,i)=>Math.abs(pr.ds[i])>ROTOR_D).map(f=>f.v))}; }
 // ---- escape paths: VRS recovery (classic forward / Vuichard to the advancing side) and OEI fly-away, against the terrain
 const RC0={gnd:1,ca:30,cl:300,cd:150,vl:50,vd:30,aroc:1000,aspd:60,ol:0,od:200,oroc:150,ovy:80,mg:30,cable:295,po:3,pc:1};
 const RC={...RC0}; try{ Object.assign(RC,JSON.parse(localStorage.getItem('sd139rc')||'{}')); }catch(e){}
@@ -4579,6 +4680,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   if(key!==XS.key){ XS.key=key; XS.prof=null; box.innerHTML='<div class="hint">地形を読み取り中…</div>'; wireHint('地形を読み取り中…'); const k=key;
     xsLoad(p.lat,p.lon,hdg,XS.range).then(pr=>{ if(XS.key!==k) return; XS.prof=pr; keepView(()=>drawXsec(XS.H,XS.T,XS.W)); xsStatus(); }).catch(e=>{ box.innerHTML='<div class="hint warn">地形を読み取れませんでした</div>'; }); return; }
   if(!XS.prof) return;
+  if(!XS.prof.vt&&navigator.onLine!==false){ XS.prof.vt='busy'; const pf=XS.prof; vtProfile(pf,XS.key).then(()=>{ if(XS.prof===pf&&pf.vt==='ok') keepView(()=>drawXsec(XS.H,XS.T,XS.W)); }).catch(()=>{ pf.vt='none'; }); }
   const obs=+$('mObs').value||0, hft=+$('hh').value||0, hAGL=obs+hft/FT, d=downwash(H,T,W);
   XS.w=Math.round(Math.max(460,Math.min(760,(box.clientWidth||760)*1.3)));
   const wc=windComp(), Ufa=-wc.head*0.514444, Ulr=-wc.cross*0.514444;
@@ -4590,7 +4692,7 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   if(typeof fa==='string'){ box.innerHTML=fa; return; }
   const hd=hAGL/ROTOR_D, Vg=2*d.vi*wakeF(hd), drift=Math.hypot(Ufa,Ulr)*hAGL/Math.max(1,(2*d.vi+Vg)/2);
   const rng=(r,lb)=>{ const a=Math.abs(Math.round(r[0])), b2=Math.round(r[1]); return a===0&&b2===0?'なし':`${lb[0]} ${a?a+' m':'なし'}・${lb[1]} ${b2?b2+' m':'なし'}`+'（中心から）'; };
-  const card=(t,o,lb)=>{ const S=o.slope; return `<div class="xcard"><div class="xct">${t}</div>${o.svg}
+  const card=(t,o,lb)=>{ const S=o.slope; return `<div class="xcard"><div class="xct">${t}</div>${o.svg}${o.vleg||''}
    <div class="xrow">${S?`<div class="xslope" style="--sc:${S.cat[0]}" title="${S.cat[1]}：${S.cat[2]}"><span class="xsa">${Math.abs(S.ang).toFixed(0)}°</span><div><b>降下地点の傾斜</b><small>${Math.round(Math.tan(Math.abs(S.ang)*Math.PI/180)*100)}%${S.dir?'・'+S.dir:''}・${S.cat[1]}</small></div></div>`:''}
    <div class="xst"><small>周囲の最大</small><b style="color:${(DWB[dwBand(o.vmax)]||DWB[0])[1]}">${o.vmax.toFixed(0)}<i> m/s</i></b></div><div class="xst"><small>物が飛ぶ（17 m/s〜）</small><b class="xs2">${rng(o.r17,lb).replace('（中心から）','')}</b></div></div>
    ${o.notes.length?`<div class="xchips">${o.notes.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${o.notes.map(n=>`<li>${n[1]}</li>`).join('')}<li>物が舞う（10 m/s〜）：${rng(o.r10,lb)}</li></ul>`:`<div class="hint note">物が舞う（10 m/s〜）：${rng(o.r10,lb)}</div>`}</div>`; };
