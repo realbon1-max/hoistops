@@ -5188,7 +5188,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     else if(below.length){ hd='雲上 VMC on top'; cls='w'; ic=2; }
     else { hd=wc!=null&&wc<=1?'VMC 快晴':'VMC'; cls='ok'; }
     const fm=n=>Math.round(n).toLocaleString(), chips=[];
-    if(base!=null&&base<8000) chips.push([`${fm(Math.round(base/100)*100)} ft`,base<1000?'d':base<2000?'w':'','base','雲底（地上から）']);
+    if(base!=null&&base<8000){ const b0=base<100; chips.push([b0?'現場は雲の中':`${fm(Math.round(base/100)*100)} ft`,base<1000?'d':base<2000?'w':'','base',b0?'雲底が地面の高さ：現場（山の斜面・稜線）が雲に覆われている予報。視界がなく、ホイストは見通しが取れない':`雲の下面は現場の地面から約 ${fm(Math.round(base/100)*100)} ft 上${base<1000?'：とても低い（雲の下で動ける高さが少ない）':base<2000?'：低め':''}`,b0?'雲底 0 ft':base<1000?'雲底 AGL・とても低い':base<2000?'雲底 AGL・低め':'雲底 AGL']); }
     if(vis!=null) chips.push([`${vis>=10000?'10 km+':(vis/1000).toFixed(1)+' km'}`,vis<1600?'d':vis<5000?'w':'','vis','視程']);
     if(tH!=null) chips.push([`${tH.toFixed(0)}℃`,'','oat',`ホバリング高度 ${fm(Math.round(H/100)*100)} ft の気温`]);
     if(fz!=null) chips.push([`${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'','fz','0℃高度（フリージングレベル）']);
