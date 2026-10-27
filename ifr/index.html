@@ -50,6 +50,21 @@ header.top h1{font-size:20px;margin:0;font-weight:700}
 .leg .nm{font-size:11px;color:var(--muted);white-space:nowrap}
 .leg .wx{font-family:var(--code);font-size:12px;margin-top:4px}
 .leg.alt{border-style:dashed;margin-left:10px;border-left:1px dashed var(--line)}
+.leg{cursor:pointer}.leg:hover{border-color:var(--sky)}.leg .edit{position:absolute;top:6px;right:8px;font-size:11px;color:var(--sky)}
+.leg.add{display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:70px;border-style:dashed;color:var(--muted)}
+.leg.add .icao{font-size:22px;color:var(--sky)}
+#apPick{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+#apPick.on{display:flex}
+#apPick .sheet{background:var(--card);color:var(--ink);width:min(640px,100%);max-height:86vh;display:flex;flex-direction:column;border-radius:14px 14px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+@media(min-width:700px){#apPick{align-items:center}#apPick .sheet{border-radius:12px}}
+#apPick .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#apPick input{width:100%;font-size:18px;padding:10px 12px;margin:10px 0 6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:var(--code)}
+#apPick .lst{overflow:auto;-webkit-overflow-scrolling:touch;flex:1}
+#apPick .rg{font-size:12px;color:var(--muted);margin:10px 0 4px}
+#apPick .ap{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;padding:10px 8px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font-size:15px;cursor:pointer}
+#apPick .ap b{font-family:var(--code);font-size:17px;min-width:56px}
+#apPick .ap small{color:var(--muted)}
+#apPick .ap.cur{background:var(--go-soft)}
 .leg .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--line)}
 .bar.go{background:var(--go)}.bar.cau{background:var(--cau)}.bar.no{background:var(--no)}
 .arrow{flex:0 0 18px;align-self:center;height:2px;background:var(--mag)}
@@ -611,13 +626,36 @@ function wxPollSet(on){S.wxPoll=on?1:0;save();if(wxTimer){clearInterval(wxTimer)
 function route(){const r=S.route;return [['出発',r.dep],...r.via.map(v=>['経由',v]),['目的',r.dst]].filter(x=>x[1])}
 function renderStrip(){
   const r=S.route; const legs=route(); const el=$('strip');
-  if(!legs.length){el.innerHTML='<div class="empty" style="width:100%">ルートタブで出発・目的飛行場を入力してください。</div>';$('stripnote').textContent='';return}
-  const cell=(role,i,alt)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
+  const addc=(key,lab,x)=>`<div class="leg add${x?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${lab}を選ぶ"><div class="icao">＋</div><div class="nm">${lab}</div></div>`;
+  if(!legs.length){el.innerHTML=addc('dep','出発')+'<div class="arrow"></div>'+addc('dst','目的');$('stripnote').textContent='カードをタップして飛行場を選べます。';return}
+  const cell=(role,i,alt,key)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
-    return `<div class="leg${alt?' alt':''}"><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
-  el.innerHTML=legs.map((l,k)=>(k?'<div class="arrow"></div>':'')+cell(l[0],l[1])).join('')+(r.talt?cell('離陸代替',r.talt,1):'')+(r.alt?cell('代替',r.alt,1):'');
+    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
+  const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
+  el.innerHTML=main.join('<div class="arrow"></div>')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
   $('stripnote').textContent=`ETD ${fmtZ(utc(r.etd))}　ETA ${fmtZ(utc(r.eta))}　CAT ${S.prof.cat}　色は現況METARの目安（緑 良好／黄 低め／赤 悪い）`;
 }
+const PK_LAB={dep:'出発飛行場',dst:'目的飛行場',talt:'離陸代替飛行場',alt:'代替飛行場（目的地の代替）'};
+function pkCur(key){if(key.startsWith('via:')){const n=key.slice(4);return n==='+'?'':S.route.via[+n]||''}return S.route[key]||''}
+function pkSet(key,v){if(key.startsWith('via:')){const n=key.slice(4);if(n==='+'){if(v&&!S.route.via.includes(v))S.route.via.push(v)}else if(v)S.route.via[+n]=v;else S.route.via.splice(+n,1);save();try{renderVia()}catch(e){}renderAll();return}
+  const el=$(key);el.value=v;el.dispatchEvent(new Event('change'))}
+function apPickOpen(key){let pk=$('apPick');if(!pk){pk=document.createElement('div');pk.id='apPick';pk.innerHTML='<div class="sheet" role="dialog" aria-modal="true"><div class="hd"><b id="pkT"></b><span class="row" style="gap:6px"><button class="sub" id="pkClr" type="button">外す</button><button class="sub" id="pkX" type="button">閉じる</button></span></div><input id="pkQ" placeholder="ICAOコードか名前（例 RJSS / SENDAI）" autocomplete="off" autocapitalize="characters"><div class="lst" id="pkL"></div></div>';document.body.appendChild(pk);
+    pk.onclick=e=>{if(e.target===pk)apPickClose()};$('pkX').onclick=apPickClose;$('pkQ').oninput=()=>apPickList();
+    $('pkQ').onkeydown=e=>{if(e.key==='Enter'){const f=$('pkL').querySelector('.ap');if(f)f.click()}else if(e.key==='Escape')apPickClose()};
+    $('pkL').onclick=e=>{const b=e.target.closest('.ap');if(!b)return;pkSet(pk.dataset.key,b.dataset.v);apPickClose()};
+    $('pkClr').onclick=()=>{pkSet(pk.dataset.key,'');apPickClose()}}
+  pk.dataset.key=key;const via=key.startsWith('via:');$('pkT').textContent=via?(key==='via:+'?'経由地を追加':'経由地を変更'):PK_LAB[key];
+  $('pkClr').style.display=pkCur(key)?'':'none';$('pkQ').value='';apPickList();pk.classList.add('on');document.body.style.overflow='hidden';
+  if(matchMedia('(pointer:fine)').matches)setTimeout(()=>$('pkQ').focus(),30);
+  const c=$('pkL').querySelector('.cur');if(c)c.scrollIntoView({block:'center'})}
+function apPickClose(){const pk=$('apPick');if(pk)pk.classList.remove('on');document.body.style.overflow=''}
+function apPickList(){const pk=$('apPick'),q=$('pkQ').value.trim().toUpperCase(),cur=pkCur(pk.dataset.key);
+  const REGS=['北海道','東北','関東','中部','関西','中国','四国','九州','沖縄'];
+  const hit=([k,v])=>!q||k.includes(q)||(v.n||'').toUpperCase().includes(q)||(v.r||'').includes(q);
+  const rows=REGS.map(r=>{const L=Object.entries(DB).filter(([k,v])=>v.r===r&&hit([k,v])).sort((a,b)=>a[0].localeCompare(b[0]));
+    return L.length?`<div class="rg">${r}</div>`+L.map(([k,v])=>`<button type="button" class="ap${k===cur?' cur':''}" data-v="${k}"><b>${k}</b><span>${esc(v.n)}${v.iac.length?'':' <small>（計器進入なし）</small>'}</span></button>`).join(''):''}).join('');
+  const raw=/^[A-Z]{4}$/.test(q)&&!DB[q]?`<button type="button" class="ap" data-v="${q}"><b>${q}</b><span>このコードで入力 <small>（データなし）</small></span></button>`:'';
+  $('pkL').innerHTML=raw+rows||'<p class="note">見つかりません。</p>'}
 function renderWx(){
   try{$('wxNeed').innerHTML=wxAirports().map(i=>{const w=S.wx[i]||{};const ok=w.metar&&w.taf;const s=w.src||{},a=k=>s[k]==='auto'?'(参考)':'';return `<span class="chip ${ok?'ok':'ng'}">${i} ${w.metar?'✓METAR'+a('metar'):'－METAR'} ${w.taf?'✓TAF'+a('taf'):'－TAF'}</span>`}).join('')}catch(e){}
   const all=[...new Set([...route().map(x=>x[1]),S.route.alt].filter(Boolean))];
@@ -1543,6 +1581,8 @@ function bind(){
     $('wxResult').innerHTML=res.length?`<div class="msg ok">${res.length}件を読み取り、${add.length}件を取り込みました。<br><small class="code">${esc(add.join('、')||'（すでに同じか新しい報があります）')}</small></div>`:'<div class="msg">METAR・TAFが見つかりませんでした。MetAirで報文が表示されている画面を選択してください。</div>'};
   $('copyIcao').onclick=async()=>{const s=wxAirports().join(' ');if(!s)return;try{await navigator.clipboard.writeText(s);$('copyIcao').textContent='コピーしました：'+s}catch(e){$('copyIcao').textContent=s}};
   $('wxClear').onclick=()=>{S.wx={};save();renderAll()};
+  $('strip').addEventListener('click',e=>{const c=e.target.closest('[data-pk]');if(c)apPickOpen(c.dataset.pk)});
+  $('strip').addEventListener('keydown',e=>{const c=e.target.closest('[data-pk]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();apPickOpen(c.dataset.pk)}});
   $('wxAuto').onclick=()=>wxAutoFetch(true);$('wxPoll').checked=!!S.wxPoll;$('wxPoll').onchange=()=>wxPollSet($('wxPoll').checked);
   document.addEventListener('visibilitychange',()=>{if(S.wxPoll&&document.visibilityState==='visible'&&(!S.wxAutoAt||Date.now()-new Date(S.wxAutoAt)>10*60e3))wxAutoFetch(false)});
   $('chkReset').onclick=()=>{S.chk={};save();renderChk()};
