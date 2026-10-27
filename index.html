@@ -746,7 +746,7 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxtop{display:contents!important}
 #mInfo .wxic{width:50px!important;height:52px!important;flex:none}
 #mInfo .wxtx{min-width:0}#mInfo .wxtx b{font-size:17px!important}
-#mInfo .wxwind{flex:none}#mInfo .wxwind b{font-size:24px!important}
+#mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
 #mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 220px}
 #mInfo .wxch span{display:inline-flex;align-items:center;gap:3px;font-size:12.5px!important;padding:2px 8px 2px 6px!important;font-weight:700}
 #mInfo .wxp{width:15px;height:15px;flex:none}
@@ -5069,6 +5069,12 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     let vis=g('visibility'), rh2=g('relative_humidity_2m'), td2=g('dew_point_2m'), ccl=g('cloud_cover_low'), pr=g('precipitation');
     if(MX){ if(MX.p.vis!=null) vis=MX.p.vis; if(MX.p.td!=null) td2=MX.p.td; }
     const elFt=(d.__el!=null?d.__el:0)*3.28084, siteFt=isFinite(p.h)?p.h*3.28084:elFt, H=hovFt!=null?hovFt:siteFt+150;
+    // ホバリング中の機体の高さ（海抜）の風：上下の気圧面の風をベクトルで内挿（気圧面の風がなければ地上10 mの風）
+    const windAt=(k,Hf)=>{ const P=LV.map(l=>({z:d[`geopotential_height_${l}hPa`]?d[`geopotential_height_${l}hPa`][k]:null,s:d[`wind_speed_${l}hPa`]?d[`wind_speed_${l}hPa`][k]:null,a:d[`wind_direction_${l}hPa`]?d[`wind_direction_${l}hPa`][k]:null})).filter(q=>q.z!=null&&q.s!=null&&q.a!=null).map(q=>({...q,z:q.z*3.28084})).sort((x,y)=>x.z-y.z);
+      if(P.length<2) return null; let a=P[0],c=P[P.length-1]; if(Hf<=a.z) c=a; else if(Hf>=c.z) a=c; else for(let n=0;n<P.length-1;n++){ if(P[n].z<=Hf&&P[n+1].z>=Hf){ a=P[n]; c=P[n+1]; break; } }
+      const f=c.z===a.z?0:(Hf-a.z)/(c.z-a.z), R=Math.PI/180, u=(1-f)*a.s*Math.sin(a.a*R)+f*c.s*Math.sin(c.a*R), v=(1-f)*a.s*Math.cos(a.a*R)+f*c.s*Math.cos(c.a*R);
+      return {wd:((Math.atan2(u,v)/R)+360)%360, ws:Math.hypot(u,v)}; };
+    const HW=windAt(i,H), sfcWd=wd, sfcWs=ws, sfcGu=gu; if(HW){ wd=HW.wd; ws=HW.ws; gu=null; }
     // vertical profile (ft MSL)
     const L=LV.map(l=>({p:l,z:g(`geopotential_height_${l}hPa`),t:g(`temperature_${l}hPa`),rh:g(`relative_humidity_${l}hPa`),cc:g(`cloud_cover_${l}hPa`)})).filter(q=>q.z!=null&&q.t!=null).map(q=>({...q,z:q.z*3.28084})).sort((a,b)=>a.z-b.z);
     const cloudy=q=>(q.cc!=null?q.cc>=60:false)||(q.rh!=null&&q.rh>=95);
@@ -5109,28 +5115,28 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     if(ic!=null&&ic<=2&&inCloud) ic=3;
     const wdn=wd!=null?String(Math.round(wd/10)*10%360||360).padStart(3,'0'):'—';
     b.innerHTML=`<div class="wxtop">${wxIcon(ic,night)}<div class="wxtx"><b class="wx-${cls}">${hd}</b><span>${t2!=null?`地上 ${t2.toFixed(0)}℃`:''}${spread!=null?` / 露点差 ${spread.toFixed(0)}`:''}</span></div>
-      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}</div></div>
+      <div class="wxwind"><svg viewBox="-12 -12 24 24" class="wxarr" style="transform:rotate(${(wd||0)+180}deg)"><path d="M0 9V-7M-5.5 -1.5L0 -9L5.5 -1.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${wdn}°</b><span>/</span><b>${ws!=null?Math.round(ws):'—'}</b><small>kt</small>${gu!=null&&gu>=(ws||0)+8?`<em>G${Math.round(gu)}</em>`:''}<span class="wxwl">${HW?`海抜 ${fm(Math.round(H/10)*10)} ft（ホバリング）`:'地上 10 m'}${HW&&sfcWs!=null?`<br>地上${MX?'（METAR）':' 10 m'} ${String(Math.round((sfcWd||0)/10)*10%360||360).padStart(3,'0')}°/${Math.round(sfcWs)} kt${sfcGu!=null&&sfcGu>=sfcWs+8?` G${Math.round(sfcGu)}`:''}`:''}</span></div></div>
       ${chips.length?`<div class="wxch">${chips.map(([t,c,k,ti])=>`<span class="${c}" title="${ti}">${wxPic(k)}${t}</span>`).join('')}</div>`:''}
       ${MX?`<div class="wxmt" title="${MX.m.raw}"><b>✈ ${MX.m.id} 実況</b> ${(()=>{ const o=new Date(MX.m.obs*1000); return String(o.getHours()).padStart(2,'0')+':'+String(o.getMinutes()).padStart(2,'0'); })()}（${Math.round((Date.now()/1000-MX.m.obs)/60)}分前・現場から ${MX.nm.toFixed(0)} NM）<span class="mtcat" style="background:${MT_COL[MX.p.cat]}">${MX.p.cat}</span>${mxw?` ${mxw}`:''}<small>地上の風・視程・雲底・気温は METAR、上空は MSM</small></div>`:''}
       ${(()=>{ // 予報の帯：24時間先までは1時間ごと、その先は3時間ごと。タップでその時刻の予報をこのカードに表示
         const DOW='日月火水木金土'; let h='', dd0=T[iNow].slice(0,10);
-        for(let k=iNow;k<T.length;k++){ if(k-iNow>24&&+T[k].slice(11,13)%3) continue; const t=T[k], hr=+t.slice(11,13), w=d.weather_code?d.weather_code[k]:null, tt=d.temperature_2m?d.temperature_2m[k]:null, a=d.wind_direction_10m?d.wind_direction_10m[k]:null, sp=d.wind_speed_10m?d.wind_speed_10m[k]:null, gg=d.wind_gusts_10m?d.wind_gusts_10m[k]:null, vv=d.visibility?d.visibility[k]:null;
+        for(let k=iNow;k<T.length;k++){ if(k-iNow>24&&+T[k].slice(11,13)%3) continue; const t=T[k], hr=+t.slice(11,13), w=d.weather_code?d.weather_code[k]:null, tt=d.temperature_2m?d.temperature_2m[k]:null, hw=windAt(k,H), a=hw?hw.wd:d.wind_direction_10m?d.wind_direction_10m[k]:null, sp=hw?hw.ws:d.wind_speed_10m?d.wind_speed_10m[k]:null, gg=d.wind_gusts_10m?d.wind_gusts_10m[k]:null, vv=d.visibility?d.visibility[k]:null;
           if(t.slice(0,10)!==dd0){ dd0=t.slice(0,10); h+=`<span class="wsd">${+dd0.slice(8,10)}<small>${DOW[new Date(dd0+'T00:00:00').getDay()]}</small></span>`; }
           const bad=w!=null&&(w>=95||w===66||w===67||w===56||w===57)||vv!=null&&vv<1600, cau=!bad&&(w===45||w===48||w!=null&&w>=63&&w<95||vv!=null&&vv<5000||gg!=null&&gg>=25);
           h+=`<button type="button" class="wsc${k===i?' on':''}${bad?' bad':cau?' cau':''}" data-k="${k}"><small>${k===iNow?'今':hr+'時'}</small>${k===iEta&&iEta!==iNow?'<em>到着</em>':''}${w!=null?wxIcon(w,hr<6||hr>=18):''}<b>${tt!=null?Math.round(tt)+'°':''}</b><small class="wsw">${a!=null&&sp!=null?`<i style="transform:rotate(${Math.round(a)}deg)">↓</i>${Math.round(sp)}`:''}</small></button>`; }
         return `<div class="wxstrip" data-key="${key}">${h}</div>`; })()}
-      <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${man!=null?`${+T[i].slice(8,10)}日 `:''}${T[i].slice(11,16)} 予報${man!=null?`<button type="button" class="wxeta">✈ 到着時刻に戻す</button>`:''}<button type="button" class="wxuse" title="この予報の地上風を風向・風速に入れる">風に反映</button></div>`;
+      <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${man!=null?`${+T[i].slice(8,10)}日 `:''}${T[i].slice(11,16)} 予報${man!=null?`<button type="button" class="wxeta">✈ 到着時刻に戻す</button>`:''}<button type="button" class="wxuse" title="この予報の風（ホバリング高度・海抜）を風向・風速に入れる">風に反映</button></div>`;
     { const st=b.querySelector('.wxstrip'); if(st){ if(WXS.sl&&WXS.sl[0]===key) st.scrollLeft=WXS.sl[1]; else { const on=st.querySelector('.wsc.on'); if(on) st.scrollLeft=Math.max(0,on.offsetLeft-st.clientWidth/3); }
         st.addEventListener('scroll',()=>{ WXS.sl=[key,st.scrollLeft]; },{passive:true});
         st.querySelectorAll('.wsc').forEach(c=>c.onclick=()=>{ const k=+c.dataset.k; WXS.sel=k===iEta?null:{key,i:k}; draw(d); }); }
       const eb=b.querySelector('.wxeta'); if(eb) eb.onclick=()=>{ WXS.sel=null; draw(d); }; }
     const u=b.querySelector('.wxuse'); if(u) u.onclick=()=>{ if(wd==null||ws==null) return; try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=Math.round(ws); if($('wsR')) $('wsR').value=Math.round(ws); update(); mapWind&&mapWind(); }catch(e){} u.textContent='反映しました'; }; };
-  if(C&&Date.now()-C.t<3600e3){ draw(C.d); return; }
+  if(C&&Date.now()-C.t<3600e3&&C.d.wind_speed_850hPa){ draw(C.d); return; }
   if(navigator.onLine===false){ box.innerHTML='<div class="wxt">オフライン：予報は表示できません</div>'; return; }
   box.innerHTML='<div class="wxt">予報を読み込み中…</div>'; if(WXS.busy[key]) return; WXS.busy[key]=1;
   try{ const base=`https://api.open-meteo.com/v1/jma?latitude=${p.lat.toFixed(3)}&longitude=${p.lon.toFixed(3)}&models=jma_msm&wind_speed_unit=kn&timezone=Asia%2FTokyo&forecast_days=4&hourly=`;
     const s1=['weather_code','temperature_2m','wind_speed_10m','wind_direction_10m'], s2=['wind_gusts_10m','visibility','relative_humidity_2m','dew_point_2m','cloud_cover_low','precipitation'];
-    const pl=[]; LV.forEach(l=>pl.push(`temperature_${l}hPa`,`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`)); const pc=LV.map(l=>`cloud_cover_${l}hPa`);
+    const pl=[]; LV.forEach(l=>pl.push(`temperature_${l}hPa`,`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`)); const pc=LV.map(l=>`cloud_cover_${l}hPa`);
     let d=null, el=null;
     for(const v of [s1.concat(s2,pl,pc),s1.concat(s2,pl),s1.concat(pl),s1]){ const r=await fetch(base+v.join(',')); if(!r.ok) continue; const j=await r.json(); if(j.hourly&&j.hourly.time){ d=j.hourly; el=j.elevation; break; } }
     if(!d) throw 0; d.__el=el;
