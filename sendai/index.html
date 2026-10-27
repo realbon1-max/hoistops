@@ -5154,7 +5154,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     if(tH!=null) chips.push([`${tH.toFixed(0)}℃`,'','oat',`ホバリング高度 ${fm(Math.round(H/100)*100)} ft の気温`]);
     if(fz!=null) chips.push([`${fm(Math.round(fz/100)*100)} ft`,fz<H+1500?'w':'','fz','0℃高度（フリージングレベル）']);
     if(icing&&!(hd.includes('着氷'))) chips.push(['着氷','d','ice','着氷のおそれ']);
-    if(above.length&&!inCloud) chips.push([`${fm(Math.round((above[0].z-siteFt)/100)*100)} ft〜`,'','top','上空の雲（地上から）']);
+    if(above.length&&!inCloud&&!(base!=null&&Math.abs((above[0].z-siteFt)-base)<300)) chips.push([`${fm(Math.round((above[0].z-siteFt)/100)*100)} ft〜`,'','top','上空の雲（地上から）']);
     if(precip&&!hd.match(/雨|雪|TS|FZ/)) chips.push([sn?'雪':'雨','w',sn?'sn':'ra',sn?'降雪':'降水']);
     
     let night=false; try{ const st=new Date(T[i]+':00+09:00'), sn2=SUN.times(jstDay(st),p.lat,p.lon); night=!(sn2.rise&&sn2.set&&st>=sn2.rise&&st<sn2.set); }catch(e){}
