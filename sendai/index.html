@@ -2467,13 +2467,13 @@ function mapRender(){
       const zz=B.max, k=Math.pow(2,z-zz), px=Math.floor(tx/k), py=Math.floor(ty/k), pk=MAP.base+'/'+zz+'/'+px+'/'+py;
       const dv=document.createElement('div'); dv.dataset.k=bk; dv.className='otile'; const ig=document.createElement('img'); ig.alt=''; ig.draggable=false;
       ig.style.width=ig.style.height=(256*k)+'px'; ig.style.left=(-(tx-px*k)*256)+'px'; ig.style.top=(-(ty-py*k)*256)+'px';
-      const net=GSI+pk+'.'+B.ext; ig.onload=()=>{MAP.ok++; mapMsg();}; ig.onerror=()=>{ MAP.ng++; mapMsg(); };
+      const net=GSI+pk+'.'+B.ext; ig.onload=()=>{MAP.ok++; mapMsg(); mapReq();}; ig.onerror=()=>{ MAP.ng++; mapMsg(); };
       if(TS.known.has(pk)) tsGet(pk).then(b=>{ ig.src=b?URL.createObjectURL(b):net; }); else ig.src=net;
       dv.appendChild(ig); bl.appendChild(dv); im=dv; }
     if(!im){ im=document.createElement('img'); im.dataset.k=bk; im.alt=''; im.draggable=false;
       const net=GSI+MAP.base+'/'+z+'/'+tx+'/'+ty+'.'+B.ext, el_=im, zz=z, xx=tx, yy=ty;
-      im.onload=()=>{MAP.ok++; mapMsg();};
-      im.onerror=()=>{ MAP.ng++; mapMsg(); if(!el_.isConnected) return; const cv=document.createElement('canvas'); cv.width=cv.height=256; cv.dataset.k=bk; cv.style.left=el_.style.left; cv.style.top=el_.style.top; el_.replaceWith(cv); drawShade(cv,zz,xx,yy); };
+      im.onload=()=>{MAP.ok++; mapMsg(); mapReq();};
+      im.onerror=()=>{ MAP.ng++; mapMsg(); mapReq(); if(!el_.isConnected) return; const cv=document.createElement('canvas'); cv.width=cv.height=256; cv.dataset.k=bk; cv.style.left=el_.style.left; cv.style.top=el_.style.top; el_.replaceWith(cv); drawShade(cv,zz,xx,yy); };
       if(TS.known.has(bk)) tsGet(bk).then(b=>{ if(b){ const u=URL.createObjectURL(b); el_.onload=()=>{MAP.ok++; mapMsg(); URL.revokeObjectURL(u);}; el_.src=u; } else el_.src=net; });
       else im.src=net;
       bl.appendChild(im); }
@@ -2487,6 +2487,7 @@ function mapRender(){
   bl.querySelectorAll('[data-k]').forEach(im=>{if(!want.has(im.dataset.k)) im.remove();});
   ol.querySelectorAll('canvas').forEach(cv=>{if(!wantO.has(cv.dataset.k)) cv.remove();});
   ol.style.display=$('mOvOn').checked?'':'none'; ol.style.opacity=(+$('mOvA').value)/100;
+  try{ mapGhost(); }catch(e){}
   try{ govRender(); mgrsDraw(); retDraw(); }catch(e){ console.error(e); }
   try{ radarDraw(); oeiDraw(); rdDraw(); }catch(e){ console.error(e); }
   try{ const ce=$('mCtr'); if(ce){ const cl=y2lat(MAP.cy,MAP.z), co=x2lon(MAP.cx,MAP.z); const t=fmtLL(cl,co); if(ce.dataset.t!==t){ ce.dataset.t=t; ce.innerHTML=`<i></i>${t}`; } } }catch(e){} try{ sunDraw(); }catch(e){} drawRoute(); try{ ifrLayer(); }catch(e){} if(typeof drawLayer==='function') drawLayer(); mapScale(); if(typeof mapWindField==='function'&&MW&&(MW._w!==$('map').clientWidth)){ MW._w=$('map').clientWidth; mapWindField(); }
@@ -2517,10 +2518,22 @@ function mapScale(){ const el=$('mScale'), m=$('map'); if(!el||!m) return; const
   const sub=DISP.dist==='m'?(()=>{ const nm=d/1852; return nm>=1?nm.toFixed(nm<10?1:0)+' NM':nm.toFixed(2)+' NM'; })():fmtMetric(d);
   el.innerHTML=`<div class="msbar" style="width:${px.toFixed(0)}px"><i></i><i></i></div><div class="mstx">${nd.lab}（${sub}）・ズーム${MAP.z}</div>`; }
 function mapSetView(lat,lon,z){ if(z!=null) MAP.z=Math.max(MAP.minZ,Math.min(MAP.maxZ,z)); MAP.cx=lon2x(lon,MAP.z); MAP.cy=lat2y(lat,MAP.z); mapReq(); }
-function mapZoom(dz,px,py){ const el=$('map'); const Wd=el.clientWidth,Hd=el.clientHeight; if(px==null){px=Wd/2;py=Hd/2;}
-  const nz=Math.max(MAP.minZ,Math.min(MAP.maxZ,MAP.z+dz)); if(nz===MAP.z) return; const s=Math.pow(2,nz-MAP.z);
-  const wx=MAP.cx-Wd/2+px, wy=MAP.cy-Hd/2+py; MAP.cx=wx*s-px+Wd/2; MAP.cy=wy*s-py+Hd/2; MAP.z=nz;
-  $('mBaseL').innerHTML=''; $('mOvL').innerHTML=''; mapReq(); }
+// 拡大縮小：前のズームのタイルを拡大・縮小した「残像」として下に残し、新しいタイルが届くまで地図が消えないようにする
+// (px,py)：画面上で動かない点。to があれば、その点を to の位置へ動かす（ピンチの中心の移動）
+function mapZoom(dz,px,py,to){ const el=$('map'); const Wd=el.clientWidth,Hd=el.clientHeight; if(px==null){px=Wd/2;py=Hd/2;}
+  const nz=Math.max(MAP.minZ,Math.min(MAP.maxZ,MAP.z+dz)); const s=Math.pow(2,nz-MAP.z), qx=to?to[0]:px, qy=to?to[1]:py; if(nz===MAP.z&&!to) return;
+  const wx=MAP.cx-Wd/2+px, wy=MAP.cy-Hd/2+py; MAP.cx=wx*s-qx+Wd/2; MAP.cy=wy*s-qy+Hd/2;
+  if(nz!==MAP.z){ const bl=$('mBaseL'); let g=$('mGhost'); const ld=[...bl.querySelectorAll('img')].filter(i=>i.complete&&i.naturalWidth).length+bl.querySelectorAll('canvas').length, tot=bl.children.length;
+    if(!g||ld>=Math.max(1,tot*0.6)){ if(g) g.remove(); g=document.createElement('div'); g.className='mlayer'; g.id='mGhost'; g.style.transformOrigin='0 0'; while(bl.firstChild) g.appendChild(bl.firstChild); bl.before(g); g._T=[0,0]; g._S=1; }
+    else bl.innerHTML='';
+    // 画面座標の写像：新 = q + (旧 − p)·s
+    const T=g._T, S=g._S; g._T=[qx-px*s+s*T[0], qy-py*s+s*T[1]]; g._S=S*s; g._cx=MAP.cx; g._cy=MAP.cy; mapGhost();
+    clearTimeout(g._tm); g._tm=setTimeout(()=>{ const q=$('mGhost'); if(q===g) g.remove(); },4000);
+    MAP.z=nz; $('mOvL').innerHTML=''; }
+  mapReq(); }
+function mapGhost(){ const g=$('mGhost'); if(!g) return; const tx=g._T[0]+(g._cx-MAP.cx), ty=g._T[1]+(g._cy-MAP.cy); g.style.transform=`translate(${tx}px,${ty}px) scale(${g._S})`;
+  // 新しいタイルがそろったら残像を消す
+  const bl=$('mBaseL'); if(bl&&bl.children.length){ const pend=[...bl.querySelectorAll('img')].some(i=>!(i.complete&&i.naturalWidth)); if(!pend){ clearTimeout(g._tm); g.remove(); } } }
 function mapParamsChanged(){ if(!$('map')) return; const t=mapThresholds(); const sig=t.sig;
   const old=MAP.thr; MAP.thr=t; if(!old||old.sig!==sig){ MAP.ver++; } mapReq(); mapLegend(); mapInfo(); }
 function mapLegend(){ const t=MAP.thr; if(!t) return; const fm=v=>Math.round(v).toLocaleString(), B=t.b;
@@ -2781,14 +2794,21 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
       const r=el.getBoundingClientRect(), hit=e.target.closest('button,input,select,.mhcp')?null:drawHit(e.clientX-r.left,e.clientY-r.top);
       if(hit){ const NM={dest:'救助地点',circ:'同心円',grid:'グリッド',pt:'ポイント',txt:'文字',area:'面積の点',tmp:'点',meas:'距離・方位'}; st.lp=setTimeout(()=>{ if(st&&!st.moved){ st.drag=hit; DRAW.mv=hit; el.classList.add('drag'); try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} drawLayer(); mapMsg(`${NM[hit.it.t]}を移動中：指を離した場所に置きます`); } },450); }
       else if(!e.target.closest('button,input,select,.mhcp,.lpmenu')){ const px=e.clientX-r.left, py=e.clientY-r.top; const ms=Math.round((+DISP.lp||2)*1000); lpRing(px,py,ms); st.lp=setTimeout(()=>{ lpRingOff(); if(st&&!st.moved&&pts.size===1){ st.menu=true; try{ navigator.vibrate&&navigator.vibrate(30); }catch(_){} lpMenu(px,py); } },ms); } }
-    if(pts.size===2){ lpRingOff(); if(st.lp){ clearTimeout(st.lp); st.lp=0; } const [a,b]=[...pts.values()]; st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.moved=true; } });
+    if(pts.size===2){ lpRingOff(); if(st.lp){ clearTimeout(st.lp); st.lp=0; } const [a,b]=[...pts.values()], r=el.getBoundingClientRect(); st.pinch=Math.hypot(a.x-b.x,a.y-b.y); st.m0=[(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top]; st.m1=st.m0.slice(); st.sc=1; st.moved=true; st.drag=null; } });
+  // ピンチ中は地図を指に合わせて連続で拡大縮小・移動（見た目だけ）し、指を離した時に一番近いズームに確定
+  const PL='#mBaseL,#mGhost,#mGOv,#mGeo,#mOvL,#mGrid,#mIfr,#mRoute,#mOei,#mRadar,#mRadio,#mDraw,#mHp,#mRet,#mMark';
+  const pinchView=()=>{ const s=st.sc, m0=st.m0, m1=st.m1; el.querySelectorAll(PL).forEach(n=>{ if(n.parentElement!==el) return; if(n.id==='mGhost'){ n.style.transform=`translate(${m1[0]-m0[0]*s}px,${m1[1]-m0[1]*s}px) scale(${s}) translate(${n._T[0]+(n._cx-MAP.cx)}px,${n._T[1]+(n._cy-MAP.cy)}px) scale(${n._S})`; return; } if(n.id==='mMark'){ n.style.translate=`${(m1[0]-m0[0]*s)+(s-1)*(parseFloat(n.style.left)||0)}px ${(m1[1]-m0[1]*s)+(s-1)*(parseFloat(n.style.top)||0)}px`; return; } n.style.transformOrigin='0 0'; n.style.transform=`translate(${m1[0]-m0[0]*s}px,${m1[1]-m0[1]*s}px) scale(${s})`; }); };
+  const pinchEnd=()=>{ if(!st||!st.m0) return; const s=st.sc, m0=st.m0, m1=st.m1; st.m0=null; el.querySelectorAll(PL).forEach(n=>{ if(n.id==='mMark') n.style.translate=''; else if(n.id!=='mGhost'){ n.style.transform=''; } });
+    let dz=Math.round(Math.log2(s)); dz=Math.max(MAP.minZ-MAP.z,Math.min(MAP.maxZ-MAP.z,dz)); mapZoom(dz,m0[0],m0[1],m1); mapGhost(); };
   el.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)||!st) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===1&&st.drag){ const r=el.getBoundingClientRect(), it=st.drag.it, px=e.clientX-r.left+st.drag.ox, py=e.clientY-r.top+st.drag.oy; if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>3) st.moved=true;
       { const la=y2lat(MAP.cy-el.clientHeight/2+py,MAP.z), lo=x2lon(MAP.cx-el.clientWidth/2+px,MAP.z); if(st.drag.k===-1){ const a=it.pts[0], b=it.pts[1], dla=la-(a[0]+b[0])/2, dlo=lo-(a[1]+b[1])/2; it.pts=it.pts.map(q=>[q[0]+dla,q[1]+dlo]); } else if(st.drag.k!=null) it.pts[st.drag.k]=[la,lo]; else { it.lat=la; it.lon=lo; } } if(!st.raf) st.raf=requestAnimationFrame(()=>{ if(st) st.raf=0; drawLayer(); }); return; }
     if(pts.size===1){ const dx=e.clientX-st.x, dy=e.clientY-st.y; if(Math.hypot(dx,dy)>5){st.moved=true; el.classList.add('drag'); if(st.lp){ clearTimeout(st.lp); st.lp=0; lpRingOff(); }} MAP.cx=st.cx-dx; MAP.cy=st.cy-dy; mapReq(); }
-    else if(pts.size===2&&st.pinch){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), r=el.getBoundingClientRect(); const mx=(a.x+b.x)/2-r.left, my=(a.y+b.y)/2-r.top;
-      if(d/st.pinch>1.6){mapZoom(1,mx,my); st.pinch=d;} else if(d/st.pinch<0.62){mapZoom(-1,mx,my); st.pinch=d;} } });
+    else if(pts.size===2&&st.pinch&&st.m0){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), r=el.getBoundingClientRect();
+      const zmx=Math.pow(2,MAP.maxZ-MAP.z+0.4), zmn=Math.pow(2,MAP.minZ-MAP.z-0.4); st.sc=Math.max(zmn,Math.min(zmx,d/st.pinch)); st.m1=[(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top];
+      if(!st.praf) st.praf=requestAnimationFrame(()=>{ if(st){ st.praf=0; if(st.m0) pinchView(); } }); } });
   const up=e=>{ if(!pts.has(e.pointerId)) return; pts.delete(e.pointerId); el.classList.remove('drag'); lpRingOff(); if(st&&st.lp){ clearTimeout(st.lp); st.lp=0; }
+    if(st&&st.m0&&pts.size<2){ if(st.praf){ cancelAnimationFrame(st.praf); st.praf=0; } pinchEnd(); }
     if(st&&st.drag){ const it=st.drag.it, was=st.moved; DRAW.mv=null; { const mm=$('mMsg'); if(mm&&/移動中/.test(mm.textContent)) mm.hidden=true; } st=pts.size?st:null; if(was){ if(it.t==='dest'){ it.h=null; elevAt(it.lat,it.lon).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); try{ update(); }catch(_){} }
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st&&st.menu){ st=null; return; }
