@@ -762,29 +762,30 @@ nav.jump a.ib{padding:6px 12px!important}nav.jump a.ib>span{font-size:13px}
 #mInfo .wxwind{flex:none;flex-wrap:wrap}#mInfo .wxwl{flex-basis:100%;font-size:11px!important;font-weight:600;color:var(--muted);line-height:1.35;margin-top:1px}#mInfo .wxwind b{font-size:24px!important}
 #mInfo .wxch{justify-content:flex-start!important;margin:0!important;flex:1 1 100%;align-items:center}@container (max-width:519px){ #mInfo .wxs{position:relative} #mInfo .wxv{position:absolute;top:6px;right:8px} #mInfo .wxtx,#mInfo .wxwind{margin-right:70px} }
 #mInfo .wxv{flex:none;display:flex;flex-direction:column;align-items:center;font-style:normal;margin-left:auto;padding-left:6px}#mInfo .wxv svg{width:62px;height:82px;border-radius:7px;background:linear-gradient(#e3f0fb,#f6fafd);border:1px solid var(--rule)}#mInfo .wxv b{font-size:12px;line-height:1.25;color:var(--ink)}#mInfo .wxv small{font-size:10px;color:var(--muted);white-space:nowrap}#mInfo .wxv.d b{color:#d62828}#mInfo .wxv.w b{color:#b7790f}
-#mInfo .wxsun{display:flex;flex-direction:column;font-style:normal;min-width:0;width:100%;color:var(--ink)}#mInfo .wxsun svg{width:100%;height:auto;display:block}#mInfo .wxsm{font-size:13.5px;text-align:center;line-height:1.35;font-weight:600}#mInfo .wxst{display:flex;justify-content:center;gap:14px;margin-top:6px}#mInfo .wxst>span{display:flex;flex-direction:column;align-items:center;line-height:1.15}#mInfo .wxst small{font-size:11px;color:var(--muted)}#mInfo .wxst b{font-size:18px;font-variant-numeric:tabular-nums;color:#e76f51}#mInfo .wxsm b.xsw{color:#d97706}#mInfo .wxsm b.xsn{color:#5c6bc0}
+#mInfo .wxsun{display:flex;flex-direction:column;font-style:normal;min-width:0;width:100%;color:var(--ink)}#mInfo .wxsun svg{width:100%;height:auto;display:block}#mInfo .wxsm{font-size:13px;text-align:left;line-height:1.35;font-weight:600;white-space:nowrap}#mInfo .wxst{display:flex;justify-content:flex-start;gap:12px;margin-top:3px}#mInfo .wxst>span{display:flex;flex-direction:column;align-items:center;line-height:1.15}#mInfo .wxst small{font-size:11px;color:var(--muted)}#mInfo .wxst b{font-size:17px;font-variant-numeric:tabular-nums;color:#e76f51}#mInfo .wxsm b.xsw{color:#d97706}#mInfo .wxsm b.xsn{color:#5c6bc0}
 @container (max-width:519px){ #mInfo .wxsun{flex-basis:100%;order:0;max-width:340px;margin:0 auto} }
 #mInfo .wxs.wxp-tw .wxsm b.xsw{color:#fff3c4}
 #mInfo .wxs.wxp-tw{--sunt:#fff3c4;background:linear-gradient(175deg,#4a5785 0%,#8e7aa8 60%,#d9926a 100%)!important;--ink:#f3f1fa;--muted:#e2dcef;--curve:#fff3c4;color:#f3f1fa}
 #mInfo .wxs.wxp-night{background:linear-gradient(180deg,#0b1626 0%,#16253d 100%)!important;--ink:#e6edf6;--muted:#a9b8cc;--curve:#8fc7ff;color:#e6edf6}
 #mInfo .wxs.wxp-tw .wsc,#mInfo .wxs.wxp-night .wsc{background:rgba(255,255,255,.08)}#mInfo .wxs.wxp-tw .wxch span,#mInfo .wxs.wxp-night .wxch span{border-color:rgba(255,255,255,.3)}#mInfo .wxs.wxp-night .wxsm b.xsn{color:#b4c2ff}
 @container (min-width:520px){
- #mInfo .wxs{display:grid!important;grid-template-columns:auto minmax(170px,max-content) minmax(220px,1fr) 132px;grid-template-areas:"ic tx su vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important}
+ #mInfo .wxs{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto 120px;grid-template-areas:"ic tx tx vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt";align-items:center;column-gap:14px!important;row-gap:6px!important}
  #mInfo .wxtop>.wxic{grid-area:ic;width:80px!important;height:84px!important}
  #mInfo .wxtx{grid-area:tx;margin:0!important}#mInfo .wxtx span{white-space:nowrap}#mInfo .wxtx b{font-size:22px!important}#mInfo .wxtx span{font-size:13px!important}
  #mInfo .wxwind{grid-area:wd;justify-self:start;margin:0!important;min-width:0}#mInfo .wxwind b{font-size:clamp(22px,4.4cqw,30px)!important}#mInfo .wxwind small{font-size:15px!important}#mInfo .wxarr{width:24px!important;height:24px!important}#mInfo .wxwl{font-size:12px!important}
- #mInfo .wxsun{grid-area:su;align-self:center;justify-self:stretch;max-width:300px;margin:0 auto}
+ #mInfo .wxsun{grid-area:su;align-self:center;justify-self:start;max-width:none;margin:0 8px 0 0}
+ #mInfo .wxwl{white-space:nowrap}
  #mInfo .wxv{grid-area:vv;align-self:stretch;justify-content:center;margin:0;padding:0}
- #mInfo .wxv svg{width:118px!important;height:150px!important;border-radius:12px}
+ #mInfo .wxv svg{width:104px!important;height:128px!important;border-radius:12px}
  #mInfo .wxv b{font-size:15px!important}#mInfo .wxv small{font-size:12px!important}
  #mInfo .wxch{grid-area:ch}#mInfo .wxmt{grid-area:mt}#mInfo .wxstrip{grid-area:sp}#mInfo .wxt{grid-area:tt;justify-self:end}
 }
 @container (min-width:520px) and (max-width:759px){
- #mInfo .wxs{grid-template-columns:auto minmax(130px,max-content) minmax(150px,1fr) 112px;column-gap:10px!important;grid-template-areas:"ic tx su vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt"}
+ #mInfo .wxs{grid-template-columns:auto minmax(0,1fr) auto 104px;column-gap:10px!important;grid-template-areas:"ic tx tx vv" "wd wd su vv" "ch ch ch ch" "mt mt mt mt" "sp sp sp sp" "tt tt tt tt"}
  #mInfo .wxtx span{white-space:normal}
  #mInfo .wxtx b{white-space:normal!important;font-size:19px!important}
  #mInfo .wxtop>.wxic{width:62px!important;height:66px!important}
- #mInfo .wxv svg{width:100px!important;height:128px!important}
+ #mInfo .wxv svg{width:92px!important;height:116px!important}
  #mInfo .wxwind b{font-size:clamp(22px,5cqw,28px)!important}
  #mInfo .wxwind b{font-size:clamp(22px,5cqw,28px)!important}
 }
