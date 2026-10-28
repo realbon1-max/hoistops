@@ -1548,17 +1548,17 @@ function sectFreq(k){return k&&SECT[k]&&SECT[k][1].length?SECT[k][1].join('／')
 /* ---------- shortest-route suggestion (airways + published directs + SID/STAR) ---------- */
 let SUG=null;
 function polyLen(ps){let d=0;for(let i=1;i<ps.length;i++)if(ps[i-1]&&ps[i])d+=gc(ps[i-1],ps[i]);return d}
-function sugKey(){const c=S.prof.caps;return [S.route.dep,S.route.dst,c.rnav1,c.rnav5,S.fpl.lvl,procSel().drw,AIRAC_EFF].join('|')}
+function sugKey(){const c=S.prof.caps;return [S.route.dep,S.route.dst,c.rnav1,c.rnav5,S.fpl.lvl,flyLimit(),procSel().drw,AIRAC_EFF].join('|')}
 function heapPush(H,x){H.push(x);let i=H.length-1;while(i>0){const j=(i-1)>>1;if(H[j][0]<=H[i][0])break;[H[i],H[j]]=[H[j],H[i]];i=j}}
 function heapPop(H){const t=H[0],l=H.pop();if(H.length){H[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===i)break;[H[i],H[m]]=[H[m],H[i]];i=m}}return t}
 function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);if(!A||!B||dep===dst)return {opts:[],why:'出発と目的の飛行場を入れてください。'};
-  const c=S.prof.caps,rn5=c.rnav5||c.rnav1,rn1=c.rnav1,LV=lvlFt(S.fpl.lvl);const ok=m=>{if(LV==null)return true;const v=meaFt(m);return v==null||v<=LV};
+  const c=S.prof.caps,rn5=c.rnav5||c.rnav1,rn1=c.rnav1,LV=flyLimit();const ok=m=>{if(LV==null)return true;const v=meaFt(m);return v==null||v<=LV};
   // graph
   const G=new Map();const add=(a,b,d,via)=>{if(!G.has(a))G.set(a,[]);G.get(a).push([b,d,via])};
   for(const [id,r] of Object.entries(NAV.R)){if(r.k&&!rn5)continue;for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1];const pa=fixPos(a),pb=fixPos(b);if(!pa||!pb||!ok(r.m[i]))continue;const d=gc(pa,pb);add(a,b,d,id);add(b,a,d,id)}}
   NAV.D.forEach(dd=>{const ps=dd[0];for(let i=0;i<ps.length-1;i++){const pa=fixPos(ps[i]),pb=fixPos(ps[i+1]);if(!pa||!pb||!ok(dd[2]&&dd[2][i]))continue;const d=gc(pa,pb);add(ps[i],ps[i+1],d,'DCT');add(ps[i+1],ps[i],d,'DCT')}});
   // STAR entries → sink costs
-  const stars=[];(B.star||[]).forEach(s=>{if(s[1]&&!rn1)return;const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];all.forEach((e,k)=>{const fx=e[1]||[];if(!fx.length)return;let ps=fx.map(fixPos);let tail=ps.filter(Boolean);
+  const stars=[];(B.star||[]).forEach(s=>{if(s[1]&&!rn1)return;const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];all.forEach((e,k)=>{const fx=e[1]||[];if(!fx.length)return;if(LV!=null&&reqAlt(dst,'STAR',s[0],fx)>LV)return;let ps=fx.map(fixPos);let tail=ps.filter(Boolean);
       if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)tail=[...tail,...main[1].map(fixPos).filter(Boolean)]}
       const L=polyLen(tail)+(tail.length?gc(tail[tail.length-1],B.p):0)*1.3;if(!fixPos(fx[0]))return;stars.push({f:fx[0],L,star:s[0],starE:k,name:e[7]||s[0],rnav:s[1]})})});
   const sinks=new Map();stars.forEach(x=>{const o=sinks.get(x.f);if(!o||x.L<o.L)sinks.set(x.f,x)});
@@ -1575,7 +1575,7 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
     const mps=[A.p,...(mm[1]||[]).map(fixPos)].filter(Boolean);const mlen=polyLen(mps);const mend=(mm[1]||[])[(mm[1]||[]).length-1];
     const cand=[{f:mend,L:mlen,t:-1,nm:mm[7]||s[0]}];
     E.forEach(e=>{if(!e[5])return;const t=ti++;const fx=e[1]||[];if(!fx.length||fx[0]!==mend)return;cand.push({f:fx[fx.length-1],L:mlen+polyLen(fx.map(fixPos).filter(Boolean)),t,nm:(mm[7]||s[0])+'／'+(e[10]||fx[fx.length-1])+' トランジション'})});
-    cand.forEach(x=>{if(!x.f||!dist.has(x.f))return;opts.push({sid:s[0],sidT:x.t,sidN:x.nm,exit:x.f,L0:x.L,tot:x.L+dist.get(x.f),rnav:s[1]})})});
+    cand.forEach(x=>{if(!x.f||!dist.has(x.f))return;if(LV!=null&&reqAlt(dep,'SID',s[0])>LV)return;opts.push({sid:s[0],sidT:x.t,sidN:x.nm,exit:x.f,L0:x.L,tot:x.L+dist.get(x.f),rnav:s[1]})})});
   // no SID: radar vectors to a fix within 30NM
   for(const k of G.keys()){const q=fixPos(k);if(!q||!dist.has(k))continue;const d=gc(A.p,q);if(d<=30){const pen=(A.sid||[]).length?30:0;opts.push({sid:'',sidT:-1,sidN:'SIDなし（レーダー誘導）',exit:k,L0:d*1.25+5,tot:d*1.25+5+dist.get(k),pen})}}
   opts.forEach(o=>o.rank=o.tot+(o.pen||0));opts.sort((a,b)=>a.rank-b.rank);
@@ -1589,7 +1589,7 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
   return {dist,opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
 function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.r;
   let h=`<div class="row" style="justify-content:space-between;align-items:center"><b>おすすめルート（最短距離）</b><button class="sub" type="button" id="sugGo">${r?'探し直す':'探す'}</button></div>
-   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。機体の許可（RNAV1/RNAV5）と、巡航高度を入れていればMEAも考えに入れます。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。</p>`;
+   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。</p>`;
   if(r){if(!r.opts.length)h+=`<div class="msg cau">${esc(r.why)}</div>`;
     h+=r.opts.map((o,i)=>`<div class="sugopt" style="border-top:1px solid var(--line);padding:8px 0"><div class="row" style="justify-content:space-between;gap:8px"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b><button class="act" type="button" data-sug="${i}">このルートにする</button></div>
       <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}</div>
@@ -1598,27 +1598,35 @@ function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.
 function sugBind(){const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
   document.querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{const o=SUG.r.opts[+x.dataset.sug];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()})}
 /* ---------- recommendations: SID / transition / STAR / approach ---------- */
+function flyLimit(){try{return mapLimit()}catch(e){return null}}
+function limText(){const L=flyLimit(),f=mapF();return L!=null?`飛べる上限 ${L.toLocaleString()}ft（${f.src==='lvl'?'巡航高度':f.src==='fz'?'予想0℃高度':'指定値'}）`:'飛べる上限：未設定（巡航高度を入れると、それより高い高度制限の手順を外します）'}
+function reqAlt(apt,kind,short,fixes){let mx=0;const add=v=>{if(v&&v>mx)mx=v};
+  const A=ap(apt);const s=(kind==='SID'?A.sid:A.star).find(x=>x[0]===short);const cons=s&&s[4]||{};
+  (fixes||Object.keys(cons)).forEach(f=>{const c=cons[f];if(c&&(c[0]==='+'||c[0]==='@'||c[0]==='B'))add(c[1])});
+  const E=plFind(apt,kind,short);if(E)E[2].forEach(sg=>sg[2].forEach(g=>{if(!g[1]||(fixes&&!fixes.includes(g[1])))return;String(g[6]||'').split(/\s+/).forEach(v=>{if(/^\+?(FL)?\d+/.test(v)&&!v.startsWith('-')){add(altFt(v))}})}));
+  return mx}
 function sugData(){const k=sugKey();if(!SUG||SUG.k!==k||!SUG.r)SUG={k,r:sugCompute()};return SUG.r}
 function minH(x,m){const v=m&&m.c&&m.c[S.prof.cat];if(!v)return 99999;const t=String(v[0]);const mm=t.match(/\((\d+)\)/);return mm?+mm[1]:(+(t.match(/\d+/)||[99999])[0])}
 function recSid(){const A=ap(S.route.dep),B=ap(S.route.dst);if(!A||!(A.sid||[]).length)return [];const t=utc(S.route.etd);const ev=rwyEval(S.route.dep,windsFor(S.route.dep,t));const P=procSel();
   const rw=P.drwManual&&P.drw?P.drw:(ev[0]&&ev[0].ok?ev[0].r.id:P.drw);const c=S.prof.caps;const C=routeCalc();const first=(C.r.pts||[])[0];let D=null;try{D=sugData().dist}catch(e){}
-  const out=[];A.sid.forEach(s=>{const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(rw))||(mains.find(e=>!(e[0]||[]).length));if(!mm)return;
+  const out=[];A.sid.forEach(s=>{const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(rw))||(mains.find(e=>!(e[0]||[]).length))||(!rw?mains[0]:null);if(!mm)return;const rw_=rw||((mm[0]||[])[0]);
     const L0=polyLen([A.p,...(mm[1]||[]).map(fixPos)].filter(Boolean));const mend=(mm[1]||[]).slice(-1)[0];let ti=0;
     const cands=[{t:-1,end:mend,L:L0,nm:''}];E.forEach(e=>{if(!e[5])return;const k=ti++;const fx=e[1]||[];if(fx[0]!==mend)return;cands.push({t:k,end:fx[fx.length-1],L:L0+polyLen(fx.map(fixPos).filter(Boolean)),nm:(e[10]||fx[fx.length-1])+' トランジション'})});
-    cands.forEach(x=>{const why=[];let sc=0;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}
-      why.push(`RWY${rw}${ev[0]&&ev[0].ok&&ev[0].r.id===rw?'（風に合う）':''}`);
+    const LV=flyLimit(),ra=reqAlt(S.route.dep,'SID',s[0]);
+    cands.forEach(x=>{const why=[];let sc=0;if(LV!=null&&ra>LV)return;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}if(ra)why.push(`最高の指定高度 ${ra.toLocaleString()}ft`)
+      why.push(`RWY${rw_||'—'}${ev[0]&&ev[0].ok&&ev[0].r.id===rw_?'（風に合う）':''}`);
       if(first&&x.end===first){sc+=500;why.push(`経路の最初のfix ${first} につながる`)}
       const rest=D&&D.has(x.end)?D.get(x.end):null;const tot=rest!=null?x.L+rest:null;if(tot!=null){sc-=tot;why.push(`目的地まで約${Math.round(tot)}NM`)}else{sc-=2000;why.push('目的地までの航空路が見つからない')}
-      out.push({sid:s[0],sidT:x.t,rw,name:(s[3]&&s[3][0]||s[0])+(x.nm?'／'+x.nm:''),end:x.end,sc,why,rnav:s[1]})})});
-  out.sort((a,b)=>b.sc-a.sc);const seen=new Set();return out.filter(o=>{const k=o.sid+o.sidT;if(seen.has(k))return false;seen.add(k);return true}).slice(0,3)}
+      out.push({sid:s[0],sidT:x.t,rw:rw_,name:(s[3]&&s[3][0]||s[0])+(x.nm?'／'+x.nm:''),end:x.end,sc,why,rnav:s[1]})})});
+  out.sort((a,b)=>b.sc-a.sc);const seen=new Set();const U=out.filter(o=>{const k=o.sid+o.sidT;if(seen.has(k))return false;seen.add(k);return true});REC.sidAll=U;return U.slice(0,3)}
 function recStar(){const A=ap(S.route.dep),B=ap(S.route.dst);if(!B||!(B.star||[]).length)return [];const c=S.prof.caps;const C=routeCalc();const pts=C.r.pts||[];const last=pts[pts.length-1];const from=last&&fixPos(last)||(A&&A.p);
   const out=[];B.star.forEach(s=>{const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];all.forEach((e,k)=>{const fx=e[1]||[];if(!fx.length||!fixPos(fx[0]))return;let tail=fx.map(fixPos).filter(Boolean);
       if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)tail=[...tail,...main[1].map(fixPos).filter(Boolean)]}
-      const L=polyLen(tail)+gc(tail[tail.length-1],B.p);const why=[];let sc=0;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}
+      const L=polyLen(tail)+gc(tail[tail.length-1],B.p);const why=[];let sc=0;const LV=flyLimit(),ra=reqAlt(S.route.dst,'STAR',s[0],fx);if(LV!=null&&ra>LV)return;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}if(ra)why.push(`最高の指定高度 ${ra.toLocaleString()}ft`)
       if(last&&fx[0]===last){sc+=500;why.push(`経路の最後のfix ${last} から始まる`)}
       const lead=from?gc(from,fixPos(fx[0])):0;sc-=lead+L;why.push(`${last?last:'出発地'}から着陸まで約${Math.round(lead+L)}NM`);
       out.push({star:s[0],starE:k,name:e[7]||s[3]&&s[3][0]||s[0],start:fx[0],endFix:fx[fx.length-1],sc,why})})});
-  out.sort((a,b)=>b.sc-a.sc);return out.slice(0,3)}
+  out.sort((a,b)=>b.sc-a.sc);REC.starAll=out;return out.slice(0,3)}
 function recApp(){const B=ap(S.route.dst);if(!B||!B.iac.length)return [];const t=utc(S.route.eta);const cond=condFor(S.route.dst,t);const winds=windsFor(S.route.dst,t);const ev=rwyEval(S.route.dst,winds);const rank={};ev.forEach(e=>rank[e.r.id]=e);
   const P=procSel();let starEnd=null;try{const st=B.star.find(s=>s[0]===P.star);if(st){const E=st[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];const e=all[P.starE||0];if(e){const fx=e[1];starEnd=fx[fx.length-1];if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)starEnd=main[1][main[1].length-1]}}}}catch(e){}
   const out=B.iac.map(x=>{const [u,whyU]=chartUsable(x);const e=x.rw?rank[x.rw]:null;const why=[];let sc=0;
@@ -1629,10 +1637,10 @@ function recApp(){const B=ap(S.route.dst);if(!B||!B.iac.length)return [];const t
     const rr=x.r||{};const ent=[...(rr.IAF||[]),...(rr.IF||[])];if(starEnd&&ent.includes(starEnd)){sc+=150;why.push(`STARの終点 ${starEnd} からつながる`)}
     return {x,sc,why}});
   out.sort((a,b)=>b.sc-a.sc);return out.slice(0,3)}
-function recBox(kind){let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return '';
+function recBox(kind){let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return kind==='app'?'':`<div class="box"><b>${kind==='sid'?'おすすめのSID・トランジション':'おすすめのSTAR'}</b><p class="note">${esc(limText())}。この高さで飛べる${kind==='sid'?'SID':'STAR'}がありません（${kind==='sid'?'レーダー誘導での出発':'レーダー誘導での到着'}を考えてください）。</p></div>`;
   const P=procSel();const cur=o=>kind==='sid'?(o.sid===P.sid&&o.sidT===P.sidT):kind==='star'?(o.star===P.star&&o.starE===(P.starE||0)):(o.x.n===P.app);
   const ttl={sid:'おすすめのSID・トランジション',star:'おすすめのSTAR',app:'おすすめの進入方式'}[kind];
-  h=`<div class="box"><b>${ttl}</b><p class="note" style="margin:2px 0 6px">${kind==='app'?'到着時刻の風・天気予報、機体の装備、ミニマの低さ、STARからのつながりで順位をつけています。':kind==='sid'?'風に合う滑走路、航空路とのつながり、目的地までの距離で順位をつけています。':'航空路の最後のfixとのつながりと、着陸までの距離で順位をつけています。'}</p>`+
+  h=`<div class="box"><b>${ttl}</b><p class="note" style="margin:2px 0 0"><b>${esc(limText())}</b>。上限より高い高度制限のある手順は出しません。${kind!=='app'?'下の図の線をタップしても選べます。':''}</p><p class="note" style="margin:2px 0 6px">${kind==='app'?'到着時刻の風・天気予報、機体の装備、ミニマの低さ、STARからのつながりで順位をつけています。':kind==='sid'?'風に合う滑走路、航空路とのつながり、目的地までの距離で順位をつけています。':'航空路の最後のfixとのつながりと、着陸までの距離で順位をつけています。'}</p>`+
    L.map((o,i)=>{const nm=kind==='app'?o.x.n:o.name;return `<div style="border-top:1px solid var(--line);padding:7px 0;display:flex;gap:8px;justify-content:space-between;align-items:flex-start"><div><b class="code">${i+1}. ${esc(nm)}</b>${cur(o)?' <span class="tag t-mute">選択中</span>':''}<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${o.why.map(esc).join('・')}</div></div>${cur(o)?'':`<button class="act" type="button" data-rec="${kind}|${i}" style="flex:0 0 auto">これにする</button>`}</div>`}).join('')+'</div>';
   REC[kind]=L;return h}
 const REC={};
@@ -1747,7 +1755,8 @@ function drawMini(id,parts,pts,legend){const svg=$(id);if(!svg)return;if(!pts.le
   const box=svg.closest('.map');box.querySelectorAll('[data-minibg]').forEach(sel=>sel.onchange=()=>{mapF().bg=sel.value;save();if(id==='depMini')renderDep();else renderArr()});
   box.querySelectorAll('[data-minibgo]').forEach(r=>{r.oninput=()=>{mapF().bgo=+r.value;const g=svg.querySelector('.mapTiles');if(g)g.setAttribute('opacity',r.value/100)};r.onchange=save});
   gestures(svg,{pan:(dx,dy)=>{const k=vb.w/svg.clientWidth;vb.x-=dx*k;vb.y-=dy*k;req()},zoom:(f,cx,cy)=>{const k=vb.w/svg.clientWidth;const ux=vb.x+cx*k,uy=vb.y+cy*k;const nw=Math.max(3,Math.min(800,vb.w/f));const nf=nw/vb.w;vb.x=ux-(ux-vb.x)*nf;vb.y=uy-(uy-vb.y)*nf;vb.w=nw;vb.h*=nf;req()},
-    dbl:e=>{const r=svg.getBoundingClientRect();const k=vb.w/svg.clientWidth;const ux=vb.x+(e.clientX-r.left)*k,uy=vb.y+(e.clientY-r.top)*k;vb.w/=2;vb.h/=2;vb.x=ux-vb.w/2;vb.y=uy-vb.h/2;req()}});
+    dbl:e=>{const r=svg.getBoundingClientRect();const k=vb.w/svg.clientWidth;const ux=vb.x+(e.clientX-r.left)*k,uy=vb.y+(e.clientY-r.top)*k;vb.w/=2;vb.h/=2;vb.x=ux-vb.w/2;vb.y=uy-vb.h/2;req()},
+    tap:e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const t=el&&el.closest('[data-mpick]');if(t)mapPickApply(t.dataset.mpick)}});
   if($(id+'L'))$(id+'L').innerHTML=legend||'';
   if(!svg.__ro){svg.__ro=1;setTimeout(apply,0)}}
 function fixMark(f,cls,cons){const p=fixPos(f);if(!p)return '';const c=cons&&cons[f];const lab=c?(c[0]==='+'?' +'+c[1]:c[0]==='-'?' −'+c[1]:c[0]==='B'?' '+c[1]+'〜'+c[2]:' '+c[1]):'';
@@ -1859,6 +1868,19 @@ function plSection(which){const apt=which==='dep'?S.route.dep:S.route.dst;if(!ap
   return `<h3>AIPの手順（経路・高度制限・fix）</h3><div class="box"><div class="row" style="gap:8px;align-items:center"><span style="font-size:13px">表示する手順</span><select id="plSel_${which}"><option value="">いま選んでいる手順</option>${all.map((E,i)=>`<option value="${i}" ${v===i?'selected':''}>${esc(nm(E))}</option>`).join('')}</select></div>
    ${pick.length?pick.map(E=>`<h4 style="margin:12px 0 2px">${esc(nm(E))}　${E[2].some(s=>s[2].length)?'<span class="tag t-rnav">コーディング表</span>':'<span class="tag t-mute">チャートの文章</span>'}</h4>${plTable(apt,E,plCtx(E[0]==='SID'?'SID':'ARR'))}`).join(''):'<p class="note">上で手順を選ぶか、表示する手順を選んでください。</p>'}</div>`}
 function plBind(which){const el=$('plSel_'+which);if(!el)return;el.onchange=()=>{(S.plView=S.plView||{})[which]=el.value===''?null:+el.value;save();which==='dep'?renderDep():renderArr()}}
+function pickLines(which,PP){let s='';const P=procSel();const L=which==='dep'?(REC.sidAll||[]):(REC.starAll||[]);const A=ap(which==='dep'?S.route.dep:S.route.dst);if(!A)return '';
+  const cols=['#2E8B57','#1B8A9A','#7A5BB5','#C2185B','#00838F','#6D8B00','#B5651D'];
+  L.slice(0,7).forEach((o,i)=>{let ps=[];
+    if(which==='dep'){const s=A.sid.find(x=>x[0]===o.sid);if(!s)return;const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(o.rw))||mains.find(e=>!(e[0]||[]).length)||mains[0];if(!mm)return;ps=[A.p,...(mm[1]||[]).map(fixPos)];let ti=0;E.forEach(e=>{if(!e[5])return;const k=ti++;if(k===o.sidT)ps.push(...(e[1]||[]).map(fixPos))})}
+    else{const s=A.star.find(x=>x[0]===o.star);if(!s)return;const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];const e=all[o.starE];if(!e)return;ps=(e[1]||[]).map(fixPos);if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===e[1][e[1].length-1]);if(main)ps.push(...main[1].map(fixPos))}ps.push(A.p)}
+    ps=ps.filter(Boolean);if(ps.length<2)return;if(PP)PP.push(...ps);const on=which==='dep'?(o.sid===P.sid&&o.sidT===P.sidT):(o.star===P.star&&o.starE===(P.starE||0));const col=cols[i%cols.length];const pts=ps.map(p=>PX(p)+','+PY(p)).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${on?2:2.2}" stroke-opacity="${on?.25:.75}" stroke-dasharray="${on?'':'7 4'}" vector-effect="non-scaling-stroke" style="pointer-events:none"/>`;
+    s+=`<polyline data-mpick="${which}|${i}" points="${pts}" fill="none" stroke="transparent" stroke-width="18" vector-effect="non-scaling-stroke" style="pointer-events:stroke"/>`;
+    const e=ps[ps.length-(which==='dep'?1:2)]||ps[0];s+=`<text class="ml pll" x="${PX(e)}" y="${PY(e)}" fill="${col}" style="fill:${col}">${i+1}${on?'（選択中）':''} ${esc(o.name)}</text>`});
+  return s}
+function mapPickApply(k){const [w,i]=k.split('|');const L=w==='dep'?REC.sidAll:REC.starAll;const o=L&&L[+i];if(!o)return;const P=procSel();
+  if(w==='dep'){P.sid=o.sid;P.sidT=o.sidT;P.sidE=0;if(o.rw)P.drw=o.rw;if(!(routeCalc().r.pts||[]).length&&o.end)S.route.rte=o.end}else{P.star=o.star;P.starE=o.starE;P.arrMode='star'}
+  if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()}
 function ctxLines(C,which){let s='';const ln=(ps,col,dash)=>ps&&ps.filter(Boolean).length>1?`<polyline points="${ps.filter(Boolean).map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="${col}" stroke-width="3" stroke-opacity=".28" stroke-linejoin="round" ${dash?'stroke-dasharray="6 5"':''} vector-effect="non-scaling-stroke"/>`:'';
   (C.r.legs||[]).forEach(l=>{s+=ln([fixPos(l.a),fixPos(l.b)],l.via==='DCT'?'var(--sky)':'var(--mag)')});
   const lab=f=>{const p=fixPos(f);return p?`<text class="ml pll dim" x="${PX(p)}" y="${PY(p)}" opacity=".7">${esc(f)}</text>`:''};
@@ -1873,7 +1895,7 @@ function depMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dep);if(!A)retur
     const sObj=A.sid.find(x=>x[0]===P.sid);const cons=sObj&&sObj[4]||{};
     (C.sid.ent||[]).forEach(f=>s+=fixMark(f,'ms',cons));(C.sid.trn||[]).forEach(f=>s+=fixMark(f,'mt',cons))}
   else if(S.route.depMode==='vfr'&&S.route.ifrFix&&fixPos(S.route.ifrFix)){const fp=fixPos(S.route.ifrFix);s+=`<line x1="${PX(A.p)}" y1="${PY(A.p)}" x2="${PX(fp)}" y2="${PY(fp)}" stroke="#5B7FA6" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>`+fixMark(S.route.ifrFix,'mt');pts.push(fp)}
-  try{const ctx=ctxLines(C,'dep');s=ctx+s}catch(e){}
+  try{const ctx=ctxLines(C,'dep');s=ctx+s+pickLines('dep',pts)}catch(e){}
   drawMini('depMini',s,pts,`<span><i style="background:#2E8B57"></i>SID（太線＝選んだ滑走路・トランジション）</span><span><i style="border:1.5px solid #2E8B57;border-radius:50%;background:none"></i>フライオーバー</span><span><i style="background:#1B8A9A;border-radius:50%"></i>トランジションのfix</span><span><i style="background:#2E8B57;border-radius:50%"></i>SIDのfix</span><span>数字は指定高度（+以上／−以下）</span>`)}
 function arrMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(!A)return;let s='';const pts=[A.p];const x=A.iac.find(q=>q.n===P.app);
   s+=rwLines(S.route.dst,x&&x.rw);
@@ -1898,7 +1920,7 @@ function arrMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(!A)retur
     if(!plA&&C.arr.maTrack&&C.arr.maTrack.length>1){s+=`<polyline points="${C.arr.maTrack.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;pts.push(...C.arr.maTrack)}
     const AFm={};(C.arr.appFix||[]).forEach(([f,r])=>{(AFm[f]=AFm[f]||[]).push(r==='MA'?'進入復行':r)});if(!plA)Object.entries(AFm).map(([f,rs])=>[f,rs.join('/')]).forEach(([f,r])=>{const p=fixPos(f);if(!p)return;s+=`<circle class="mfp ${r==='進入復行'?'mm':'mf'}" cx="${PX(p)}" cy="${PY(p)}"/><text class="ml mfl" x="${PX(p)}" y="${PY(p)}">${esc(f)}<tspan class="mrole"> ${r}</tspan></text>`;pts.push(p)});
     if(!plA&&x&&x.rw&&!(C.arr.appFix||[]).some(a=>a[1]==='FAF')){const rw=rwyOf(S.route.dst,x.rw);if(rw&&rw.t&&rw.b!=null){const fl=C.arr.fl||10;const fap=dest(rw.t,(rw.b+180)%360,fl);s+=`<circle class="mfp mf" cx="${PX(fap)}" cy="${PY(fap)}"/><text class="ml mfl" x="${PX(fap)}" y="${PY(fap)}">最終進入 ${fl}NM</text>`;pts.push(fap)}}}
-  try{const ctx=ctxLines(C,'arr');s=ctx+s}catch(e){}
+  try{const ctx=ctxLines(C,'arr');s=ctx+s+pickLines('arr',pts)}catch(e){}
   drawMini('arrMini',s,pts,`<span><i style="background:#C98A00"></i>STAR</span><span><i style="background:#C0392B"></i>進入${P.arrMode==='vec'?'（レーダー誘導・概略）':''}</span><span><i style="border-top:2px dashed #C0392B;height:0;width:12px"></i>進入復行</span><span><i style="background:#C98A00;border-radius:50%"></i>STARのfix</span><span>数字は指定高度（+以上／−以下）</span>`)}
 
 
@@ -2025,6 +2047,12 @@ function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s=''
   let rings='';for(const [k,L] of Object.entries(PROCIDX)){const sid=L.some(x=>x.k==='SID'&&x.apt===S.route.dep),star=L.some(x=>x.k==='STAR'&&x.apt===S.route.dst);if(!sid&&!star)continue;const p=fixPos(k);if(!p)continue;
     rings+=`<g data-fx="${k}"><circle class="pring ${sid&&star?'both':sid?'sid':'star'}" cx="${PX(p)}" cy="${PY(p)}"/><text class="ml prl" x="${PX(p)}" y="${PY(p)}" fill="${sid?'#2E8B57':'#9A6508'}">${k}</text></g>`}
   s+=awl+fx+rings+hit;
+  // suggested routes (tap to apply)
+  try{if(SUG&&SUG.r&&SUG.k===sugKey()){const cols=['#E8A600','#00A3C4','#B04FC9'];SUG.r.opts.slice(0,3).forEach((o,i)=>{const toks=o.rte.split(/\s+/);const names=[];for(let k=0;k<toks.length;k+=2){if(k===0){names.push(toks[0]);continue}}
+      let cur=toks[0];const ps=[fixPos(cur)];for(let k=1;k<toks.length;k+=2){const via=toks[k],to=toks[k+1];if(via!=='DCT'&&NAV.R[via]){const sg=awySeg(via,cur,to);if(sg)sg.forEach(l=>ps.push(fixPos(l.b)));else ps.push(fixPos(to))}else ps.push(fixPos(to));cur=to}
+      const A=ap(S.route.dep),B=ap(S.route.dst);const all=[A&&A.p,...ps,B&&B.p].filter(Boolean);const pts=all.map(p=>PX(p)+','+PY(p)).join(' ');
+      s+=`<polyline points="${pts}" fill="none" stroke="${cols[i]}" stroke-width="3" stroke-opacity=".8" stroke-dasharray="8 5" vector-effect="non-scaling-stroke" style="pointer-events:none"/><polyline data-sugm="${i}" points="${pts}" fill="none" stroke="transparent" stroke-width="18" vector-effect="non-scaling-stroke" style="pointer-events:stroke"/>`;
+      const mid=all[Math.floor(all.length/2)];s+=`<text class="ml rl" x="${PX(mid)}" y="${PY(mid)}" style="fill:${cols[i]}">案${i+1} 約${Math.round(o.tot)}NM（タップで選択）</text>`})}}catch(e){}
   // route overlays
   const seg=(pts,col,dash)=>pts&&pts.length>1?`<polyline points="${pts.map(P).join(' ')}" fill="none" stroke="${col}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"${dash?' stroke-dasharray="6 5"':''} style="pointer-events:none"/>`:'';
   let ln='';const vfr=C.rows.find(l=>l.kind==='VFR');
@@ -2048,7 +2076,7 @@ function bindMap(){const svg=$('mapSvg');if(!svg||!MAP)return;const C=MAP.C;
   gestures(svg,{pan:(dx,dy)=>{const k=MAP.vb.w/svg.clientWidth;MAP.vb.x-=dx*k;MAP.vb.y-=dy*k;req()},
     zoom:(f,cx,cy)=>{const v=MAP.vb,k=v.w/svg.clientWidth;const ux=v.x+cx*k,uy=v.y+cy*k;let nw=Math.max(15,Math.min(2500,v.w/f));const nf=nw/v.w;v.x=ux-(ux-v.x)*nf;v.y=uy-(uy-v.y)*nf;v.w=nw;v.h=v.h*nf;req()},
     dbl:e=>{const r=svg.getBoundingClientRect();const v=MAP.vb,k=v.w/svg.clientWidth;const ux=v.x+(e.clientX-r.left)*k,uy=v.y+(e.clientY-r.top)*k;v.w/=2;v.h/=2;v.x=ux-v.w/2;v.y=uy-v.h/2;req()},
-    tap:e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const t=el&&el.closest('[data-fx],[data-aw],[data-dr]');if(!t){S._selAw=null;S._selFx=null;S._selDr=null;mapPanel();svg.innerHTML=mapContent(C);return}
+    tap:e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const sg=el&&el.closest('[data-sugm]');if(sg){const o=SUG.r.opts[+sg.dataset.sugm];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';SUG=null;MAP.key='';save();renderAll();return}const t=el&&el.closest('[data-fx],[data-aw],[data-dr]');if(!t){S._selAw=null;S._selFx=null;S._selDr=null;mapPanel();svg.innerHTML=mapContent(C);return}
       S._selAw=null;S._selFx=null;S._selDr=null;if(t.dataset.fx)S._selFx=t.dataset.fx;else if(t.dataset.dr!=null)S._selDr=+t.dataset.dr;else S._selAw=t.dataset.aw;svg.innerHTML=mapContent(C);mapPanel()}});
   $('mapFit').onclick=()=>{const xs=C.path.map(PX),ys=C.path.map(PY);if(xs.length){const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),pad=Math.max(x1-x0,y1-y0)*.15+25;MAP.vb={x:x0-pad,y:y0-pad,w:x1-x0+2*pad,h:y1-y0+2*pad}}MAP.key=mapKey(C);apply()};
   $('mapIn').onclick=()=>{const v=MAP.vb;v.x+=v.w/4;v.y+=v.h/4;v.w/=2;v.h/=2;apply()};$('mapOut').onclick=()=>{const v=MAP.vb;v.x-=v.w/2;v.y-=v.h/2;v.w*=2;v.h*=2;apply()};
