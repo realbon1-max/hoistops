@@ -1453,6 +1453,16 @@ function brgOf(a,b){const la1=a[0]*RAD,la2=b[0]*RAD,dl=(b[1]-a[1])*RAD;return (M
 function holdPath(apt,h){const A=ap(apt),mv=(A&&A.mv)||0;const p=plPos(apt,h[0]);if(!p||!h[1])return null;const inb=(+h[1]+mv+360)%360,R=h.slice(2).includes('L')?-1:1;
   const L=4,w=2;const o=dest(p,(inb+180)%360,L);const side=(inb+90*R+360)%360;const p2=dest(p,side,w),o2=dest(o,side,w);const arc=(c,b0,sw)=>{const r=[];for(let k=0;k<=8;k++)r.push(dest(c,b0+sw*k/8,w/2));return r};
   const c1=dest(p,side,w/2),c2=dest(o,side,w/2);return [p,...arc(c1,(side+180)%360,180*R).slice(1),o2,...arc(c2,side,180*R).slice(1)]}
+function initialApp(appNm,V){const A=ap(S.route.dst);const x=A.iac.find(q=>nsp(q.n)===nsp(appNm));if(!x)return {s:''};const P=procSel();const sv=[P.arrMode,P.app,S.route.rte,P.star];P.arrMode='star';P.app=x.n;let C2;try{C2=routeCalc();if(!(C2.arr&&C2.arr.appTrack&&C2.arr.appTrack.length>2)){const st=((x.r||{}).IAF||[]).find(f=>fixPos(f))||(x.bt&&x.bt[0])||((x.r||{}).IF||[]).find(f=>fixPos(f));if(st){S.route.rte=st;P.star='';C2=routeCalc()}}}finally{P.arrMode=sv[0];P.app=sv[1];S.route.rte=sv[2];P.star=sv[3]}
+  const tr=(C2.arr&&C2.arr.appTrack)||[];if(tr.length<2)return {s:''};const rw=x.rw&&rwyOf(S.route.dst,x.rw);const thr=rw&&rw.t;
+  const fin=V[0].filter(f=>f[1]!=='IAF');if(!fin.length||!thr)return {s:''};const far=fin.slice().sort((a,b)=>gc([b[2],b[3]],thr)-gc([a[2],a[3]],thr))[0];const fp=[far[2],far[3]];
+  // start of the published part = IAF (or first named fix) on the track
+  const iaf=(C2.arr.appFix||[]).find(a=>a[1]==='IAF');let i0=0;if(iaf&&fixPos(iaf[0])){const q=fixPos(iaf[0]);let bd=1e9;tr.forEach((p,k)=>{const d=gc(p,q);if(d<bd){bd=d;i0=k}})}
+  let km=i0,mx=-1;for(let k=i0;k<tr.length;k++){const d=gc(tr[k],thr);if(d>mx){mx=d;km=k}}let i1=tr.length-1,bd=1e9;for(let k=km;k<tr.length;k++){const d=gc(tr[k],fp);if(d<bd){bd=d;i1=k}}if(i1-i0<2)return {s:''};
+  const seg=tr.slice(i0,i1+1);seg.push(fp);if(seg.some(q=>gc(q,A.p)>45))return {s:''};let s=`<polyline points="${seg.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  if(iaf&&fixPos(iaf[0])){const q=fixPos(iaf[0]);const al=x.alts&&x.alts[iaf[0]]||(x.mha&&x.mha[0])||'';s+=`<circle class="plf" cx="${PX(q)}" cy="${PY(q)}" fill="#C0392B"/><text class="ml pll" x="${PX(q)}" y="${PY(q)}">${esc(iaf[0])}<tspan class="mrole"> IAF</tspan>${al?`<tspan class="plc"> ${al}</tspan>`:''}</text>`}
+  if(x.bt){let mk=null,md=-1;seg.forEach(p=>{const d=gc(p,thr);if(d>md){md=d;mk=p}});if(mk)s+=`<circle class="plf" cx="${PX(mk)}" cy="${PY(mk)}" fill="#fff" stroke="#C0392B"/><text class="ml pll" x="${PX(mk)}" y="${PY(mk)}">D${x.bt[1]} ${esc(x.bt[0])}<tspan class="plcr"> 旋回開始</tspan></text>`}
+  return {s,pts:seg}}
 function cvFind(apt,name){const D=CVD[apt];if(!D||!name)return null;const n=nsp(name);const k=Object.keys(D).find(x=>nsp(x)===n);return k?D[k]:null}
 function cvDraw(apt,V,rwId){let s='',pts=[];const col='#C0392B';const rw=rwId&&rwyOf(apt,rwId);const thr=rw&&rw.t;
   const F=V[0].filter(f=>f[1]!=='IAF').sort((a,b)=>thr?gc([b[2],b[3]],thr)-gc([a[2],a[3]],thr):0);
@@ -1530,7 +1540,10 @@ function arrMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(!A)retur
   const ES=VE?(VE[0]==='STAR'?VE:null):plFind(S.route.dst,'STAR',P.star),EA=VE?(VE[0]==='APP'?VE:null):plFind(S.route.dst,'APP',P.app);
   const plS=!!(ES&&ES[2].some(q=>q[2].length));let plA=!!(EA&&EA[2].some(q=>q[2].length));
   const appNm=VE?(VE[0]==='APP'?VE[1]:null):P.app;const CVx=!plA&&appNm?cvFind(S.route.dst,appNm):null;
-  if(CVx&&(CVx[0].length||CVx[1].length>1)){const xx=A.iac.find(q=>nsp(q.n)===nsp(appNm));const D=cvDraw(S.route.dst,CVx,(xx&&xx.rw)||((appNm.match(/RWY\s?(\d{2}[LRC]?)/)||[])[1]));s+=D.s;pts.push(...D.pts);plA=true}
+  if(CVx&&(CVx[0].length||CVx[1].length>1)){const xx=A.iac.find(q=>nsp(q.n)===nsp(appNm));
+    // published initial approach (IAF, base turn/racetrack) from the procedure model, always drawn even with radar vectors
+    try{const ini=initialApp(appNm,CVx);if(ini.s){s+=ini.s;pts.push(...ini.pts)}}catch(e){}
+    const D=cvDraw(S.route.dst,CVx,(xx&&xx.rw)||((appNm.match(/RWY\s?(\d{2}[LRC]?)/)||[])[1]));s+=D.s;pts.push(...D.pts);plA=true}
   if(plS){const D=plDraw(S.route.dst,ES,plCtx('ARR'));s+=D.s;pts.push(...D.pts)}
   if(plA){const D=plDraw(S.route.dst,EA,plCtx('ARR'));s+=D.s;pts.push(...D.pts)}
   if(VE&&!plS&&!plA){}
