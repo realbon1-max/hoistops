@@ -252,7 +252,7 @@ svg.mini .apt{width:calc(10px*var(--k));height:calc(10px*var(--k));transform:tra
     <h1>IFRブリーフィング</h1>
     <div class="airac">航空路誌データ <b>AIRAC 2026-10-01</b>（全国127飛行場・航空路374・fix 3,001）</div>
   </div>
-  <button class="sub" id="themeBtn" type="button">表示切替</button>
+  <span class="row" style="gap:6px;flex-wrap:nowrap"><button class="sub" id="resetBtn" type="button" title="飛行場・出発・経路・到着・進入を消します">リセット</button><button class="sub" id="themeBtn" type="button">表示切替</button></span>
 </header>
 <div id="airacWarn"></div>
 
@@ -1825,6 +1825,11 @@ function bind(){
   document.addEventListener('visibilitychange',()=>{if(S.wxPoll&&document.visibilityState==='visible'&&(!S.wxAutoAt||Date.now()-new Date(S.wxAutoAt)>10*60e3))wxAutoFetch(false)});
   $('chkReset').onclick=()=>{S.chk={};save();renderChk()};
   document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.p));
+  {let armed=0,tm=null;const rb=$('resetBtn');rb.onclick=()=>{if(!armed){armed=1;rb.textContent='もう一度押すと消去';rb.style.borderColor='var(--no)';rb.style.color='var(--no)';tm=setTimeout(()=>{armed=0;rb.textContent='リセット';rb.style.borderColor='';rb.style.color=''},3500);return}
+    clearTimeout(tm);armed=0;rb.textContent='リセット';rb.style.borderColor='';rb.style.color='';
+    S.route=structuredClone(DEF.route);S.proc={};S.plView={};S._selAw=null;S._selFx=null;S._selDr=null;S.fpl.lvl='';S.chk={};if(typeof MAP!=='undefined')MAP=null;if(typeof SUG!=='undefined')SUG=null;save();
+    ['dep','dst','alt','talt'].forEach(k=>{const el=$(k);if(el)el.value='';const s=$(k+'_s');if(s)s.value=''});try{renderVia()}catch(e){}if($('rteIn'))$('rteIn').value='';
+    ['etd','eta'].forEach(k=>{const el=$(k);if(el)el.value=''});renderAll();show('route');window.scrollTo(0,0)}}
   $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');r.dataset.theme=cur==='dark'?'light':'dark';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}};
   try{const th=localStorage.getItem('ifrtheme');if(th)document.documentElement.dataset.theme=th}catch(e){}
   renderVia();
