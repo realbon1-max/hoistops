@@ -697,7 +697,7 @@ const CHK=[
 function depWinds(i,t){const w=wxFor(i);const ws=w.metar&&w.metar.wind?[w.metar.wind]:[];if(w.taf&&t){const tw=tafWindow(w.taf,new Date(+t-3600e3),new Date(+t+3600e3));if(tw)ws.push(...tw.winds)}return ws}
 function wxBadge(c){if(!c)return statusCard('mute','気象未入力','気象タブでMetAirの報文を取り込んでください');const v=c.vis??10000,cc=c.ceil;const k=(v<1600||(cc!=null&&cc<500))?'no':(v<5000||(cc!=null&&cc<1500))?'cau':'go';
   return statusCard(k,{go:'良好',cau:'低め・注意',no:'悪い'}[k],`視程 <b class="code">${v>=10000?'10km+':v+'m'}</b>　雲高 <b class="code">${cc!=null?cc+'ft':'なし'}</b><br><small>${esc(c.src||'')}</small>`)}
-function renderDep(){try{renderDep0()}finally{bindProc($('depOut'));try{depMini()}catch(e){}try{plBind('dep')}catch(e){}}}
+function renderDep(){try{renderDep0()}finally{bindProc($('depOut'));try{recBind($('depOut'))}catch(e){}try{depMini()}catch(e){}try{plBind('dep')}catch(e){}}}
 function renderDep0(){const i=S.route.dep,A=ap(i);
   if(!A){$('depOut').innerHTML='<div class="empty">ルートタブで出発飛行場を選んでください。</div>';return}
   const t=utc(S.route.etd);const winds=depWinds(i,t);const ev=rwyEval(i,winds);const C=routeCalc();const P=procSel();const rn=S.prof.caps.rnav1;
@@ -707,6 +707,7 @@ function renderDep0(){const i=S.route.dep,A=ap(i);
    <div class="two"><div>${windRose(i,winds[0],P.drw)}</div><div>${wxBadge(cond)}
      ${ev[0]&&ev[0].ok!==null?statusCard(ev[0].ok?'go':'no',`おすすめの滑走路 RWY${ev[0].r.id}`,`向かい風 <b class="code">${ev[0].minH}kt</b>　横風 <b class="code">${ev[0].worstX}kt</b>`):''}
      ${statusCard(P.sid?'go':'mute',P.sid?`SID ${esc(P.sid)}`:'SID未選択',P.sid?`RWY${esc(P.drw)} から ${sidRows.map(l=>esc(l.b)).join(' → ')}<br>約 <b class="code">${Math.round(sidRows.reduce((s,l)=>s+(l.d||0),0))}NM・${hhmm(sidRows.reduce((s,l)=>s+(l.d||0),0)/C.tas*60)}</b>`:'航空路タブでSIDを選ぶと距離と時間を出します')}</div></div>
+   ${recBox('sid')}
    <div class="box">${procDepUI()}<p class="note">ここで選んだ内容は、航空路タブ・飛行計画・FMS・ATC交信にそのまま反映されます。下のSIDのカードを押しても選べます。</p></div>
    ${miniHtml('depMini','出発経路の図')}
    ${(()=>{try{return plSection('dep')}catch(e){return ''}})()}
@@ -714,7 +715,7 @@ function renderDep0(){const i=S.route.dep,A=ap(i);
    <h3>使用滑走路の候補</h3>${rwyTable(ev)}
    <h3>SIDの一覧</h3>${A.sid.length?`<div class="sidgrid">${A.sid.map(s=>{const bad=s[1]&&!rn;const on=s[0]===P.sid;return `<button type="button" data-pick="sid|${esc(s[0])}" class="sidc ${on?'on':''} ${bad?'dim':''}"><b class="code">${esc(s[3]&&s[3].length?s[3].join(' / '):s[0])}</b><span>${s[1]?'<span class="tag t-rnav">RNAV</span>':'<span class="tag t-mute">従来型</span>'} ${bad?'<span class="tag t-no">RNAV1の許可が必要</span>':''}${on?'<span class="tag t-go">選択中</span>':''}</span><small>${(s[2]||[]).filter(e=>!e[5]).map(e=>'RWY'+e[0].join('/')+'：'+e[1].join('-')).slice(0,3).map(esc).join('<br>')||'経路の記述を読み取れず'}</small></button>`}).join('')}</div><p class="note">SIDの選択は航空路タブで行います。滑走路・時間帯との対応はチャートとATISで確認してください。</p>`:'<div class="empty">公示されたSIDはありません。</div>'}`;
 }
-function renderArr(){try{renderArr0()}finally{bindProc($('arrOut'));try{arrMini()}catch(e){}try{plBind('arr')}catch(e){}}}
+function renderArr(){try{renderArr0()}finally{bindProc($('arrOut'));try{recBind($('arrOut'))}catch(e){}try{arrMini()}catch(e){}try{plBind('arr')}catch(e){}}}
 function renderArr0(){const i=S.route.dst,A=ap(i);
   if(!A){$('arrOut').innerHTML='<div class="empty">ルートタブで目的飛行場を選んでください。</div>';return}
   const t=utc(S.route.eta); const cond=condFor(i,t); const winds=windsFor(i,t); const rn=S.prof.caps.rnav1;const ev=rwyEval(i,winds);const C=routeCalc();const P=procSel();
@@ -723,6 +724,7 @@ function renderArr0(){const i=S.route.dst,A=ap(i);
    <div class="two"><div>${windRose(i,winds[0],ev[0]&&ev[0].ok?ev[0].r.id:null)}</div><div>${wxBadge(cond)}
      ${ev[0]&&ev[0].ok!==null?statusCard(ev[0].ok?'go':'no',`おすすめの滑走路 RWY${ev[0].r.id}`,`向かい風 <b class="code">${ev[0].minH}kt</b>　横風 <b class="code">${ev[0].worstX}kt</b>`):''}
      ${statusCard(P.star||P.app?'go':'mute',`${P.star?'STAR '+esc(P.star):'STAR未選択'}${P.app?'／'+esc(P.app):''}`,arrRows.length?arrRows.map(l=>`${esc(l.a)} → ${esc(String(l.b))}`).join('<br>')+`<br>約 <b class="code">${Math.round(arrRows.reduce((s,l)=>s+(l.d||0),0))}NM・${hhmm(arrRows.reduce((s,l)=>s+(l.d||0),0)/C.tas*60)}</b>`:'航空路タブでSTARと進入方式を選ぶと距離と時間を出します')}</div></div>
+   ${recBox('star')}${recBox('app')}
    <div class="box">${procArrUI()}<p class="note">ここで選んだ内容は、航空路タブ・飛行計画・FMS・ATC交信にそのまま反映されます。進入方式は下の一覧の「この進入方式にする」でも選べます。</p></div>
    ${miniHtml('arrMini','到着・進入経路の図')}
    ${(()=>{try{return plSection('arr')}catch(e){return ''}})()}
@@ -1260,7 +1262,7 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
     const key=o.sid+'|'+o.sidT+'|'+str+'|'+(end.x?end.x.star+end.x.starE:'V');if(seen.has(key))continue;seen.add(key);
     if(!end.x&&(B.star||[]).length)o.tot-=25;
     out.push({...o,rte:str,end:u,star:end.x?end.x.star:'',starE:end.x?end.x.starE:0,starN:end.x?end.x.name:'STARなし（レーダー誘導）',direct:gc(A.p,B.p)});if(out.length>=5)break}
-  return {opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
+  return {dist,opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
 function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.r;
   let h=`<div class="row" style="justify-content:space-between;align-items:center"><b>おすすめルート（最短距離）</b><button class="sub" type="button" id="sugGo">${r?'探し直す':'探す'}</button></div>
    <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。機体の許可（RNAV1/RNAV5）と、巡航高度を入れていればMEAも考えに入れます。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。</p>`;
@@ -1271,6 +1273,50 @@ function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.
   return h}
 function sugBind(){const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
   document.querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{const o=SUG.r.opts[+x.dataset.sug];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()})}
+/* ---------- recommendations: SID / transition / STAR / approach ---------- */
+function sugData(){const k=sugKey();if(!SUG||SUG.k!==k||!SUG.r)SUG={k,r:sugCompute()};return SUG.r}
+function minH(x,m){const v=m&&m.c&&m.c[S.prof.cat];if(!v)return 99999;const t=String(v[0]);const mm=t.match(/\((\d+)\)/);return mm?+mm[1]:(+(t.match(/\d+/)||[99999])[0])}
+function recSid(){const A=ap(S.route.dep),B=ap(S.route.dst);if(!A||!(A.sid||[]).length)return [];const t=utc(S.route.etd);const ev=rwyEval(S.route.dep,windsFor(S.route.dep,t));const P=procSel();
+  const rw=P.drwManual&&P.drw?P.drw:(ev[0]&&ev[0].ok?ev[0].r.id:P.drw);const c=S.prof.caps;const C=routeCalc();const first=(C.r.pts||[])[0];let D=null;try{D=sugData().dist}catch(e){}
+  const out=[];A.sid.forEach(s=>{const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(rw))||(mains.find(e=>!(e[0]||[]).length));if(!mm)return;
+    const L0=polyLen([A.p,...(mm[1]||[]).map(fixPos)].filter(Boolean));const mend=(mm[1]||[]).slice(-1)[0];let ti=0;
+    const cands=[{t:-1,end:mend,L:L0,nm:''}];E.forEach(e=>{if(!e[5])return;const k=ti++;const fx=e[1]||[];if(fx[0]!==mend)return;cands.push({t:k,end:fx[fx.length-1],L:L0+polyLen(fx.map(fixPos).filter(Boolean)),nm:(e[10]||fx[fx.length-1])+' トランジション'})});
+    cands.forEach(x=>{const why=[];let sc=0;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}
+      why.push(`RWY${rw}${ev[0]&&ev[0].ok&&ev[0].r.id===rw?'（風に合う）':''}`);
+      if(first&&x.end===first){sc+=500;why.push(`経路の最初のfix ${first} につながる`)}
+      const rest=D&&D.has(x.end)?D.get(x.end):null;const tot=rest!=null?x.L+rest:null;if(tot!=null){sc-=tot;why.push(`目的地まで約${Math.round(tot)}NM`)}else{sc-=2000;why.push('目的地までの航空路が見つからない')}
+      out.push({sid:s[0],sidT:x.t,rw,name:(s[3]&&s[3][0]||s[0])+(x.nm?'／'+x.nm:''),end:x.end,sc,why,rnav:s[1]})})});
+  out.sort((a,b)=>b.sc-a.sc);const seen=new Set();return out.filter(o=>{const k=o.sid+o.sidT;if(seen.has(k))return false;seen.add(k);return true}).slice(0,3)}
+function recStar(){const A=ap(S.route.dep),B=ap(S.route.dst);if(!B||!(B.star||[]).length)return [];const c=S.prof.caps;const C=routeCalc();const pts=C.r.pts||[];const last=pts[pts.length-1];const from=last&&fixPos(last)||(A&&A.p);
+  const out=[];B.star.forEach(s=>{const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];all.forEach((e,k)=>{const fx=e[1]||[];if(!fx.length||!fixPos(fx[0]))return;let tail=fx.map(fixPos).filter(Boolean);
+      if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)tail=[...tail,...main[1].map(fixPos).filter(Boolean)]}
+      const L=polyLen(tail)+gc(tail[tail.length-1],B.p);const why=[];let sc=0;if(s[1]&&!c.rnav1){why.push('RNAV1の許可が必要');sc-=1000}
+      if(last&&fx[0]===last){sc+=500;why.push(`経路の最後のfix ${last} から始まる`)}
+      const lead=from?gc(from,fixPos(fx[0])):0;sc-=lead+L;why.push(`${last?last:'出発地'}から着陸まで約${Math.round(lead+L)}NM`);
+      out.push({star:s[0],starE:k,name:e[7]||s[3]&&s[3][0]||s[0],start:fx[0],endFix:fx[fx.length-1],sc,why})})});
+  out.sort((a,b)=>b.sc-a.sc);return out.slice(0,3)}
+function recApp(){const B=ap(S.route.dst);if(!B||!B.iac.length)return [];const t=utc(S.route.eta);const cond=condFor(S.route.dst,t);const winds=windsFor(S.route.dst,t);const ev=rwyEval(S.route.dst,winds);const rank={};ev.forEach(e=>rank[e.r.id]=e);
+  const P=procSel();let starEnd=null;try{const st=B.star.find(s=>s[0]===P.star);if(st){const E=st[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];const e=all[P.starE||0];if(e){const fx=e[1];starEnd=fx[fx.length-1];if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)starEnd=main[1][main[1].length-1]}}}}catch(e){}
+  const out=B.iac.map(x=>{const [u,whyU]=chartUsable(x);const e=x.rw?rank[x.rw]:null;const why=[];let sc=0;
+    if(!u){sc-=5000;why.push(whyU||'機体の装備・許可で使えない')}
+    if(e&&e.ok!==null){if(e.ok){sc+=300;why.push(`RWY${x.rw} 風が制限内（${e.minH>=0?'向かい風'+e.minH:'背風'+(-e.minH)}kt・横風${e.worstX}kt）`)}else{sc-=800;why.push(`RWY${x.rw} 風が制限外`)}}else if(!x.rw){sc-=100;why.push('周回進入')}
+    const lines=(x.m||[]).filter(m=>lineUsable(x,m)&&u);const best=lines.map(m=>({m,j:judge(m,cond),h:minH(x,m)})).sort((a,b)=>a.h-b.h)[0];
+    if(best){sc-=best.h/10;if(best.j.s==='go'){sc+=200;why.push(`${best.m.l} ミニマ ${best.h}ft 以上の天気`)}else if(best.j.s==='cau'){sc+=50;why.push(`${best.m.l} ミニマに近い天気`)}else if(best.j.s==='no'){sc-=600;why.push(`${best.m.l} ミニマを下回る予報`)}else why.push(`${best.m.l} ミニマ ${best.h}ft`)}
+    const rr=x.r||{};const ent=[...(rr.IAF||[]),...(rr.IF||[])];if(starEnd&&ent.includes(starEnd)){sc+=150;why.push(`STARの終点 ${starEnd} からつながる`)}
+    return {x,sc,why}});
+  out.sort((a,b)=>b.sc-a.sc);return out.slice(0,3)}
+function recBox(kind){let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return '';
+  const P=procSel();const cur=o=>kind==='sid'?(o.sid===P.sid&&o.sidT===P.sidT):kind==='star'?(o.star===P.star&&o.starE===(P.starE||0)):(o.x.n===P.app);
+  const ttl={sid:'おすすめのSID・トランジション',star:'おすすめのSTAR',app:'おすすめの進入方式'}[kind];
+  h=`<div class="box"><b>${ttl}</b><p class="note" style="margin:2px 0 6px">${kind==='app'?'到着時刻の風・天気予報、機体の装備、ミニマの低さ、STARからのつながりで順位をつけています。':kind==='sid'?'風に合う滑走路、航空路とのつながり、目的地までの距離で順位をつけています。':'航空路の最後のfixとのつながりと、着陸までの距離で順位をつけています。'}</p>`+
+   L.map((o,i)=>{const nm=kind==='app'?o.x.n:o.name;return `<div style="border-top:1px solid var(--line);padding:7px 0;display:flex;gap:8px;justify-content:space-between;align-items:flex-start"><div><b class="code">${i+1}. ${esc(nm)}</b>${cur(o)?' <span class="tag t-mute">選択中</span>':''}<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${o.why.map(esc).join('・')}</div></div>${cur(o)?'':`<button class="act" type="button" data-rec="${kind}|${i}" style="flex:0 0 auto">これにする</button>`}</div>`}).join('')+'</div>';
+  REC[kind]=L;return h}
+const REC={};
+function recBind(root){root.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>{const [k,i]=b.dataset.rec.split('|');const o=REC[k][+i];const P=procSel();
+  if(k==='sid'){P.sid=o.sid;P.sidT=o.sidT;P.sidE=0;if(o.rw){P.drw=o.rw}const C=routeCalc();if(!(C.r.pts||[]).length&&o.end){S.route.rte=o.end}}
+  else if(k==='star'){P.star=o.star;P.starE=o.starE;P.arrMode='star'}
+  else{P.app=o.x.n}
+  if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()})}
 function renderEnr(){
   const C=routeCalc(); const {r,rows,tot,time,tas,sc}=C; const rn5=S.prof.caps.rnav5||S.prof.caps.rnav1;
   $('rteIn').value=S.route.rte||'';
