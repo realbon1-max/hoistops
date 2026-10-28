@@ -1453,9 +1453,26 @@ function brgOf(a,b){const la1=a[0]*RAD,la2=b[0]*RAD,dl=(b[1]-a[1])*RAD;return (M
 function holdPath(apt,h){const A=ap(apt),mv=(A&&A.mv)||0;const p=plPos(apt,h[0]);if(!p||!h[1])return null;const inb=(+h[1]+mv+360)%360,R=h.slice(2).includes('L')?-1:1;
   const L=4,w=2;const o=dest(p,(inb+180)%360,L);const side=(inb+90*R+360)%360;const p2=dest(p,side,w),o2=dest(o,side,w);const arc=(c,b0,sw)=>{const r=[];for(let k=0;k<=8;k++)r.push(dest(c,b0+sw*k/8,w/2));return r};
   const c1=dest(p,side,w/2),c2=dest(o,side,w/2);return [p,...arc(c1,(side+180)%360,180*R).slice(1),o2,...arc(c2,side,180*R).slice(1)]}
+function baseTurn(x,rw,fp){const A=ap(S.route.dst),mv=A.mv!=null?A.mv:-8;const nav=fixPos(x.bt[0]);const D=x.bt[1];
+  const inb=rw.b,fo=(inb+180)%360;const dd=(a,b)=>Math.abs(((a-b+540)%360)-180);const rMag=(fo-mv+360)%360;
+  const oc=(x.deg||[]).filter(c=>dd(c,rMag)>=5&&dd(c,rMag)<=40).sort((a,b)=>dd(a,rMag)-dd(b,rMag))[0];if(oc==null)return null;
+  const ob=(oc+mv+360)%360;const T=dest(nav,ob,D);const side=((ob-fo+540)%360)-180;const dir=side>0?-1:1; // outbound right of the final course -> turn left
+  const tas=Math.min(S.fpl.tas||120,200),R=Math.max(1,tas/62.8);const pts=[nav,T];let p=T,hd=ob;
+  for(let k=0;k<90;k++){const rem=((inb-hd)*dir+720)%360;if(rem<4||rem>356)break;const st=Math.min(4,rem);p=dest(p,(hd+dir*st/2+360)%360,2*R*Math.sin(st*RAD/2));hd=(hd+dir*st+360)%360;pts.push(p)}
+  // straight on the inbound heading until joining the final course, then along it to the FAF
+  const toLine=q=>{const d=gc(nav,q),b=brgOf(nav,q);return d*Math.sin((b-fo)*RAD)};
+  let q=p;for(let k=0;k<60;k++){const off=toLine(q);if(Math.abs(off)<0.15)break;const corr=Math.max(-30,Math.min(30,off*25));q=dest(q,(inb+corr+360)%360,0.25);pts.push(q);if(gc(q,nav)<gc(fp,nav))break}
+  pts.push(fp);
+  let s=`<polyline points="${pts.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  const al=x.alts&&x.alts[x.bt[0]]||(x.mha&&x.mha[0])||'';
+  s+=`<circle class="plf" cx="${PX(nav)}" cy="${PY(nav)}" fill="#C0392B"/><text class="ml pll" x="${PX(nav)}" y="${PY(nav)}">${esc(x.bt[0])}<tspan class="mrole"> IAF</tspan>${al?`<tspan class="plc"> ${al}</tspan>`:''}</text>`;
+  const mid=dest(nav,ob,D*0.55);s+=`<text class="ml plcr" x="${PX(mid)}" y="${PY(mid)}" text-anchor="middle">${String(oc).padStart(3,'0')}°</text>`;
+  s+=`<circle class="plf" cx="${PX(T)}" cy="${PY(T)}" fill="#fff" stroke="#C0392B"/><text class="ml pll" x="${PX(T)}" y="${PY(T)}">D${D} ${esc(x.bt[0])}<tspan class="plcr"> ${dir<0?'左':'右'}旋回開始</tspan></text>`;
+  return {s,pts}}
 function initialApp(appNm,V){const A=ap(S.route.dst);const x=A.iac.find(q=>nsp(q.n)===nsp(appNm));if(!x)return {s:''};const P=procSel();const sv=[P.arrMode,P.app,S.route.rte,P.star];P.arrMode='star';P.app=x.n;let C2;try{C2=routeCalc();if(!(C2.arr&&C2.arr.appTrack&&C2.arr.appTrack.length>2)){const st=((x.r||{}).IAF||[]).find(f=>fixPos(f))||(x.bt&&x.bt[0])||((x.r||{}).IF||[]).find(f=>fixPos(f));if(st){S.route.rte=st;P.star='';C2=routeCalc()}}}finally{P.arrMode=sv[0];P.app=sv[1];S.route.rte=sv[2];P.star=sv[3]}
   const tr=(C2.arr&&C2.arr.appTrack)||[];if(tr.length<2)return {s:''};const rw=x.rw&&rwyOf(S.route.dst,x.rw);const thr=rw&&rw.t;
   const fin=V[0].filter(f=>f[1]!=='IAF');if(!fin.length||!thr)return {s:''};const far=fin.slice().sort((a,b)=>gc([b[2],b[3]],thr)-gc([a[2],a[3]],thr))[0];const fp=[far[2],far[3]];
+  if(x.bt&&fixPos(x.bt[0])&&rw.b!=null){const bt=baseTurn(x,rw,fp);if(bt)return bt}
   // start of the published part = IAF (or first named fix) on the track
   const iaf=(C2.arr.appFix||[]).find(a=>a[1]==='IAF');let i0=0;if(iaf&&fixPos(iaf[0])){const q=fixPos(iaf[0]);let bd=1e9;tr.forEach((p,k)=>{const d=gc(p,q);if(d<bd){bd=d;i0=k}})}
   let km=i0,mx=-1;for(let k=i0;k<tr.length;k++){const d=gc(tr[k],thr);if(d>mx){mx=d;km=k}}let i1=tr.length-1,bd=1e9;for(let k=km;k<tr.length;k++){const d=gc(tr[k],fp);if(d<bd){bd=d;i1=k}}if(i1-i0<2)return {s:''};
