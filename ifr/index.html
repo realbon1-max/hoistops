@@ -1392,7 +1392,23 @@ function bindProfile(){const box=$('profSvg');if(!box||!PROF)return;let raf=0;co
 /* ---------- interactive enroute map ---------- */
 const MK=Math.cos(36*RAD);const PX=p=>p[1]*60*MK, PY=p=>-p[0]*60;
 let MAP=null;
-function mapF(){return S.mapF=Object.assign({on:0,src:'lvl',alt:'',dr:1},S.mapF||{})}
+function mapF(){return S.mapF=Object.assign({on:0,src:'lvl',alt:'',dr:1,bg:'none',bgo:70},S.mapF||{})}
+/* GSI (国土地理院) tiles, drawn tile-by-tile into the map's own projection */
+const BGS={none:['簡易地図（海岸線のみ）'],pale:['淡色地図','pale','png',5,18],std:['標準地図','std','png',5,18],relief:['色別標高図','relief','png',5,15],hill:['陰影起伏図','hillshademap','png',5,16],photo:['写真','seamlessphoto','jpg',5,18]};
+function tilesUpdate(svg){const f=mapF(),B=BGS[f.bg],at=$('mapAttr');if(at)at.innerHTML=B&&B[1]?'背景：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener" style="color:inherit">地理院タイル</a>（'+B[0]+'）':'';const g=svg.querySelector('#mapTiles');if(!g)return;
+  if(!B||!B[1]){g.innerHTML='';g.dataset.k='';return}
+  const v=MAP.vb,W=svg.clientWidth||600,dpr=Math.min(2,window.devicePixelRatio||1);
+  const pxNM=W/v.w*dpr;let z=Math.round(Math.log2(360*60*MK*pxNM/256));z=Math.max(B[3],Math.min(B[4],z));const n=2**z;
+  const lon0=v.x/(60*MK),lon1=(v.x+v.w)/(60*MK),latN=-v.y/60,latS=-(v.y+v.h)/60;
+  const tx=lon=>Math.floor((lon+180)/360*n),ty=lat=>{lat=Math.max(-85,Math.min(85,lat))*RAD;return Math.floor((1-Math.log(Math.tan(lat)+1/Math.cos(lat))/Math.PI)/2*n)};
+  const x0=Math.max(0,tx(lon0)),x1=Math.min(n-1,tx(lon1)),y0=Math.max(0,ty(latN)),y1=Math.min(n-1,ty(latS));
+  const key=[f.bg,z,x0,x1,y0,y1].join(',');if(g.dataset.k===key)return;g.dataset.k=key;
+  if((x1-x0+1)*(y1-y0+1)>120){g.innerHTML='';return}
+  const lonOf=x=>x/n*360-180,latOf=y=>Math.atan(Math.sinh(Math.PI*(1-2*y/n)))/RAD;let s='';
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const L=lonOf(x),R=lonOf(x+1),T=latOf(y),Bt=latOf(y+1);
+    const X=L*60*MK,Y=-T*60,w=(R-L)*60*MK,hh=(T-Bt)*60;
+    s+=`<image href="https://cyberjapandata.gsi.go.jp/xyz/${B[1]}/${z}/${x}/${y}.${B[2]}" x="${X.toFixed(3)}" y="${Y.toFixed(3)}" width="${(w*1.002).toFixed(3)}" height="${(hh*1.002).toFixed(3)}" preserveAspectRatio="none" onerror="this.remove()"/>`}
+  g.innerHTML=s}
 function mapLimit(){const f=mapF();if(f.src==='lvl')return lvlFt(S.fpl.lvl);if(f.src==='fz')return routeFzl();return f.alt?+f.alt:null}
 function mapKey(C){return [S.route.dep,S.route.dst,S.route.rte,S.proc&&S.proc.sid,S.proc&&S.proc.star].join('|')}
 function routeMap(C){const path=C.path;let vb;
@@ -1402,18 +1418,23 @@ function routeMap(C){const path=C.path;let vb;
     const pad=Math.max(x1-x0,y1-y0)*.15+25;vb={x:x0-pad,y:y0-pad,w:(x1-x0)+2*pad,h:(y1-y0)+2*pad}}
   MAP={key,vb,C};
   const MF=mapF();
-  return `<div class="map zoomable" id="mapBox"><div class="mapctl"><label class="tgl"><input type="checkbox" id="mf_dr" ${MF.dr?'checked':''}>公示直行経路を表示</label>
+  return `<div class="map zoomable" id="mapBox"><div class="mapctl"><div class="row" style="gap:8px;align-items:center"><span style="font-size:13px">背景</span><select id="mf_bg">${Object.entries(BGS).map(([k,v])=>`<option value="${k}" ${MF.bg===k?'selected':''}>${v[0]}</option>`).join('')}</select>
+   <label style="font-size:13px;display:flex;gap:6px;align-items:center;${MF.bg==='none'?'display:none':''}" id="mf_bgow">濃さ<input type="range" id="mf_bgo" min="20" max="100" step="5" value="${MF.bgo}" style="width:120px"></label></div>
+   <label class="tgl"><input type="checkbox" id="mf_dr" ${MF.dr?'checked':''}>公示直行経路を表示</label>
    <label class="tgl"><input type="checkbox" id="mf_on" ${MF.on?'checked':''}>飛べる高度の区間だけ表示（MEAが上限以下）</label>
    <div class="row" ${MF.on?'':'style="display:none"'} id="mf_row"><select id="mf_src"><option value="lvl" ${MF.src==='lvl'?'selected':''}>上限＝計画の巡航高度</option><option value="fz" ${MF.src==='fz'?'selected':''}>上限＝予想0℃高度（着氷を避ける）</option><option value="custom" ${MF.src==='custom'?'selected':''}>上限＝数値で指定</option></select>
    <span class="inp" style="width:150px;${MF.src==='custom'?'':'display:none'}" id="mf_altw"><input type="number" id="mf_alt" step="500" value="${esc(MF.alt||'')}" placeholder="8000"><em>ft</em></span><b class="code" id="mf_lim">${mapLimit()!=null?'上限 '+mapLimit().toLocaleString()+'ft':'上限が決まりません'}</b></div></div><div class="mapwrap"><svg id="mapSvg" role="img" aria-label="航空路図（ピンチで拡大、線をタップで選択）" preserveAspectRatio="xMidYMid meet"></svg>
-   <div class="mapbtns"><button type="button" class="sub" id="mapFit">経路全体</button><button type="button" class="sub" id="mapIn">＋</button><button type="button" class="sub" id="mapOut">－</button></div></div>
+   <div class="mapbtns"><button type="button" class="sub" id="mapFit">経路全体</button><button type="button" class="sub" id="mapIn">＋</button><button type="button" class="sub" id="mapOut">－</button></div><div id="mapAttr" style="position:absolute;left:6px;bottom:4px;font-size:10px;color:var(--muted);background:var(--card);opacity:.85;padding:1px 5px;pointer-events:auto"></div></div>
    <div class="zhint">ピンチ・スワイプで拡大・移動。航空路の線やfixをタップすると選べます。</div>
    <div id="mapPanel"></div>
    <div class="plegend" style="padding:6px 10px 8px;margin:0"><span><i style="background:#2E8B57"></i>SID</span><span><i style="background:var(--mag)"></i>航空路（計画）</span><span><i style="background:var(--sky)"></i>直行</span><span><i style="background:#C98A00"></i>STAR</span><span><i style="background:#C0392B"></i>進入</span><span><i style="background:var(--mag);opacity:.35"></i>RNAV経路</span><span><i style="background:var(--muted);opacity:.5"></i>従来型航空路</span><span><i style="border-top:2px dashed #1F8FB5;height:0;width:12px"></i>公示直行経路</span><span><i style="border:2px solid #2E8B57;border-radius:50%;width:9px;height:9px"></i>出発地のSIDの終点</span><span><i style="border:2px solid #C98A00;border-radius:50%;width:9px;height:9px"></i>目的地のSTARの始点</span><span><i style="border:1.5px dashed #2B6A94;width:8px;height:8px"></i>管制区</span>${GEO||WGEO?'':'<span>海岸線は読み込み中または表示できません</span>'}</div></div>`}
 function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s='';
   s+=`<rect x="-99999" y="-99999" width="199998" height="199998" fill="var(--sea)"/>`;
-  const feats=[...(WGEO?WGEO.features.filter(f=>f.id!=='JP'&&!(f.properties&&f.properties.id==='JP')):[]),...(GEO?GEO.features:[])];
-  if(feats.length){s+='<g fill="var(--land)" stroke="var(--coast)" stroke-width="0.8" vector-effect="non-scaling-stroke">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path vector-effect="non-scaling-stroke" d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
+  const BGon=mapF().bg&&mapF().bg!=='none';
+  const feats0=[...(WGEO?WGEO.features.filter(f=>f.id!=='JP'&&!(f.properties&&f.properties.id==='JP')):[]),...(GEO?GEO.features:[])];
+  const feats=feats0;if(BGon&&feats.length){s+='<g fill="var(--land)" stroke="none">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
+  if(BGon)s+=`<g id="mapTiles" opacity="${(mapF().bgo||70)/100}" style="pointer-events:none"></g>`;
+  else if(feats.length){s+='<g fill="var(--land)" stroke="var(--coast)" stroke-width="0.8" vector-effect="non-scaling-stroke">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path vector-effect="non-scaling-stroke" d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
   for(const [nm,v] of Object.entries(SECT)){for(const pt of v[2]){if(!(C.lvl>=pt[0]&&C.lvl<pt[1]))continue;const col=v[0]==='Tokyo'?'#2B6A94':v[0]==='Fukuoka'?'#8E3B5E':'#2E7D4F';
       s+=`<path d="M${pt[2].map(P).join('L')}Z" fill="${col}" fill-opacity=".035" stroke="${col}" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="6 3" vector-effect="non-scaling-stroke"/>`;
       const cx=pt[2].reduce((a,p)=>a+p[0],0)/pt[2].length,cy=pt[2].reduce((a,p)=>a+p[1],0)/pt[2].length;s+=`<text class="ml sl" x="${PX([cx,cy])}" y="${PY([cx,cy])}" text-anchor="middle" fill="${col}">${nm} ${v[1][0]||''}</text>`}}
@@ -1454,7 +1475,7 @@ function bindMap(){const svg=$('mapSvg');if(!svg||!MAP)return;const C=MAP.C;
   const apply=()=>{const W=svg.clientWidth||600,H=svg.clientHeight||400;const v=MAP.vb;const ar=H/W;
       if(Math.abs(v.h/v.w-ar)>0.001){const cy=v.y+v.h/2;v.h=v.w*ar;v.y=cy-v.h/2}
       svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);const k=v.w/W;svg.style.setProperty('--k',k);
-      svg.classList.toggle('z1',v.w<330);svg.classList.toggle('z2',v.w<150)};
+      svg.classList.toggle('z1',v.w<330);svg.classList.toggle('z2',v.w<150);tilesUpdate(svg)};
   apply();let raf=0;const req=()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;apply()})};
   gestures(svg,{pan:(dx,dy)=>{const k=MAP.vb.w/svg.clientWidth;MAP.vb.x-=dx*k;MAP.vb.y-=dy*k;req()},
     zoom:(f,cx,cy)=>{const v=MAP.vb,k=v.w/svg.clientWidth;const ux=v.x+cx*k,uy=v.y+cy*k;let nw=Math.max(15,Math.min(2500,v.w/f));const nf=nw/v.w;v.x=ux-(ux-v.x)*nf;v.y=uy-(uy-v.y)*nf;v.w=nw;v.h=v.h*nf;req()},
@@ -1466,7 +1487,10 @@ function bindMap(){const svg=$('mapSvg');if(!svg||!MAP)return;const C=MAP.C;
   const redraw=()=>{svg.innerHTML=mapContent(MAP.C);mapPanel()};
   const upd=()=>{const f=mapF();$('mf_row').style.display=f.on?'':'none';$('mf_altw').style.display=f.src==='custom'?'':'none';const L=mapLimit();$('mf_lim').textContent=L!=null?'上限 '+L.toLocaleString()+'ft':'上限が決まりません（'+(f.src==='lvl'?'巡航高度を入れてください':f.src==='fz'?'気温入りのMETARが必要です':'数値を入れてください')+'）';save();redraw()};
   $('mf_on').onchange=()=>{mapF().on=$('mf_on').checked?1:0;upd()};$('mf_dr').onchange=()=>{mapF().dr=$('mf_dr').checked?1:0;upd()};
-  $('mf_src').onchange=()=>{mapF().src=$('mf_src').value;upd()};$('mf_alt').onchange=()=>{mapF().alt=$('mf_alt').value;upd()};
+  $('mf_src').onchange=()=>{mapF().src=$('mf_src').value;upd()};
+  $('mf_bg').onchange=()=>{mapF().bg=$('mf_bg').value;$('mf_bgow').style.display=mapF().bg==='none'?'none':'flex';save();svg.innerHTML=mapContent(MAP.C);tilesUpdate(svg);mapPanel()};
+  $('mf_bgo').oninput=()=>{mapF().bgo=+$('mf_bgo').value;const g=svg.querySelector('#mapTiles');if(g){g.setAttribute('opacity',mapF().bgo/100)}};$('mf_bgo').onchange=save;
+  new MutationObserver(()=>{const g=svg.querySelector('#mapTiles');if(g&&!g.dataset.k)tilesUpdate(svg)}).observe(svg,{childList:true});$('mf_alt').onchange=()=>{mapF().alt=$('mf_alt').value;upd()};
   MAP.apply=apply;if(!window.__mapRs){window.__mapRs=1;window.addEventListener('resize',()=>{MAP&&MAP.apply&&MAP.apply()})}mapPanel()}
 function mapPanel(){const box=$('mapPanel');if(!box)return;const r=parseRoute(S.route.rte||'');const last=r.pts[r.pts.length-1];let h='';
   const addTok=s=>{S.route.rte=((S.route.rte||'').trim()+' '+s).trim();save();renderAll()};
