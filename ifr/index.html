@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="tac">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IFRブリーフィング</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#12324a">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -243,6 +243,175 @@ svg.mini .apt{width:calc(10px*var(--k));height:calc(10px*var(--k));transform:tra
 .pick button[disabled]{opacity:.45}
 .empty{padding:14px;border:1px dashed var(--line);color:var(--muted);font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* TACTICAL THEME START */
+/* === TACTICAL MFD THEME (戦闘ヘリ/HUD風) === */
+:root[data-theme="tac"] {
+  /* ベースカラー：漆黒とHUDグリーン */
+  --paper: #000000;      
+  --card: #051005;       /* わずかに緑がかった黒（パネル） */
+  --ink: #4afe00;        /* HUDグリーン（主文字・線） */
+  --muted: #1e701e;      /* 暗い緑（非アクティブ・グリッド） */
+  --line: #144d14;       /* 枠線 */
+
+  /* アクセントカラー */
+  --mag: #ff9900;        /* タクティカルアンバー（経路・重要情報） */
+  --mag-soft: #331f00;
+  --go: #00ff00;         /* 純緑（正常・クリア） */
+  --go-soft: #003300;
+  --cau: #ffcc00;        /* 注意・コーション */
+  --cau-soft: #332900;
+  --no: #ff0000;         /* 警告・レッドアウト */
+  --no-soft: #330000;
+  --sky: #00ccff;        /* シアン（ATC・レーダー） */
+
+  /* マップ系カラーをダークトーンに沈める */
+  --sea: #000814;
+  --land: #0a140a;
+  --coast: #1a4d1a;
+
+  /* フォント：全体的に計器感を強める */
+  --code: 'B612', 'IBM Plex Sans JP', monospace;
+  --body: 'IBM Plex Sans JP', system-ui, sans-serif;
+  
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+/* --- OVERRIDES FOR TACTICAL LOOK --- */
+/* 背景にうっすらとスキャンライン（走査線）を入れる */
+html[data-theme="tac"] body {
+  background: var(--paper) repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  color: var(--ink);
+}
+/* 角丸を排除し、すべてシャープな矩形に */
+html[data-theme="tac"] * { border-radius: 0 !important; }
+/* パネルとカードのスタイリング（枠線とグロー効果） */
+html[data-theme="tac"] .box,
+html[data-theme="tac"] .leg,
+html[data-theme="tac"] .stat,
+html[data-theme="tac"] .scard,
+html[data-theme="tac"] .fstep,
+html[data-theme="tac"] .wxcard,
+html[data-theme="tac"] .appr,
+html[data-theme="tac"] .map,
+html[data-theme="tac"] .tl,
+html[data-theme="tac"] .sidc {
+  background: rgba(5, 16, 5, 0.85);
+  border: 1px solid var(--muted);
+  box-shadow: inset 0 0 10px rgba(74, 254, 0, 0.05);
+}
+/* ヘッダー・見出しをすべて大文字化 */
+html[data-theme="tac"] h1,
+html[data-theme="tac"] h2,
+html[data-theme="tac"] h3,
+html[data-theme="tac"] nav.steps button,
+html[data-theme="tac"] .bh {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 4px rgba(74, 254, 0, 0.3);
+}
+/* MFDのベゼルボタン風のタブ */
+html[data-theme="tac"] nav.steps {
+  border-bottom: 2px solid var(--muted);
+  background: var(--paper);
+}
+html[data-theme="tac"] nav.steps button {
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: var(--muted);
+}
+html[data-theme="tac"] nav.steps button[aria-selected="true"] {
+  background: var(--ink);
+  color: #000;
+  border-color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 0 8px var(--ink);
+}
+html[data-theme="tac"] nav.steps button .n { color: inherit; }
+/* 番号の色も連動 */
+
+/* ルートストリップ（ウェイポイント）の強調 */
+html[data-theme="tac"] .leg { border-color: var(--muted); }
+html[data-theme="tac"] .leg:hover { border-color: var(--mag); box-shadow: 0 0 8px var(--mag); }
+html[data-theme="tac"] .leg .icao { color: var(--mag); text-shadow: 0 0 5px rgba(255, 153, 0, 0.5); }
+html[data-theme="tac"] .arrow { background: var(--muted); height: 1px; }
+/* 入力フォーム群のハードウェア感 */
+html[data-theme="tac"] input,
+html[data-theme="tac"] select,
+html[data-theme="tac"] textarea {
+  background: #000 !important;
+  border: 1px solid var(--muted) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="tac"] input:focus,
+html[data-theme="tac"] select:focus,
+html[data-theme="tac"] textarea:focus {
+  border-color: var(--ink) !important;
+  box-shadow: 0 0 6px rgba(74, 254, 0, 0.4) !important;
+  outline: none;
+}
+/* アクションボタン（EXECUTEボタン風） */
+html[data-theme="tac"] button.act {
+  background: transparent;
+  color: var(--mag);
+  border: 1px solid var(--mag);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+html[data-theme="tac"] button.act:hover {
+  background: var(--mag);
+  color: #000;
+  box-shadow: 0 0 12px var(--mag);
+}
+html[data-theme="tac"] button.sub {
+  border-color: var(--muted);
+  color: var(--ink);
+  text-transform: uppercase;
+}
+html[data-theme="tac"] button.sub:hover {
+  background: var(--muted);
+  color: #000;
+}
+/* チェックリストなどのトグル類 */
+html[data-theme="tac"] .tgl input[type="checkbox"],
+html[data-theme="tac"] .check input[type="checkbox"] {
+  appearance: none;
+  width: 16px; height: 16px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  position: relative;
+}
+html[data-theme="tac"] .tgl input[type="checkbox"]:checked::after,
+html[data-theme="tac"] .check input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  background: var(--ink);
+  box-shadow: 0 0 4px var(--ink);
+}
+/* FMS MCDUのスタイルをさらに本物に近づける */
+html[data-theme="tac"] .mcdu {
+  background: #000;
+  border: 4px solid #1a1a1a;
+  border-top-color: #2a2a2a; border-left-color: #2a2a2a;
+  box-shadow: 5px 5px 15px rgba(0,0,0,0.8);
+}
+html[data-theme="tac"] .mcdu .mt { color: #00ff00; text-shadow: 0 0 3px #00ff00; }
+html[data-theme="tac"] .mr b { color: #00ccff; }
+/* データエントリーカラー */
+html[data-theme="tac"] .keys .sp { background: #111; color: #ff9900; }
+/* その他調整 */
+html[data-theme="tac"] .warnbar { border-left-width: 6px; }
+html[data-theme="tac"] .fbar { background: transparent; }
+html[data-theme="tac"] .fob { background: var(--mag); box-shadow: 0 0 4px var(--mag); width: 2px; }
+/* TACTICAL THEME END */
 </style>
 </head>
 <body>
@@ -1860,8 +2029,9 @@ function bind(){
     S.route=structuredClone(DEF.route);S.proc={};S.plView={};S._selAw=null;S._selFx=null;S._selDr=null;S.fpl.lvl='';S.chk={};if(typeof MAP!=='undefined')MAP=null;if(typeof SUG!=='undefined')SUG=null;save();
     ['dep','dst','alt','talt'].forEach(k=>{const el=$(k);if(el)el.value='';const s=$(k+'_s');if(s)s.value=''});try{renderVia()}catch(e){}if($('rteIn'))$('rteIn').value='';
     ['etd','eta'].forEach(k=>{const el=$(k);if(el)el.value=''});renderAll();show('route');window.scrollTo(0,0)}}
-  $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');r.dataset.theme=cur==='dark'?'light':'dark';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}};
-  try{const th=localStorage.getItem('ifrtheme');if(th)document.documentElement.dataset.theme=th}catch(e){}
+  const THN={tac:'タクティカル',light:'ライト',dark:'ダーク'};const thLab=()=>{const t=document.documentElement.dataset.theme||'tac';$('themeBtn').textContent='表示：'+(THN[t]||t)};
+  $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||'tac';r.dataset.theme={tac:'light',light:'dark',dark:'tac'}[cur]||'tac';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}thLab();try{renderAll()}catch(e){}};
+  try{const th=localStorage.getItem('ifrtheme');document.documentElement.dataset.theme=th||'tac'}catch(e){document.documentElement.dataset.theme='tac'}thLab();
   renderVia();
 }
 function renderVia(){$('viaList').innerHTML=S.route.via.map((v,k)=>`<span class="chip">${esc(v)}<button type="button" aria-label="${esc(v)}を削除" data-k="${k}">×</button></span>`).join('');
