@@ -660,10 +660,15 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   <div class="box">
     <datalist id="apList"></datalist>
     <div class="grid">
-      <div class="f">出発飛行場<div class="apsel"><input class="code" id="dep" list="apList" placeholder="RJTT" autocomplete="off" aria-label="出発飛行場のICAO"><select id="dep_s" aria-label="出発飛行場をリストから選ぶ"></select></div></div>
-      <div class="f">目的飛行場<div class="apsel"><input class="code" id="dst" list="apList" placeholder="RJSS" autocomplete="off" aria-label="目的飛行場のICAO"><select id="dst_s" aria-label="目的飛行場をリストから選ぶ"></select></div><button class="sub" type="button" data-swap="1" style="margin-top:6px">⇄ 出発と目的を入れ替える</button></div>
-      <div class="f">離陸代替飛行場<div class="apsel"><input class="code" id="talt" list="apList" placeholder="RJSN" autocomplete="off" aria-label="離陸代替飛行場のICAO"><select id="talt_s" aria-label="離陸代替飛行場をリストから選ぶ"></select></div></div>
-      <div class="f">代替飛行場（目的地の代替）<div class="apsel"><input class="code" id="alt" list="apList" placeholder="RJSF" autocomplete="off" aria-label="代替飛行場のICAO"><select id="alt_s" aria-label="代替飛行場をリストから選ぶ"></select></div></div>
+      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end">
+      <div class="f" style="flex:1;min-width:0;margin:0">出発飛行場<div class="apsel"><input class="code" id="dep" list="apList" placeholder="RJTT" autocomplete="off" aria-label="出発飛行場のICAO"><select id="dep_s" aria-label="出発飛行場をリストから選ぶ"></select></div></div>
+      <button class="sub" type="button" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="flex:0 0 auto;font-size:18px;line-height:1;padding:10px 11px;margin-bottom:2px">⇄</button>
+      <div class="f" style="flex:1;min-width:0;margin:0">目的飛行場<div class="apsel"><input class="code" id="dst" list="apList" placeholder="RJSS" autocomplete="off" aria-label="目的飛行場のICAO"><select id="dst_s" aria-label="目的飛行場をリストから選ぶ"></select></div></div>
+      </div>
+      <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div class="f" style="flex:1;min-width:220px;margin:0">離陸代替飛行場<div class="apsel"><input class="code" id="talt" list="apList" placeholder="RJSN" autocomplete="off" aria-label="離陸代替飛行場のICAO"><select id="talt_s" aria-label="離陸代替飛行場をリストから選ぶ"></select></div></div>
+      <div class="f" style="flex:1;min-width:220px;margin:0">代替飛行場（目的地の代替）<div class="apsel"><input class="code" id="alt" list="apList" placeholder="RJSF" autocomplete="off" aria-label="代替飛行場のICAO"><select id="alt_s" aria-label="代替飛行場をリストから選ぶ"></select></div></div>
+      </div>
     </div>
     <h3>経由地</h3>
     <div class="row"><div class="apsel" style="flex:1;min-width:220px"><input class="code" id="viaIn" list="apList" placeholder="RJSF" autocomplete="off" aria-label="経由地のICAO"><select id="viaIn_s" aria-label="経由地をリストから選ぶ"></select></div><button class="sub" id="viaAdd" type="button">経由地を追加</button></div>
@@ -1036,7 +1041,8 @@ function renderStrip(){
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
     return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
-  el.innerHTML=main.join('<div class="arrow"></div>')+(r.dep&&r.dst?'<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;min-width:44px;font-size:18px;padding:8px 10px">⇄</button>':'')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
+  const swb='<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;flex:0 0 auto;min-width:40px;font-size:18px;line-height:1;padding:8px 9px;margin:0 2px">⇄</button>';
+  el.innerHTML=main.map((c,k)=>k===0?c:(k===1&&r.dep&&r.dst?swb:'<div class="arrow"></div>')+c).join('')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
   $('stripnote').textContent=`ETD ${fmtZ(utc(r.etd))}　ETA ${fmtZ(utc(r.eta))}　CAT ${S.prof.cat}　色は現況METARの目安（緑 良好／黄 低め／赤 悪い）`;
 }
 const PK_LAB={dep:'出発飛行場',dst:'目的飛行場',talt:'離陸代替飛行場',alt:'代替飛行場（目的地の代替）'};
