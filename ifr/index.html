@@ -1830,7 +1830,7 @@ function procUse(x){const P=procSel();
   else{P.star=x.short;P.starE=x.starE||0;P.arrMode='star'}save();renderAll()}
 
 /* ---------- mini procedure maps (departure / arrival tabs) ---------- */
-function miniCharts(id){const P=procSel();if(id==='depMini')return [chartBtn(S.route.dep,'SID',P.sid,'SIDのAIPチャート')].join('');return [chartBtn(S.route.dst,'STAR',P.star,'STARのAIPチャート'),chartBtn(S.route.dst,'APP',P.app,'進入のAIPチャート')].join('')}
+function miniCharts(id){const P=procSel();if(id==='depMini')return [chartBtn(S.route.dep,'SID',P.sid,'SIDのAIPチャート'),'<button type="button" class="sub" data-v3d="dep">🛩 出発を3Dで見る</button>'].join('');return [chartBtn(S.route.dst,'STAR',P.star,'STARのAIPチャート'),chartBtn(S.route.dst,'APP',P.app,'進入のAIPチャート'),'<button type="button" class="sub" data-v3d="arr">🛩 到着・進入を3Dで見る</button>'].join('')}
 function miniHtml(id,title){const MF=mapF();return `<h3>${title}</h3><div class="row" style="gap:8px;margin:0 0 6px">${(()=>{try{return miniCharts(id)}catch(e){return ''}})()}<span class="note" style="margin:0;align-self:center">図は自動で描いた概略です。正確な経路・高度はAIPチャートで確認してください。</span></div><div class="map zoomable"><div class="mapctl"><div class="row" style="gap:8px;align-items:center"><span style="font-size:13px">背景</span><select data-minibg="${id}">${Object.entries(BGS).map(([k,v])=>`<option value="${k}" ${MF.bg===k?'selected':''}>${v[0]}</option>`).join('')}</select><label style="font-size:13px;align-items:center;gap:6px;${MF.bg==='none'?'display:none':'display:flex'}">濃さ<input type="range" data-minibgo="${id}" min="20" max="100" step="5" value="${MF.bgo}" style="width:110px"></label></div></div><div style="position:relative"><svg id="${id}" class="mini" role="img" aria-label="${title}"></svg><div id="${id}A" style="position:absolute;left:6px;bottom:4px;font-size:10px;color:var(--muted);background:var(--card);opacity:.85;padding:1px 5px"></div></div><div class="zhint">ピンチ・スワイプで拡大・移動／ダブルタップで拡大</div><div class="plegend" style="padding:4px 10px 8px;margin:0" id="${id}L"></div></div>`}
 function rwLines(icao,hl){const A=ap(icao);if(!A)return '';let s='';const seen=new Set();
   A.rw.forEach(r=>{if(!r.t)return;const o=A.rw.find(x=>x.id===recip(r.id));const k=[r.id,recip(r.id)].sort().join();if(seen.has(k)||!o||!o.t)return;seen.add(k);const on=hl&&(hl===r.id||hl===o.id);
@@ -2350,21 +2350,37 @@ async function kmlExport(){let r;try{r=kmlBuild()}catch(e){alertBox('3D航跡を
 function alertBox(m){try{const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:10px;z-index:9999;font-size:14px;max-width:90%';document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}catch(e){}}
 document.addEventListener('click',e=>{if(e.target.closest('[data-kml]'))kmlExport()});
 // ---------- in-app 3D view of the planned track (WebGL; terrain = GSI DEM tiles, imagery = GSI tiles) ----------
-function trk3d(){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND');const tot=ph.reduce((s,p)=>s+p.d,0);if(!tot||!C.path||C.path.length<2)return null;
+// published approach altitudes vs distance to threshold, from the coding table (null if not available)
+function appAltPts(C){try{const P=procSel();if(!P.app||!C.arr)return null;const legs=plAppChain(S.route.dst,P.app,(C.arr.fixes||[])[(C.arr.fixes||[]).length-1]);if(!legs)return null;const ri=legs.findIndex(l=>/^RW\d/.test(l[1]||''));const L=legs.slice(0,ri+1);
+  const pos=L.map(l=>l[1]?plPos(S.route.dst,l[1]):null);const dd=L.map((l,k)=>{if(!k)return 0;const v=parseFloat(l[4]);return v>0?v:(pos[k]&&pos[k-1]?gc(pos[k-1],pos[k]):0)});let rem=dd.reduce((a,b)=>a+b,0);const q=[];
+  L.forEach((l,k)=>{rem-=k?dd[k]:0;const t=String(l[6]||'').trim().split(/\s+/)[0]||'';q.push([k===L.length-1?0:rem,t?+t.replace(/^[+-]/,''):null])});const k=q.filter(v=>v[1]!=null);return k.length>=2?k:null}catch(e){return null}}
+function trk3d(mode){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND');const tot=ph.reduce((s,p)=>s+p.d,0);if(!tot||!C.path||C.path.length<2)return null;
   const dep=ap(S.route.dep),dst=ap(S.route.dst);const ed=dep?dep.e||0:0,ea=dst?dst.e||0:0;const cr=C.lvl||6000;const pts=altProfile(C,tot,ed,ea,cr).pts;
   const altAt=d=>{if(d<=pts[0][0])return pts[0][1];for(let i=1;i<pts.length;i++)if(pts[i][0]>=d){const a=pts[i-1],b=pts[i];const f=(d-a[0])/((b[0]-a[0])||1);return a[1]+(b[1]-a[1])*f}return pts[pts.length-1][1]};
   const P=C.path.filter((q,i,a)=>q&&(i===0||gc(a[i-1],q)>0.01));let plen=0;const seg=[];for(let i=1;i<P.length;i++){const d=gc(P[i-1],P[i]);seg.push(d);plen+=d}if(!plen)return null;
   const smp=[{p:P[0],s:0}];let cum=0;for(let i=1;i<P.length;i++){const d=seg[i-1];const n=Math.max(1,Math.ceil(d/0.5));for(let k=1;k<=n;k++)smp.push({p:interp(P[i-1],P[i],k/n),s:cum+d*k/n});cum+=d}
   const bnd=[];let c2=0;ph.forEach(q=>{bnd.push([c2,c2+q.d,q.k]);c2+=q.d});const phAt=d=>{for(const b of bnd)if(d<=b[1]+1e-6)return b[2];return bnd[bnd.length-1][2]};
   smp.forEach(o=>{o.d=o.s/plen*tot;o.a=altAt(o.d);o.k=phAt(o.d)});
+  const aq=appAltPts(C);if(aq){const appLen=bnd.filter(b=>b[2]==='APP').reduce((s,b)=>s+(b[1]-b[0]),0);const L0=aq[0][0];const sc=appLen>0?L0/appLen:1;
+    const at=r=>{if(r>=aq[0][0])return aq[0][1];for(let i=1;i<aq.length;i++)if(aq[i][0]<=r){const a=aq[i-1],b=aq[i];return a[1]+(b[1]-a[1])*(a[0]-r)/((a[0]-b[0])||1)}return aq[aq.length-1][1]};
+    smp.forEach(o=>{if(o.k==='APP'){const r=(tot-o.d)*sc;o.a=at(r)}})}
   const ma=[];const mt=C.arr&&C.arr.maTrack;if(mt&&mt.length>1){let s=0;const rc=(S.perf.roc||500)*60/(C.tas||120);ma.push([mt[0][0],mt[0][1],ea+50]);for(let i=1;i<mt.length;i++){s+=gc(mt[i-1],mt[i]);ma.push([mt[i][0],mt[i][1],Math.min(ea+3000,ea+50+rc*s)])}}
-  const fixes=[];let cd=0;const seen=new Set();C.rows.forEach(l=>{cd+=l.d||0;const n=String(l.b||'').split(' ')[0];const fp=fixPos(n);if(!fp||seen.has(n)||n===S.route.dst)return;seen.add(n);fixes.push({n,p:fp,a:altAt(cd)})});
+  const fixes=[];let cd=0;const seen=new Set();C.rows.forEach(l=>{cd+=l.d||0;const n=String(l.b||'').split(' ')[0];const fp=fixPos(n);if(!fp||seen.has(n)||n===S.route.dst)return;seen.add(n);fixes.push({n,p:fp,a:altAt(cd),cd})});
   const apts=[[S.route.dep,dep],[S.route.dst,dst],[S.route.alt,ap(S.route.alt)]].filter(x=>x[0]&&x[1]&&x[1].p).map(([i,A])=>({n:i,p:A.p,a:A.e||0}));
-  const t0=+(utc(S.route.etd)||new Date())+(+S.perf.taxiMin||0)*60e3;
-  return {smp,ma,fixes,apts,t0,tas:C.tas||120,tot,lvl:cr,title:`${S.route.dep||''}→${S.route.dst||''} ${(S.fpl.lvl||'').toUpperCase()}`}}
+  let t0=+(utc(S.route.etd)||new Date())+(+S.perf.taxiMin||0)*60e3;const tas=C.tas||120;
+  let title=`${S.route.dep||''}→${S.route.dst||''} ${(S.fpl.lvl||'').toUpperCase()}`;
+  if(mode==='dep'||mode==='arr'){const want=mode==='dep'?['SID','TRN','VFR']:['STAR','APP'];let a=smp.findIndex(o=>want.includes(o.k)),b=smp.length-1-[...smp].reverse().findIndex(o=>want.includes(o.k));
+    if(a<0)return null;
+    // a little of the neighbouring en-route leg for context (up to 8NM)
+    if(mode==='dep'){const lim=smp[b].d+8;while(b<smp.length-1&&smp[b+1].d<=lim)b++}else{const lim=smp[a].d-8;while(a>0&&smp[a-1].d>=lim)a--}
+    const d0=smp[a].d,d1=smp[b].d;const sub=smp.slice(a,b+1).map(o=>Object.assign({},o,{d:o.d-d0}));
+    const fx=fixes.filter(f=>f.cd>=d0-0.5&&f.cd<=d1+0.5);t0+=d0/tas*3600e3;
+    const P=procSel();title=mode==='dep'?`出発 ${S.route.dep||''}${P.sid?' '+P.sid:''}`:`到着・進入 ${S.route.dst||''}${P.star&&P.arrMode!=='vec'?' '+P.star:''}${P.app?' '+P.app:''}`;
+    return {smp:sub,ma:mode==='arr'?ma:[],fixes:fx,apts:mode==='dep'?apts.filter(x=>x.n===S.route.dep):apts.filter(x=>x.n!==S.route.dep),t0,tas,tot:Math.max(0.1,d1-d0),lvl:cr,title,mode}}
+  return {smp,ma,fixes,apts,t0,tas,tot,lvl:cr,title}}
 
 const V3D={};
-function v3dOpen(){let T;try{T=trk3d()}catch(e){alertBox('3D表示を作れませんでした：'+e.message);return}if(!T){alertBox('出発地・目的地と経路を入れてください。');return}
+function v3dOpen(mode){let T;try{T=trk3d(mode)}catch(e){alertBox('3D表示を作れませんでした：'+e.message);return}if(!T){alertBox(mode==='dep'?'出発（SID）の経路がありません。出発地と経路を入れてください。':mode==='arr'?'到着・進入の経路がありません。目的地と進入方式を選んでください。':'出発地・目的地と経路を入れてください。');return}
   v3dClose();const ov=document.createElement('div');ov.id='v3d';
   ov.innerHTML=`<style>#v3d{position:fixed;inset:0;z-index:9000;background:#0b1220;color:#fff;font-family:system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
 #v3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -2383,11 +2399,11 @@ function v3dOpen(){let T;try{T=trk3d()}catch(e){alertBox('3D表示を作れま�
 #v3d .v3msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:14px;background:#0009;padding:10px 14px;border-radius:10px}
 #v3d .v3attr{position:absolute;right:6px;bottom:calc(4px + env(safe-area-inset-bottom));font-size:10px;opacity:.75}</style>
 <canvas></canvas><div class="v3lbls"></div><div class="v3ac" style="display:none"></div>
-<div class="v3bar"><b>${esc(T.title)}</b><button data-v="play">▶ 再生</button><button data-v="follow">追従</button><button data-v="ex">高さ ×5</button><button data-v="map">地図</button><button data-v="home">全体</button><button data-v="close">✕ 閉じる</button></div>
+<div class="v3bar"><b>${esc(T.title)}</b><button data-v="play">▶ 再生</button><button data-v="follow">追従</button><button data-v="ex">高さ ×${T.mode?3:5}</button><button data-v="map">地図</button><button data-v="home">全体</button><button data-v="close">✕ 閉じる</button></div>
 <div class="v3msg">地形と地図を読み込み中…</div>
 <div class="v3st"><div class="v3leg">${[...new Set(T.smp.map(o=>o.k))].map(k=>`<span><i style="background:${PHC[k][1]}"></i>${PHC[k][0]}</span>`).join('')}${T.ma.length?'<span><i style="background:#C0392B;opacity:.5"></i>復行（概略）</span>':''}</div>
 <div class="v3info">—</div><input type="range" min="0" max="1000" value="0" aria-label="飛行の位置"></div><div class="v3attr">地図・標高：国土地理院／高度は計画の概略</div>`;
-  document.body.appendChild(ov);V3D.sid=(window.__v3dSid=(window.__v3dSid||0)+1);V3D.dead=false;V3D.ov=ov;V3D.T=T;V3D.ex=5;V3D.layer='seamlessphoto';V3D.play=false;V3D.follow=false;V3D.pos=0;V3D.speed=60;
+  document.body.appendChild(ov);V3D.sid=(window.__v3dSid=(window.__v3dSid||0)+1);V3D.dead=false;V3D.ov=ov;V3D.T=T;V3D.ex=T.mode?3:5;V3D.layer='seamlessphoto';V3D.play=false;V3D.follow=false;V3D.pos=0;V3D.speed=T.mode?20:60;
   const cv=ov.querySelector('canvas');const gl=cv.getContext('webgl',{antialias:true,alpha:false})||cv.getContext('experimental-webgl');if(!gl){ov.querySelector('.v3msg').textContent='この端末ではWebGL（3D表示）が使えません。';return}
   V3D.gl=gl;V3D.cv=cv;v3dSetup(T);v3dBind();v3dLoad().catch(e=>{ov.querySelector('.v3msg').textContent='地図を読み込めませんでした（通信を確認）。航跡だけ表示します。';v3dBuildTerrain(null,null);v3dDirty()})}
 function v3dClose(){const o=document.getElementById('v3d');if(!o)return;V3D.dead=true;cancelAnimationFrame(V3D.raf);try{V3D.gl&&V3D.gl.getExtension('WEBGL_lose_context')&&V3D.gl.getExtension('WEBGL_lose_context').loseContext()}catch(e){}window.removeEventListener('resize',V3D.onResize);o.remove();for(const k of Object.keys(V3D))if(k!=='dead')delete V3D[k]}
@@ -2475,7 +2491,7 @@ function v3dFrame(ts){V3D.raf=0;if(V3D.dead)return;const gl=V3D.gl,cv=V3D.cv;con
   const proj=(x,y,z)=>{const v=[x,y*V3D.ex,z,1];const o=[0,0,0,0];for(let j=0;j<4;j++)o[j]=M[j]*v[0]+M[4+j]*v[1]+M[8+j]*v[2]+M[12+j];if(o[3]<=0)return null;return [(o[0]/o[3]*0.5+0.5)*cv.clientWidth,(-o[1]/o[3]*0.5+0.5)*cv.clientHeight]};
   V3D.lbl.forEach(l=>{const q=proj(l.x,l.y,l.z);if(!q){l.el.style.display='none';return}l.el.style.display='';l.el.style.transform=`translate(${q[0]}px,${q[1]}px) translate(-50%,-130%)`});
   const q=proj(ac.x,ac.y,ac.z);V3D.acEl.style.display=q&&(V3D.pos>0||V3D.play)?'':'none';if(q)V3D.acEl.style.transform=`translate(${q[0]}px,${q[1]}px)`;
-  V3D.ov.querySelector('.v3info').textContent=`${zt(ac.t)}　${PHC[ac.k][0]}　${Math.round(ac.ft/100)*100>14000?'FL'+Math.round(ac.ft/100):Math.round(ac.ft/100*100).toLocaleString()+'ft'}　出発から ${Math.round(ac.d)}NM／${Math.round(V3D.T.tot)}NM`+(V3D.play?`　×${V3D.speed}`:'');
+  V3D.ov.querySelector('.v3info').textContent=`${zt(ac.t)}　${PHC[ac.k][0]}　${Math.round(ac.ft/100)*100>14000?'FL'+Math.round(ac.ft/100):Math.round(ac.ft/100*100).toLocaleString()+'ft'}　${V3D.T.mode?'この区間':'出発から'} ${Math.round(ac.d)}NM／${Math.round(V3D.T.tot)}NM`+(V3D.play?`　×${V3D.speed}`:'');
   if(V3D.play)v3dDirty()}
 function v3dBtn(){const o=V3D.ov;o.querySelector('[data-v=play]').textContent=V3D.play?'⏸ 停止':'▶ 再生';o.querySelector('[data-v=play]').classList.toggle('on',V3D.play);o.querySelector('[data-v=follow]').classList.toggle('on',V3D.follow);o.querySelector('[data-v=ex]').textContent='高さ ×'+V3D.ex;o.querySelector('[data-v=map]').textContent=V3D_LAYERS[V3D.layer][2]}
 function v3dBind(){const o=V3D.ov,cv=V3D.cv;v3dBtn();
@@ -2500,7 +2516,7 @@ function v3dBind(){const o=V3D.ov,cv=V3D.cv;v3dBtn();
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   V3D.onResize=()=>v3dDirty();window.addEventListener('resize',V3D.onResize);v3dDirty()}
 function v3dHome(){const c=V3D.cam;c.tx=0;c.ty=0;c.tz=0;c.dist=V3D.R*1.0;c.yaw=-0.5;c.pitch=0.45}
-document.addEventListener('click',e=>{if(e.target.closest('[data-v3d]'))v3dOpen()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-v3d]');if(b)v3dOpen(b.dataset.v3d)});
 
 function renderAll(){try{lvlListUpdate()}catch(e){}const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
