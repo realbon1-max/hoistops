@@ -3643,10 +3643,12 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
   try{ DRAW.items.forEach(it=>{ if(it.t==='pt') pin(it.lat,it.lon,'● '+(it.label||'P'),0x7b3fd0); else if(it.t==='dest'){ const R=ROLES[it.role||'vic']; pin(it.lat,it.lon,R.ic+' '+(it.label||R.n),new T.Color(R.col).getHex()); } }); }catch(e){}
   // aircraft at the hoist point / pick
   { const q=yOf(st.lat,st.lon); if(q){ const obs=+(($('mObs')||{}).value)||0, hh=(+(($('hh')||{}).value)||0)/FT, hy=q[1]+(obs+hh)*ex;
-      const L=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(q[0],q[1],q[2]),new T.Vector3(q[0],hy,q[2])]),new T.LineDashedMaterial({color:0xd4361e,dashSize:6,gapSize:4})); L.computeLineDistances(); grp.add(L);
-      const rot=new T.Mesh(new T.CircleGeometry(ROTOR_D/2*Math.max(1,S/600),32),new T.MeshBasicMaterial({color:0x1d3b5c,transparent:true,opacity:.55,side:T.DoubleSide})); rot.rotation.x=-Math.PI/2; rot.position.set(q[0],hy,q[2]); grp.add(rot);
-      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, al=Math.max(60,S*0.12), tip=new T.Vector3(q[0]+Math.sin(hd)*al,hy,q[2]-Math.cos(hd)*al); grp.add(new T.ArrowHelper(tip.clone().sub(new T.Vector3(q[0],hy,q[2])).normalize(),new T.Vector3(q[0],hy,q[2]),al,0xb0268c,al*0.3,al*0.15));
-      const sp=v3Sprite(`🚁 ${st.label||'現場'}　OGE ${Math.round(+(($('hh')||{}).value)||0)} ft`,'#b0268c',true); sp.position.set(q[0],hy,q[2]); grp.add(sp); st.heli=new T.Vector3(q[0],hy,q[2]); } }
+      const L=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(q[0],q[1],q[2]),new T.Vector3(q[0],hy,q[2])]),new T.LineDashedMaterial({color:0xd4361e,dashSize:Math.max(6,S*0.006),gapSize:Math.max(4,S*0.004)})); L.computeLineDistances(); grp.add(L);
+      // 機体：機首方位を向いた四角錐（高さはホバリング高度）。大きさは表示範囲に合わせる
+      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, cl=Math.max(40,S*0.05), cone=new T.Mesh(new T.ConeGeometry(cl*0.42,cl,4),new T.MeshLambertMaterial({color:0xd81b8c,emissive:0x5a0838}));
+      cone.geometry.rotateX(-Math.PI/2); cone.rotation.y=-hd; cone.position.set(q[0],hy,q[2]); grp.add(cone);
+      const sh=new T.Mesh(new T.CircleGeometry(cl*0.35,20),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh);
+      st.heli=new T.Vector3(q[0],hy,q[2]); } }
   // 山名・拠点（広域のとき）
   if(st.S>=3000){ try{ const seen=new Set(); let n=0; PEAKS.forEach(([nm,la,lo])=>{ if(n>=40) return; const q=yOf(la,lo); if(!q) return; const e=(lo-st.lon)*kx, nn=(la-st.lat)*ky; if(Math.hypot(e,nn)<S*0.06) return; const k=nm.split('（')[0]; if(seen.has(k)) return; seen.add(k); n++;
       const sp=v3Sprite('▲ '+k,'#5d4037'); sp.position.set(q[0],q[1]+S*0.012,q[2]); grp.add(sp); }); }catch(e){} }
