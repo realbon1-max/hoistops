@@ -3592,21 +3592,46 @@ async function v3Tile(base,z,x,y){ const B=BASES[base]||{ext:'png'}, k=base+'/'+
 function v3Sprite(text,col,big){ const c=document.createElement('canvas'), g=c.getContext('2d'), fs=big?44:34; g.font=`800 ${fs}px sans-serif`; const w=Math.ceil(g.measureText(text).width)+28; c.width=w; c.height=fs+22;
   g.font=`800 ${fs}px sans-serif`; g.fillStyle='rgba(255,255,255,.92)'; const r=12; g.beginPath(); g.moveTo(r,0); g.arcTo(w,0,w,c.height,r); g.arcTo(w,c.height,0,c.height,r); g.arcTo(0,c.height,0,0,r); g.arcTo(0,0,w,0,r); g.fill(); g.lineWidth=4; g.strokeStyle=col; g.stroke(); g.fillStyle=col; g.textBaseline='middle'; g.fillText(text,14,c.height/2+1);
   const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter; const m=new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}), sp=new THREE.Sprite(m); sp.material.sizeAttenuation=false; const k=0.00042*(big?1.15:1); sp.scale.set(w*k,c.height*k,1); sp.center.set(0.5,-0.25); sp.renderOrder=10; return sp; }
-// AW139 の簡易モデル（1単位＝1 m、機首は -Z 方向）：胴体・風防・テールブーム・垂直／水平尾翼・スポンソン・5枚ブレードのメインローター・4枚のテールローター
-function v3AW139(){ const T=THREE, G=new T.Group(), M=c=>new T.MeshLambertMaterial({color:c}), add=(geo,mat,x,y,z,rx,ry,rz)=>{ const m=new T.Mesh(geo,mat); m.position.set(x,y,z); if(rx) m.rotation.x=rx; if(ry) m.rotation.y=ry; if(rz) m.rotation.z=rz; G.add(m); return m; };
-  const wht=M(0xf3f3f3), red=M(0xd32f2f), dark=M(0x1b2733), grey=M(0x6b7178);
-  const body=add(new T.SphereGeometry(1,28,18),wht,0,0,-1.8); body.scale.set(1.15,1.05,3.4);
-  const belly=add(new T.SphereGeometry(1,28,18),red,0,-0.35,-1.6); belly.scale.set(1.12,0.75,3.2);
-  const wind=add(new T.SphereGeometry(1,20,14),dark,0,0.35,-4.3); wind.scale.set(0.95,0.6,1.1);
-  add(new T.BoxGeometry(2.0,0.55,2.6),wht,0,0.95,-1.2);                       // エンジン部
-  add(new T.CylinderGeometry(0.32,0.62,7.2,14),wht,0,0.45,4.6,Math.PI/2);       // テールブーム
-  const fin=add(new T.BoxGeometry(0.14,2.3,1.3),red,0,1.55,8.0); fin.rotation.x=-0.35;
-  add(new T.BoxGeometry(3.2,0.1,0.7),wht,0,0.55,6.6);                          // 水平尾翼
-  add(new T.BoxGeometry(0.7,0.55,2.4),grey,1.25,-0.75,-0.6); add(new T.BoxGeometry(0.7,0.55,2.4),grey,-1.25,-0.75,-0.6); // スポンソン
-  add(new T.CylinderGeometry(0.16,0.16,0.7,10),grey,0,1.55,-1.3);              // マスト
-  const rot=new T.Group(); rot.position.set(0,1.9,-1.3); for(let b=0;b<5;b++){ const bl=new T.Mesh(new T.BoxGeometry(0.45,0.05,6.9),grey); bl.position.set(Math.sin(b*2*Math.PI/5)*3.45,0,Math.cos(b*2*Math.PI/5)*3.45); bl.rotation.y=b*2*Math.PI/5; rot.add(bl); }
-  rot.add(new T.Mesh(new T.CylinderGeometry(0.35,0.35,0.25,12),dark)); const disc=new T.Mesh(new T.CircleGeometry(6.9,40),new T.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.12,side:T.DoubleSide})); disc.rotation.x=-Math.PI/2; rot.add(disc); G.add(rot);
-  const tr=new T.Group(); tr.position.set(-0.3,2.3,8.3); for(let b=0;b<4;b++){ const bl=new T.Mesh(new T.BoxGeometry(0.04,1.35,0.18),grey); bl.position.set(0,Math.cos(b*Math.PI/2)*0.68,Math.sin(b*Math.PI/2)*0.68); bl.rotation.x=b*Math.PI/2; tr.add(bl); } G.add(tr);
+// AW139 の簡易モデル（1単位＝1 m、機首は -Z 方向）。塗装は V3LIV で切り替え
+const V3LIV='generic';
+const V3PAINT={generic:{body:0xf3f3f3,belly:0xd32f2f,stripe:null,band:null,fin:0xd32f2f,finLow:0xf3f3f3,blade:0x3d434a,tip:[0xd32f2f,0xffffff],tr:[0xd32f2f,0xffffff]},
+  mpp:{body:0x5aa8e6,belly:0xd9dde2,stripe:0x1d3f8f,band:0xff6a1a,fin:0x3d8fd6,finLow:0xe9ecef,blade:0x2b3036,tip:[0xd32f2f,0xffffff],tr:[0xd32f2f,0xffffff]}};
+function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Group(), M=c=>new T.MeshLambertMaterial({color:c}),
+    add=(geo,mat,x,y,z,sx,sy,sz,rx,ry,rz,par)=>{ const m=new T.Mesh(geo,mat); m.position.set(x,y,z); if(sx!=null) m.scale.set(sx,sy,sz); if(rx) m.rotation.x=rx; if(ry) m.rotation.y=ry; if(rz) m.rotation.z=rz; (par||G).add(m); return m; };
+  const SPH=new T.SphereGeometry(1,32,20), body=M(P.body), dark=M(0x16202b), grey=M(0x5d646c), blk=M(0x1a1a1a);
+  // 胴体（客室）と機首
+  add(SPH,body,0,0,-1.2,1.18,1.12,3.6);
+  add(SPH,body,0,-0.12,-4.3,0.95,0.78,1.6);                                 // 機首
+  add(SPH,M(P.belly),0,-0.42,-1.6,1.15,0.72,3.75);                           // 下面
+  if(P.stripe) add(SPH,M(P.stripe),0,-0.08,-1.5,1.195,0.16,3.66);           // 紺の帯
+  add(SPH,dark,0,0.32,-3.95,0.98,0.62,1.25);                                 // 風防
+  add(new T.BoxGeometry(0.06,0.55,0.75),dark,1.17,0.2,-0.9); add(new T.BoxGeometry(0.06,0.55,0.75),dark,1.17,0.2,0.1); add(new T.BoxGeometry(0.06,0.55,0.75),dark,-1.17,0.2,-0.9); add(new T.BoxGeometry(0.06,0.55,0.75),dark,-1.17,0.2,0.1); // 客室窓
+  if(P.band){ const bg=new T.CylinderGeometry(1,1,0.45,32,1,true); add(bg,new T.MeshLambertMaterial({color:P.band,side:T.DoubleSide}),0,0.02,-2.55,1.2,1,1.14,Math.PI/2); }   // オレンジの帯
+  add(SPH,body,0,0.95,-0.6,0.95,0.55,2.1);                                    // エンジン部
+  add(new T.CylinderGeometry(0.28,0.28,0.9,14),body,0.75,1.05,-1.0,1,1,1,Math.PI/2); add(new T.CylinderGeometry(0.28,0.28,0.9,14),body,-0.75,1.05,-1.0,1,1,1,Math.PI/2); // 吸気口
+  // テールブーム（上へ反る）・尾翼
+  const tb=add(new T.CylinderGeometry(0.3,0.75,6.6,16),body,0,0.55,4.7,1,1,1,Math.PI/2-0.06);
+  add(new T.CylinderGeometry(0.31,0.5,4.2,16),M(P.belly),0,0.18,4.2,1,0.5,1,Math.PI/2-0.06);
+  const fin=add(new T.BoxGeometry(0.14,2.4,1.25),M(P.fin),0,1.75,8.05,1,1,1,-0.42); add(new T.BoxGeometry(0.15,0.8,1.3),M(P.finLow),0,0.95,7.75,1,1,1,-0.42);
+  add(new T.BoxGeometry(3.3,0.09,0.75),M(P.fin),0,0.42,7.2);                  // 水平尾翼
+  add(new T.BoxGeometry(0.1,0.55,0.65),M(P.fin),1.62,0.62,7.25); add(new T.BoxGeometry(0.1,0.55,0.65),M(P.fin),-1.62,0.62,7.25);
+  // スポンソン・車輪
+  add(SPH,M(P.belly),1.25,-0.75,0.2,0.42,0.38,1.5); add(SPH,M(P.belly),-1.25,-0.75,0.2,0.42,0.38,1.5);
+  const W=new T.CylinderGeometry(0.3,0.3,0.2,16); add(W,blk,1.3,-1.35,0.4,1,1,1,0,0,Math.PI/2); add(W,blk,-1.3,-1.35,0.4,1,1,1,0,0,Math.PI/2); add(W,blk,0,-1.25,-3.6,1,1,1,0,0,Math.PI/2);
+  add(new T.CylinderGeometry(0.05,0.05,0.5,6),grey,0,-1.0,-3.6); add(new T.CylinderGeometry(0.06,0.06,0.6,6),grey,1.3,-1.05,0.4); add(new T.CylinderGeometry(0.06,0.06,0.6,6),grey,-1.3,-1.05,0.4);
+  // 救助ホイスト（右上・キャビンドアの上）
+  add(new T.CylinderGeometry(0.22,0.22,0.9,14),M(P.body),1.35,0.95,-0.4,1,1,1,Math.PI/2); add(new T.BoxGeometry(0.7,0.12,0.12),grey,1.0,0.95,-0.4);
+  // メインローター（5枚・翼端の赤白）
+  add(new T.CylinderGeometry(0.15,0.15,0.6,10),grey,0,1.6,-0.9);
+  const rot=new T.Group(); rot.position.set(0,1.95,-0.9);
+  for(let b=0;b<5;b++){ const a=b*2*Math.PI/5, arm=new T.Group(); arm.rotation.y=a; rot.add(arm);
+    add(new T.BoxGeometry(0.42,0.05,5.6),M(P.blade),0,0,3.1,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.6),M(P.tip[0]),0,0,6.2,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.6),M(P.tip[1]),0,0,6.75,1,1,1,0,0,0,arm); }
+  add(new T.CylinderGeometry(0.42,0.42,0.28,14),M(P.fin),0,0,0,1,1,1,0,0,0,rot);
+  const disc=new T.Mesh(new T.CircleGeometry(6.9,48),new T.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.1,side:T.DoubleSide})); disc.rotation.x=-Math.PI/2; rot.add(disc); G.add(rot);
+  // テールローター（4枚・赤白）左側
+  const tr=new T.Group(); tr.position.set(-0.25,2.55,8.55);
+  for(let b=0;b<4;b++){ const arm=new T.Group(); arm.rotation.x=b*Math.PI/2; tr.add(arm); for(let k=0;k<4;k++) add(new T.BoxGeometry(0.04,0.33,0.17),M(P.tr[k%2]),0,0.2+k*0.33,0,1,1,1,0,0,0,arm); }
+  G.add(tr);
   G.userData={rotor:rot,trotor:tr}; return G; }
 async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='v3Ov'; ov.className='v3ov';
