@@ -3676,7 +3676,7 @@ function v3HoistVis(st,on){ const T=THREE; if(!st.sc) return;
     st.H={g,wire,man,pt,L:0,P:null,V:new T.Vector3(),hp:null,vi,agl:0,ang:0,dw:0,part:Array.from({length:N},()=>({s:-1}))}; }
   if(st.H) st.H.g.visible=!!on; }
 // 広域で機体が点にならないよう、カメラから遠いときだけ見た目を拡大（判定・HUDは常に実寸）
-function v3AcZoom(st){ const ac=st.ac; if(!ac||!st.cam) return; const d=st.cam.position.distanceTo(ac.position), fr=2*d*Math.tan(st.cam.fov*RAD/2), m=Math.max(1,Math.min(60,0.11*fr/16.9));
+function v3AcZoom(st){ const ac=st.ac; if(!ac||!st.cam) return; const d=st.cam.position.distanceTo(ac.position), fr=2*d*Math.tan(st.cam.fov*RAD/2), m=Math.max(1,Math.min(30,0.055*fr/16.9));
   const m0=st.acM||1; const mm=Math.abs(m-m0)/m0>0.03?m:m0; if(mm!==m0){ st.acM=mm; ac.scale.setScalar(V3SC*mm); if(st.acSh) st.acSh.scale.setScalar(mm); }
   const b=document.getElementById('v3Big'); if(b){ const on=mm>1.15; b.hidden=!on; if(on) b.textContent=`機体の表示 ×${mm<10?mm.toFixed(1):Math.round(mm)}（実寸ではありません・判定は実寸）`; } }
 function v3HSnagUI(st){ const b=$('v3Cut'), H=st.H; if(!b) return; b.classList.toggle('alert',!!(H&&H.snag&&!H.cutP)); b.disabled=!!(H&&H.cutP); b.textContent=H&&H.cutP?'✂ カット済':'✂ ワイヤーカット'; }
