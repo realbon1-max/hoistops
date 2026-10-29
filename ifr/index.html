@@ -661,7 +661,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
     <datalist id="apList"></datalist>
     <div class="grid">
       <div class="f">出発飛行場<div class="apsel"><input class="code" id="dep" list="apList" placeholder="RJTT" autocomplete="off" aria-label="出発飛行場のICAO"><select id="dep_s" aria-label="出発飛行場をリストから選ぶ"></select></div></div>
-      <div class="f">目的飛行場<div class="apsel"><input class="code" id="dst" list="apList" placeholder="RJSS" autocomplete="off" aria-label="目的飛行場のICAO"><select id="dst_s" aria-label="目的飛行場をリストから選ぶ"></select></div></div>
+      <div class="f">目的飛行場<div class="apsel"><input class="code" id="dst" list="apList" placeholder="RJSS" autocomplete="off" aria-label="目的飛行場のICAO"><select id="dst_s" aria-label="目的飛行場をリストから選ぶ"></select></div><button class="sub" type="button" data-swap="1" style="margin-top:6px">⇄ 出発と目的を入れ替える</button></div>
       <div class="f">離陸代替飛行場<div class="apsel"><input class="code" id="talt" list="apList" placeholder="RJSN" autocomplete="off" aria-label="離陸代替飛行場のICAO"><select id="talt_s" aria-label="離陸代替飛行場をリストから選ぶ"></select></div></div>
       <div class="f">代替飛行場（目的地の代替）<div class="apsel"><input class="code" id="alt" list="apList" placeholder="RJSF" autocomplete="off" aria-label="代替飛行場のICAO"><select id="alt_s" aria-label="代替飛行場をリストから選ぶ"></select></div></div>
     </div>
@@ -1020,6 +1020,14 @@ function wxPollSet(on){S.wxPoll=on?1:0;save();if(wxTimer){clearInterval(wxTimer)
   if(on){wxTimer=setInterval(()=>{if(document.visibilityState==='visible')wxAutoFetch(false)},10*60e3);wxAutoFetch(false)}}
 /* ---------- renderers ---------- */
 function route(){const r=S.route;return [['出発',r.dep],...r.via.map(v=>['経由',v]),['目的',r.dst]].filter(x=>x[1])}
+// swap departure and destination: reverse the route and via points, clear the procedure choices (they belong to the other airport)
+function swapApt(){const r=S.route;if(!r.dep&&!r.dst)return;[r.dep,r.dst]=[r.dst,r.dep];r.via=(r.via||[]).slice().reverse();
+  const tk=(r.rte||'').toUpperCase().trim().split(/\s+/).filter(Boolean);if(tk.length){const pts=[],via=[];let i=0;pts.push(tk[0]);for(i=1;i<tk.length;i++){const t=tk[i];if(isAwy(t)||t==='DCT'){via.push(t);pts.push(tk[++i]||'')}else{via.push('DCT');pts.push(t)}}
+    const out=[pts[pts.length-1]];for(let k=via.length-1;k>=0;k--){if(via[k]!=='DCT'||true)out.push(via[k]);out.push(pts[k])}r.rte=out.filter(Boolean).join(' ').replace(/ DCT /g,' DCT ')}
+  r.depMode='ifr';r.ifrFix='';r.clrLimit='';S.proc={};S.plView={};S._aw=null;S._selAw=null;S._selFx=null;S._selDr=null;if(typeof SUG!=='undefined')SUG=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';
+  for(const k of ['dep','dst']){const el=$(k);if(el)el.value=r[k]||'';const s=$(k+'_s');if(s)s.value=DB[r[k]]?r[k]:''}if($('rteIn'))$('rteIn').value=r.rte||'';try{renderVia()}catch(e){}
+  save();renderAll();try{alertBox(`出発 ${r.dep||'—'} ⇄ 目的 ${r.dst||'—'} に入れ替えました。SID・STAR・進入は選び直してください。`)}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest('[data-swap]')){e.preventDefault();e.stopPropagation();swapApt()}},true);
 function renderStrip(){
   const r=S.route; const legs=route(); const el=$('strip');
   const addc=(key,lab,x)=>`<div class="leg add${x?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${lab}を選ぶ"><div class="icao">＋</div><div class="nm">${lab}</div></div>`;
@@ -1028,7 +1036,7 @@ function renderStrip(){
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
     return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
-  el.innerHTML=main.join('<div class="arrow"></div>')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
+  el.innerHTML=main.join('<div class="arrow"></div>')+(r.dep&&r.dst?'<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;min-width:44px;font-size:18px;padding:8px 10px">⇄</button>':'')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
   $('stripnote').textContent=`ETD ${fmtZ(utc(r.etd))}　ETA ${fmtZ(utc(r.eta))}　CAT ${S.prof.cat}　色は現況METARの目安（緑 良好／黄 低め／赤 悪い）`;
 }
 const PK_LAB={dep:'出発飛行場',dst:'目的飛行場',talt:'離陸代替飛行場',alt:'代替飛行場（目的地の代替）'};
