@@ -1776,7 +1776,7 @@ function renderEnr(){
    <div class="stat ${o2}"><div class="k">10,000ft超の時間</div><div class="v">${Math.round(over10+over13)}<small style="font-size:13px"> 分</small></div><div class="s">${o2==='no'?'酸素が必要':o2==='cau'?'設定時間以内':'なし'}</div></div></div>
    <div class="phase">${Object.entries(byPh).map(([k,d])=>`<div style="flex:${d};background:${PH[k][1]}">${d/tot>0.12?PH[k][0]+' '+Math.round(d)+'NM':''}</div>`).join('')}</div>
    <div class="plegend">${Object.keys(byPh).map(k=>`<span><i style="background:${PH[k][1]}"></i>${PH[k][0]} ${Math.round(byPh[k])}NM</span>`).join('')}</div>`:'';
-  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<div class="row" style="margin:6px 0"><button type="button" class="sub" data-kml="1">🌏 Google Earthで3D航跡を見る</button></div><p class="note" style="margin:-2px 0 8px">押すと共有画面が出るので「Google Earth」をタップ。<b>一番前に出しておくと1タップ</b>になります（iPhone/iPad：アプリの列の「その他」→「編集」でGoogle Earthを「よく使う項目」に追加／Android：共有画面でGoogle Earthを長押し→「固定」）。パソコンはKMLファイルが保存されます。</p><h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
+  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<div class="row" style="margin:6px 0"><button type="button" class="sub" data-kml="1">🌏 Google Earthで3D航跡を見る</button></div><p class="note" style="margin:-2px 0 8px">押すと共有画面が出ます。<b>iPhone/iPad</b>：「ファイルに保存」→ Google Earthアプリのメニュー「プロジェクト」→「開く」→「KMLファイルをインポート」で保存したファイルを選択。<b>Android</b>：共有画面でGoogle Earthを選択（出ないときは保存してGoogle Earthから読み込み）。パソコンはKMLファイルが保存されます。</p><h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
   bindProfile();bindMap();
   // legs table with sector changes interleaved
   let cum=0,ct=0; const chg=[...sc.changes]; let html='';
