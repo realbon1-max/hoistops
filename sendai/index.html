@@ -3594,6 +3594,22 @@ async function v3Tile(base,z,x,y){ const B=BASES[base]||{ext:'png'}, k=base+'/'+
 function v3Sprite(text,col,big){ const c=document.createElement('canvas'), g=c.getContext('2d'), fs=big?44:34; g.font=`800 ${fs}px sans-serif`; const w=Math.ceil(g.measureText(text).width)+28; c.width=w; c.height=fs+22;
   g.font=`800 ${fs}px sans-serif`; g.fillStyle='rgba(255,255,255,.92)'; const r=12; g.beginPath(); g.moveTo(r,0); g.arcTo(w,0,w,c.height,r); g.arcTo(w,c.height,0,c.height,r); g.arcTo(0,c.height,0,0,r); g.arcTo(0,0,w,0,r); g.fill(); g.lineWidth=4; g.strokeStyle=col; g.stroke(); g.fillStyle=col; g.textBaseline='middle'; g.fillText(text,14,c.height/2+1);
   const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter; const m=new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}), sp=new THREE.Sprite(m); sp.material.sizeAttenuation=false; const k=0.00042*(big?1.15:1); sp.scale.set(w*k,c.height*k,1); sp.center.set(0.5,-0.25); sp.renderOrder=10; return sp; }
+// AW139 の簡易モデル（1単位＝1 m、機首は -Z 方向）：胴体・風防・テールブーム・垂直／水平尾翼・スポンソン・5枚ブレードのメインローター・4枚のテールローター
+function v3AW139(){ const T=THREE, G=new T.Group(), M=c=>new T.MeshLambertMaterial({color:c}), add=(geo,mat,x,y,z,rx,ry,rz)=>{ const m=new T.Mesh(geo,mat); m.position.set(x,y,z); if(rx) m.rotation.x=rx; if(ry) m.rotation.y=ry; if(rz) m.rotation.z=rz; G.add(m); return m; };
+  const wht=M(0xf3f3f3), red=M(0xd32f2f), dark=M(0x1b2733), grey=M(0x6b7178);
+  const body=add(new T.SphereGeometry(1,28,18),wht,0,0,-1.8); body.scale.set(1.15,1.05,3.4);
+  const belly=add(new T.SphereGeometry(1,28,18),red,0,-0.35,-1.6); belly.scale.set(1.12,0.75,3.2);
+  const wind=add(new T.SphereGeometry(1,20,14),dark,0,0.35,-4.3); wind.scale.set(0.95,0.6,1.1);
+  add(new T.BoxGeometry(2.0,0.55,2.6),wht,0,0.95,-1.2);                       // エンジン部
+  add(new T.CylinderGeometry(0.32,0.62,7.2,14),wht,0,0.45,4.6,Math.PI/2);       // テールブーム
+  const fin=add(new T.BoxGeometry(0.14,2.3,1.3),red,0,1.55,8.0); fin.rotation.x=-0.35;
+  add(new T.BoxGeometry(3.2,0.1,0.7),wht,0,0.55,6.6);                          // 水平尾翼
+  add(new T.BoxGeometry(0.7,0.55,2.4),grey,1.25,-0.75,-0.6); add(new T.BoxGeometry(0.7,0.55,2.4),grey,-1.25,-0.75,-0.6); // スポンソン
+  add(new T.CylinderGeometry(0.16,0.16,0.7,10),grey,0,1.55,-1.3);              // マスト
+  const rot=new T.Group(); rot.position.set(0,1.9,-1.3); for(let b=0;b<5;b++){ const bl=new T.Mesh(new T.BoxGeometry(0.45,0.05,6.9),grey); bl.position.set(Math.sin(b*2*Math.PI/5)*3.45,0,Math.cos(b*2*Math.PI/5)*3.45); bl.rotation.y=b*2*Math.PI/5; rot.add(bl); }
+  rot.add(new T.Mesh(new T.CylinderGeometry(0.35,0.35,0.25,12),dark)); const disc=new T.Mesh(new T.CircleGeometry(6.9,40),new T.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.12,side:T.DoubleSide})); disc.rotation.x=-Math.PI/2; rot.add(disc); G.add(rot);
+  const tr=new T.Group(); tr.position.set(-0.3,2.3,8.3); for(let b=0;b<4;b++){ const bl=new T.Mesh(new T.BoxGeometry(0.04,1.35,0.18),grey); bl.position.set(0,Math.cos(b*Math.PI/2)*0.68,Math.sin(b*Math.PI/2)*0.68); bl.rotation.x=b*Math.PI/2; tr.add(bl); } G.add(tr);
+  G.userData={rotor:rot,trotor:tr}; return G; }
 async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='v3Ov'; ov.className='v3ov';
   const B0=MAP.base==='seamlessphoto'?'seamlessphoto':MAP.base==='hillshademap'?'hillshademap':'std';
@@ -3602,7 +3618,7 @@ async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
     <span class="seg" id="v3B">${[['seamlessphoto','写真'],['std','地図'],['hillshademap','陰影']].map(([k,t])=>`<button type="button" data-b="${k}" aria-pressed="${k===B0}">${t}</button>`).join('')}</span>
     <span class="seg" id="v3S">${[[800,'±0.8 km'],[1500,'±1.5 km'],[3000,'±3 km'],[6000,'±6 km'],[12000,'±12 km']].map(([k,t])=>`<button type="button" data-s="${k}" aria-pressed="${k===st.S}">${t}</button>`).join('')}</span>
     <span class="seg" id="v3E">${[[1,'縦×1'],[1.5,'×1.5'],[2,'×2']].map(([k,t])=>`<button type="button" data-e="${k}" aria-pressed="${k===st.ex}">${t}</button>`).join('')}</span>
-    <button type="button" class="v3x" aria-label="閉じる">×</button></div><div class="v3c" id="v3C"></div><div class="v3msg" id="v3M">読み込み中…</div><div class="v3hint">1本指：回転　2本指：拡大・移動　ダブルタップ：機体の位置へ</div>`;
+    <button type="button" class="v3x" aria-label="閉じる">×</button></div><div class="v3c" id="v3C"></div><div class="v3msg" id="v3M">読み込み中…</div><div class="v3hint">1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく</div>`;
   document.body.appendChild(ov); document.body.classList.add('v3open'); ov.style.setProperty('--v3t',(ov.querySelector('.v3bar').offsetHeight)+'px');
   const close=()=>{ st.alive=false; try{ st.ren&&st.ren.dispose(); }catch(e){} cancelAnimationFrame(st.raf); ov.remove(); document.body.classList.remove('v3open'); };
   ov.querySelector('.v3x').onclick=close; st.onKey=e=>{ if(e.key==='Escape') close(); }; document.addEventListener('keydown',st.onKey,{once:true});
@@ -3623,8 +3639,8 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
     const sc=new T.Scene(); sc.background=new T.Color(0xbfd9f2); st.sc=sc; sc.add(new T.AmbientLight(0xffffff,0.72)); const dl=new T.DirectionalLight(0xffffff,0.55); dl.position.set(-1,1.4,-0.6); sc.add(dl);
     const cam=new T.PerspectiveCamera(50,1,5,200000); st.cam=cam; const ctl=new T.OrbitControls(cam,ren.domElement); ctl.enableDamping=true; ctl.dampingFactor=0.12; ctl.maxPolarAngle=Math.PI*0.495; ctl.screenSpacePanning=true; st.ctl=ctl;
     const rs=()=>{ const w=box.clientWidth, h=box.clientHeight; ren.setSize(w,h); cam.aspect=w/Math.max(1,h); cam.updateProjectionMatrix(); }; rs(); st.rs=rs; addEventListener('resize',rs);
-    ren.domElement.addEventListener('dblclick',()=>{ if(st.heli){ ctl.target.copy(st.heli); } });
-    const loop=()=>{ if(!st.alive) return; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
+    ren.domElement.addEventListener('dblclick',()=>{ if(st.heli){ const d=st.cam.position.clone().sub(ctl.target), r=Math.max(60,(st.acK||1)*70); ctl.target.copy(st.heli); st.cam.position.copy(st.heli).add(d.setLength(r)); } });
+    const loop=()=>{ if(!st.alive) return; if(st.rotor) st.rotor.rotation.y-=0.35; if(st.trotor) st.trotor.rotation.x+=0.9; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
   // terrain
   if(st.grp) st.sc.remove(st.grp); const grp=new T.Group(); st.grp=grp; st.sc.add(grp);
   const geo=new T.PlaneGeometry(2*S,2*S,N,N); geo.rotateX(-Math.PI/2); const pos=geo.attributes.position;
@@ -3644,10 +3660,9 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
   // aircraft at the hoist point / pick
   { const q=yOf(st.lat,st.lon); if(q){ const obs=+(($('mObs')||{}).value)||0, hh=(+(($('hh')||{}).value)||0)/FT, hy=q[1]+(obs+hh)*ex;
       const L=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(q[0],q[1],q[2]),new T.Vector3(q[0],hy,q[2])]),new T.LineDashedMaterial({color:0xd4361e,dashSize:Math.max(6,S*0.006),gapSize:Math.max(4,S*0.004)})); L.computeLineDistances(); grp.add(L);
-      // 機体：機首方位を向いた四角錐（高さはホバリング高度）。大きさは表示範囲に合わせる
-      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, cl=Math.max(40,S*0.05), cone=new T.Mesh(new T.ConeGeometry(cl*0.42,cl,4),new T.MeshLambertMaterial({color:0xd81b8c,emissive:0x5a0838}));
-      cone.geometry.rotateX(-Math.PI/2); cone.rotation.y=-hd; cone.position.set(q[0],hy,q[2]); grp.add(cone);
-      const sh=new T.Mesh(new T.CircleGeometry(cl*0.35,20),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.35})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh);
+      // 機体：AW139 の簡易3Dモデル（機首方位を向く・ホバリング高度）。小さすぎて見えないときは表示範囲に合わせて拡大
+      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, ac=v3AW139(); const k=Math.max(1,S*0.02/16.7); st.acK=k; ac.scale.setScalar(k); ac.rotation.y=-hd; ac.position.set(q[0],hy,q[2]); grp.add(ac); st.rotor=ac.userData.rotor; st.trotor=ac.userData.trotor;
+      const sh=new T.Mesh(new T.CircleGeometry(6.9*k,24),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh);
       st.heli=new T.Vector3(q[0],hy,q[2]); } }
   // 山名・拠点（広域のとき）
   if(st.S>=3000){ try{ const seen=new Set(); let n=0; PEAKS.forEach(([nm,la,lo])=>{ if(n>=40) return; const q=yOf(la,lo); if(!q) return; const e=(lo-st.lon)*kx, nn=(la-st.lat)*ky; if(Math.hypot(e,nn)<S*0.06) return; const k=nm.split('（')[0]; if(seen.has(k)) return; seen.add(k); n++;
