@@ -738,7 +738,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
     <ol class="steps3">
       <li><b>MetAirを開く</b><span>ログインして、ルートの空港のMETAR/TAFを表示します。</span>
         <div class="row" style="margin-top:6px"><a class="act lnk" href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1">MetAirを開く ↗</a><button class="sub" id="copyIcao" type="button">空港コードをコピー</button></div>
-        <p class="note" style="margin:6px 0 0">勝手にアプリへ戻るときは、このリンクを<b>長押し</b>→「Safariで開く」：<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener" style="color:var(--sky);word-break:break-all">www3.metair.go.jp/metair/view/login/index.html</a></p>
+        <p class="note" style="margin:6px 0 0">「MetAirを開く」はChromeアプリで開きます（Chromeが無ければSafari）。うまく開かないときは、このリンクを<b>長押し</b>して開いてください：<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener" style="color:var(--sky);word-break:break-all">www3.metair.go.jp/metair/view/login/index.html</a></p>
         <div class="need" id="wxNeed"></div></li>
       <li><b>画面を全選択してコピー</b><span>パソコンは Ctrl+A（Macは ⌘+A）、スマホは長押しで「全選択」→「コピー」。余計な文字が入っていても大丈夫です。</span></li>
       <li><b>ここに貼り付ける</b><span>METAR・SPECI・TAFだけを拾って空港ごとに振り分け、同じ空港は新しい報を残します。</span>
@@ -2308,11 +2308,14 @@ function bind(){
     for(const r of res){const k=r.icao;if(!mergeReport(r,'metair'))continue;const lab=k+' '+(r.type==='TAF'?'TAF':r.type);if(!add.includes(lab))add.push(lab)}
     save();renderAll();$('wxIn').value='';
     $('wxResult').innerHTML=res.length?`<div class="msg ok">${res.length}件を読み取り、${add.length}件を取り込みました。<br><small class="code">${esc(add.join('、')||'（すでに同じか新しい報があります）')}</small></div>`:'<div class="msg">METAR・TAFが見つかりませんでした。MetAirで報文が表示されている画面を選択してください。</div>'};
-  // MetAir: open in the device's own browser app (not the in-app view of the home-screen app)
+  // MetAir: open in the Chrome app (iOS: googlechromes:// scheme, Android: intent with Chrome package); fall back if Chrome is not installed
   document.addEventListener('click',e=>{const a=e.target.closest('a[data-metair]');if(!a)return;const u=a.href;const ua=navigator.userAgent;
     const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches;const ios=/iPad|iPhone|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);const android=/Android/.test(ua);
-    if(ios&&standalone){e.preventDefault();location.href='x-safari-'+u;return}
-    if(android){e.preventDefault();location.href='intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url='+encodeURIComponent(u)+';end';return}},true);
+    const rest=u.replace(/^https?:\/\//,'');
+    if(ios){e.preventDefault();let left=false;const onHide=()=>{left=true};document.addEventListener('visibilitychange',onHide,{once:true});
+      location.href='googlechromes://'+rest;
+      setTimeout(()=>{document.removeEventListener('visibilitychange',onHide);if(!left&&document.visibilityState==='visible'){if(standalone)location.href='x-safari-'+u;else window.open(u,'_blank')}},1500);return}
+    if(android){e.preventDefault();location.href='intent://'+rest+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(u)+';end';return}},true);
   $('copyIcao').onclick=async()=>{const s=wxAirports().join(' ');if(!s)return;try{await navigator.clipboard.writeText(s);$('copyIcao').textContent='コピーしました：'+s}catch(e){$('copyIcao').textContent=s}};
   $('wxClear').onclick=()=>{S.wx={};save();renderAll()};
   $('strip').addEventListener('click',e=>{const c=e.target.closest('[data-pk]');if(c)apPickOpen(c.dataset.pk)});
