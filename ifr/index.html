@@ -1776,7 +1776,7 @@ function renderEnr(){
    <div class="stat ${o2}"><div class="k">10,000ft超の時間</div><div class="v">${Math.round(over10+over13)}<small style="font-size:13px"> 分</small></div><div class="s">${o2==='no'?'酸素が必要':o2==='cau'?'設定時間以内':'なし'}</div></div></div>
    <div class="phase">${Object.entries(byPh).map(([k,d])=>`<div style="flex:${d};background:${PH[k][1]}">${d/tot>0.12?PH[k][0]+' '+Math.round(d)+'NM':''}</div>`).join('')}</div>
    <div class="plegend">${Object.keys(byPh).map(k=>`<span><i style="background:${PH[k][1]}"></i>${PH[k][0]} ${Math.round(byPh[k])}NM</span>`).join('')}</div>`:'';
-  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<div class="row" style="margin:6px 0"><button type="button" class="sub" data-kml="1">🌏 3D航跡を書き出す（Google Earth用 KML）</button></div><h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
+  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<div class="row" style="margin:6px 0"><button type="button" class="sub" data-kml="1">🌏 Google Earthで3D航跡を見る</button></div><p class="note" style="margin:-2px 0 8px">押すと共有画面が出るので「Google Earth」をタップ。<b>一番前に出しておくと1タップ</b>になります（iPhone/iPad：アプリの列の「その他」→「編集」でGoogle Earthを「よく使う項目」に追加／Android：共有画面でGoogle Earthを長押し→「固定」）。パソコンはKMLファイルが保存されます。</p><h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
   bindProfile();bindMap();
   // legs table with sector changes interleaved
   let cum=0,ct=0; const chg=[...sc.changes]; let html='';
@@ -2312,7 +2312,8 @@ function kmlBuild(){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND'
   return {kml,file:`IFR_${S.route.dep||'DEP'}-${S.route.dst||'DST'}_${(S.fpl.lvl||'').toUpperCase()||'LVL'}.kml`}}
 async function kmlExport(){let r;try{r=kmlBuild()}catch(e){alertBox('3D航跡を作れませんでした：'+e.message);return}if(!r){alertBox('出発地・目的地と経路を入れてください。');return}
   const type='application/vnd.google-earth.kml+xml';const blob=new Blob([r.kml],{type});
-  try{const f=new File([blob],r.file,{type});if(navigator.canShare&&navigator.canShare({files:[f]})&&/iPad|iPhone|iPod|Android/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1&&navigator.canShare&&navigator.canShare({files:[f]}))){await navigator.share({files:[f],title:r.file});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const mobile=/iPad|iPhone|iPod|Android/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+  try{const f=new File([blob],r.file,{type});if(mobile&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
   const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=r.file;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},4000)}
 function alertBox(m){try{const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:10px;z-index:9999;font-size:14px;max-width:90%';document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}catch(e){}}
 document.addEventListener('click',e=>{if(e.target.closest('[data-kml]'))kmlExport()});
