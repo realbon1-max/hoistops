@@ -488,7 +488,7 @@ details.mset>summary.msh{cursor:pointer}
 .v3home{position:absolute;right:18px;top:calc(var(--v3t,110px) + 8px);z-index:3;font:inherit;font-size:13px;padding:6px 12px;border-radius:16px;border:1px solid #2f4d6d;background:rgba(29,53,80,.9);color:#fff;cursor:pointer}
 .v3hsp{position:absolute;right:18px;top:calc(var(--v3t,110px) + 52px);z-index:3;display:flex;flex-direction:column;gap:6px;align-items:stretch;background:rgba(13,27,42,.7);padding:8px;border-radius:12px}.v3hsp[hidden]{display:none}
 .v3hsp button{font:inherit;font-size:15px;font-weight:800;padding:10px 14px;border-radius:10px;border:1px solid #2f4d6d;background:#1d3550;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}.v3hsp button.hstop{font-size:12px;padding:4px}.v3hsp b{color:#ffd166;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
-.v3hud .hsh b{color:#ffd166}.v3hud .hsh.w b{color:#ff6b5e}
+.v3hud .hsh b{color:#ffd166}.v3hud .ige b{color:#4fd18b}.v3hud .oge b{color:#8fc7ff}.v3hud .hsh.w b{color:#ff6b5e}
 .v3ov{position:fixed;inset:0;z-index:9999;background:#0d1b2a;display:flex;flex-direction:column}body.v3open{overflow:hidden}
 .v3bar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:#13263b;color:#e6edf6;font-size:13px}
 .v3bar>b{font-size:16px}.v3ll{opacity:.85;font-variant-numeric:tabular-nums}.v3bar .seg button{font:inherit;font-size:13px;padding:5px 10px;background:#1d3550;color:#e6edf6;border:1px solid #2f4d6d}.v3bar .seg button[aria-pressed=true]{background:#2f6fb0;border-color:#2f6fb0}
@@ -496,6 +496,7 @@ details.mset>summary.msh{cursor:pointer}
 .v3c{flex:1;min-height:0;position:relative;touch-action:none}.v3c canvas{display:block;width:100%!important;height:100%!important}
 .v3msg{position:absolute;left:50%;top:calc(var(--v3t,110px) + 8px);transform:translateX(-50%);background:rgba(13,27,42,.85);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;max-width:80vw;text-align:center;pointer-events:none}.v3msg[hidden]{display:none}
 .v3hint{position:absolute;left:10px;bottom:max(10px,env(safe-area-inset-bottom));background:rgba(13,27,42,.7);color:#e6edf6;font-size:12px;padding:4px 10px;border-radius:10px;pointer-events:none}
+.hhige{display:inline-block;margin-left:6px;padding:0 7px;border-radius:9px;font-size:11px;font-weight:900;color:#fff;vertical-align:1px}.hhige.i{background:#2e9e5b}.hhige.o{background:#2f6fb0}
 .mlayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .mlayer .otile{position:absolute;width:256px;height:256px;overflow:hidden}.mlayer .otile img{position:absolute}
 .mlayer img,.mlayer canvas{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}
@@ -2014,7 +2015,7 @@ inputs.forEach(id=>{const n=$(id),r=$(id+'R');n.addEventListener('input',()=>{r.
 const hhP2V=p=>{ p=Math.max(0,Math.min(1000,+p||0)); return p<=500?Math.round(p/500*300/5)*5:Math.round((300+(p-500)/500*4700)/50)*50; }, hhV2P=v=>{ v=Math.max(0,+v||0); return v<=300?Math.round(v/300*500):Math.min(1000,Math.round(500+(v-300)/4700*500)); };
 const hhTouch=()=>{ try{ if(GT.on){ RD.simUntil=Date.now()+30000; clearTimeout(RD.simEndT); clearInterval(RD.simTick); RD.simTick=setInterval(()=>{ try{ rdBox(); mkHeli(); }catch(e){} },1000); RD.simEndT=setTimeout(()=>{ RD.simUntil=0; clearInterval(RD.simTick); try{ mkHeli(); }catch(e){} rdDraw(); rdPanel(); try{ gtSpd(); }catch(e){} },30200); } }catch(e){} };
 $('hh').addEventListener('input',()=>{hhTouch();$('hhR').value=hhV2P($('hh').value);update();if(typeof hcSync==='function')hcSync()});$('hhR').addEventListener('input',()=>{hhTouch();$('hh').value=hhP2V($('hhR').value);update()});
-function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; if(+r.value!==hhV2P(v)&&document.activeElement!==r) r.value=hhV2P(v); const hp=(hhV2P(v)/10).toFixed(1)+'%'; r.style.setProperty('--hp',hp); r.classList.toggle('hhhi',v>300); r.style.setProperty('--trk',v>300?`linear-gradient(90deg,#2f6fb0 0 50%,transparent 50%),linear-gradient(90deg,transparent 0 ${hp},#d9dee5 ${hp}),repeating-linear-gradient(-45deg,#2f6fb0 0 3px,#dbe8f6 3px 8px)`:`linear-gradient(90deg,#2f6fb0 0,#2f6fb0 ${hp},#d9dee5 ${hp})`); const m=$('hhM'); if(m) m.textContent=`約 ${Math.round(v/3.28084)} m`; }
+function hhFill(){ const r=$('hhR'), v=+$('hh').value||0; if(+r.value!==hhV2P(v)&&document.activeElement!==r) r.value=hhV2P(v); const hp=(hhV2P(v)/10).toFixed(1)+'%'; r.style.setProperty('--hp',hp); r.classList.toggle('hhhi',v>300); r.style.setProperty('--trk',v>300?`linear-gradient(90deg,#2f6fb0 0 50%,transparent 50%),linear-gradient(90deg,transparent 0 ${hp},#d9dee5 ${hp}),repeating-linear-gradient(-45deg,#2f6fb0 0 3px,#dbe8f6 3px 8px)`:`linear-gradient(90deg,#2f6fb0 0,#2f6fb0 ${hp},#d9dee5 ${hp})`); const m=$('hhM'); if(m){ const ige=v/3.28084<=ROTOR_D; m.innerHTML=`約 ${Math.round(v/3.28084)} m <b class="hhige ${ige?'i':'o'}" title="${ige?'ローター直径（13.8 m・45 ft）以内：地面効果あり（IGE）。性能はOGEの値で計算しているので安全側':'ローター直径（13.8 m・45 ft）より上：地面効果なし（OGE）'}">${ige?'IGE':'OGE'}</b>`; } }
 document.querySelectorAll('.hhbtns [data-hd]').forEach(b=>b.onclick=()=>{ hhTouch(); const v=Math.max(0,Math.min(5000,Math.round(((+$('hh').value||0)+(+b.dataset.hd))/5)*5)); $('hh').value=v; $('hhR').value=hhV2P(v); update(); });
 const TAPES=[
  {key:'p917',name:'離陸出力・双発（AEO）',sub:'第9-117図 NR102%｜航空局承認対象外の追加データ',chart:'c917',cap:14000,hdc:true,main:true,lab:'離陸出力',lab2:'双発・第9-117図',cn:'離陸出力（TOP）・双発'},
@@ -2570,7 +2571,7 @@ function mkHeli(){ const mk=$('mMark'); if(!mk) return; if(!mk.firstChild||mk.da
     // 20 steps along the hover-height slider scale (0–300 ft fine, 300–5,000 ft coarse)
     const st=Math.round(hhV2P(hv)/1000*19), q=st/19, I=(a,b)=>a+(b-a)*q; mk.dataset.lv=st+1;
     [['--hs',I(.72,1.32).toFixed(3)],['--lx',I(1,24).toFixed(1)+'px'],['--ly',I(2,32).toFixed(1)+'px'],['--sw',I(28,52).toFixed(1)+'px'],['--so',I(.92,.54).toFixed(2)],['--sb',I(.5,4.4).toFixed(2)+'px'],['--gl',Math.max(0,I(-6,7)).toFixed(1)+'px']].forEach(([a,b])=>mk.style.setProperty(a,b));
-    mk.classList.toggle('hi',hi); let t=mk.querySelector('.mkalt'); if(!t){ t=document.createElement('div'); t.className='mkalt'; mk.appendChild(t); } t.classList.toggle('lo',!hi); const left=GT.on&&typeof RD!=='undefined'?Math.ceil(((RD.simUntil||0)-Date.now())/1000):0; t.innerHTML=(hi?'▲ ':'')+'OGE '+hv.toLocaleString()+' ft'+(left>0?`<i>⏱${left}秒でGPSへ</i>`:''); if(typeof hcSync==='function') hcSync(); }
+    mk.classList.toggle('hi',hi); let t=mk.querySelector('.mkalt'); if(!t){ t=document.createElement('div'); t.className='mkalt'; mk.appendChild(t); } t.classList.toggle('lo',!hi); const left=GT.on&&typeof RD!=='undefined'?Math.ceil(((RD.simUntil||0)-Date.now())/1000):0; t.innerHTML=(hi?'▲ ':'')+(hv*0.3048<=ROTOR_D?'IGE ':'OGE ')+hv.toLocaleString()+' ft'+(left>0?`<i>⏱${left}秒でGPSへ</i>`:''); if(typeof hcSync==='function') hcSync(); }
   const hd=((+$('hdg').value%360)+360)%360; const g=mk.querySelector('.mkh'); if(g) g.setAttribute('transform',`rotate(${hd})`); try{ radarDraw(); }catch(e){} mk.title='機首 '+String(Math.round(hd)).padStart(3,'0')+'°'; }
 function mapScale(){ const el=$('mScale'), m=$('map'); if(!el||!m) return; const la=y2lat(MAP.cy,MAP.z), mpp=40075016.686*Math.cos(la*Math.PI/180)/(256*Math.pow(2,MAP.z));
   const nd=niceDist(mpp*Math.min(140,m.clientWidth*0.3)), d=nd.m, px=d/mpp;
@@ -3602,6 +3603,7 @@ function v3Sprite(text,col,big){ const c=document.createElement('canvas'), g=c.g
   const t=new THREE.CanvasTexture(c); t.minFilter=THREE.LinearFilter; const m=new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}), sp=new THREE.Sprite(m); sp.material.sizeAttenuation=false; const k=0.00042*(big?1.15:1); sp.scale.set(w*k,c.height*k,1); sp.center.set(0.5,-0.25); sp.renderOrder=10; return sp; }
 // AW139 の簡易モデル（1単位＝1 m、機首は -Z 方向）。塗装は V3LIV で切り替え
 const V3LIV='generic';
+const V3SC=0.94, V3WH=1.55;   // 実寸：胴体長 13.77 m・ローター直径 13.8 m／機体の原点から車輪の下端まで 1.55 m
 const V3PAINT={generic:{body:0xf3f3f3,belly:0xd32f2f,stripe:null,band:null,fin:0xd32f2f,finLow:0xf3f3f3,blade:0x3d434a,tip:[0xd32f2f,0xffffff],tr:[0xd32f2f,0xffffff]},
   mpp:{body:0x5aa8e6,belly:0xd9dde2,stripe:0x1d3f8f,band:0xff6a1a,fin:0x3d8fd6,finLow:0xe9ecef,blade:0x2b3036,tip:[0xd32f2f,0xffffff],tr:[0xd32f2f,0xffffff]}};
 function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Group(), M=c=>new T.MeshLambertMaterial({color:c}),
@@ -3633,12 +3635,12 @@ function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Gr
   add(new T.CylinderGeometry(0.15,0.15,0.6,10),grey,0,1.6,-0.9);
   const rot=new T.Group(); rot.position.set(0,1.95,-0.9);
   for(let b=0;b<5;b++){ const a=b*2*Math.PI/5, arm=new T.Group(); arm.rotation.y=a; rot.add(arm);
-    add(new T.BoxGeometry(0.42,0.05,5.6),M(P.blade),0,0,3.1,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.6),M(P.tip[0]),0,0,6.2,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.6),M(P.tip[1]),0,0,6.75,1,1,1,0,0,0,arm); }
+    add(new T.BoxGeometry(0.42,0.05,6.0),M(P.blade),0,0,3.25,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.55),M(P.tip[0]),0,0,6.525,1,1,1,0,0,0,arm); add(new T.BoxGeometry(0.42,0.052,0.55),M(P.tip[1]),0,0,7.075,1,1,1,0,0,0,arm); }
   add(new T.CylinderGeometry(0.42,0.42,0.28,14),M(P.fin),0,0,0,1,1,1,0,0,0,rot);
-  const disc=new T.Mesh(new T.CircleGeometry(6.9,48),new T.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.1,side:T.DoubleSide})); disc.rotation.x=-Math.PI/2; rot.add(disc); G.add(rot);
+  const disc=new T.Mesh(new T.CircleGeometry(7.34,48),new T.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.1,side:T.DoubleSide})); disc.rotation.x=-Math.PI/2; rot.add(disc); G.add(rot);
   // テールローター（4枚・赤白）左側
   const tr=new T.Group(); tr.position.set(-0.25,2.55,8.55);
-  for(let b=0;b<4;b++){ const arm=new T.Group(); arm.rotation.x=b*Math.PI/2; tr.add(arm); for(let k=0;k<4;k++) add(new T.BoxGeometry(0.04,0.33,0.17),M(P.tr[k%2]),0,0.2+k*0.33,0,1,1,1,0,0,0,arm); }
+  for(let b=0;b<4;b++){ const arm=new T.Group(); arm.rotation.x=b*Math.PI/2; tr.add(arm); for(let k=0;k<4;k++) add(new T.BoxGeometry(0.04,0.29,0.17),M(P.tr[k%2]),0,0.25+k*0.29,0,1,1,1,0,0,0,arm); }
   G.add(tr);
   G.userData={rotor:rot,trotor:tr}; return G; }
 // ラジコン操縦：入力から速度を少しずつ変え、地面より下には行かない。速さは表示範囲が広いほど早回し
@@ -3648,14 +3650,14 @@ function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.rc?s
   st.hdg+=cl(lx)*(st.hs?0.35:0.8)*dt; const a=Math.min(1,dt*(st.hs?0.7:1.6)); st.v[0]+=(cl(ry)*Vh-st.v[0])*a; st.v[1]+=(cl(rx)*Vh-st.v[1])*a; st.v[2]+=(cl(ly)*Vz-st.v[2])*a;
   const h=st.hdg, p=ac.position.clone(); let x=p.x+(Math.sin(h)*st.v[0]+Math.cos(h)*st.v[1])*dt, z=p.z+(-Math.cos(h)*st.v[0]+Math.sin(h)*st.v[1])*dt, y=p.y+st.v[2]*dt*st.ex;
   const Smax=st.S*0.98; x=Math.max(-Smax,Math.min(Smax,x)); z=Math.max(-Smax,Math.min(Smax,z));
-  const g=st.yOf(st.lat-z/ky,st.lon+x/kx), gy=g?g[1]:p.y, minY=gy+3*st.ex*Math.max(1,st.acK*0.5); if(y<minY){ y=minY; if(st.v[2]<0) st.v[2]=0; }
+  const g=st.yOf(st.lat-z/ky,st.lon+x/kx), gy=g?g[1]:p.y, minY=gy+V3WH*st.ex; if(y<minY){ y=minY; if(st.v[2]<0) st.v[2]=0; }
   ac.position.set(x,y,z); ac.rotation.y=-h; ac.rotation.x=-0.22*st.v[0]/Vh; ac.rotation.z=-0.22*st.v[1]/Vh;
   const d=ac.position.clone().sub(p); st.cam.position.add(d); st.ctl.target.add(d); st.heli=ac.position.clone();
   if(st.acSh) st.acSh.position.set(x,gy+0.5,z);
   if(st.acLine){ const pa=st.acLine.geometry.attributes.position; pa.setXYZ(0,x,gy,z); pa.setXYZ(1,x,y,z); pa.needsUpdate=true; st.acLine.computeLineDistances(); }
   st.rotor&&(st.rotor.rotation.y-=0.1);
   if(!st.hudT||performance.now()-st.hudT>200){ st.hudT=performance.now(); const hud=$('v3Hud'); if(hud){ const agl=(y-gy)/st.ex, msl=(y/st.ex)+st.zc, gs=Math.hypot(st.v[0],st.v[1])/f*1.944, vs=st.v[2]/f*196.85;
-      hud.innerHTML=`<span><small>機首</small><b>${String(Math.round(((h/RAD)%360+360)%360)||360).padStart(3,'0')}°</b></span><span><small>対地 AGL</small><b>${Math.round(agl*FT).toLocaleString()} ft</b></span><span><small>海抜</small><b>${Math.round(msl*FT).toLocaleString()} ft</b></span><span><small>速度</small><b>${Math.round(gs)} kt</b></span><span><small>昇降</small><b>${vs>=0?'+':''}${Math.round(vs/50)*50} fpm</b></span>${f>1?`<span><small>早回し</small><b>×${f.toFixed(0)}</b></span>`:''}${st.hs&&st.H&&st.H.wind?`<span><small>現場の風</small><b>${String(Math.round(st.H.wind.wd)%360||360).padStart(3,'0')}°/${Math.round(st.H.wind.ws)} kt</b></span>`:''}${st.hs&&st.H?`<span class="hsh"><small>ワイヤー</small><b>${Math.round(st.H.L*FT)} ft</b></span><span class="hsh"><small>吊り荷 対地</small><b>${Math.round(st.H.agl*FT)} ft</b></span><span class="hsh${st.H.ang>15?' w':''}"><small>振れ角</small><b>${Math.round(st.H.ang)}°</b></span>${st.H.dw>0.5?`<span class="hsh${st.H.dw>17?' w':''}"><small>吊り荷の風</small><b>${Math.round(st.H.dw)} m/s</b></span>`:''}`:''}`; } } }
+      hud.innerHTML=`<span><small>機首</small><b>${String(Math.round(((h/RAD)%360+360)%360)||360).padStart(3,'0')}°</b></span><span><small>車輪高 AGL</small><b>${Math.round((agl-V3WH)*FT).toLocaleString()} ft</b></span>${(()=>{ const obs=+(($('mObs')||{}).value)||0, hw=agl-V3WH-obs, ige=hw<=ROTOR_D; return `<span class="${ige?'ige':'oge'}"><small>${obs>0?`障害物上 ${Math.round(Math.max(0,hw)*FT)} ft`:'ホバリング'}</small><b>${ige?'IGE':'OGE'}</b></span>`; })()}<span><small>海抜</small><b>${Math.round(msl*FT).toLocaleString()} ft</b></span><span><small>速度</small><b>${Math.round(gs)} kt</b></span><span><small>昇降</small><b>${vs>=0?'+':''}${Math.round(vs/50)*50} fpm</b></span>${f>1?`<span><small>早回し</small><b>×${f.toFixed(0)}</b></span>`:''}${st.hs&&st.H&&st.H.wind?`<span><small>現場の風</small><b>${String(Math.round(st.H.wind.wd)%360||360).padStart(3,'0')}°/${Math.round(st.H.wind.ws)} kt</b></span>`:''}${st.hs&&st.H?`<span class="hsh"><small>ワイヤー</small><b>${Math.round(st.H.L*FT)} ft</b></span><span class="hsh"><small>吊り荷 対地</small><b>${Math.round(st.H.agl*FT)} ft</b></span><span class="hsh${st.H.ang>15?' w':''}"><small>振れ角</small><b>${Math.round(st.H.ang)}°</b></span>${st.H.dw>0.5?`<span class="hsh${st.H.dw>17?' w':''}"><small>吊り荷の風</small><b>${Math.round(st.H.dw)} m/s</b></span>`:''}`:''}`; } } }
 // ==== ホイスト：ワイヤーで吊った荷（救助員）を振り子として計算し、ダウンウォッシュ（吹き下ろし）を粒子で表示 ====
 function v3HoistVis(st,on){ const T=THREE; if(!st.sc) return;
   if(on&&!st.H){ const k=st.acK||1, g=new T.Group(); st.sc.add(g);
@@ -3766,11 +3768,11 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
     const sp=v3Sprite(txt,'#'+new T.Color(col).getHexString(),big); sp.position.set(q[0],q[1]+h,q[2]); grp.add(sp); };
   try{ DRAW.items.forEach(it=>{ if(it.t==='pt') pin(it.lat,it.lon,'● '+(it.label||'P'),0x7b3fd0); else if(it.t==='dest'){ const R=ROLES[it.role||'vic']; pin(it.lat,it.lon,R.ic+' '+(it.label||R.n),new T.Color(R.col).getHex()); } }); }catch(e){}
   // aircraft at the hoist point / pick
-  { const q=yOf(st.lat,st.lon); if(q){ const obs=+(($('mObs')||{}).value)||0, hh=(+(($('hh')||{}).value)||0)/FT, hy=q[1]+(obs+hh)*ex;
+  { const q=yOf(st.lat,st.lon); if(q){ const obs=+(($('mObs')||{}).value)||0, hh=(+(($('hh')||{}).value)||0)/FT, hy=q[1]+(obs+hh+V3WH)*ex;
       const L=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(q[0],q[1],q[2]),new T.Vector3(q[0],hy,q[2])]),new T.LineDashedMaterial({color:0xd4361e,dashSize:Math.max(6,S*0.006),gapSize:Math.max(4,S*0.004)})); L.computeLineDistances(); grp.add(L); st.acLine=L;
       // 機体：AW139 の簡易3Dモデル（機首方位を向く・ホバリング高度）。小さすぎて見えないときは表示範囲に合わせて拡大
-      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, ac=v3AW139(); const k=Math.max(1,S*0.02/16.7); st.acK=k; ac.scale.setScalar(k); ac.rotation.order='YXZ'; ac.rotation.y=-hd; ac.position.set(q[0],hy,q[2]); grp.add(ac); st.ac=ac; st.hdg=hd; st.home=[q[0],hy,q[2],hd]; st.v=[0,0,0]; st.rotor=ac.userData.rotor; st.trotor=ac.userData.trotor;
-      const sh=new T.Mesh(new T.CircleGeometry(6.9*k,24),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh); st.acSh=sh;
+      const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, ac=v3AW139(); const k=V3SC; st.acK=k; ac.scale.setScalar(k); ac.rotation.order='YXZ'; ac.rotation.y=-hd; ac.position.set(q[0],hy,q[2]); grp.add(ac); st.ac=ac; st.hdg=hd; st.home=[q[0],hy,q[2],hd]; st.v=[0,0,0]; st.rotor=ac.userData.rotor; st.trotor=ac.userData.trotor;
+      const sh=new T.Mesh(new T.CircleGeometry(ROTOR_D/2,24),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh); st.acSh=sh;
       st.heli=new T.Vector3(q[0],hy,q[2]); } }
   // 山名・拠点（広域のとき）
   if(st.S>=3000){ try{ const seen=new Set(); let n=0; PEAKS.forEach(([nm,la,lo])=>{ if(n>=40) return; const q=yOf(la,lo); if(!q) return; const e=(lo-st.lon)*kx, nn=(la-st.lat)*ky; if(Math.hypot(e,nn)<S*0.06) return; const k=nm.split('（')[0]; if(seen.has(k)) return; seen.add(k); n++;
