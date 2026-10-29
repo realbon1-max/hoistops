@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="tac">
+<html lang="ja" data-theme="simple">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -251,6 +251,56 @@ svg.mini .apt{width:calc(10px*var(--k));height:calc(10px*var(--k));transform:tra
 .empty{padding:14px;border:1px dashed var(--line);color:var(--muted);font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+
+/* SIMPLE THEME START */
+svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;vertical-align:-4px}
+nav.steps button{display:inline-flex;align-items:center;gap:6px}
+h2 svg.ic{width:22px;height:22px;margin-right:8px;color:var(--sky)}
+:root[data-theme="simple"]{--paper:#F3F5F8;--card:#FFFFFF;--ink:#1B2733;--muted:#5F6E7C;--line:#E1E6EC;--mag:#B4235F;--mag-soft:#FBE7EF;--go:#17803D;--go-soft:#E3F5E9;--cau:#A15C00;--cau-soft:#FFF1DC;--no:#C62828;--no-soft:#FDE7E7;--sky:#1F66B2;--sea:#E4EEF6;--land:#F6F4EE;--coast:#C3CDD5;
+  --code:'B612','IBM Plex Sans JP',system-ui,sans-serif;--body:'Hiragino Sans','Noto Sans JP','IBM Plex Sans JP',system-ui,sans-serif}
+html[data-theme="simple"] body{font-size:15px;line-height:1.6;background:var(--paper)}
+html[data-theme="simple"] header h1{font-size:22px;letter-spacing:.02em}
+html[data-theme="simple"] .box{border:none;border-radius:14px;box-shadow:0 1px 2px rgba(20,40,60,.06),0 2px 10px rgba(20,40,60,.05);padding:16px 18px;margin-bottom:14px}
+html[data-theme="simple"] h2{font-size:19px;font-weight:700;display:flex;align-items:center;margin:26px 0 10px}
+html[data-theme="simple"] h3{font-size:16px;font-weight:700;margin:20px 0 8px}
+html[data-theme="simple"] h3.bh{border-left:none;padding-left:0;font-size:15px}
+html[data-theme="simple"] .f,html[data-theme="simple"] label.f{font-size:13px;color:var(--muted);font-weight:600}
+html[data-theme="simple"] input,html[data-theme="simple"] select,html[data-theme="simple"] textarea{border:1.5px solid var(--line);border-radius:10px;background:#F8FAFC;min-height:42px;font-size:16px;padding:8px 10px;color:var(--ink)}
+html[data-theme="simple"] input:focus,html[data-theme="simple"] select:focus,html[data-theme="simple"] textarea:focus{outline:none;border-color:var(--sky);background:#fff;box-shadow:0 0 0 3px rgba(31,102,178,.15)}
+html[data-theme="simple"] .inp em{border-radius:0 10px 10px 0;background:#EEF2F6;border:1.5px solid var(--line);border-left:none;color:var(--muted);font-style:normal}
+html[data-theme="simple"] .inp input{border-radius:10px 0 0 10px}
+html[data-theme="simple"] button.act{background:var(--sky);color:#fff;border-radius:10px;padding:10px 18px;font-weight:700;min-height:42px}
+html[data-theme="simple"] button.act:hover{filter:brightness(1.08)}
+html[data-theme="simple"] button.sub{border-radius:10px;border:1.5px solid var(--line);background:#fff;padding:8px 14px;min-height:38px;font-weight:600}
+html[data-theme="simple"] button.sub:hover{border-color:var(--sky);color:var(--sky)}
+html[data-theme="simple"] .tag{border-radius:999px;padding:2px 10px;font-weight:600}
+html[data-theme="simple"] nav.steps{background:rgba(243,245,248,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);gap:6px;padding:6px 0;margin:10px 0 18px;scrollbar-width:none}
+html[data-theme="simple"] nav.steps::-webkit-scrollbar{display:none}
+html[data-theme="simple"] nav.steps button{flex-direction:column;gap:3px;min-width:64px;padding:8px 10px 7px;border-radius:12px;color:var(--muted);font-size:12px;font-weight:600;border-bottom:none}
+html[data-theme="simple"] nav.steps button svg.ic{width:24px;height:24px}
+html[data-theme="simple"] nav.steps button .n{display:none}
+html[data-theme="simple"] nav.steps button[aria-selected="true"]{background:var(--sky);color:#fff;box-shadow:0 2px 8px rgba(31,102,178,.3)}
+html[data-theme="simple"] nav.steps button:not([aria-selected="true"]):hover{background:#E8EEF5;color:var(--ink)}
+html[data-theme="simple"] .leg{border:none;border-radius:12px;box-shadow:0 1px 2px rgba(20,40,60,.08),0 2px 8px rgba(20,40,60,.06);margin-right:6px}
+html[data-theme="simple"] .leg+.leg{border-left:none}
+html[data-theme="simple"] .leg .bar{border-radius:0 0 12px 12px;height:5px}
+html[data-theme="simple"] .leg.add{background:transparent;box-shadow:none;border:2px dashed var(--line)}
+html[data-theme="simple"] .leg.alt{border:2px dashed #D0A64F;box-shadow:none}
+html[data-theme="simple"] .arrow{background:var(--line);height:2px}
+html[data-theme="simple"] .hero{border:none;border-radius:14px;box-shadow:0 1px 2px rgba(20,40,60,.06),0 2px 10px rgba(20,40,60,.05);border-left:6px solid var(--sky)}
+html[data-theme="simple"] .map{border-radius:14px;overflow:hidden;border:none;box-shadow:0 1px 2px rgba(20,40,60,.06),0 2px 10px rgba(20,40,60,.05)}
+html[data-theme="simple"] .note,html[data-theme="simple"] .hint{color:var(--muted)}
+html[data-theme="simple"] table th{color:var(--muted);font-weight:600}
+html[data-theme="simple"] .msg{border-radius:10px}
+html[data-theme="simple"] .chip{border-radius:999px}
+@media (max-width:600px){html[data-theme="simple"] nav.steps button{min-width:58px;padding:7px 6px;font-size:11px}html[data-theme="simple"] .box{padding:14px}}
+html[data-theme="simple"] :is(.appr,.atcs,.fstep,.gb,.gw,.phase,.rose,.scard,.sidc,.stat,.tl,.wxcard,.fpltxt,.atcref){border:none;border-radius:14px;box-shadow:0 1px 2px rgba(20,40,60,.06),0 2px 10px rgba(20,40,60,.05);background:var(--card)}
+html[data-theme="simple"] .scard{border-left:6px solid var(--muted)}html[data-theme="simple"] .scard.go{border-left-color:var(--go)}html[data-theme="simple"] .scard.cau{border-left-color:var(--cau)}html[data-theme="simple"] .scard.no{border-left-color:var(--no)}
+html[data-theme="simple"] .scard .sci{border-radius:50%}
+html[data-theme="simple"] .sidc.on{box-shadow:0 0 0 2px var(--sky),0 2px 10px rgba(31,102,178,.15)}
+html[data-theme="simple"] .warnbar{border-radius:12px}
+html[data-theme="simple"] .steps3>li{border-radius:12px}
+/* SIMPLE THEME END */
 /* TACTICAL THEME START */
 /* === TACTICAL MFD THEME (戦闘ヘリ/HUD風) === */
 :root[data-theme="tac"] {
@@ -591,17 +641,17 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
 <div class="stripnote" id="stripnote"></div>
 
 <nav class="steps" role="tablist" id="tabs">
-  <button role="tab" data-p="route" aria-selected="true"><span class="n">1</span>ルート・機体</button>
-  <button role="tab" data-p="wx" aria-selected="false"><span class="n">2</span>気象</button>
-  <button role="tab" data-p="dep" aria-selected="false"><span class="n">3</span>出発</button>
-  <button role="tab" data-p="enr" aria-selected="false"><span class="n">4</span>航空路</button>
-  <button role="tab" data-p="arr" aria-selected="false"><span class="n">5</span>到着・進入</button>
-  <button role="tab" data-p="alt" aria-selected="false"><span class="n">6</span>代替</button>
-  <button role="tab" data-p="fpl" aria-selected="false"><span class="n">7</span>飛行計画</button>
-  <button role="tab" data-p="fms" aria-selected="false"><span class="n">8</span>FMS入力</button>
-  <button role="tab" data-p="calc" aria-selected="false"><span class="n">9</span>計算ツール</button>
-  <button role="tab" data-p="atc" aria-selected="false"><span class="n">10</span>ATC交信</button>
-  <button role="tab" data-p="chk" aria-selected="false"><span class="n">11</span>チェックリスト</button>
+  <button role="tab" data-p="route" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h5a3.5 3.5 0 0 1 0 7h-3a3.5 3.5 0 0 0 0 7h5"/></svg><span class="tlab"><span class="n">1</span>ルート・機体</span></button>
+  <button role="tab" data-p="wx" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 11 3.5 3.5 0 0 0 7 18z"/></svg><span class="tlab"><span class="n">2</span>気象</span></button>
+  <button role="tab" data-p="dep" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M4 14l3 .5 10-6a2 2 0 0 1 2.7.8 2 2 0 0 1-.8 2.6L8.5 17.5 4.5 16z"/><path d="M9 9.5 7 7l2-1 4 2.2"/></svg><span class="tlab"><span class="n">3</span>出発</span></button>
+  <button role="tab" data-p="enr" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/></svg><span class="tlab"><span class="n">4</span>航空路</span></button>
+  <button role="tab" data-p="arr" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M4 9l2.8-.6 9.6 6.4a2 2 0 0 1 .6 2.8 2 2 0 0 1-2.7.7L4.8 11.6 3.5 10z"/><path d="M9 11.5 9.8 8l2 .5 1 4.3"/></svg><span class="tlab"><span class="n">5</span>到着・進入</span></button>
+  <button role="tab" data-p="alt" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20V9a3 3 0 0 1 3-3h9"/><path d="M15 3l3 3-3 3"/><circle cx="6" cy="20" r="1.5"/></svg><span class="tlab"><span class="n">6</span>代替</span></button>
+  <button role="tab" data-p="fpl" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5M10 9h2"/></svg><span class="tlab"><span class="n">7</span>飛行計画</span></button>
+  <button role="tab" data-p="fms" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="5" rx="1"/><path d="M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 17.5h.01M12 17.5h.01M15.5 17.5h.01"/></svg><span class="tlab"><span class="n">8</span>FMS</span></button>
+  <button role="tab" data-p="calc" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="6"/><path d="M12 12l3-2"/></svg><span class="tlab"><span class="n">9</span>計算</span></button>
+  <button role="tab" data-p="atc" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1-2 1.5-4 1.5"/></svg><span class="tlab"><span class="n">10</span>ATC交信</span></button>
+  <button role="tab" data-p="chk" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span class="tlab"><span class="n">11</span>チェック</span></button>
 </nav>
 
 <!-- 1 route -->
@@ -2199,6 +2249,8 @@ function renderFpl(){const F=S.fpl,r=S.route;const C=routeCalc();const pr=C.r;co
   $('fplCopy').onclick=async()=>{try{await navigator.clipboard.writeText(txt);$('fplCopy').textContent='コピーしました'}catch(e){const rg=document.createRange();rg.selectNodeContents($('fplTxt'));const s=getSelection();s.removeAllRanges();s.addRange(rg);$('fplCopy').textContent='選択しました。コピーしてください'}};
 }
 
+const PANE_IC={"route": "<circle cx=\"6\" cy=\"6\" r=\"2.5\"/><circle cx=\"18\" cy=\"18\" r=\"2.5\"/><path d=\"M8.5 6h5a3.5 3.5 0 0 1 0 7h-3a3.5 3.5 0 0 0 0 7h5\"/>", "wx": "<path d=\"M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 11 3.5 3.5 0 0 0 7 18z\"/>", "dep": "<path d=\"M3 20h18\"/><path d=\"M4 14l3 .5 10-6a2 2 0 0 1 2.7.8 2 2 0 0 1-.8 2.6L8.5 17.5 4.5 16z\"/><path d=\"M9 9.5 7 7l2-1 4 2.2\"/>", "enr": "<circle cx=\"5\" cy=\"18\" r=\"2\"/><circle cx=\"12\" cy=\"7\" r=\"2\"/><circle cx=\"19\" cy=\"15\" r=\"2\"/><path d=\"M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4\"/>", "arr": "<path d=\"M3 20h18\"/><path d=\"M4 9l2.8-.6 9.6 6.4a2 2 0 0 1 .6 2.8 2 2 0 0 1-2.7.7L4.8 11.6 3.5 10z\"/><path d=\"M9 11.5 9.8 8l2 .5 1 4.3\"/>", "alt": "<path d=\"M6 20V9a3 3 0 0 1 3-3h9\"/><path d=\"M15 3l3 3-3 3\"/><circle cx=\"6\" cy=\"20\" r=\"1.5\"/>", "fpl": "<path d=\"M7 3h7l4 4v14H7z\"/><path d=\"M14 3v4h4M10 12h5M10 15.5h5M10 9h2\"/>", "fms": "<rect x=\"5\" y=\"3\" width=\"14\" height=\"18\" rx=\"2\"/><rect x=\"8\" y=\"6\" width=\"8\" height=\"5\" rx=\"1\"/><path d=\"M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 17.5h.01M12 17.5h.01M15.5 17.5h.01\"/>", "calc": "<path d=\"M12 3v3M12 18v3M3 12h3M18 12h3\"/><circle cx=\"12\" cy=\"12\" r=\"6\"/><path d=\"M12 12l3-2\"/>", "atc": "<path d=\"M4 14v-2a8 8 0 0 1 16 0v2\"/><rect x=\"3\" y=\"14\" width=\"4\" height=\"6\" rx=\"1.5\"/><rect x=\"17\" y=\"14\" width=\"4\" height=\"6\" rx=\"1.5\"/><path d=\"M19 20c0 1-2 1.5-4 1.5\"/>", "chk": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"3\"/><path d=\"M8 12l3 3 5-6\"/>"};
+function decoHeadings(){document.querySelectorAll('section.pane').forEach(s=>{const k=s.id.replace('p-','');const ic=PANE_IC[k];if(!ic)return;s.querySelectorAll('h2').forEach((h,i)=>{if(i>0||h.querySelector('.ic'))return;h.insertAdjacentHTML('afterbegin',`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg>`)})})}
 function renderAll(){const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
 /* ---------- inputs ---------- */
@@ -2256,9 +2308,9 @@ function bind(){
     S.route=structuredClone(DEF.route);S.proc={};S.plView={};S._selAw=null;S._selFx=null;S._selDr=null;S.fpl.lvl='';S.chk={};if(typeof MAP!=='undefined')MAP=null;if(typeof SUG!=='undefined')SUG=null;save();
     ['dep','dst','alt','talt'].forEach(k=>{const el=$(k);if(el)el.value='';const s=$(k+'_s');if(s)s.value=''});try{renderVia()}catch(e){}if($('rteIn'))$('rteIn').value='';
     ['etd','eta'].forEach(k=>{const el=$(k);if(el)el.value=''});renderAll();show('route');window.scrollTo(0,0)}}
-  const THN={tac:'タクティカル',light:'ライト',dark:'ダーク'};const thLab=()=>{const t=document.documentElement.dataset.theme||'tac';$('themeBtn').textContent='表示：'+(THN[t]||t)};
-  $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||'tac';r.dataset.theme={tac:'light',light:'dark',dark:'tac'}[cur]||'tac';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}thLab();try{renderAll()}catch(e){}};
-  try{const th=localStorage.getItem('ifrtheme');document.documentElement.dataset.theme=th||'tac'}catch(e){document.documentElement.dataset.theme='tac'}thLab();
+  const THN={simple:'シンプル',light:'クラシック',dark:'ダーク',tac:'タクティカル'};const thLab=()=>{const t=document.documentElement.dataset.theme||'simple';$('themeBtn').textContent='表示：'+(THN[t]||t)};
+  $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||'simple';r.dataset.theme={simple:'light',light:'dark',dark:'tac',tac:'simple'}[cur]||'simple';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}thLab();try{renderAll()}catch(e){}};
+  try{const th=localStorage.getItem('ifrtheme');document.documentElement.dataset.theme=th||'simple'}catch(e){document.documentElement.dataset.theme='simple'}thLab();
   renderVia();
 }
 function renderVia(){$('viaList').innerHTML=S.route.via.map((v,k)=>`<span class="chip">${esc(v)}<button type="button" aria-label="${esc(v)}を削除" data-k="${k}">×</button></span>`).join('');
@@ -2266,7 +2318,7 @@ function renderVia(){$('viaList').innerHTML=S.route.via.map((v,k)=>`<span class=
 function show(p){S.tab=p;save();if(p==='calc')setTimeout(calcLoad,0);if(p==='enr')setTimeout(()=>{MAP&&MAP.apply&&MAP.apply()},0);if(p==='dep')setTimeout(()=>{try{depMini()}catch(e){}},0);if(p==='arr')setTimeout(()=>{try{arrMini()}catch(e){}},0);document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===p));document.querySelectorAll('section.pane').forEach(s=>s.classList.toggle('on',s.id==='p-'+p))}
 function airacCheck(){const today=new Date().toISOString().slice(0,10);
   if(today>=AIRAC_NEXT)$('airacWarn').innerHTML=`<div class="warnbar">航空路誌データ（AIRAC ${AIRAC_EFF}）は ${AIRAC_NEXT} に次の版へ切り替わっています。最新のデータで更新するまで、手順・ミニマは必ず公式チャートで確認してください。</div>`}
-load();bind();airacCheck();show(S.tab||'route');renderAll();if(S.wxPoll)wxPollSet(1);
+load();bind();airacCheck();show(S.tab||'route');renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
