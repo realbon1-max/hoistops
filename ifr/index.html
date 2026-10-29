@@ -1275,7 +1275,7 @@ function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id
   }
   const app=fq(r.dst,['APP','APP/ASR','ASR','ARR','RADAR','TCA']),atA=fq(r.dst,['ATIS']),twA=fq(r.dst,['TWR']),rdA=fq(r.dst,['AFIS','RDO','A/G']),gnA=fq(r.dst,['GND']);
   const x=dst.iac.find(q=>q.n===P.app);const aps=x?apprSpoken(x.n):`${B}`;const isLoc=x&&/ILS|LOC|LDA/.test(x.n);const isRnav=x&&/RNP|RNAV|GLS/.test(x.n);
-  const useStar=P.star&&P.arrMode!=='vec';const starN=useStar?starSpoken(P.star):'';
+  const useStar=P.star&&P.arrMode==='star';const starN=useStar?starSpoken(P.star):'';
   accs.forEach((k,i)=>{const nx=accs[i+1];const last=i===accs.length-1;
     const msgs=[['PIL',`${accName(k)}, ${cs}, ${i===0&&!depc&&!vrow?'airborne '+r.dep+', ':''}${alt}.`],['ATC',`${cs}, ${accName(k)}${i===0&&!depc&&!vrow?', radar contact':''}, roger.`]];
     if(last){msgs.push(['ATC',`${cs}, descend and maintain ${B}${x?`, expect ${aps} approach`:''}.`],['PIL',`Descend and maintain ${B}, ${cs}.`]);
@@ -1419,7 +1419,7 @@ function awySeg(id,from,to){const r=NAV.R[id];const i=r.p.indexOf(from),j=r.p.in
 function pubDirect(a,b){const l=(DIR[a]||[]).find(x=>x.to===b&&x.path.length===2);return l||null}
 // Entry fixes of the chosen arrival: STAR start, or (no STAR) the approach's IAF/IF. The flown route ends there even if the typed route goes further.
 function arrEntryFixes(){const P=procSel(),A=ap(S.route.dst);if(!A)return [];const out=new Set();
-  if(P.star&&P.arrMode!=='vec'){try{const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e&&e[1]&&e[1][0])out.add(e[1][0])}catch(e){}return [...out]}
+  if(P.star&&P.arrMode==='star'){try{const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e&&e[1]&&e[1][0])out.add(e[1][0])}catch(e){}return [...out]}
   if(P.app&&P.arrMode!=='vec'){const pl=(typeof PLD!=='undefined'&&PLD[S.route.dst])||[];const e=pl.find(q=>q[0]==='APP'&&q[1]===P.app);if(e)(e[2]||[]).forEach(t=>{const l=(t[2]||[])[0];if(l&&l[1]&&!/^RW/.test(l[1]))out.add(l[1])});
     const x=(A.iac||[]).find(q=>q.n===P.app);if(x&&x.r)['IAF','IF'].forEach(k=>(x.r[k]||[]).forEach(f=>out.add(f)))}
   return [...out].filter(f=>fixPos(f))}
@@ -1472,7 +1472,8 @@ function rwyOf(icao,id){const A=ap(icao);return A?A.rw.find(r=>r.id===id):null}
 function recip(id){const n=+id.slice(0,2);const s=id.slice(2);return String((n+18-1)%36+1).padStart(2,'0')+({L:'R',R:'L',C:'C'}[s]||'')}
 function entriesFor(list,name,rwy){const p=list.find(s=>s[0]===name);if(!p)return {rw:[],tr:[]};const e=p[2]||[];
   return {rw:e.filter(x=>!x[5]),tr:e.filter(x=>x[5])}}
-function procSel(){return S.proc=Object.assign({drw:'',sid:'',sidE:0,sidT:-1,star:'',starE:0,app:'',arrMode:'star',vecNm:10},S.proc||{})}
+// keep the same object (callers save and restore fields on it)
+function procSel(){if(!S.proc||typeof S.proc!=='object')S.proc={};const D={drw:'',sid:'',sidE:0,sidT:-1,star:'',starE:0,app:'',arrMode:'star',vecNm:10};for(const k in D)if(S.proc[k]===undefined)S.proc[k]=D[k];return S.proc}
 /* --- weather-derived --- */
 function tempOf(raw){const m=(raw||'').match(/\s(M?\d{2})\/(M?\d{2}|\/\/)\s/);return m?+(m[1].replace('M','-')):null}
 function fzl(icao){const w=(S.wx[icao]||{}).metar;const t=tempOf(w);const A=ap(icao);if(t==null||!A)return null;return Math.round(((A.e||0)+t/2*1000)/100)*100}
@@ -1519,7 +1520,7 @@ function sidCalc(tas){const P=procSel(),i=S.route.dep,A=ap(i);if(!A||!P.drw)retu
 }
 function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return null;
   const rp=parseRoute(rteEff()).pts;const last=rp[rp.length-1];let fixes=[];let label='';
-  let sT=null,sF=null;if(P.star&&P.arrMode!=='vec'){const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e){fixes=[...e[1]];label=P.star;sT=e[8]||null;sF=e[9]||null}}
+  let sT=null,sF=null;if(P.star&&P.arrMode==='star'){const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e){fixes=[...e[1]];label=P.star;sT=e[8]||null;sF=e[9]||null}}
   let pre=false;if(last&&fixPos(last)&&fixes[0]!==last){fixes.unshift(last);pre=!!label}
   fixes=fixes.filter(f=>fixPos(f));
   const pl=plane(A.p);
@@ -1609,7 +1610,7 @@ function routeCalc(){const r=parseRoute(rteEff());const tas=S.fpl.tas||120;const
   if(dst&&path.length)path.push(dst.p);
   const cons=[];const P_=procSel();
   if(sid&&dep&&P_.sid){const s=dep.sid.find(x=>x[0]===P_.sid);const cd=s&&s[4]||{};(sid.fixD||[]).forEach(([f,d])=>{if(cd[f])cons.push({fix:f,d,t:cd[f][0],a1:cd[f][1],a2:cd[f][2],ph:'climb',src:'SID'})})}
-  if(arr&&dst&&P_.star&&P_.arrMode!=='vec'&&arr.fixD){const s=dst.star.find(x=>x[0]===P_.star);const cd=s&&s[4]||{};let off=0;for(const l of rows){if(l.kind==='STAR')break;off+=l.d||0}
+  if(arr&&dst&&P_.star&&P_.arrMode==='star'&&arr.fixD){const s=dst.star.find(x=>x[0]===P_.star);const cd=s&&s[4]||{};let off=0;for(const l of rows){if(l.kind==='STAR')break;off+=l.d||0}
     arr.fixD.forEach(([f,d])=>{if(cd[f])cons.push({fix:f,d:off+d,t:cd[f][0],a1:cd[f][1],a2:cd[f][2],ph:'desc',src:'STAR'})})}
   const time=tot/tas*60; const lvl=lvlFt(S.fpl.lvl)||Math.max(0,...rows.map(l=>meaFt(l.mea)||0))||6000;
   const sc=sectorChanges(path,lvl);
@@ -1625,14 +1626,14 @@ function procDepUI(){const P=procSel();const dep=ap(S.route.dep);let h='';if(S.r
   return h}
 function procArrUI(){const P=procSel();const dst=ap(S.route.dst);let h='';
   if(dst){const all=P.star?(()=>{const E=entriesFor(dst.star,P.star);return [...E.rw,...E.tr]})():[];
-    h+=`<h3 class="bh">到着 ${esc(S.route.dst)}</h3><div class="grid"><label class="f">到着の方法<select data-p="arrMode"><option value="star" ${P.arrMode!=='vec'?'selected':''}>STARを飛ぶ</option><option value="vec" ${P.arrMode==='vec'?'selected':''}>レーダー誘導（ベクター）</option></select></label>
+    h+=`<h3 class="bh">到着 ${esc(S.route.dst)}</h3><div class="grid"><label class="f">到着の方法<select data-p="arrMode"><option value="star" ${P.arrMode==='star'?'selected':''}>STARを飛ぶ</option><option value="full" ${P.arrMode==='full'?'selected':''}>局・IAFから進入（上空通過→リバーサル等のフル手順）</option><option value="vec" ${P.arrMode==='vec'?'selected':''}>レーダー誘導（ベクター）</option></select></label>
      ${P.arrMode==='vec'?`<label class="f">誘導で増える距離の見込み<span class="inp"><input type="number" min="0" data-p="vecNm" value="${esc(P.vecNm??10)}"><em>NM</em></span></label>`:''}
-     <label class="f" ${P.arrMode==='vec'?'style="display:none"':''}>STAR<select data-p="star"><option value="">使わない（直行）</option>${dst.star.map(s=>`<option value="${esc(s[0])}" ${s[0]===P.star?'selected':''}>${esc((s[3]&&s[3].length?s[3].join('／'):s[0]))}${s[1]?' (RNAV)':''}${(s[2]||[]).length?'':'（経路を読み取れず）'}</option>`).join('')}</select></label>
+     <label class="f" ${P.arrMode!=='star'?'style="display:none"':''}>STAR<select data-p="star"><option value="">使わない（直行）</option>${dst.star.map(s=>`<option value="${esc(s[0])}" ${s[0]===P.star?'selected':''}>${esc((s[3]&&s[3].length?s[3].join('／'):s[0]))}${s[1]?' (RNAV)':''}${(s[2]||[]).length?'':'（経路を読み取れず）'}</option>`).join('')}</select></label>
      ${all.length>1?`<label class="f">STARの経路<select data-p="starE">${all.map((t,k)=>`<option value="${k}" ${k==P.starE?'selected':''}>${esc((t[7]?t[7]+'：':'')+t[1].join('-'))}</option>`).join('')}</select></label>`:''}
      <label class="f">進入方式<select data-p="app"><option value="">未選択</option>${dst.iac.map(x=>`<option value="${esc(x.n)}" ${x.n===P.app?'selected':''}>${esc(x.n)}</option>`).join('')}</select></label></div>`}
   return h}
 function procUI(){const h=procDepUI()+procArrUI();return h||'<p class="hint">ルートタブで出発・目的飛行場を選ぶと、SID・STAR・進入方式を選べます。</p>'}
-function bindProc(root){root.querySelectorAll('[data-p]').forEach(s=>{if(s.tagName==='BUTTON')return;s.onchange=()=>{const k=s.dataset.p;S.proc[k]=['sidE','sidT','starE','vecNm'].includes(k)?+s.value:s.value;if(k==='drw'){S.proc.drwManual=1;S.proc.sidE=0}if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star')S.proc.starE=0;save();renderAll()}});
+function bindProc(root){root.querySelectorAll('[data-p]').forEach(s=>{if(s.tagName==='BUTTON')return;s.onchange=()=>{const k=s.dataset.p;S.proc[k]=['sidE','sidT','starE','vecNm'].includes(k)?+s.value:s.value;if(k==='drw'){S.proc.drwManual=1;S.proc.sidE=0}if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star')S.proc.starE=0;if(k==='arrMode'){if(s.value!=='star'){if(S.proc.star){S.proc.starSaved=S.proc.star;S.proc.starESaved=S.proc.starE}S.proc.star='';S.proc.starE=0}else if(!S.proc.star&&S.proc.starSaved){S.proc.star=S.proc.starSaved;S.proc.starE=S.proc.starESaved||0}}save();renderAll()}});
   root.querySelectorAll('[data-pick]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [k,v]=b.dataset.pick.split('|');S.proc[k]=v;if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star'){S.proc.starE=0;S.proc.arrMode='star'}save();renderAll()})}
 const PH={VFR:['VFR','#5B7FA6'],SID:['SID','#2E8B57'],TRN:['トランジション','#1B8A9A'],ENR:['航空路','var(--mag)'],STAR:['STAR','#C98A00'],APP:['進入','#C0392B']};
 function sectName(k){if(!k)return '管制区外';const v=SECT[k];return `${({Tokyo:'東京',Fukuoka:'福岡',Kobe:'神戸'})[v[0]]||v[0]}ACC ${k}`}
@@ -2000,7 +2001,7 @@ function plSection(which){const apt=which==='dep'?S.route.dep:S.route.dst;if(!ap
    ${pick.length?pick.map(E=>`<h4 style="margin:12px 0 2px">${esc(nm(E))}　${E[2].some(s=>s[2].length)?'<span class="tag t-rnav">コーディング表</span>':'<span class="tag t-mute">チャートの文章</span>'}　${chartBtn(apt,E[0],E[1])}</h4>${plTable(apt,E,plCtx(E[0]==='SID'?'SID':'ARR'))}`).join(''):'<p class="note">上で手順を選ぶか、表示する手順を選んでください。</p>'}</div>`}
 function plBind(which){const sv=$('chSave_'+which);if(sv)sv.onclick=()=>chartsSave([which==='dep'?S.route.dep:S.route.dst,which==='arr'?S.route.alt:null]);const el=$('plSel_'+which);if(!el)return;el.onchange=()=>{(S.plView=S.plView||{})[which]=el.value===''?null:+el.value;save();which==='dep'?renderDep():renderArr()}}
 function expandNames(apt,names){const AP=ARCP[apt]||{};const out=[];names.forEach((f,i)=>{const a=i&&AP[names[i-1]+'>'+f];if(a)out.push(...a);const q=fixPos(f);if(q)out.push(q)});return out}
-function pickLines(which,PP){if(which==='dep'&&S.route.depMode==='vfr'&&S.route.ifrFix)return '';let s='';const P=procSel();const L=which==='dep'?(REC.sidAll||[]):(REC.starAll||[]);const A=ap(which==='dep'?S.route.dep:S.route.dst);if(!A)return '';
+function pickLines(which,PP){if(which==='dep'&&S.route.depMode==='vfr'&&S.route.ifrFix)return '';let s='';const P=procSel();if(which!=='dep'&&P.arrMode!=='star')return '';const L=which==='dep'?(REC.sidAll||[]):(REC.starAll||[]);const A=ap(which==='dep'?S.route.dep:S.route.dst);if(!A)return '';
   const cols=['#2E8B57','#1B8A9A','#7A5BB5','#C2185B','#00838F','#6D8B00','#B5651D'];
   L.slice(0,7).forEach((o,i)=>{let ps=[];
     if(which==='dep'){const s=A.sid.find(x=>x[0]===o.sid);if(!s)return;const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(o.rw))||mains.find(e=>!(e[0]||[]).length)||mains[0];if(!mm)return;const nm=[...(mm[1]||[])];let ti=0;E.forEach(e=>{if(!e[5])return;const k=ti++;if(k===o.sidT)nm.push(...(e[1]||[]).filter((f,j)=>!(j===0&&f===nm[nm.length-1])))});ps=[A.p,...expandNames(S.route.dep,nm)]}
@@ -2046,7 +2047,7 @@ function arrMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(!A)retur
   if(C.arr){let trk=C.arr.track||[];if(C.arr.pre&&C.arr.fixes[1]&&trk.length){const e=fixPos(C.arr.fixes[1]);let bi=0,bd=1e9;trk.forEach((p,i)=>{const d=gc(p,e);if(d<bd){bd=d;bi=i}});trk=trk.slice(bi)}
     if(trk.length>1&&!plS){s+=`<polyline points="${trk.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C98A00" stroke-width="3.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;pts.push(...trk)}
     let ap2=[C.arr.track[C.arr.track.length-1],...(C.arr.appTrack||[])].filter(Boolean);
-    if(!P.star&&(C.arr.appFix||[]).length&&P.arrMode!=='vec'){const f0=C.arr.appFix.find(a=>a[1]&&a[1]!=='MA');const q=C.arr.appStart||(f0&&fixPos(f0[0]));if(q){let bi=0,bd=1e9;ap2.forEach((p,i)=>{const d=gc(p,q);if(d<bd){bd=d;bi=i}});const lead=ap2.slice(0,bi+1);const lin=lead.length>1?lead.slice(-Math.max(2,Math.ceil(lead.length*0.12))):[];if(lin.length>1&&!plA)s+=`<polyline points="${lin.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2" stroke-opacity=".5" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>`;ap2=ap2.slice(bi)}}if(ap2.length>1&&!plA){s+=`<polyline points="${ap2.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3.5" stroke-linejoin="round" ${P.arrMode==='vec'?'stroke-dasharray="7 5"':''} vector-effect="non-scaling-stroke"/>`;pts.push(...ap2)}
+    if(!(P.star&&P.arrMode==='star')&&(C.arr.appFix||[]).length&&P.arrMode!=='vec'){const f0=C.arr.appFix.find(a=>a[1]&&a[1]!=='MA');const q=C.arr.appStart||(f0&&fixPos(f0[0]));if(q){let bi=0,bd=1e9;ap2.forEach((p,i)=>{const d=gc(p,q);if(d<bd){bd=d;bi=i}});const lead=ap2.slice(0,bi+1);const lin=lead.length>1?lead.slice(-Math.max(2,Math.ceil(lead.length*0.12))):[];if(lin.length>1&&!plA)s+=`<polyline points="${lin.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2" stroke-opacity=".5" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>`;ap2=ap2.slice(bi)}}if(ap2.length>1&&!plA){s+=`<polyline points="${ap2.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3.5" stroke-linejoin="round" ${P.arrMode==='vec'?'stroke-dasharray="7 5"':''} vector-effect="non-scaling-stroke"/>`;pts.push(...ap2)}
     const sObj=A.star.find(q=>q[0]===P.star);const cons=sObj&&sObj[4]||{};if(!plS)(C.arr.fixD||[]).forEach(([f])=>s+=fixMark(f,'ma',cons));
     if(!plA)(C.arr.appBr||[]).forEach(b=>{if(b.length>1){s+=`<polyline points="${b.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2" stroke-opacity=".55" vector-effect="non-scaling-stroke"/>`;pts.push(...b)}});
     if(!plA&&C.arr.maTrack&&C.arr.maTrack.length>1){s+=`<polyline points="${C.arr.maTrack.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>`;pts.push(...C.arr.maTrack)}
@@ -2375,7 +2376,7 @@ function trk3d(mode){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND
     if(mode==='dep'){const lim=smp[b].d+8;while(b<smp.length-1&&smp[b+1].d<=lim)b++}else{const lim=smp[a].d-8;while(a>0&&smp[a-1].d>=lim)a--}
     const d0=smp[a].d,d1=smp[b].d;const sub=smp.slice(a,b+1).map(o=>Object.assign({},o,{d:o.d-d0}));
     const fx=fixes.filter(f=>f.cd>=d0-0.5&&f.cd<=d1+0.5);t0+=d0/tas*3600e3;
-    const P=procSel();title=mode==='dep'?`出発 ${S.route.dep||''}${P.sid?' '+P.sid:''}`:`到着・進入 ${S.route.dst||''}${P.star&&P.arrMode!=='vec'?' '+P.star:''}${P.app?' '+P.app:''}`;
+    const P=procSel();title=mode==='dep'?`出発 ${S.route.dep||''}${P.sid?' '+P.sid:''}`:`到着・進入 ${S.route.dst||''}${P.star&&P.arrMode==='star'?' '+P.star:''}${P.app?' '+P.app:''}`;
     return {smp:sub,ma:mode==='arr'?ma:[],fixes:fx,apts:mode==='dep'?apts.filter(x=>x.n===S.route.dep):apts.filter(x=>x.n!==S.route.dep),t0,tas,tot:Math.max(0.1,d1-d0),lvl:cr,title,mode}}
   return {smp,ma,fixes,apts,t0,tas,tot,lvl:cr,title}}
 
