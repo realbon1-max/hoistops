@@ -3612,7 +3612,8 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
   if(refetch||!st.Z){ msg.hidden=false; msg.textContent='標高を読み込み中…'; const Z=new Float32Array((N+1)*(N+1)), P=[];
     for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const e=-S+2*S*i/N, n=S-2*S*j/N; P.push(v3Elev(st.lat+n/ky,st.lon+e/kx).then(v=>{ Z[j*(N+1)+i]=v; })); }
     await Promise.all(P); if(!st.alive||V3.st!==st) return; let ok=0,sum=0; Z.forEach(v=>{ if(!isNaN(v)){ ok++; sum+=v; } }); if(!ok){ msg.textContent='この地点の標高を読めません（内蔵データの範囲外で、ネットにもつながっていません）'; return; }
-    const avg=sum/ok; for(let k=0;k<Z.length;k++) if(isNaN(Z[k])) Z[k]=avg; st.Z=Z; st.N=N; st.zc=await v3Elev(st.lat,st.lon); if(isNaN(st.zc)) st.zc=Z[(N/2)*(N+1)+N/2]; }
+    // 標高データの無い所は海（地理院の標高タイルは海域が欠測）：海面 0 m にする
+    for(let k=0;k<Z.length;k++) if(isNaN(Z[k])) Z[k]=0; st.Z=Z; st.N=N; st.zc=await v3Elev(st.lat,st.lon); if(isNaN(st.zc)) st.zc=Z[(N/2)*(N+1)+N/2]; }
   const T=THREE, Z=st.Z, ex=st.ex;
   if(!st.ren){ const ren=new T.WebGLRenderer({antialias:true}); ren.setPixelRatio(Math.min(2,devicePixelRatio||1)); box.appendChild(ren.domElement); st.ren=ren;
     const sc=new T.Scene(); sc.background=new T.Color(0xbfd9f2); st.sc=sc; sc.add(new T.AmbientLight(0xffffff,0.72)); const dl=new T.DirectionalLight(0xffffff,0.55); dl.position.set(-1,1.4,-0.6); sc.add(dl);
