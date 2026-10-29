@@ -730,7 +730,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   <h2>気象を取り込む</h2>
   <div class="box" id="autoBox">
     <div class="row" style="justify-content:space-between"><b>自動取得（参考）</b><span class="tag t-cau">公式ではありません</span></div>
-    <p class="note" style="margin-top:4px">ルートの空港のMETAR/TAF（気象庁発表の報を米国気象局 aviationweather.gov が中継したもの）を、GitHubで10分ごとに自動巡回したデータから取ります。運航判断はMetAirの報で確認してください。MetAirで貼り付けた報が同じ時刻以上なら、そちらを優先して残します。</p>
+    <p class="note" style="margin-top:4px">ルートの空港のMETAR/TAF（気象庁発表の報を米国気象局 aviationweather.gov が中継したもの。霞目 RJSU など自衛隊の飛行場のMETARは国際気象海洋 IMOC のページから）を、GitHubで10分ごとに自動巡回したデータから取ります。運航判断はMetAirの報で確認してください。MetAirで貼り付けた報が同じ時刻以上なら、そちらを優先して残します。</p>
     <div class="row" style="margin-top:6px"><button class="act" id="wxAuto" type="button">今すぐ取得</button><label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wxPoll"> 開いている間、10分ごとに自動で巡回</label></div>
     <div id="wxAutoSt" class="note" style="margin-top:6px"></div>
   </div>
@@ -1060,9 +1060,9 @@ function renderWx(){
     const tw=w.taf&&t?tafWindow(w.taf,new Date(+t-3600e3),new Date(+t+3600e3)):null;
     const age=m?metarAge(m):null;
     return `<div class="wxcard"><div class="row" style="justify-content:space-between"><b class="code" style="font-size:18px">${esc(i)}</b><span style="font-size:12px;color:var(--muted)">${esc(ap(i)?.n||'')}　<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1" style="color:var(--sky)">MetAir ↗</a></span></div>
-     ${m?`<div style="margin-top:6px">${wxBadge({vis:m.vis??10000,ceil:m.ceil,src:'現況METAR'})}</div>`:''}<div style="margin-top:6px"><b style="font-size:13px">現況 METAR</b> ${(S.wx[i]?.src||{}).metar==='auto'?'<span class="tag t-cau">参考：aviationweather.gov</span>':(S.wx[i]?.metar?'<span class="tag t-mute">MetAir</span>':'')} ${m?(age>70?`<span class="tag t-cau">${age}分前・古い</span>`:`<span class="tag t-mute">${age}分前</span>`):'<span class="tag t-mute">未入力</span>'}</div>
+     ${m?`<div style="margin-top:6px">${wxBadge({vis:m.vis??10000,ceil:m.ceil,src:'現況METAR'})}</div>`:''}<div style="margin-top:6px"><b style="font-size:13px">現況 METAR</b> ${(S.wx[i]?.src||{}).metar==='auto'?'<span class="tag t-cau">参考：自動取得</span>':(S.wx[i]?.metar?'<span class="tag t-mute">MetAir</span>':'')} ${m?(age>70?`<span class="tag t-cau">${age}分前・古い</span>`:`<span class="tag t-mute">${age}分前</span>`):'<span class="tag t-mute">未入力</span>'}</div>
      ${m?`<div class="kv"><span>風 <b>${esc(windText(m.wind))}</b></span><span>視程 <b>${m.vis>=10000?'10km以上':m.vis+'m'}</b></span><span>雲高 <b>${m.ceil!=null?m.ceil+'ft':'なし'}</b></span>${m.ww?`<span>天気 <b>${esc(m.ww.join(' '))}</b></span>`:''}${fzl(i)!=null?`<span>予想0℃高度 <b>約${fzl(i).toLocaleString()}ft</b></span>`:''}${m.rvr?`<span>RVR <b>${esc(Object.entries(m.rvr).map(([k,v])=>k+':'+v).join(' '))}</b></span>`:''}</div><div class="raw">${esc(m.raw)}</div>`:''}
-     <div style="margin-top:8px"><b style="font-size:13px">予報 TAF</b> ${(S.wx[i]?.src||{}).taf==='auto'?'<span class="tag t-cau">参考：aviationweather.gov</span>':(S.wx[i]?.taf?'<span class="tag t-mute">MetAir</span>':'')} ${t?`<span class="tag t-mute">${fmtZ(t)} ±1時間</span>`:''} ${w.taf?'':'<span class="tag t-mute">未入力</span>'}</div>
+     <div style="margin-top:8px"><b style="font-size:13px">予報 TAF</b> ${(S.wx[i]?.src||{}).taf==='auto'?'<span class="tag t-cau">参考：自動取得</span>':(S.wx[i]?.taf?'<span class="tag t-mute">MetAir</span>':'')} ${t?`<span class="tag t-mute">${fmtZ(t)} ±1時間</span>`:''} ${w.taf?'':'<span class="tag t-mute">未入力</span>'}</div>
      ${tw?`<div class="kv"><span>最低視程 <b>${tw.vis>=10000?'10km以上':tw.vis+'m'}</b></span><span>最低雲高 <b>${tw.ceil!=null?tw.ceil+'ft':'なし'}</b></span><span>風 <b>${esc(tw.winds.map(windText).join('、')||'—')}</b></span>${tw.ww.length?`<span>天気 <b>${esc(tw.ww.join(' '))}</b></span>`:''}</div>${tw.inPeriod?'':'<p class="note" style="color:var(--no)">指定時刻がTAFの有効期間外です。</p>'}`:(w.taf&&!t?'<p class="note">ルートタブで時刻を入れると、その時間帯の予報を判定します。</p>':'')}
      ${w.taf?`<div class="raw">${esc(w.taf.raw)}</div>`:''}</div>`}).join('');
 }
