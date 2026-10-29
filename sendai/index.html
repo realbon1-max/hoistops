@@ -3637,7 +3637,7 @@ function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Gr
   G.userData={rotor:rot,trotor:tr}; return G; }
 async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='v3Ov'; ov.className='v3ov';
-  const B0=MAP.base==='seamlessphoto'?'seamlessphoto':MAP.base==='hillshademap'?'hillshademap':'std';
+  const B0='seamlessphoto';
   const st=V3.st={lat,lon,label,base:B0,S:+(localStorage.getItem('sd139v3s')||1500),ex:+(localStorage.getItem('sd139v3e')||1),alive:true};
   ov.innerHTML=`<div class="v3bar"><b>🏔 3D</b><span class="v3ll">${fmtLL(lat,lon)}${label?' ・'+esc(label):''}</span>
     <span class="seg" id="v3B">${[['seamlessphoto','写真'],['std','地図'],['hillshademap','陰影']].map(([k,t])=>`<button type="button" data-b="${k}" aria-pressed="${k===B0}">${t}</button>`).join('')}</span>
