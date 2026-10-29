@@ -1473,6 +1473,8 @@ function recip(id){const n=+id.slice(0,2);const s=id.slice(2);return String((n+1
 function entriesFor(list,name,rwy){const p=list.find(s=>s[0]===name);if(!p)return {rw:[],tr:[]};const e=p[2]||[];
   return {rw:e.filter(x=>!x[5]),tr:e.filter(x=>x[5])}}
 // keep the same object (callers save and restore fields on it)
+// choosing a procedure shows it on the map again (drops a fixed '表示する手順' choice)
+function plViewReset(k){S.plView=S.plView||{};if(['sid','sidE','sidT','drw'].includes(k))S.plView.dep=null;if(['star','starE','app','arrMode'].includes(k))S.plView.arr=null}
 function procSel(){if(!S.proc||typeof S.proc!=='object')S.proc={};const D={drw:'',sid:'',sidE:0,sidT:-1,star:'',starE:0,app:'',arrMode:'star',vecNm:10};for(const k in D)if(S.proc[k]===undefined)S.proc[k]=D[k];return S.proc}
 /* --- weather-derived --- */
 function tempOf(raw){const m=(raw||'').match(/\s(M?\d{2})\/(M?\d{2}|\/\/)\s/);return m?+(m[1].replace('M','-')):null}
@@ -1633,8 +1635,8 @@ function procArrUI(){const P=procSel();const dst=ap(S.route.dst);let h='';
      <label class="f">進入方式<select data-p="app"><option value="">未選択</option>${dst.iac.map(x=>`<option value="${esc(x.n)}" ${x.n===P.app?'selected':''}>${esc(x.n)}</option>`).join('')}</select></label></div>`}
   return h}
 function procUI(){const h=procDepUI()+procArrUI();return h||'<p class="hint">ルートタブで出発・目的飛行場を選ぶと、SID・STAR・進入方式を選べます。</p>'}
-function bindProc(root){root.querySelectorAll('[data-p]').forEach(s=>{if(s.tagName==='BUTTON')return;s.onchange=()=>{const k=s.dataset.p;S.proc[k]=['sidE','sidT','starE','vecNm'].includes(k)?+s.value:s.value;if(k==='drw'){S.proc.drwManual=1;S.proc.sidE=0}if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star')S.proc.starE=0;if(k==='arrMode'){if(s.value!=='star'){if(S.proc.star){S.proc.starSaved=S.proc.star;S.proc.starESaved=S.proc.starE}S.proc.star='';S.proc.starE=0}else if(!S.proc.star&&S.proc.starSaved){S.proc.star=S.proc.starSaved;S.proc.starE=S.proc.starESaved||0}}save();renderAll()}});
-  root.querySelectorAll('[data-pick]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [k,v]=b.dataset.pick.split('|');S.proc[k]=v;if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star'){S.proc.starE=0;S.proc.arrMode='star'}save();renderAll()})}
+function bindProc(root){root.querySelectorAll('[data-p]').forEach(s=>{if(s.tagName==='BUTTON')return;s.onchange=()=>{const k=s.dataset.p;S.proc[k]=['sidE','sidT','starE','vecNm'].includes(k)?+s.value:s.value;plViewReset(k);if(k==='drw'){S.proc.drwManual=1;S.proc.sidE=0}if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star')S.proc.starE=0;if(k==='arrMode'){if(s.value!=='star'){if(S.proc.star){S.proc.starSaved=S.proc.star;S.proc.starESaved=S.proc.starE}S.proc.star='';S.proc.starE=0}else if(!S.proc.star&&S.proc.starSaved){S.proc.star=S.proc.starSaved;S.proc.starE=S.proc.starESaved||0}}save();renderAll()}});
+  root.querySelectorAll('[data-pick]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const [k,v]=b.dataset.pick.split('|');S.proc[k]=v;plViewReset(k);if(k==='sid'){S.proc.sidT=-1;S.proc.sidE=0}if(k==='star'){S.proc.starE=0;S.proc.arrMode='star'}save();renderAll()})}
 const PH={VFR:['VFR','#5B7FA6'],SID:['SID','#2E8B57'],TRN:['トランジション','#1B8A9A'],ENR:['航空路','var(--mag)'],STAR:['STAR','#C98A00'],APP:['進入','#C0392B']};
 function sectName(k){if(!k)return '管制区外';const v=SECT[k];return `${({Tokyo:'東京',Fukuoka:'福岡',Kobe:'神戸'})[v[0]]||v[0]}ACC ${k}`}
 function sectFreq(k){return k&&SECT[k]&&SECT[k][1].length?SECT[k][1].join('／')+'MHz':''}
@@ -1691,7 +1693,7 @@ function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.
       <div class="note" style="margin:2px 0 0">直線距離 ${Math.round(o.direct)}NM の ${Math.round(o.tot/o.direct*100)}%</div></div>`).join('')}
   return h}
 function sugBind(){const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
-  document.querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{const o=SUG.r.opts[+x.dataset.sug];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()})}
+  document.querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{const o=SUG.r.opts[+x.dataset.sug];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S.plView={};S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll()})}
 /* ---------- recommendations: SID / transition / STAR / approach ---------- */
 function flyLimit(){try{return mapLimit()}catch(e){return null}}
 function limText(){const L=flyLimit(),f=mapF();return L!=null?`飛べる上限 ${L.toLocaleString()}ft（${f.src==='lvl'?'巡航高度':f.src==='fz'?'予想0℃高度':'指定値'}）`:'飛べる上限：未設定（巡航高度を入れると、それより高い高度制限の手順を外します）'}
@@ -2218,7 +2220,7 @@ function bindMap(){const svg=$('mapSvg');if(!svg||!MAP)return;const C=MAP.C;
   gestures(svg,{pan:(dx,dy)=>{const k=MAP.vb.w/svg.clientWidth;MAP.vb.x-=dx*k;MAP.vb.y-=dy*k;req()},
     zoom:(f,cx,cy)=>{const v=MAP.vb,k=v.w/svg.clientWidth;const ux=v.x+cx*k,uy=v.y+cy*k;let nw=Math.max(15,Math.min(2500,v.w/f));const nf=nw/v.w;v.x=ux-(ux-v.x)*nf;v.y=uy-(uy-v.y)*nf;v.w=nw;v.h=v.h*nf;req()},
     dbl:e=>{const r=svg.getBoundingClientRect();const v=MAP.vb,k=v.w/svg.clientWidth;const ux=v.x+(e.clientX-r.left)*k,uy=v.y+(e.clientY-r.top)*k;v.w/=2;v.h/=2;v.x=ux-v.w/2;v.y=uy-v.h/2;req()},
-    tap:e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const sg=el&&el.closest('[data-sugm]');if(sg){const o=SUG.r.opts[+sg.dataset.sugm];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';SUG=null;MAP.key='';save();renderAll();return}const t=el&&el.closest('[data-fx],[data-aw],[data-dr]');if(!t){S._selAw=null;S._selFx=null;S._selDr=null;mapPanel();svg.innerHTML=mapContent(C);return}
+    tap:e=>{const el=document.elementFromPoint(e.clientX,e.clientY);const sg=el&&el.closest('[data-sugm]');if(sg){const o=SUG.r.opts[+sg.dataset.sugm];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S.plView={};SUG=null;MAP.key='';save();renderAll();return}const t=el&&el.closest('[data-fx],[data-aw],[data-dr]');if(!t){S._selAw=null;S._selFx=null;S._selDr=null;mapPanel();svg.innerHTML=mapContent(C);return}
       S._selAw=null;S._selFx=null;S._selDr=null;if(t.dataset.fx)S._selFx=t.dataset.fx;else if(t.dataset.dr!=null)S._selDr=+t.dataset.dr;else S._selAw=t.dataset.aw;svg.innerHTML=mapContent(C);mapPanel()}});
   $('mapFit').onclick=()=>{const xs=C.path.map(PX),ys=C.path.map(PY);if(xs.length){const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),pad=Math.max(x1-x0,y1-y0)*.15+25;MAP.vb={x:x0-pad,y:y0-pad,w:x1-x0+2*pad,h:y1-y0+2*pad}}MAP.key=mapKey(C);apply()};
   $('mapIn').onclick=()=>{const v=MAP.vb;v.x+=v.w/4;v.y+=v.h/4;v.w/=2;v.h/=2;apply()};$('mapOut').onclick=()=>{const v=MAP.vb;v.x-=v.w/2;v.y-=v.h/2;v.w*=2;v.h*=2;apply()};
