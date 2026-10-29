@@ -1153,7 +1153,7 @@ function casFromTas(tas,alt){const s=Math.pow(1-6.8756e-6*(alt||0),4.2559);retur
 function toFmsFuel(v,perHour){const F=fmsSet(),u='kg';if(v===''||v==null||isNaN(+v))return '';v=+v;let kg;
   if(u==='kg')kg=v;else if(u==='lb')kg=v*0.4536;else if(u==='L')kg=v*(+F.sg||0.79);else if(u==='USG')kg=v*3.785*(+F.sg||0.79);
   return Math.round(F.u==='KG'?kg:kg/0.4536)}
-function fmsVia(){const tk=(S.route.rte||'').toUpperCase().trim().split(/\s+/).filter(Boolean);const out=[];if(!tk.length)return out;
+function fmsVia(){const tk=(rteEff()||'').toUpperCase().trim().split(/\s+/).filter(Boolean);const out=[];if(!tk.length)return out;
   const conv=n=>{const m=n.match(/^([A-Z]{2,3})(\d{3})(\d{3})$/);if(m&&NAV.F[n]&&NAV.F[n][2]===4)return {e:`${m[1]}/${+m[2]}/${+m[3]}`,n:`${n}（${m[1]}の${+m[2]}°・${+m[3]}NMの点。P/B/D形式で入力）`};
     const d=n.match(/^([A-Z]{2,3})(\d+)DME$/);if(d)return {e:n,n:`${d[1]}の${d[2]}DMEの点。FMSでは P/B/D（${d[1]}/方位/${d[2]}）で定義が必要`};return {e:n,n:''}};
   let i=0;const f0=conv(tk[0]);out.push({e:f0.e,k:'VIA.TO',n:f0.n||'航空路の入口（SIDの終点）'});
@@ -1417,6 +1417,20 @@ function isAwy(tok){return !!NAV.R[tok]}
 function awySeg(id,from,to){const r=NAV.R[id];const i=r.p.indexOf(from),j=r.p.indexOf(to);if(i<0||j<0||i===j)return null;
   const out=[];if(i<j){for(let k=i;k<j;k++)out.push({a:r.p[k],b:r.p[k+1],mea:r.m[k]})}else{for(let k=i;k>j;k--)out.push({a:r.p[k],b:r.p[k-1],mea:r.m[k-1]})}return out}
 function pubDirect(a,b){const l=(DIR[a]||[]).find(x=>x.to===b&&x.path.length===2);return l||null}
+// Entry fixes of the chosen arrival: STAR start, or (no STAR) the approach's IAF/IF. The flown route ends there even if the typed route goes further.
+function arrEntryFixes(){const P=procSel(),A=ap(S.route.dst);if(!A)return [];const out=new Set();
+  if(P.star&&P.arrMode!=='vec'){try{const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e&&e[1]&&e[1][0])out.add(e[1][0])}catch(e){}return [...out]}
+  if(P.app&&P.arrMode!=='vec'){const pl=(typeof PLD!=='undefined'&&PLD[S.route.dst])||[];const e=pl.find(q=>q[0]==='APP'&&q[1]===P.app);if(e)(e[2]||[]).forEach(t=>{const l=(t[2]||[])[0];if(l&&l[1]&&!/^RW/.test(l[1]))out.add(l[1])});
+    const x=(A.iac||[]).find(q=>q.n===P.app);if(x&&x.r)['IAF','IF'].forEach(k=>(x.r[k]||[]).forEach(f=>out.add(f)))}
+  return [...out].filter(f=>fixPos(f))}
+function rteEff(){const s=(S.route.rte||'').trim();if(!s)return s;const ents=arrEntryFixes();if(!ents.length)return s;
+  const tk=s.toUpperCase().replace(/[\u3000,]/g,' ').split(/\s+/).filter(Boolean);if(ents.includes(tk[0]))return s;let cur=tk[0];const out=[cur];
+  for(let i=1;i<tk.length;i++){const t=tk[i];
+    if(isAwy(t)){const to=tk[i+1];i++;if(!to){out.push(t);break}
+      if(NAV.R[t].p.includes(cur)&&NAV.R[t].p.includes(to)){const seg=awySeg(t,cur,to);const hit=seg.find(q=>ents.includes(q.b));if(hit){out.push(t,hit.b);return out.join(' ')}}
+      out.push(t,to);cur=to;if(ents.includes(to))return out.join(' ')}
+    else{let to=t;if(t==='DCT'){to=tk[i+1];i++;if(!to)break;out.push('DCT',to)}else out.push(to);cur=to;if(ents.includes(to))return out.join(' ')}}
+  return s}
 function parseRoute(str){
   const tk=str.toUpperCase().replace(/[\u3000,]/g,' ').trim().split(/\s+/).filter(Boolean); const errs=[]; const legs=[];
   if(!tk.length)return {legs,errs,pts:[]};
@@ -1490,7 +1504,7 @@ function sidCalc(tas){const P=procSel(),i=S.route.dep,A=ap(i);if(!A||!P.drw)retu
     if(e){fixes=[...e[1]];alt=e[2];if(e[3]!=null)hdg=trueHdg(i,e[3]);turn=e[4];cl=e[6];label=P.sid;if(!e[0].includes(P.drw))warn='この滑走路の記述がないため近い滑走路の経路で計算'}
     else warn='SIDの経路を読み取れなかったため直行で計算';
     if(P.sidT>=0&&E.tr[P.sidT]){const t=E.tr[P.sidT][1];fixes.push(...t.filter((f,k)=>!(k===0&&f===fixes[fixes.length-1])))}}
-  const r1=parseRoute(S.route.rte||'').pts[0];
+  const r1=parseRoute(rteEff()).pts[0];
   let ent=[...fixes],trn=[];if(P.sid){const E=entriesFor(A.sid,P.sid);if(P.sidT>=0&&E.tr[P.sidT]){const n=E.tr[P.sidT][1].filter((f,k)=>!(k===0&&f===ent[ent.length-1]));ent=fixes.slice(0,fixes.length-n.length);trn=fixes.slice(fixes.length-n.length)}}
   const sidEnd=(trn.length?trn:ent)[(trn.length?trn:ent).length-1]; if(r1&&sidEnd!==r1&&fixPos(r1))(trn.length?trn:ent).push(r1);
   ent=ent.filter(f=>fixPos(f));trn=trn.filter(f=>fixPos(f)); if(!ent.length&&!trn.length)return null;
@@ -1504,7 +1518,7 @@ function sidCalc(tas){const P=procSel(),i=S.route.dep,A=ap(i);if(!A||!P.drw)retu
   return {fixD,dist:climbNm+s1.dist+s2.dist,sidD:climbNm+s1.dist,trnD:s2.dist,ent,trn,label,fixes:[...ent,...trn],climbNm,warn,sidEnd,trnName:trn.length?trn[trn.length-1]:'',track:[A.p,der,...[st,c0,...s1.track,...s2.track].map(pl.from)]};
 }
 function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return null;
-  const rp=parseRoute(S.route.rte||'').pts;const last=rp[rp.length-1];let fixes=[];let label='';
+  const rp=parseRoute(rteEff()).pts;const last=rp[rp.length-1];let fixes=[];let label='';
   let sT=null,sF=null;if(P.star&&P.arrMode!=='vec'){const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e){fixes=[...e[1]];label=P.star;sT=e[8]||null;sF=e[9]||null}}
   let pre=false;if(last&&fixPos(last)&&fixes[0]!==last){fixes.unshift(last);pre=!!label}
   fixes=fixes.filter(f=>fixPos(f));
@@ -1555,6 +1569,11 @@ function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return n
     else{const s=simulate(from,h,[pl.to(A.p)],tas);appD=s.dist+3;appTrack=s.track}}
   else{const s=simulate(from,h,[pl.to(A.p)],tas);appD=s.dist;appTrack=s.track}
 
+  try{if(x&&P.arrMode!=='vec'){const legs=plAppChain(i,P.app,fixes[fixes.length-1]);if(legs){const tr=plTrack(i,legs,null,{app:1});if(tr.maFrom>0){const ap0=tr.pts.slice(0,tr.maFrom+1);const fromLL=pl.from(from);const chain=gc(fromLL,ap0[0])>0.05?[fromLL,...ap0]:ap0;
+      let L=0;const cum=[0];for(let k=1;k<chain.length;k++){L+=gc(chain[k-1],chain[k]);cum.push(L)}appTrack=chain.map(q=>pl.to(q));appD=L;
+      const ma=tr.pts.slice(tr.maFrom);if(ma.length>1)maTrack=ma;
+      if(appProf){appProf.L=L;appProf.named.forEach(n=>{const q=fixPos(n.f)||plPos(i,n.f);if(!q)return;let bi=0,bd=1e9;chain.forEach((c,k)=>{const d=gc(c,q);if(d<bd){bd=d;bi=k}});n.dt=L-cum[bi]})}
+      appBr=[];}}}}catch(e){}
   let dctD=0;if(pre&&fixD.length>1){dctD=fixD[1][1];starD-=dctD;fixD=fixD.slice(1).map(([f,d])=>[f,d-dctD])}
   return {appBr,appStart,appProf,appFix,maTrack,pre,dctD,fixD,starD,appD,fl,rw:x&&x.rw,label,fixes,app:x,track:track.map(pl.from),appTrack:appTrack.map(pl.from)};
 }
@@ -1566,7 +1585,7 @@ function sectorChanges(path,alt){const out=[];let cur=undefined,cum=0;
   for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];const d=gc(a,b);const n=Math.max(1,Math.ceil(d/1));
     for(let k=0;k<n;k++){const p=interp(a,b,k/n);const s=sectorAt(p,alt);if(s!==cur){if(cur!==undefined)out.push({from:cur,to:s,p,dist:cum+d*k/n});cur=s}}cum+=d}
   return {changes:out,first:path.length?sectorAt(path[0],alt):null}}
-function routeCalc(){const r=parseRoute(S.route.rte||'');const tas=S.fpl.tas||120;const rows=[];let tot=0;
+function routeCalc(){const r=parseRoute(rteEff());const tas=S.fpl.tas||120;const rows=[];let tot=0;
   const dep=ap(S.route.dep),dst=ap(S.route.dst);
   const vfrDep=S.route.depMode==='vfr'&&S.route.ifrFix&&fixPos(S.route.ifrFix);
   const sid=dep&&!vfrDep?sidCalc(tas):null, arr=dst?starAppCalc(tas):null; const path=[];
@@ -1849,6 +1868,10 @@ function plAltShort(a){if(!a)return '';const t=String(a).trim().split(/\s+/);ret
 function plSpd(s){if(!s)return '';return String(s).trim().split(/\s+/).map(v=>v.startsWith('-')?v.slice(1)+'kt以下':v.startsWith('+')?v.slice(1)+'kt以上':v+'kt').join(' ')}
 function plPos(apt,n){if(!n)return null;const c=PCD[apt]&&PCD[apt][n];if(c)return c;const m=n.match(/^RW(\d{2}[LRC]?)$/);if(m){const r=rwyOf(apt,m[1]);if(r&&r.t)return r.t}return fixPos(n)}
 function altFt(a){if(!a)return null;const m=String(a).match(/(FL)?(\d{3,5})/);return m?(m[1]?+m[2]*100:+m[2]):null}
+function plAppChain(apt,name,f0){const E=plFind(apt,'APP',name);if(!E)return null;const segs=E[2].filter(s=>s[2]&&s[2].length);if(!segs.length)return null;
+  const hasRW=s=>s[2].some(l=>/^RW\d/.test(l[1]||''));let cur=(f0&&segs.find(s=>s[2][0][1]===f0))||segs.find(s=>hasRW(s)&&s[2][0][0]==='IF')||segs.find(hasRW)||segs[0];
+  let legs=cur[2].slice();const used=new Set([cur]);for(let g=0;g<4&&!legs.some(l=>/^RW\d/.test(l[1]||''));g++){const lf=legs[legs.length-1][1];const nx=segs.find(s=>!used.has(s)&&s[2][0][1]===lf);if(!nx)break;used.add(nx);legs=legs.concat(nx[2].slice(1))}
+  if(!legs.some(l=>/^RW\d/.test(l[1]||'')))return null;return legs}
 function plTrack(apt,legs,start,opt){const A=ap(apt),mv=(A&&A.mv)||0,el=(A&&A.e)||0;let cur=start;const pts=cur?[cur]:[];const fx=[];let maFrom=-1;
   legs.forEach((g,i)=>{const [pt,fix,fo,crs,dist,turn,alt,spd,vpa,ctr,rad,crsT]=g;const tc=crsT?+crsT:(crs?(+crs+mv+360)%360:null);let to=fix?plPos(apt,fix):null;
     if(pt==='RF'&&cur&&to){const c=plPos(apt,ctr);if(c){const b0=brgOf(c,cur),b1=brgOf(c,to),r=gc(c,cur);let d=((b1-b0)+360)%360;if(turn==='L')d=d-360;const n=Math.max(6,Math.round(Math.abs(d)/6));for(let k=1;k<=n;k++)pts.push(dest(c,b0+d*k/n,r))}else pts.push(to);cur=to}
@@ -2045,6 +2068,14 @@ function approachProfile(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(
   let iafAlt=ifAlt;if(iaf){const v=pa(iaf.f);const mh=(x.mha||[]).filter(h=>h>=ifAlt&&h<=17000);iafAlt=v&&v>=ifAlt&&v<=17000?v:(mh.length?Math.max(...mh):ifAlt)}
   if(iaf)pts.push([iaf.dt,iafAlt,iaf.f,'IAF']);if(ifp)pts.push([ifp.dt,ifAlt,ifp.f,'IF']);pts.push([dFaf,fafAlt,faf?faf.f:'FAF(推定)',faf?faf.r:'FAF']);pts.push([0,thrE+tch,'RWY'+(x.rw||''),'THR']);
   pts.sort((a,b)=>b[0]-a[0]);
+  // coding table available → use its fixes, distances and altitudes as published
+  let pld=false;try{const legs=plAppChain(S.route.dst,P.app,(C.arr.fixes||[])[(C.arr.fixes||[]).length-1]);if(legs){const ri=legs.findIndex(l=>/^RW\d/.test(l[1]||''));const L=legs.slice(0,ri+1);
+    const pos=L.map(l=>l[1]?plPos(S.route.dst,l[1]):null);const dd=L.map((l,k)=>{if(k===0)return 0;const v=parseFloat(l[4]);if(v>0)return v;return pos[k]&&pos[k-1]?gc(pos[k-1],pos[k]):0});
+    let rem=dd.reduce((a,b)=>a+b,0);const roles={};(C.arr.appFix||[]).forEach(([f,r])=>{if(r!=='MA')roles[f]=roles[f]||r});const q=[];
+    L.forEach((l,k)=>{rem-=k?dd[k]:0;const t=String(l[6]||'').trim().split(/\s+/)[0]||'';const a=t?+t.replace(/^[+-]/,''):null;q.push([Math.max(0,k===L.length-1?0:rem+0),a,l[1]+(t.startsWith('+')?'':''),/^RW/.test(l[1])?'THR':(roles[l[1]]||(k===0?'IAF':'')),t])});
+    // fill missing altitudes by interpolation
+    for(let k=0;k<q.length;k++)if(q[k][1]==null){let a=k-1;while(a>=0&&q[a][1]==null)a--;let b=k+1;while(b<q.length&&q[b][1]==null)b++;if(a>=0&&b<q.length){const f=(q[a][0]-q[k][0])/((q[a][0]-q[b][0])||1);q[k][1]=Math.round(q[a][1]+(q[b][1]-q[a][1])*f)}else if(a>=0)q[k][1]=q[a][1];else if(b<q.length)q[k][1]=q[b][1]}
+    if(q.every(v=>v[1]!=null)){pts.length=0;q.forEach(v=>pts.push([v[0],v[1],v[2],v[3]||'',v[4]]));pld=true;const fa=q.find(v=>v[3]==='FAF'||v[3]==='FAP');if(fa)dFaf=fa[0]}}}catch(e){}
   // minima
   const mline=(x.m||[]).find(m=>m.c&&m.c[S.prof.cat]&&/\d/.test(m.c[S.prof.cat][0]||'')&&!/CIRC/.test(m.l));const mv=mline?num(mline.c[S.prof.cat][0]):null;
   const maAlt=x.maalt||(thrE+2000);const grad=243;const maD=Math.max(1.5,(maAlt-(mv?mv.alt:thrE+200))/grad);
@@ -2054,17 +2085,18 @@ function approachProfile(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(
   let s='';for(let a=Math.ceil(bot/1000)*1000;a<=top;a+=(top-bot>8000?2000:1000))s+=`<line x1="${L}" x2="${W-R}" y1="${Y(a)}" y2="${Y(a)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(a)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="B612,sans-serif">${a}</text>`;
   s+=`<rect x="${L}" y="${Y(thrE)}" width="${W-L-R}" height="${H-B-Y(thrE)}" fill="var(--land)" opacity=".8"/>`;
   // path: level then descend
-  const path=[];pts.forEach((p,k)=>{if(k===0){path.push([p[0],p[1]]);return}const prev=path[path.length-1];if(p[3]==='THR'){path.push([p[0],p[1]]);return}
+  const path=[];if(pld)pts.forEach(p=>path.push([p[0],p[1]]));else pts.forEach((p,k)=>{if(k===0){path.push([p[0],p[1]]);return}const prev=path[path.length-1];if(p[3]==='THR'){path.push([p[0],p[1]]);return}
     if(prev[1]>p[1]){const dDesc=(prev[1]-p[1])/g;const startD=Math.min(prev[0],p[0]+dDesc);path.push([startD,prev[1]])}path.push([p[0],p[1]])});
   s+=`<polyline points="${path.map(p=>X(p[0])+','+Y(p[1])).join(' ')}" fill="none" stroke="#C0392B" stroke-width="2.5"/>`;
   if(mv){s+=`<line x1="${X(dFaf)}" x2="${X(0)}" y1="${Y(mv.alt)}" y2="${Y(mv.alt)}" stroke="var(--no)" stroke-width="1.5" stroke-dasharray="6 3"/><text x="${X(dFaf)+4}" y="${Y(mv.alt)-5}" font-size="11" font-weight="700" fill="var(--no)" font-family="B612,sans-serif">${esc(mline.hf.replace(/\(H\)/,''))} ${mv.alt}（${mv.hat}）${esc(mline.l)}</text>`}
   const ms=mv?mv.alt:thrE+tch;s+=`<polyline points="${X(0)},${Y(ms)} ${X(-maD)},${Y(Math.min(maAlt,ms+grad*maD))} ${X(D1)},${Y(maAlt)}" fill="none" stroke="#C0392B" stroke-width="2" stroke-dasharray="4 4"/><text x="${X(D1)-4}" y="${Y(maAlt)-6}" text-anchor="end" font-size="10.5" fill="#C0392B" font-family="B612,sans-serif">進入復行 ${maAlt}ft</text>`;
-  pts.forEach(p=>{s+=`<line x1="${X(p[0])}" x2="${X(p[0])}" y1="${Y(p[1])}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="2 3"/><circle cx="${X(p[0])}" cy="${Y(p[1])}" r="4" fill="${p[3]==='THR'?'var(--ink)':'#C0392B'}"/>
-    <text x="${X(p[0])}" y="${Y(p[1])-9}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)" font-family="B612,sans-serif" paint-order="stroke" stroke="var(--card)" stroke-width="3">${esc(p[2])}</text>
-    <text x="${X(p[0])}" y="${H-B+14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="B612,sans-serif">${p[3]} ${p[0].toFixed(1)}NM</text>
-    <text x="${X(p[0])}" y="${H-B+27}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#C0392B" font-family="B612,sans-serif">${Math.round(p[1])}ft</text>`});
-  s+=`<text x="${X(dFaf/2)}" y="${Y((fafAlt+thrE+tch)/2)-8}" text-anchor="middle" font-size="10" fill="var(--muted)">3.0°</text>`;
-  return `<h3>進入の断面図</h3><div class="map"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="進入の断面図">${s}</svg><div class="plegend" style="padding:4px 10px 8px;margin:0"><span><i style="background:#C0392B"></i>進入の高度（中間進入は水平、最終進入は3°）</span><span><i style="border-top:2px dashed var(--no);height:0;width:12px"></i>${mline?esc(mline.hf.replace(/\(H\)/,''))+'（CAT '+S.prof.cat+'）':'ミニマ'}</span><span><i style="border-top:2px dashed #C0392B;height:0;width:12px"></i>進入復行（上昇勾配4%で概算）</span></div>
+  const xEnd=X(pts[pts.length-1][0]);let lastB=-1e9;pts.forEach((p,k)=>{const px=X(p[0]);const showB=k===pts.length-1||((px-lastB>=62||(p[3]==='FAF'||p[3]==='FAP')&&px-lastB>=44)&&xEnd-px>=62);if(showB)lastB=px;const nRow=0;const ny=Y(p[1])-9;
+    s+=`<line x1="${px}" x2="${px}" y1="${Y(p[1])}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="2 3"/><circle cx="${px}" cy="${Y(p[1])}" r="4" fill="${p[3]==='THR'?'var(--ink)':'#C0392B'}"/>
+    <text x="${px+(pld?3:0)}" y="${ny}" text-anchor="${pld?'start':'middle'}" ${pld?`transform="rotate(-40 ${px+3} ${ny})"`:''} font-size="11" font-weight="700" fill="var(--ink)" font-family="B612,sans-serif" paint-order="stroke" stroke="var(--card)" stroke-width="3">${esc(p[2])}${pld&&!showB&&p[4]?' '+esc(plAltShort(p[4])):''}</text>`;if(!showB)return;s+=`
+    <text x="${px}" y="${H-B+14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="B612,sans-serif">${p[3]} ${p[0].toFixed(1)}NM</text>
+    <text x="${X(p[0])}" y="${H-B+27}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#C0392B" font-family="B612,sans-serif">${pld&&p[4]?esc(plAltShort(p[4])):pld?'('+Math.round(p[1])+')':Math.round(p[1])+'ft'}</text>`});
+  if(!pld)s+=`<text x="${X(dFaf/2)}" y="${Y((fafAlt+thrE+tch)/2)-8}" text-anchor="middle" font-size="10" fill="var(--muted)">3.0°</text>`;
+  return `<h3>進入の断面図</h3><div class="map"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="進入の断面図">${s}</svg><div class="plegend" style="padding:4px 10px 8px;margin:0"><span><i style="background:#C0392B"></i>${pld?'進入の高度（AIPコーディング表の値：@＝指定、+＝以上、()＝間の目安）':'進入の高度（中間進入は水平、最終進入は3°）'}</span><span><i style="border-top:2px dashed var(--no);height:0;width:12px"></i>${mline?esc(mline.hf.replace(/\(H\)/,''))+'（CAT '+S.prof.cat+'）':'ミニマ'}</span><span><i style="border-top:2px dashed #C0392B;height:0;width:12px"></i>進入復行（上昇勾配4%で概算）</span></div>
     <p class="note" style="padding:0 10px 8px;margin:0">距離は滑走路末端までの飛行距離。fixの高度はチャートの数字を読めたものはその値、読めないものは3°の進入角から計算した目安です。正確な高度・ステップダウンは公示チャートで確認してください。</p></div>`}
 /* ---------- gestures (pinch / drag / wheel / tap) ---------- */
 function gestures(el,h){el.style.touchAction='none';const P=new Map();let last=null,moved=0,downT=0,lastTap=0;
@@ -2236,7 +2268,7 @@ function renderFpl(){const F=S.fpl,r=S.route;const C=routeCalc();const pr=C.r;co
   const eet=C.time||null; const spd='N'+String(Math.round(F.tas||0)).padStart(4,'0'); const lvl=(F.lvl||'').toUpperCase()||'A___';
   const pbn=pbnCodes(); const dof=etd?`${String(etd.getUTCFullYear()).slice(2)}${String(etd.getUTCMonth()+1).padStart(2,'0')}${String(etd.getUTCDate()).padStart(2,'0')}`:'';
   const P=procSel();const sidN=P.sid?P.sid.split(/[\s\-]/)[0]:'';
-  let rte=(pr.pts.length?(S.route.rte||'').toUpperCase().replace(/\s+/g,' '):'DCT');
+  let rte=(pr.pts.length?rteEff().toUpperCase().replace(/\s+/g,' '):'DCT');
   const vfrD=r.depMode==='vfr'&&r.ifrFix;const chg=vfrD?`${r.ifrFix}/${spd}${lvl} IFR`:'';
   if(vfrD){const tk=rte.split(' ');rte=tk[0]===r.ifrFix?`DCT ${chg} ${tk.slice(1).join(' ')}`.trim():`DCT ${chg} DCT ${rte}`}
   const eetChg=vfrD?(()=>{const row=C.rows.find(l=>l.kind==='VFR');return row?hhmm(((row.d||0)/(F.tas||120))*60):''})():'';
