@@ -484,8 +484,11 @@ details.mset>summary.msh{cursor:pointer}
 .v3rcb{margin-left:auto;font:inherit;font-size:13px;font-weight:800;padding:7px 12px;border-radius:18px;border:1px solid #2f4d6d;background:#1d3550;color:#e6edf6;cursor:pointer}.v3rcb[aria-pressed=true]{background:#d81b8c;border-color:#d81b8c;color:#fff}.v3rcb+.v3x{margin-left:6px}
 .v3js{position:absolute;bottom:max(46px,calc(env(safe-area-inset-bottom) + 40px));width:150px;height:150px;border-radius:50%;background:rgba(13,27,42,.45);border:2px solid rgba(255,255,255,.55);touch-action:none;z-index:3}.v3js.l{left:18px}.v3js.r{right:18px}.v3js i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
 .v3js span{position:absolute;left:50%;top:-22px;transform:translateX(-50%);white-space:nowrap;font-size:11px;color:#fff;text-shadow:0 1px 3px #000}.v3js[hidden],.v3hud[hidden],.v3home[hidden]{display:none}
-.v3hud{position:absolute;left:50%;top:calc(var(--v3t,110px) + 8px);transform:translateX(-50%);display:flex;gap:10px;background:rgba(13,27,42,.78);color:#e6edf6;padding:6px 12px;border-radius:12px;font-variant-numeric:tabular-nums;z-index:3}.v3hud span{display:flex;flex-direction:column;align-items:center;line-height:1.1}.v3hud small{font-size:10px;opacity:.75}.v3hud b{font-size:16px}
+.v3hud{position:absolute;left:50%;top:calc(var(--v3t,110px) + 8px);transform:translateX(-50%);display:flex;gap:10px;background:rgba(13,27,42,.78);color:#e6edf6;padding:6px 12px;border-radius:12px;font-variant-numeric:tabular-nums;z-index:3}.v3hud{flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 180px)}.v3hud span{white-space:nowrap;display:flex;flex-direction:column;align-items:center;line-height:1.1}.v3hud small{font-size:10px;opacity:.75}.v3hud b{font-size:16px}
 .v3home{position:absolute;right:18px;top:calc(var(--v3t,110px) + 8px);z-index:3;font:inherit;font-size:13px;padding:6px 12px;border-radius:16px;border:1px solid #2f4d6d;background:rgba(29,53,80,.9);color:#fff;cursor:pointer}
+.v3hsp{position:absolute;right:18px;top:calc(var(--v3t,110px) + 52px);z-index:3;display:flex;flex-direction:column;gap:6px;align-items:stretch;background:rgba(13,27,42,.7);padding:8px;border-radius:12px}.v3hsp[hidden]{display:none}
+.v3hsp button{font:inherit;font-size:15px;font-weight:800;padding:10px 14px;border-radius:10px;border:1px solid #2f4d6d;background:#1d3550;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}.v3hsp button.hstop{font-size:12px;padding:4px}.v3hsp b{color:#ffd166;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.v3hud .hsh b{color:#ffd166}.v3hud .hsh.w b{color:#ff6b5e}
 .v3ov{position:fixed;inset:0;z-index:9999;background:#0d1b2a;display:flex;flex-direction:column}body.v3open{overflow:hidden}
 .v3bar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:#13263b;color:#e6edf6;font-size:13px}
 .v3bar>b{font-size:16px}.v3ll{opacity:.85;font-variant-numeric:tabular-nums}.v3bar .seg button{font:inherit;font-size:13px;padding:5px 10px;background:#1d3550;color:#e6edf6;border:1px solid #2f4d6d}.v3bar .seg button[aria-pressed=true]{background:#2f6fb0;border-color:#2f6fb0}
@@ -3641,10 +3644,10 @@ function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Gr
   G.add(tr);
   G.userData={rotor:rot,trotor:tr}; return G; }
 // ラジコン操縦：入力から速度を少しずつ変え、地面より下には行かない。速さは表示範囲が広いほど早回し
-function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.keys, I=st.in;
+function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.rc?st.keys:new Set(), I=st.rc?st.in:{lx:0,ly:0,rx:0,ry:0};
   const lx=I.lx+((K.has('ArrowRight')?1:0)-(K.has('ArrowLeft')?1:0)), ly=I.ly+((K.has('ArrowUp')?1:0)-(K.has('ArrowDown')?1:0)), rx=I.rx+((K.has('d')?1:0)-(K.has('a')?1:0)), ry=I.ry+((K.has('w')?1:0)-(K.has('s')?1:0));
-  const f=Math.max(1,st.S/1500), Vh=25*f, Vz=7*f, kx=111320*Math.cos(st.lat*RAD), ky=110540, cl=v=>Math.max(-1,Math.min(1,v));
-  st.hdg+=cl(lx)*0.8*dt; const a=Math.min(1,dt*1.6); st.v[0]+=(cl(ry)*Vh-st.v[0])*a; st.v[1]+=(cl(rx)*Vh-st.v[1])*a; st.v[2]+=(cl(ly)*Vz-st.v[2])*a;
+  const f=Math.max(1,st.S/1500), Vh=(st.hs?6:25)*f, Vz=(st.hs?3:7)*f, kx=111320*Math.cos(st.lat*RAD), ky=110540, cl=v=>Math.max(-1,Math.min(1,v));
+  st.hdg+=cl(lx)*(st.hs?0.35:0.8)*dt; const a=Math.min(1,dt*(st.hs?0.7:1.6)); st.v[0]+=(cl(ry)*Vh-st.v[0])*a; st.v[1]+=(cl(rx)*Vh-st.v[1])*a; st.v[2]+=(cl(ly)*Vz-st.v[2])*a;
   const h=st.hdg, p=ac.position.clone(); let x=p.x+(Math.sin(h)*st.v[0]+Math.cos(h)*st.v[1])*dt, z=p.z+(-Math.cos(h)*st.v[0]+Math.sin(h)*st.v[1])*dt, y=p.y+st.v[2]*dt*st.ex;
   const Smax=st.S*0.98; x=Math.max(-Smax,Math.min(Smax,x)); z=Math.max(-Smax,Math.min(Smax,z));
   const g=st.yOf(st.lat-z/ky,st.lon+x/kx), gy=g?g[1]:p.y, minY=gy+3*st.ex*Math.max(1,st.acK*0.5); if(y<minY){ y=minY; if(st.v[2]<0) st.v[2]=0; }
@@ -3654,7 +3657,49 @@ function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.keys
   if(st.acLine){ const pa=st.acLine.geometry.attributes.position; pa.setXYZ(0,x,gy,z); pa.setXYZ(1,x,y,z); pa.needsUpdate=true; st.acLine.computeLineDistances(); }
   st.rotor&&(st.rotor.rotation.y-=0.1);
   if(!st.hudT||performance.now()-st.hudT>200){ st.hudT=performance.now(); const hud=$('v3Hud'); if(hud){ const agl=(y-gy)/st.ex, msl=(y/st.ex)+st.zc, gs=Math.hypot(st.v[0],st.v[1])/f*1.944, vs=st.v[2]/f*196.85;
-      hud.innerHTML=`<span><small>機首</small><b>${String(Math.round(((h/RAD)%360+360)%360)||360).padStart(3,'0')}°</b></span><span><small>対地 AGL</small><b>${Math.round(agl*FT).toLocaleString()} ft</b></span><span><small>海抜</small><b>${Math.round(msl*FT).toLocaleString()} ft</b></span><span><small>速度</small><b>${Math.round(gs)} kt</b></span><span><small>昇降</small><b>${vs>=0?'+':''}${Math.round(vs/50)*50} fpm</b></span>${f>1?`<span><small>早回し</small><b>×${f.toFixed(0)}</b></span>`:''}`; } } }
+      hud.innerHTML=`<span><small>機首</small><b>${String(Math.round(((h/RAD)%360+360)%360)||360).padStart(3,'0')}°</b></span><span><small>対地 AGL</small><b>${Math.round(agl*FT).toLocaleString()} ft</b></span><span><small>海抜</small><b>${Math.round(msl*FT).toLocaleString()} ft</b></span><span><small>速度</small><b>${Math.round(gs)} kt</b></span><span><small>昇降</small><b>${vs>=0?'+':''}${Math.round(vs/50)*50} fpm</b></span>${f>1?`<span><small>早回し</small><b>×${f.toFixed(0)}</b></span>`:''}${st.hs&&st.H?`<span class="hsh"><small>ワイヤー</small><b>${Math.round(st.H.L*FT)} ft</b></span><span class="hsh"><small>吊り荷 対地</small><b>${Math.round(st.H.agl*FT)} ft</b></span><span class="hsh${st.H.ang>15?' w':''}"><small>振れ角</small><b>${Math.round(st.H.ang)}°</b></span>${st.H.dw>0.5?`<span class="hsh${st.H.dw>17?' w':''}"><small>吊り荷の風</small><b>${Math.round(st.H.dw)} m/s</b></span>`:''}`:''}`; } } }
+// ==== ホイスト：ワイヤーで吊った荷（救助員）を振り子として計算し、ダウンウォッシュ（吹き下ろし）を粒子で表示 ====
+function v3HoistVis(st,on){ const T=THREE; if(!st.sc) return;
+  if(on&&!st.H){ const k=st.acK||1, g=new T.Group(); st.sc.add(g);
+    const wire=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3()]),new T.LineBasicMaterial({color:0x111111})); g.add(wire);
+    const man=new T.Group(), M=c=>new T.MeshLambertMaterial({color:c}); const body=new T.Mesh(new T.CylinderGeometry(0.28,0.3,1.2,10),M(0xff6a1a)); body.position.y=-0.95; man.add(body);
+    const head=new T.Mesh(new T.SphereGeometry(0.2,12,8),M(0xffffff)); head.position.y=-0.15; man.add(head); const hook=new T.Mesh(new T.SphereGeometry(0.12,8,6),M(0x333333)); man.add(hook); man.scale.setScalar(Math.max(1,k*1.1)); g.add(man);
+    const N=900, pos=new Float32Array(N*3), pt=new T.Points(new T.BufferGeometry(),new T.PointsMaterial({color:0xe8f2ff,size:Math.max(0.5,0.6*k),transparent:true,opacity:.55,depthWrite:false}));
+    pt.geometry.setAttribute('position',new T.BufferAttribute(pos,3)); pt.frustumCulled=false; g.add(pt);
+    let vi=10; try{ vi=downwash(+$('hp').value*0.3048||0,+$('oat').value||15,(+($('gw')||{}).value||6000)).vi||10; }catch(e){}
+    st.H={g,wire,man,pt,L:0,P:null,V:new T.Vector3(),hp:null,vi,agl:0,ang:0,dw:0,part:Array.from({length:N},()=>({s:-1}))}; }
+  if(st.H) st.H.g.visible=!!on; }
+function v3Hoist(st,dt){ const T=THREE, H=st.H, ac=st.ac; if(!H||!ac) return; const ex=st.ex, kx=111320*Math.cos(st.lat*RAD), ky=110540, k=st.acK||1;
+  const gyR=(x,z)=>{ const q=st.yOf(st.lat-z/ky,st.lon+x/kx); return q?q[1]/ex:-1e9; };     // 地表の高さ（実寸 m・現場標高基準）
+  const Lmax=(+RC.cable||295)/FT; if(st.hw){ H.L=Math.max(0,Math.min(Lmax,H.L+st.hw*1.5*dt)); if(H.L>=Lmax||H.L<=0) st.hw=0; }
+  const hb=ac.localToWorld(new T.Vector3(1.75,0.9,-0.4)), hk=new T.Vector3(hb.x,hb.y/ex,hb.z);   // フック位置（実寸）
+  if(!H.P){ H.P=hk.clone(); H.V.set(0,0,0); H.hp=hk.clone(); }
+  const vh=hk.clone().sub(H.hp).divideScalar(Math.max(dt,1e-3)); H.hp=hk.clone();
+  // ダウンウォッシュの場：ローター直下は下向き、地表付近は外向き
+  const rc=new T.Vector3(ac.position.x,ac.position.y/ex,ac.position.z), R=ROTOR_D/2, w0=2*H.vi, gR=gyR(rc.x,rc.z), hR=rc.y-gR;
+  const air=p=>{ const dx=p.x-rc.x, dz=p.z-rc.z, r=Math.hypot(dx,dz), dep=rc.y-p.y; if(dep<0) return new T.Vector3(); const spread=R+dep*0.15, fz=Math.exp(-Math.pow(r/spread,4)), dec=Math.max(0.25,1-dep/(4*ROTOR_D));
+      const v=new T.Vector3(0,-w0*dec*fz,0); const hg=p.y-gyR(p.x,p.z); if(hg<R&&dep>hR*0.6){ const out=w0*0.7*dec*Math.exp(-Math.pow(Math.max(0,r-R)/(3*R),2))*(1-hg/R); if(r>0.1){ v.x+=dx/r*out; v.z+=dz/r*out; } v.y*=hg/R; } return v; };
+  if(H.L<0.3){ H.P.copy(hk); H.V.copy(vh); }
+  else{ const n=6, h=dt/n; for(let it=0;it<n;it++){ const ua=air(H.P), rel=ua.clone().sub(H.V), dr=rel.clone().multiplyScalar(0.035*rel.length());
+      H.V.addScaledVector(new T.Vector3(0,-9.81,0).add(dr),h); H.V.multiplyScalar(1-0.08*h); H.P.addScaledVector(H.V,h);
+      const d=H.P.clone().sub(hk), dl=d.length(); if(dl>H.L){ const nn=d.divideScalar(dl); H.P.copy(hk).addScaledVector(nn,H.L); const vr=H.V.clone().sub(vh).dot(nn); if(vr>0) H.V.addScaledVector(nn,-vr); }
+      const g=gyR(H.P.x,H.P.z); if(H.P.y<g){ H.P.y=g; if(H.V.y<0) H.V.y=0; H.V.x*=0.85; H.V.z*=0.85; } }
+    H.dw=air(H.P).length(); }
+  const g0=gyR(H.P.x,H.P.z); H.agl=Math.max(0,H.P.y-g0); const dd=H.P.clone().sub(hk); H.ang=H.L>0.3&&dd.length()>0.1?Math.acos(Math.min(1,-dd.y/dd.length()))/RAD:0;
+  // 描画（縦の強調は y にだけ掛ける）
+  const P2=new T.Vector3(H.P.x,H.P.y*ex,H.P.z), pa=H.wire.geometry.attributes.position; pa.setXYZ(0,hb.x,hb.y,hb.z); pa.setXYZ(1,P2.x,P2.y,P2.z); pa.needsUpdate=true; H.wire.visible=H.L>=0.3;
+  H.man.position.copy(P2); H.man.visible=H.L>=0.3; if(dd.length()>0.1){ H.man.quaternion.setFromUnitVectors(new T.Vector3(0,-1,0),dd.clone().setY(dd.y*ex).normalize()); }
+  const lab=$('v3HL'); if(lab) lab.textContent=`${Math.round(H.L*FT)} ft・${Math.round(H.L)} m`;
+  // ダウンウォッシュの粒子（見た目は機体の拡大に合わせる）
+  const pos=H.pt.geometry.attributes.position, Rv=R*k, top=ac.position.y-0.4*k*ex;
+  for(let i=0;i<H.part.length;i++){ const q=H.part[i];
+    if(q.s<0||q.t>q.life){ if(Math.random()<0.25){ const a=Math.random()*Math.PI*2, r=Math.sqrt(Math.random())*Rv; q.x=ac.position.x+Math.cos(a)*r; q.z=ac.position.z+Math.sin(a)*r; q.y=top; q.vx=0; q.vz=0; q.vy=-w0*k*(0.7+Math.random()*0.5); q.s=0; q.t=0; q.life=2+Math.random()*2.5; } else { pos.setXYZ(i,0,-1e6,0); continue; } }
+    q.t+=dt; const gy=gyR(q.x,q.z)*ex;
+    if(q.s===0){ q.y+=q.vy*dt*ex*0.6; q.x+=(Math.random()-0.5)*0.4*k; q.z+=(Math.random()-0.5)*0.4*k; const dep=(top-q.y)/ex; if(dep>4*ROTOR_D*k){ q.life=0; }
+      if(q.y<=gy+0.3*ex){ q.y=gy+0.3*ex; q.s=1; const dx=q.x-ac.position.x, dz=q.z-ac.position.z, r=Math.max(0.1,Math.hypot(dx,dz)), sp=w0*0.8*k*(0.6+Math.random()*0.6); q.vx=dx/r*sp; q.vz=dz/r*sp; } }
+    else { q.x+=q.vx*dt; q.z+=q.vz*dt; q.vx*=1-0.6*dt; q.vz*=1-0.6*dt; q.y=gyR(q.x,q.z)*ex+(0.3+q.t*0.6)*ex*Math.min(1,k); }
+    pos.setXYZ(i,q.x,q.y,q.z); }
+  pos.needsUpdate=true; }
 async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
   const ov=document.createElement('div'); ov.id='v3Ov'; ov.className='v3ov';
   const B0='seamlessphoto';
@@ -3663,20 +3708,24 @@ async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
     <span class="seg" id="v3B">${[['seamlessphoto','写真'],['std','地図'],['hillshademap','陰影']].map(([k,t])=>`<button type="button" data-b="${k}" aria-pressed="${k===B0}">${t}</button>`).join('')}</span>
     <span class="seg" id="v3S">${[[800,'±0.8 km'],[1500,'±1.5 km'],[3000,'±3 km'],[6000,'±6 km'],[12000,'±12 km']].map(([k,t])=>`<button type="button" data-s="${k}" aria-pressed="${k===st.S}">${t}</button>`).join('')}</span>
     <span class="seg" id="v3E">${[[1,'縦×1'],[1.5,'×1.5'],[2,'×2']].map(([k,t])=>`<button type="button" data-e="${k}" aria-pressed="${k===st.ex}">${t}</button>`).join('')}</span>
-    <button type="button" class="v3rcb" id="v3RC" aria-pressed="false">🎮 操縦</button><button type="button" class="v3x" aria-label="閉じる">×</button></div><div class="v3c" id="v3C"></div><div class="v3msg" id="v3M">読み込み中…</div><div class="v3hint">1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく</div>
-    <div class="v3hud" id="v3Hud" hidden></div><div class="v3js l" id="v3JL" hidden><i></i><span>上昇／下降・左右旋回</span></div><div class="v3js r" id="v3JR" hidden><i></i><span>前進／後退・横移動</span></div><button type="button" class="v3home" id="v3Home" hidden>↺ 元の位置</button>`;
+    <button type="button" class="v3rcb" id="v3RC" aria-pressed="false">🎮 操縦</button><button type="button" class="v3rcb" id="v3HS" aria-pressed="false">🪝 ホイスト</button><button type="button" class="v3x" aria-label="閉じる">×</button></div><div class="v3c" id="v3C"></div><div class="v3msg" id="v3M">読み込み中…</div><div class="v3hint">1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく</div>
+    <div class="v3hud" id="v3Hud" hidden></div><div class="v3js l" id="v3JL" hidden><i></i><span>上昇／下降・左右旋回</span></div><div class="v3js r" id="v3JR" hidden><i></i><span>前進／後退・横移動</span></div><button type="button" class="v3home" id="v3Home" hidden>↺ 元の位置</button>
+    <div class="v3hsp" id="v3HSP" hidden><button type="button" data-hw="-1">▲ 巻上</button><b id="v3HL">0 ft</b><button type="button" data-hw="1">▼ 降下</button><button type="button" class="hstop" data-hw="0">■</button></div>`;
   document.body.appendChild(ov); document.body.classList.add('v3open'); ov.style.setProperty('--v3t',(ov.querySelector('.v3bar').offsetHeight)+'px');
   const close=()=>{ st.alive=false; try{ st.unbind&&st.unbind(); }catch(e){} try{ st.ren&&st.ren.dispose(); }catch(e){} cancelAnimationFrame(st.raf); ov.remove(); document.body.classList.remove('v3open'); };
   ov.querySelector('.v3x').onclick=close;
   st.in={lx:0,ly:0,rx:0,ry:0}; st.keys=new Set();
-  $('v3RC').onclick=()=>{ st.rc=!st.rc; $('v3RC').setAttribute('aria-pressed',st.rc); ['v3Hud','v3JL','v3JR','v3Home'].forEach(id=>$(id).hidden=!st.rc); ov.querySelector('.v3hint').textContent=st.rc?'左スティック：上昇・下降／旋回　右スティック：前後・横　（キーボード：W/S 前後・A/D 横・↑/↓ 上下・←/→ 旋回）':'1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく'; if(st.rc&&st.heli){ const d=st.cam.position.clone().sub(st.ctl.target); st.ctl.target.copy(st.ac.position); st.cam.position.copy(st.ac.position).add(d.setLength(Math.max(80,(st.acK||1)*90))); } };
-  $('v3Home').onclick=()=>{ if(!st.home||!st.ac) return; const [x,y,z,h]=st.home, d=new THREE.Vector3(x,y,z).sub(st.ac.position); st.ac.position.set(x,y,z); st.hdg=h; st.v=[0,0,0]; st.cam.position.add(d); st.ctl.target.add(d); };
+  $('v3RC').onclick=()=>{ st.rc=!st.rc; $('v3RC').setAttribute('aria-pressed',st.rc); ['v3JL','v3JR'].forEach(id=>$(id).hidden=!st.rc); $('v3Hud').hidden=!(st.rc||st.hs); $('v3Home').hidden=!(st.rc||st.hs); ov.querySelector('.v3hint').textContent=st.rc?'左スティック：上昇・下降／旋回　右スティック：前後・横　（キーボード：W/S 前後・A/D 横・↑/↓ 上下・←/→ 旋回）':'1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく'; if(st.rc&&st.heli){ const d=st.cam.position.clone().sub(st.ctl.target); st.ctl.target.copy(st.ac.position); st.cam.position.copy(st.ac.position).add(d.setLength(Math.max(80,(st.acK||1)*90))); } };
+  const showHud=()=>{ $('v3Hud').hidden=!(st.rc||st.hs); $('v3Home').hidden=!(st.rc||st.hs); };
+  $('v3HS').onclick=()=>{ st.hs=!st.hs; $('v3HS').setAttribute('aria-pressed',st.hs); $('v3HSP').hidden=!st.hs; showHud(); v3HoistVis(st,st.hs); };
+  $('v3HSP').querySelectorAll('[data-hw]').forEach(b=>{ const v=+b.dataset.hw; if(v===0){ b.onclick=()=>{ st.hw=0; }; return; } b.addEventListener('pointerdown',e=>{ st.hw=v; e.preventDefault(); }); ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{ if(st.hw===v&&!st.hwLatch) st.hw=0; })); b.ondblclick=()=>{ st.hw=v; st.hwLatch=true; setTimeout(()=>{ st.hwLatch=false; },50); }; });
+  $('v3Home').onclick=()=>{ if(!st.home||!st.ac) return; const [x,y,z,h]=st.home, d=new THREE.Vector3(x,y,z).sub(st.ac.position); st.ac.position.set(x,y,z); st.hdg=h; st.v=[0,0,0]; if(st.H) st.H.P=null; st.cam.position.add(d); st.ctl.target.add(d); };
   const stick=(el,kx,ky)=>{ const knob=el.querySelector('i'); let id=null; const set=e=>{ const r=el.getBoundingClientRect(), R=r.width/2, dx=e.clientX-r.left-R, dy=e.clientY-r.top-R, m=Math.min(1,Math.hypot(dx,dy)/(R*0.8)), a=Math.atan2(dy,dx); const x=Math.cos(a)*m, y=Math.sin(a)*m; st.in[kx]=x; st.in[ky]=-y; knob.style.transform=`translate(${x*R*0.8}px,${y*R*0.8}px)`; };
     el.addEventListener('pointerdown',e=>{ id=e.pointerId; el.setPointerCapture(id); set(e); e.preventDefault(); e.stopPropagation(); });
     el.addEventListener('pointermove',e=>{ if(e.pointerId===id){ set(e); e.preventDefault(); } });
     const up=e=>{ if(e.pointerId!==id) return; id=null; st.in[kx]=0; st.in[ky]=0; knob.style.transform=''; }; el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); };
   stick($('v3JL'),'lx','ly'); stick($('v3JR'),'rx','ry');
-  const kd=e=>{ if(!st.rc) return; const k=e.key.length===1?e.key.toLowerCase():e.key; if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){ st.keys.add(k); e.preventDefault(); } }, ku=e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; st.keys.delete(k); };
+  const kd=e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; if(st.hs&&(k==='z'||k==='x')){ st.hw=k==='z'?1:-1; e.preventDefault(); return; } if(!st.rc) return; if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)){ st.keys.add(k); e.preventDefault(); } }, ku=e=>{ const k=e.key.length===1?e.key.toLowerCase():e.key; st.keys.delete(k); if(k==='z'||k==='x') st.hw=0; };
   addEventListener('keydown',kd); addEventListener('keyup',ku); st.unbind=()=>{ removeEventListener('keydown',kd); removeEventListener('keyup',ku); }; st.onKey=e=>{ if(e.key==='Escape') close(); }; document.addEventListener('keydown',st.onKey,{once:true});
   ov.querySelectorAll('#v3B [data-b]').forEach(b=>b.onclick=()=>{ st.base=b.dataset.b; ov.querySelectorAll('#v3B [data-b]').forEach(x=>x.setAttribute('aria-pressed',x===b)); v3Tex(); });
   ov.querySelectorAll('#v3S [data-s]').forEach(b=>b.onclick=()=>{ st.S=+b.dataset.s; try{localStorage.setItem('sd139v3s',st.S);}catch(e){} ov.querySelectorAll('#v3S [data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b)); v3Build(true); });
@@ -3696,7 +3745,7 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
     const cam=new T.PerspectiveCamera(50,1,5,200000); st.cam=cam; const ctl=new T.OrbitControls(cam,ren.domElement); ctl.enableDamping=true; ctl.dampingFactor=0.12; ctl.maxPolarAngle=Math.PI*0.495; ctl.screenSpacePanning=true; st.ctl=ctl;
     const rs=()=>{ const w=box.clientWidth, h=box.clientHeight; ren.setSize(w,h); cam.aspect=w/Math.max(1,h); cam.updateProjectionMatrix(); }; rs(); st.rs=rs; addEventListener('resize',rs);
     ren.domElement.addEventListener('dblclick',()=>{ if(st.heli){ const d=st.cam.position.clone().sub(ctl.target), r=Math.max(60,(st.acK||1)*70); ctl.target.copy(st.heli); st.cam.position.copy(st.heli).add(d.setLength(r)); } });
-    let tPrev=performance.now(); const loop=()=>{ if(!st.alive) return; const tn=performance.now(), dt=Math.min(0.1,(tn-tPrev)/1000); tPrev=tn; if(st.rc) v3Step(st,dt); if(st.rotor) st.rotor.rotation.y-=0.35; if(st.trotor) st.trotor.rotation.x+=0.9; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
+    let tPrev=performance.now(); const loop=()=>{ if(!st.alive) return; const tn=performance.now(), dt=Math.min(0.1,(tn-tPrev)/1000); tPrev=tn; if(st.rc||st.hs) v3Step(st,dt); if(st.hs) v3Hoist(st,dt); if(st.rotor) st.rotor.rotation.y-=0.35; if(st.trotor) st.trotor.rotation.x+=0.9; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
   // terrain
   if(st.grp) st.sc.remove(st.grp); const grp=new T.Group(); st.grp=grp; st.sc.add(grp);
   const geo=new T.PlaneGeometry(2*S,2*S,N,N); geo.rotateX(-Math.PI/2); const pos=geo.attributes.position;
