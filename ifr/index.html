@@ -1776,7 +1776,7 @@ function renderEnr(){
    <div class="stat ${o2}"><div class="k">10,000ft超の時間</div><div class="v">${Math.round(over10+over13)}<small style="font-size:13px"> 分</small></div><div class="s">${o2==='no'?'酸素が必要':o2==='cau'?'設定時間以内':'なし'}</div></div></div>
    <div class="phase">${Object.entries(byPh).map(([k,d])=>`<div style="flex:${d};background:${PH[k][1]}">${d/tot>0.12?PH[k][0]+' '+Math.round(d)+'NM':''}</div>`).join('')}</div>
    <div class="plegend">${Object.keys(byPh).map(k=>`<span><i style="background:${PH[k][1]}"></i>${PH[k][0]} ${Math.round(byPh[k])}NM</span>`).join('')}</div>`:'';
-  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
+  $('rteMap').innerHTML=(rows.length?timeline(C,'地上からの流れ（UTC）')+'<div class="row" style="margin:6px 0"><button type="button" class="sub" data-kml="1">🌏 3D航跡を書き出す（Google Earth用 KML）</button></div><h3>断面図</h3>'+profileView(C)+profileLegend(C)+'<h3>経路図</h3>':'')+routeMap(C);
   bindProfile();bindMap();
   // legs table with sector changes interleaved
   let cum=0,ct=0; const chg=[...sc.changes]; let html='';
@@ -2279,6 +2279,43 @@ function lvlListUpdate(){const s=$('f_lvl_s');if(!s)return;const mc=routeMagCour
     const ok=cf==null?null:ifrLevels(east).includes(cf);
     $('lvlNote').innerHTML=`${esc(S.route.dep)}→${esc(S.route.dst)} の磁針路 約 <b class="code">${String(mc).padStart(3,'0')}°</b> → <b>${east?'東向き：奇数（1,000・3,000・5,000ft…）':'西向き：偶数（2,000・4,000・6,000ft…）'}</b>`+(ok===false?`<br><span style="color:var(--red,#c00)">入力中の ${esc(cur)} は${east?'西':'東'}向きの高度です。</span>`:'')+'<br><small>出発地→目的地の直線で判定（偏差は概算）。14,000ft以下はA、それより上はFL。区間ごとの向きや管制の指示が優先です。</small>'}
   if(cur&&!s.value)s.value=''}
+// 3D planned track → KML (Google Earth). Altitudes from the same climb/cruise/descent profile as the 断面図; each phase is its own coloured line.
+function kmlBuild(){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND');const tot=ph.reduce((s,p)=>s+p.d,0);if(!tot||!C.path||C.path.length<2)return null;
+  const dep=ap(S.route.dep),dst=ap(S.route.dst);const ed=dep?dep.e||0:0,ea=dst?dst.e||0:0;const cr=C.lvl||6000;const AP=altProfile(C,tot,ed,ea,cr);const pts=AP.pts;
+  const altAt=d=>{if(d<=pts[0][0])return pts[0][1];for(let i=1;i<pts.length;i++)if(pts[i][0]>=d){const a=pts[i-1],b=pts[i];const f=(d-a[0])/((b[0]-a[0])||1);return a[1]+(b[1]-a[1])*f}return pts[pts.length-1][1]};
+  const P=C.path.filter((q,i,a)=>q&&(i===0||gc(a[i-1],q)>0.01));const seg=[];let plen=0;for(let i=1;i<P.length;i++){const d=gc(P[i-1],P[i]);seg.push(d);plen+=d}if(!plen)return null;
+  const smp=[];let cum=0;smp.push({p:P[0],s:0});for(let i=1;i<P.length;i++){const d=seg[i-1];const n=Math.max(1,Math.ceil(d/0.5));for(let k=1;k<=n;k++)smp.push({p:interp(P[i-1],P[i],k/n),s:cum+d*k/n});cum+=d}
+  const bnd=[];let c2=0;ph.forEach(q=>{bnd.push([c2,c2+q.d,q.k]);c2+=q.d});const phAt=d=>{for(const b of bnd)if(d<=b[1]+1e-6)return b[2];return bnd[bnd.length-1][2]};
+  smp.forEach(o=>{o.d=o.s/plen*tot;o.a=altAt(o.d);o.k=phAt(o.d)});
+  const X=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));const M=ft=>(ft*0.3048).toFixed(0);
+  const col=(hex,a='ff')=>{const m=hex.replace('#','');return a+m.slice(4,6)+m.slice(2,4)+m.slice(0,2)};
+  const co=o=>`${o.p[1].toFixed(6)},${o.p[0].toFixed(6)},${M(o.a)}`;
+  let styles='';for(const [k,v] of Object.entries(PHC))styles+=`<Style id="ph${k}"><LineStyle><color>${col(v[1])}</color><width>4</width></LineStyle><PolyStyle><color>${col(v[1],'40')}</color></PolyStyle></Style>`;
+  styles+=`<Style id="ma"><LineStyle><color>${col('#C0392B','99')}</color><width>2</width></LineStyle><PolyStyle><color>${col('#C0392B','20')}</color></PolyStyle></Style><Style id="fix"><IconStyle><scale>0.7</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href></Icon></IconStyle><LabelStyle><scale>0.8</scale></LabelStyle></Style><Style id="apt"><IconStyle><scale>1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/airports.png</href></Icon></IconStyle></Style><Style id="trk"><IconStyle><Icon><href>http://maps.google.com/mapfiles/kml/shapes/heliport.png</href></Icon></IconStyle><LineStyle><color>00ffffff</color></LineStyle></Style>`;
+  // phases
+  let lines='';let i0=0;for(let i=1;i<=smp.length;i++){if(i===smp.length||smp[i].k!==smp[i0].k){const g=smp.slice(i0,Math.min(i+1,smp.length));const k=smp[i0].k;const dd=g[g.length-1].d-g[0].d;
+      lines+=`<Placemark><name>${X(PHC[k][0])}（${Math.round(dd)}NM）</name><description>${X(PHC[k][0])}：${Math.round(g[0].a).toLocaleString()}ft → ${Math.round(g[g.length-1].a).toLocaleString()}ft</description><styleUrl>#ph${k}</styleUrl><LineString><extrude>1</extrude><tessellate>0</tessellate><altitudeMode>absolute</altitudeMode><coordinates>${g.map(co).join(' ')}</coordinates></LineString></Placemark>`;i0=i}}
+  // missed approach (rough: climb from threshold at the planned rate, capped at 3,000ft above the field)
+  let ma='';const mt=C.arr&&C.arr.maTrack;if(mt&&mt.length>1){let s=0,a=ea+50;const rc=(S.perf.roc||500)*60/(C.tas||120);const q=[`${mt[0][1].toFixed(6)},${mt[0][0].toFixed(6)},${M(a)}`];
+    for(let i=1;i<mt.length;i++){s+=gc(mt[i-1],mt[i]);q.push(`${mt[i][1].toFixed(6)},${mt[i][0].toFixed(6)},${M(Math.min(ea+3000,ea+50+rc*s))}`)}
+    ma=`<Placemark><name>復行（概略）</name><styleUrl>#ma</styleUrl><LineString><extrude>1</extrude><altitudeMode>absolute</altitudeMode><coordinates>${q.join(' ')}</coordinates></LineString></Placemark>`}
+  // fixes with planned altitude
+  let fx='';let cd=0;const seen=new Set();C.rows.forEach(l=>{cd+=l.d||0;const n=String(l.b||'').split(' ')[0];const fp=fixPos(n);if(!fp||seen.has(n)||n===S.route.dst)return;seen.add(n);const a=altAt(cd);
+    fx+=`<Placemark><name>${X(n)} ${Math.round(a/100)*100}ft</name><description>${X(PHC[l.kind]?PHC[l.kind][0]:'')}　出発から ${Math.round(cd)}NM</description><styleUrl>#fix</styleUrl><Point><extrude>1</extrude><altitudeMode>absolute</altitudeMode><coordinates>${fp[1]},${fp[0]},${M(a)}</coordinates></Point></Placemark>`});
+  const apt=(i,A)=>A&&A.p?`<Placemark><name>${X(i)} ${X(A.n||'')}</name><styleUrl>#apt</styleUrl><Point><coordinates>${A.p[1]},${A.p[0]},0</coordinates></Point></Placemark>`:'';
+  // time-animated track (time slider in Google Earth)
+  const t0=+(utc(S.route.etd)||new Date())+(+S.perf.taxiMin||0)*60e3;const tas=C.tas||120;
+  const trk=`<Placemark><name>飛行のアニメーション（TAS ${tas}kt）</name><styleUrl>#trk</styleUrl><gx:Track><altitudeMode>absolute</altitudeMode>${smp.map(o=>`<when>${new Date(t0+o.d/tas*3600e3).toISOString()}</when>`).join('')}${smp.map(o=>`<gx:coord>${o.p[1].toFixed(6)} ${o.p[0].toFixed(6)} ${M(o.a)}</gx:coord>`).join('')}</gx:Track></Placemark>`;
+  const name=`${S.route.dep||''}→${S.route.dst||''} ${(S.fpl.lvl||'').toUpperCase()}`;
+  const lookAt=(()=>{const a=dep&&dep.p,b=dst&&dst.p;if(!a||!b)return '';const r=Math.max(20,gc(a,b))*1852*1.6;return `<LookAt><longitude>${(a[1]+b[1])/2}</longitude><latitude>${(a[0]+b[0])/2}</latitude><altitude>0</altitude><heading>0</heading><tilt>55</tilt><range>${r.toFixed(0)}</range><altitudeMode>relativeToGround</altitudeMode></LookAt>`})();
+  const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2"><Document><name>${X(name)}</name><description>IFRブリーフィングの計画航跡（概略）。高度は断面図と同じ計算（上昇率 ${S.perf.roc||500}ft/分・降下 約3°）。実際の飛行は管制の指示とチャートに従ってください。</description>${lookAt}${styles}<Folder><name>フェーズ別の航跡</name><open>1</open>${lines}${ma}</Folder><Folder><name>フィックスと計画高度</name>${fx}</Folder><Folder><name>飛行場</name>${apt(S.route.dep,dep)}${apt(S.route.dst,dst)}${S.route.alt?apt(S.route.alt,ap(S.route.alt)):''}</Folder>${trk}</Document></kml>`;
+  return {kml,file:`IFR_${S.route.dep||'DEP'}-${S.route.dst||'DST'}_${(S.fpl.lvl||'').toUpperCase()||'LVL'}.kml`}}
+async function kmlExport(){let r;try{r=kmlBuild()}catch(e){alertBox('3D航跡を作れませんでした：'+e.message);return}if(!r){alertBox('出発地・目的地と経路を入れてください。');return}
+  const type='application/vnd.google-earth.kml+xml';const blob=new Blob([r.kml],{type});
+  try{const f=new File([blob],r.file,{type});if(navigator.canShare&&navigator.canShare({files:[f]})&&/iPad|iPhone|iPod|Android/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1&&navigator.canShare&&navigator.canShare({files:[f]}))){await navigator.share({files:[f],title:r.file});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=r.file;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},4000)}
+function alertBox(m){try{const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:10px;z-index:9999;font-size:14px;max-width:90%';document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest('[data-kml]'))kmlExport()});
 function renderAll(){try{lvlListUpdate()}catch(e){}const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
 /* ---------- inputs ---------- */
