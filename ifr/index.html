@@ -1383,9 +1383,18 @@ function windRose(icao,w,sel){const A=ap(icao);if(!A)return '';const S0=190,c=S0
   const seen=new Set();A.rw.forEach(rw=>{if(rw.b==null)return;const k=[rw.id,recip(rw.id)].sort().join();if(seen.has(k))return;seen.add(k);const [x1,y1]=P(rw.b+180,r-14),[x2,y2]=P(rw.b,r-14);const on=sel&&(rw.id===sel||recip(rw.id)===sel);
     g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${on?'var(--ink)':'var(--muted)'}" stroke-width="${on?9:6}" stroke-linecap="butt" opacity="${on?1:.55}"/>`;
     const [a1,b1]=P(rw.b+180,r-26),[a2,b2]=P(rw.b,r-26);g+=`<text x="${a1}" y="${b1+4}" text-anchor="middle" font-size="10" font-weight="700" font-family="B612,sans-serif" fill="var(--ink)" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${rw.id}</text><text x="${a2}" y="${b2+4}" text-anchor="middle" font-size="10" font-weight="700" font-family="B612,sans-serif" fill="var(--ink)" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${recip(rw.id)}</text>`});
-  if(w&&w.dir!=null){const [x1,y1]=P(w.dir,r+2),[x2,y2]=P(w.dir,20);const ang=w.dir+180;g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--sky)" stroke-width="4"/><path d="M0,0 L-7,-12 L7,-12 Z" fill="var(--sky)" transform="translate(${x2},${y2}) rotate(${ang})"/>`}
-  const lab=w?`${w.dir==null?'VRB':String(w.dir).padStart(3,'0')+'°'} ${w.spd}${w.gst?'G'+w.gst:''}kt`:'風の情報なし';
-  return `<div class="rose"><svg viewBox="0 0 ${S0} ${S0}" width="${S0}" height="${S0}" role="img" aria-label="滑走路と風">${g}</svg><div class="code rosel">${lab}</div><div class="note" style="text-align:center;margin:0">風は真方位</div></div>`}
+  // wind barb: staff toward where the wind blows FROM, feathers at the outer end (10kt full, 5kt half, 50kt pennant)
+  if(w&&w.dir!=null&&w.spd>=3){const col='#1F6FE0';const u=[Math.sin(w.dir*RAD),-Math.cos(w.dir*RAD)],v=[Math.cos(w.dir*RAD),Math.sin(w.dir*RAD)];
+    const L=r-6,tip=[c+u[0]*L,c+u[1]*L];g+=`<line x1="${c+u[0]*7}" y1="${c+u[1]*7}" x2="${tip[0]}" y2="${tip[1]}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+    let k=Math.round(w.spd/5)*5,pos=0;const at=d=>[tip[0]-u[0]*d,tip[1]-u[1]*d];const FL=32;
+    const fe=(d,len)=>{const q=at(d);return `<line x1="${q[0]}" y1="${q[1]}" x2="${q[0]+(v[0]*.87+u[0]*.5)*len}" y2="${q[1]+(v[1]*.87+u[1]*.5)*len}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`};
+    while(k>=50){const q=at(pos),q2=at(pos+13);g+=`<path d="M${q[0]},${q[1]} L${q[0]+(v[0]*.87+u[0]*.5)*FL},${q[1]+(v[1]*.87+u[1]*.5)*FL} L${q2[0]},${q2[1]} Z" fill="${col}"/>`;pos+=17;k-=50}
+    while(k>=10){g+=fe(pos,FL);pos+=10;k-=10}
+    if(k>=5){if(pos===0)pos=10;g+=fe(pos,FL*.55)}
+    g+=`<circle cx="${c}" cy="${c}" r="7" fill="${col}"/><circle cx="${c}" cy="${c}" r="3" fill="var(--card)"/>`}
+  else if(w&&(w.spd||0)<3){g+=`<circle cx="${c}" cy="${c}" r="9" fill="none" stroke="#1F6FE0" stroke-width="3"/><circle cx="${c}" cy="${c}" r="4" fill="none" stroke="#1F6FE0" stroke-width="2"/>`}
+  const lab=w?((w.spd||0)<3&&w.dir!=null?`静穏に近い ${String(w.dir).padStart(3,'0')}° ${w.spd}kt`:`${w.dir==null?'VRB':String(w.dir).padStart(3,'0')+'°'} ${w.spd}${w.gst?'G'+w.gst:''}kt`):'風の情報なし';
+  return `<div class="rose"><svg viewBox="0 0 ${S0} ${S0}" width="${S0}" height="${S0}" role="img" aria-label="滑走路と風">${g}</svg><div class="code rosel">${lab}</div><div class="note" style="text-align:center;margin:0">風は真方位・矢羽根 長＝10kt／短＝5kt／旗＝50kt</div></div>`}
 function gauge(label,act,min,unit,fmt){if(act==null||min==null)return '';const ok=act>=min;const max=Math.max(min*2.2,Math.min(act,min*4));const pa=Math.min(100,act/max*100),pm=min/max*100;
   return `<div class="gauge"><div class="gl">${label}<b class="code ${ok?'':'bad'}">${fmt?fmt(act):act}${unit}</b><small>最低 ${fmt?fmt(min):min}${unit}</small></div><div class="gb"><div class="gf ${ok?'ok':'ng'}" style="width:${pa}%"></div><div class="gm" style="left:${pm}%"></div></div></div>`}
 function statusCard(kind,title,body){return `<div class="scard ${kind}"><div class="sci">${kind==='go'?'✓':kind==='no'?'✕':kind==='cau'?'!':'…'}</div><div><div class="sct">${title}</div><div class="scb">${body}</div></div></div>`}
