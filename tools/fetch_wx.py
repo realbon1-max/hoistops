@@ -37,6 +37,8 @@ def imoc_metars():
         for typ, icao, ts, body in pat.findall(txt):
             body = body.strip()
             if body.startswith('NIL') or not body: continue
+            dd = int(ts[:2]); now = time.gmtime(); prev = time.gmtime(time.time() - 86400)
+            if dd not in (now.tm_mday, prev.tm_mday): continue  # 古い報（前月など）は捨てる
             raw = f'{typ or "METAR"} {icao} {ts} {body}='
             if icao not in out or out[icao]['ts'] < ts: out[icao] = {'ts': ts, 'raw': raw}
         time.sleep(1)
