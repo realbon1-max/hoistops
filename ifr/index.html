@@ -1528,7 +1528,7 @@ function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return n
   const pl=plane(A.p);
   if(!fixes.length)return {starD:0,appD:0,fixes:[],track:[],appTrack:[],label};
   const pts=fixes.map(fixPos);const P0=pl.to(pts[0]);
-  let starD=0,track=[P0],h=pts.length>1?crs(pts[0],pts[1]):crs(pts[0],A.p);
+  const prevRp=rp.length>1&&rp[rp.length-1]===fixes[0]?fixPos(rp[rp.length-2]):null;let starD=0,track=[P0],h=pts.length>1?crs(pts[0],pts[1]):(prevRp?crs(prevRp,pts[0]):crs(pts[0],A.p));
   let fixD=[[fixes[0],0]];
   if(pts.length>1){const off=pre?0:1;const RT=radTargets(fixes.slice(1),sT?sT.slice(off):null,sF?sF.slice(off):null,pl,A.mv,i,fixes[0]);const s=simulate(P0,h,RT.T,tas,null,RT.TT,RT.TF);starD=s.dist;track.push(...s.track);h=s.hdg;fixD=fixD.concat(fixes.slice(1).map((f,k)=>[f,s.at[RT.ix[k]]]))}
   const x=A.iac.find(q=>q.n===P.app);let appD=0,fl=null,rw=null,appTrack=[],appFix=[],maTrack=[],appProf=null,appStart=null,appBr=[];const from=track[track.length-1];
@@ -1553,7 +1553,7 @@ function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return n
         if(iaf&&iaf!==lastStar){seq.push(pl.to(fixPos(iaf)));nm.push([iaf,'IAF'])}else if(iaf)nm.push([iaf,'IAF']);
         if(iaf){const br=brOf(iaf).slice(1);br.forEach(f=>{seq.push(pl.to(fixPos(f)));nm.push([f,'経由'])})}
         iafs.filter(o=>o!==iaf).forEach(o=>{const br=brOf(o);const tgt=ifN||fafN;appBr.push([...br,tgt].filter(Boolean).map(fixPos));nm.push([o,'IAF（別ルート）'])});
-        if(x.bt&&!ifN&&NAV.F[x.bt[0]]){const nav=[NAV.F[x.bt[0]][0],NAV.F[x.bt[0]][1]];const mvA=A.mv!=null?A.mv:-8;const fMag=(rw.b-mvA+360)%360,rMag=(fMag+180)%360;const dd=(a,b)=>Math.abs(((a-b+540)%360)-180);const oc=(x.deg||[]).filter(c=>dd(c,rMag)>=5&&dd(c,rMag)<=40).sort((a,b)=>dd(a,rMag)-dd(b,rMag))[0];const ob=dest(nav,oc!=null?(oc+mvA+360)%360:(back+20)%360,x.bt[1]);if(!iaf||iaf!==x.bt[0]){seq.push(pl.to(nav))}seq.push(pl.to(ob));nm.push(['ベースターン',''])}
+        if(x.bt&&!ifN&&NAV.F[x.bt[0]]){const nav=[NAV.F[x.bt[0]][0],NAV.F[x.bt[0]][1]];const mvA=A.mv!=null?A.mv:-8;const fMag=(rw.b-mvA+360)%360,rMag=(fMag+180)%360;const dd=(a,b)=>Math.abs(((a-b+540)%360)-180);const oc=(x.deg||[]).filter(c=>dd(c,rMag)>=5&&dd(c,rMag)<=40).sort((a,b)=>dd(a,rMag)-dd(b,rMag))[0];const G=baseTurnPts(x,rw,pl.from(fap));if(!iaf||iaf!==x.bt[0]){seq.push(pl.to(nav))}if(G){G.pts.slice(1,-1).forEach(q=>seq.push(pl.to(q)))}else{const ob=dest(nav,oc!=null?(oc+mvA+360)%360:(back+20)%360,x.bt[1]);seq.push(pl.to(ob))}nm.push(['ベースターン',''])}
         if(ifN&&x.arc&&NAV.F[x.arc[0]]){const nav=[NAV.F[x.arc[0]][0],NAV.F[x.arc[0]][1]];const mvA=A.mv!=null?A.mv:-8;const ifR=crs(nav,fixPos(ifN));const dd=(a,b)=>Math.abs(((a-b+540)%360)-180);
           const st=(x.arc[2]||[]).map(r=>(r+mvA+360)%360).filter(r=>dd(r,ifR)>=5&&dd(r,ifR)<=90).sort((a,b)=>dd(a,ifR)-dd(b,ifR))[0];
           if(st!=null){const D=x.arc[1];const sgn=((ifR-st+540)%360)-180>0?1:-1;const n=Math.ceil(dd(st,ifR)/5);for(let k=0;k<n;k++){seq.push(pl.to(dest(nav,(st+sgn*k*dd(st,ifR)/n+360)%360,D)))}nm.push(['DME '+D+'NMのアーク',''])}}
@@ -1888,7 +1888,7 @@ function brgOf(a,b){const la1=a[0]*RAD,la2=b[0]*RAD,dl=(b[1]-a[1])*RAD;return (M
 function holdPath(apt,h){const A=ap(apt),mv=(A&&A.mv)||0;const p=plPos(apt,h[0]);if(!p||!h[1])return null;const inb=(+h[1]+mv+360)%360,R=h.slice(2).includes('L')?-1:1;
   const L=4,w=2;const o=dest(p,(inb+180)%360,L);const side=(inb+90*R+360)%360;const p2=dest(p,side,w),o2=dest(o,side,w);const arc=(c,b0,sw)=>{const r=[];for(let k=0;k<=8;k++)r.push(dest(c,b0+sw*k/8,w/2));return r};
   const c1=dest(p,side,w/2),c2=dest(o,side,w/2);return [p,...arc(c1,(side+180)%360,180*R).slice(1),o2,...arc(c2,side,180*R).slice(1)]}
-function baseTurn(x,rw,fp){const A=ap(S.route.dst),mv=A.mv!=null?A.mv:-8;const nav=fixPos(x.bt[0]);const D=x.bt[1];
+function baseTurnPts(x,rw,fp){const A=ap(S.route.dst),mv=A.mv!=null?A.mv:-8;const nav=fixPos(x.bt[0]);if(!nav||!fp)return null;const D=x.bt[1];
   const inb=rw.b,fo=(inb+180)%360;const dd=(a,b)=>Math.abs(((a-b+540)%360)-180);const rMag=(fo-mv+360)%360;
   const oc=(x.deg||[]).filter(c=>dd(c,rMag)>=5&&dd(c,rMag)<=40).sort((a,b)=>dd(a,rMag)-dd(b,rMag))[0];if(oc==null)return null;
   const ob=(oc+mv+360)%360;const T=dest(nav,ob,D);const side=((ob-fo+540)%360)-180;const dir=side>0?-1:1; // outbound right of the final course -> turn left
@@ -1898,7 +1898,9 @@ function baseTurn(x,rw,fp){const A=ap(S.route.dst),mv=A.mv!=null?A.mv:-8;const n
   const toLine=q=>{const d=gc(nav,q),b=brgOf(nav,q);return d*Math.sin((b-fo)*RAD)};
   let q=p;for(let k=0;k<60;k++){const off=toLine(q);if(Math.abs(off)<0.15)break;const corr=Math.max(-30,Math.min(30,off*25));q=dest(q,(inb+corr+360)%360,0.25);pts.push(q);if(gc(q,nav)<gc(fp,nav))break}
   pts.push(fp);
-  let s=`<polyline points="${pts.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  return {pts,nav,inb,fo,ob,T,dir,oc,side,R,mv}}
+function baseTurn(x,rw,fp){const G=baseTurnPts(x,rw,fp);if(!G)return null;const {pts,nav,inb,fo,ob,T,dir,oc,side,R}=G;const A=ap(S.route.dst),mv=A.mv!=null?A.mv:-8;const D=x.bt[1];
+    let s=`<polyline points="${pts.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="#C0392B" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
   const al=x.alts&&x.alts[x.bt[0]]||(x.mha&&x.mha[0])||'';
   s+=`<circle class="plf" cx="${PX(nav)}" cy="${PY(nav)}" fill="#C0392B"/><text class="ml pll" x="${PX(nav)}" y="${PY(nav)}">${esc(x.bt[0])}<tspan class="mrole"> IAF</tspan>${al?`<tspan class="plc"> ${al}</tspan>`:''}</text>`;
   const mid=dest(nav,ob,D*0.55);s+=`<text class="ml plcr" x="${PX(mid)}" y="${PY(mid)}" text-anchor="middle">${String(oc).padStart(3,'0')}°</text>`;
@@ -2354,7 +2356,13 @@ function alertBox(m){try{const d=document.createElement('div');d.textContent=m;d
 document.addEventListener('click',e=>{if(e.target.closest('[data-kml]'))kmlExport()});
 // ---------- in-app 3D view of the planned track (WebGL; terrain = GSI DEM tiles, imagery = GSI tiles) ----------
 // published approach altitudes vs distance to threshold, from the coding table (null if not available)
-function appAltPts(C){try{const P=procSel();if(!P.app||!C.arr)return null;const legs=plAppChain(S.route.dst,P.app,(C.arr.fixes||[])[(C.arr.fixes||[]).length-1]);if(!legs)return null;const ri=legs.findIndex(l=>/^RW\d/.test(l[1]||''));const L=legs.slice(0,ri+1);
+// conventional approaches (no coding table): IAF at its published/MHA altitude, FAF at its chart altitude, threshold +50ft
+function convAltPts(C,P){const A=ap(S.route.dst);const x=A&&A.iac.find(q=>q.n===P.app);const pr=C.arr&&C.arr.appProf;if(!x||!pr||!pr.named)return null;
+  const cv=(typeof CVD!=='undefined'&&CVD[S.route.dst]&&CVD[S.route.dst][x.n])||null;const cvAlt=f=>{if(!cv||!cv[0])return null;const r=cv[0].find(q=>q[0]===f);return r&&r[5]?+r[5]:null};
+  const thrE=(A.e||0)+50;const q=[];pr.named.forEach(n=>{let a=null;if(n.r==='IAF'||n.r==='IF'){a=(x.alts&&x.alts[n.f])||cvAlt(n.f)||(x.mha&&x.mha.length?Math.max(...x.mha):null)}else if(n.r==='FAF'||n.r==='FAP'){a=(x.alts&&x.alts[n.f])||cvAlt(n.f)||Math.round(thrE+318*n.dt)}
+    if(a!=null)q.push([n.r==='IAF'?Math.max(n.dt,pr.L||n.dt):n.dt,+a])});
+  if(!q.length)return null;q.push([0,thrE]);q.sort((a,b)=>b[0]-a[0]);return q.length>=2?q:null}
+function appAltPts(C){try{const P=procSel();if(!P.app||!C.arr)return null;const legs=plAppChain(S.route.dst,P.app,(C.arr.fixes||[])[(C.arr.fixes||[]).length-1]);if(!legs)return convAltPts(C,P);const ri=legs.findIndex(l=>/^RW\d/.test(l[1]||''));const L=legs.slice(0,ri+1);
   const pos=L.map(l=>l[1]?plPos(S.route.dst,l[1]):null);const dd=L.map((l,k)=>{if(!k)return 0;const v=parseFloat(l[4]);return v>0?v:(pos[k]&&pos[k-1]?gc(pos[k-1],pos[k]):0)});let rem=dd.reduce((a,b)=>a+b,0);const q=[];
   L.forEach((l,k)=>{rem-=k?dd[k]:0;const t=String(l[6]||'').trim().split(/\s+/)[0]||'';q.push([k===L.length-1?0:rem,t?+t.replace(/^[+-]/,''):null])});const k=q.filter(v=>v[1]!=null);return k.length>=2?k:null}catch(e){return null}}
 function trk3d(mode){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND');const tot=ph.reduce((s,p)=>s+p.d,0);if(!tot||!C.path||C.path.length<2)return null;
@@ -2366,9 +2374,10 @@ function trk3d(mode){const C=routeCalc();const ph=phases(C).filter(p=>p.k!=='GND
   smp.forEach(o=>{o.d=o.s/plen*tot;o.a=altAt(o.d);o.k=phAt(o.d)});
   const aq=appAltPts(C);if(aq){const appLen=bnd.filter(b=>b[2]==='APP').reduce((s,b)=>s+(b[1]-b[0]),0);const L0=aq[0][0];const sc=appLen>0?L0/appLen:1;
     const at=r=>{if(r>=aq[0][0])return aq[0][1];for(let i=1;i<aq.length;i++)if(aq[i][0]<=r){const a=aq[i-1],b=aq[i];return a[1]+(b[1]-a[1])*(a[0]-r)/((a[0]-b[0])||1)}return aq[aq.length-1][1]};
-    smp.forEach(o=>{if(o.k==='APP'){const r=(tot-o.d)*sc;o.a=at(r)}})}
+    smp.forEach(o=>{if(o.k==='APP'){const r=(tot-o.d)*sc;o.a=at(r)}});
+    const i0=smp.findIndex(o=>o.k==='APP');if(i0>0){const a0=smp[i0].a,d0=smp[i0].d;for(let i=i0-1;i>=0;i--){const lim=a0+318*(d0-smp[i].d);if(smp[i].a>lim)smp[i].a=Math.max(lim,a0);else break}}}
   const ma=[];const mt=C.arr&&C.arr.maTrack;if(mt&&mt.length>1){let s=0;const rc=(S.perf.roc||500)*60/(C.tas||120);ma.push([mt[0][0],mt[0][1],ea+50]);for(let i=1;i<mt.length;i++){s+=gc(mt[i-1],mt[i]);ma.push([mt[i][0],mt[i][1],Math.min(ea+3000,ea+50+rc*s)])}}
-  const fixes=[];let cd=0;const seen=new Set();C.rows.forEach(l=>{cd+=l.d||0;const n=String(l.b||'').split(' ')[0];const fp=fixPos(n);if(!fp||seen.has(n)||n===S.route.dst)return;seen.add(n);fixes.push({n,p:fp,a:altAt(cd),cd})});
+  const fixes=[];let cd=0;const seen=new Set();C.rows.forEach(l=>{cd+=l.d||0;const n=String(l.b||'').split(' ')[0];const fp=fixPos(n);if(!fp||seen.has(n)||n===S.route.dst)return;seen.add(n);let a=altAt(cd);let bd=1e9;smp.forEach(o=>{const e=Math.abs(o.d-cd);if(e<bd){bd=e;a=o.a}});fixes.push({n,p:fp,a,cd})});
   const apts=[[S.route.dep,dep],[S.route.dst,dst],[S.route.alt,ap(S.route.alt)]].filter(x=>x[0]&&x[1]&&x[1].p).map(([i,A])=>({n:i,p:A.p,a:A.e||0}));
   let t0=+(utc(S.route.etd)||new Date())+(+S.perf.taxiMin||0)*60e3;const tas=C.tas||120;
   let title=`${S.route.dep||''}→${S.route.dst||''} ${(S.fpl.lvl||'').toUpperCase()}`;
