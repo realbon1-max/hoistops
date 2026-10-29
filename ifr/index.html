@@ -1245,7 +1245,8 @@ function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id
   const ff=k=>sectFreq(k).replace('MHz','').split('／')[0];
   const vfr=r.depMode==='vfr'&&r.ifrFix;
   if(vfr){const fx=r.ifrFix,fxS=fixSpoken(fx);const vfp=fixPos(fx);const k0=vfp?sectorAt(vfp,lv):null;
-    const pick=depc&&depc.svc!=='TCA'?depc:(k0?{cs:accName(k0),f:ff(k0),acc:k0}:null);
+    const nearApp=(()=>{if(!vfp)return null;let best=null;for(const [ic,A2] of Object.entries(DB)){if(!A2.p||!A2.fq)continue;const d=gc(A2.p,vfp);if(d>30)continue;const q=A2.fq.find(x=>/^(APP|DEP)/.test(x[0])&&x[2]&&x[2].length);if(q&&(!best||d<best.d))best={d,cs:q[1],f:q[2][0]}}return best})();
+    const pick=depc&&depc.svc!=='TCA'?depc:(nearApp?{cs:nearApp.cs,f:nearApp.f}:(k0?{cs:accName(k0),f:ff(k0),acc:k0}:null));
     if(atis)steps.push({ph:'GND',st:atis,title:'出発地のATIS',ref:'',msgs:[['info',`情報の記号（information ${B}）、使用滑走路、QNHを確認します。`]]});
     if(gnd)steps.push({ph:'GND',st:gnd,title:'地上走行（VFR）',ref:'',msgs:[['PIL',`${gnd.cs}, ${cs}, spot ${B}, VFR to ${fxS}, information ${B}, request taxi.`],['ATC',`${cs}, taxi to holding point runway ${P.drw||B} via ${B}.`],['PIL',`Taxi to holding point runway ${P.drw||B} via ${B}, ${cs}.`]]});
     if(twr)steps.push({ph:'VFR',st:twr,title:'離陸（VFR）',ref:'規程(Ⅲ)2(1)',msgs:[['PIL',`${twr.cs}, ${cs}, ready.`],['ATC',`${cs}, ${wtxt(w)}, runway ${P.drw||B}, cleared for take-off.`],['PIL',`Runway ${P.drw||B}, cleared for take-off, ${cs}.`]]});
@@ -1608,7 +1609,7 @@ function sectFreq(k){return k&&SECT[k]&&SECT[k][1].length?SECT[k][1].join('／')
 /* ---------- shortest-route suggestion (airways + published directs + SID/STAR) ---------- */
 let SUG=null;
 function polyLen(ps){let d=0;for(let i=1;i<ps.length;i++)if(ps[i-1]&&ps[i])d+=gc(ps[i-1],ps[i]);return d}
-function sugKey(){const c=S.prof.caps;return [S.route.dep,S.route.dst,c.rnav1,c.rnav5,S.fpl.lvl,flyLimit(),procSel().drw,AIRAC_EFF].join('|')}
+function sugKey(){const c=S.prof.caps;return [S.route.dep,S.route.dst,S.route.depMode,S.route.ifrFix,c.rnav1,c.rnav5,S.fpl.lvl,flyLimit(),procSel().drw,AIRAC_EFF].join('|')}
 function heapPush(H,x){H.push(x);let i=H.length-1;while(i>0){const j=(i-1)>>1;if(H[j][0]<=H[i][0])break;[H[i],H[j]]=[H[j],H[i]];i=j}}
 function heapPop(H){const t=H[0],l=H.pop();if(H.length){H[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===i)break;[H[i],H[m]]=[H[m],H[i]];i=m}}return t}
 function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);if(!A||!B||dep===dst)return {opts:[],why:'出発と目的の飛行場を入れてください。'};
@@ -1636,6 +1637,8 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
     const cand=[{f:mend,L:mlen,t:-1,nm:mm[7]||s[0]}];
     E.forEach(e=>{if(!e[5])return;const t=ti++;const fx=e[1]||[];if(!fx.length||fx[0]!==mend)return;cand.push({f:fx[fx.length-1],L:mlen+polyLen(fx.map(fixPos).filter(Boolean)),t,nm:(mm[7]||s[0])+'／'+(e[10]||fx[fx.length-1])+' トランジション'})});
     cand.forEach(x=>{if(!x.f||!dist.has(x.f))return;if(LV!=null&&reqAlt(dep,'SID',s[0])>LV)return;opts.push({sid:s[0],sidT:x.t,sidN:x.nm,exit:x.f,L0:x.L,tot:x.L+dist.get(x.f),rnav:s[1]})})});
+  if(S.route.depMode==='vfr'&&S.route.ifrFix&&fixPos(S.route.ifrFix)){const k=S.route.ifrFix;opts.length=0;if(dist.has(k)){const d=gc(A.p,fixPos(k));opts.push({sid:'',sidT:-1,sidN:`VFRで離陸し ${k} からIFR`,exit:k,L0:d,tot:d+dist.get(k)})}}
+  else
   // no SID: radar vectors to a fix within 30NM
   for(const k of G.keys()){const q=fixPos(k);if(!q||!dist.has(k))continue;const d=gc(A.p,q);if(d<=30){const pen=(A.sid||[]).length?30:0;opts.push({sid:'',sidT:-1,sidN:'SIDなし（レーダー誘導）',exit:k,L0:d*1.25+5,tot:d*1.25+5+dist.get(k),pen})}}
   opts.forEach(o=>o.rank=o.tot+(o.pen||0));opts.sort((a,b)=>a.rank-b.rank);
@@ -1697,7 +1700,7 @@ function recApp(){const B=ap(S.route.dst);if(!B||!B.iac.length)return [];const t
     const rr=x.r||{};const ent=[...(rr.IAF||[]),...(rr.IF||[])];if(starEnd&&ent.includes(starEnd)){sc+=150;why.push(`STARの終点 ${starEnd} からつながる`)}
     return {x,sc,why}});
   out.sort((a,b)=>b.sc-a.sc);return out.slice(0,3)}
-function recBox(kind){let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return kind==='app'?'':`<div class="box"><b>${kind==='sid'?'おすすめのSID・トランジション':'おすすめのSTAR'}</b><p class="note">${esc(limText())}。この高さで飛べる${kind==='sid'?'SID':'STAR'}がありません（${kind==='sid'?'レーダー誘導での出発':'レーダー誘導での到着'}を考えてください）。</p></div>`;
+function recBox(kind){if(kind==='sid'&&S.route.depMode==='vfr'&&S.route.ifrFix)return '';let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return kind==='app'?'':`<div class="box"><b>${kind==='sid'?'おすすめのSID・トランジション':'おすすめのSTAR'}</b><p class="note">${esc(limText())}。この高さで飛べる${kind==='sid'?'SID':'STAR'}がありません（${kind==='sid'?'レーダー誘導での出発':'レーダー誘導での到着'}を考えてください）。</p></div>`;
   const P=procSel();const cur=o=>kind==='sid'?(o.sid===P.sid&&o.sidT===P.sidT):kind==='star'?(o.star===P.star&&o.starE===(P.starE||0)):(o.x.n===P.app);
   const ttl={sid:'おすすめのSID・トランジション',star:'おすすめのSTAR',app:'おすすめの進入方式'}[kind];
   h=`<div class="box"><b>${ttl}</b><p class="note" style="margin:2px 0 0"><b>${esc(limText())}</b>。上限より高い高度制限のある手順は出しません。${kind!=='app'?'下の図の線をタップしても選べます。':''}</p><p class="note" style="margin:2px 0 6px">${kind==='app'?'到着時刻の風・天気予報、機体の装備、ミニマの低さ、STARからのつながりで順位をつけています。':kind==='sid'?'風に合う滑走路、航空路とのつながり、目的地までの距離で順位をつけています。':'航空路の最後のfixとのつながりと、着陸までの距離で順位をつけています。'}</p>`+
@@ -1962,7 +1965,7 @@ function plSection(which){const apt=which==='dep'?S.route.dep:S.route.dst;if(!ap
    ${pick.length?pick.map(E=>`<h4 style="margin:12px 0 2px">${esc(nm(E))}　${E[2].some(s=>s[2].length)?'<span class="tag t-rnav">コーディング表</span>':'<span class="tag t-mute">チャートの文章</span>'}　${chartBtn(apt,E[0],E[1])}</h4>${plTable(apt,E,plCtx(E[0]==='SID'?'SID':'ARR'))}`).join(''):'<p class="note">上で手順を選ぶか、表示する手順を選んでください。</p>'}</div>`}
 function plBind(which){const sv=$('chSave_'+which);if(sv)sv.onclick=()=>chartsSave([which==='dep'?S.route.dep:S.route.dst,which==='arr'?S.route.alt:null]);const el=$('plSel_'+which);if(!el)return;el.onchange=()=>{(S.plView=S.plView||{})[which]=el.value===''?null:+el.value;save();which==='dep'?renderDep():renderArr()}}
 function expandNames(apt,names){const AP=ARCP[apt]||{};const out=[];names.forEach((f,i)=>{const a=i&&AP[names[i-1]+'>'+f];if(a)out.push(...a);const q=fixPos(f);if(q)out.push(q)});return out}
-function pickLines(which,PP){let s='';const P=procSel();const L=which==='dep'?(REC.sidAll||[]):(REC.starAll||[]);const A=ap(which==='dep'?S.route.dep:S.route.dst);if(!A)return '';
+function pickLines(which,PP){if(which==='dep'&&S.route.depMode==='vfr'&&S.route.ifrFix)return '';let s='';const P=procSel();const L=which==='dep'?(REC.sidAll||[]):(REC.starAll||[]);const A=ap(which==='dep'?S.route.dep:S.route.dst);if(!A)return '';
   const cols=['#2E8B57','#1B8A9A','#7A5BB5','#C2185B','#00838F','#6D8B00','#B5651D'];
   L.slice(0,7).forEach((o,i)=>{let ps=[];
     if(which==='dep'){const s=A.sid.find(x=>x[0]===o.sid);if(!s)return;const E=s[2]||[];const mains=E.filter(e=>!e[5]);const mm=mains.find(e=>(e[0]||[]).includes(o.rw))||mains.find(e=>!(e[0]||[]).length)||mains[0];if(!mm)return;const nm=[...(mm[1]||[])];let ti=0;E.forEach(e=>{if(!e[5])return;const k=ti++;if(k===o.sidT)nm.push(...(e[1]||[]).filter((f,j)=>!(j===0&&f===nm[nm.length-1])))});ps=[A.p,...expandNames(S.route.dep,nm)]}
@@ -2307,7 +2310,7 @@ function bind(){
     clearTimeout(tm);armed=0;rb.textContent='リセット';rb.style.borderColor='';rb.style.color='';
     S.route=structuredClone(DEF.route);S.proc={};S.plView={};S._selAw=null;S._selFx=null;S._selDr=null;S.fpl.lvl='';S.chk={};if(typeof MAP!=='undefined')MAP=null;if(typeof SUG!=='undefined')SUG=null;save();
     ['dep','dst','alt','talt'].forEach(k=>{const el=$(k);if(el)el.value='';const s=$(k+'_s');if(s)s.value=''});try{renderVia()}catch(e){}if($('rteIn'))$('rteIn').value='';
-    ['etd','eta'].forEach(k=>{const el=$(k);if(el)el.value=''});renderAll();show('route');window.scrollTo(0,0)}}
+    S.tab='route';save();location.reload()}}
   const THN={simple:'シンプル',light:'クラシック',dark:'ダーク',tac:'タクティカル'};const thLab=()=>{const t=document.documentElement.dataset.theme||'simple';$('themeBtn').textContent='表示：'+(THN[t]||t)};
   $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||'simple';r.dataset.theme={simple:'light',light:'dark',dark:'tac',tac:'simple'}[cur]||'simple';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}thLab();try{renderAll()}catch(e){}};
   try{const th=localStorage.getItem('ifrtheme');document.documentElement.dataset.theme=th||'simple'}catch(e){document.documentElement.dataset.theme='simple'}thLab();
