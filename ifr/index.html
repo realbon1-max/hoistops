@@ -737,7 +737,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   <div class="box">
     <ol class="steps3">
       <li><b>MetAirを開く</b><span>ログインして、ルートの空港のMETAR/TAFを表示します。</span>
-        <div class="row" style="margin-top:6px"><a class="act lnk" href="https://www3.metair.go.jp/" target="_blank" rel="noopener noreferrer" data-metair="1">MetAirを開く ↗</a><button class="sub" id="copyIcao" type="button">空港コードをコピー</button><button class="sub" id="copyMetair" type="button">MetAirのアドレスをコピー</button></div><p class="note" id="metairHint" style="display:none;margin:6px 0 0">ホーム画面のアプリから開くと、MetAirがアプリの中の簡易ブラウザで開き、ログインがはじかれることがあります。その場合は「MetAirのアドレスをコピー」を押して、<b>SafariやChromeに貼り付けて開いてください</b>。ログインしたまま報文をコピーし、ここに貼り付けられます。</p>
+        <div class="row" style="margin-top:6px"><a class="act lnk" href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1">MetAirを開く ↗</a><button class="sub" id="copyIcao" type="button">空港コードをコピー</button></div>
         <div class="need" id="wxNeed"></div></li>
       <li><b>画面を全選択してコピー</b><span>パソコンは Ctrl+A（Macは ⌘+A）、スマホは長押しで「全選択」→「コピー」。余計な文字が入っていても大丈夫です。</span></li>
       <li><b>ここに貼り付ける</b><span>METAR・SPECI・TAFだけを拾って空港ごとに振り分け、同じ空港は新しい報を残します。</span>
@@ -1058,7 +1058,7 @@ function renderWx(){
     const t=i===S.route.dep?etd:i===S.route.alt&&eta?new Date(+eta+S.route.altOff*60e3):eta;
     const tw=w.taf&&t?tafWindow(w.taf,new Date(+t-3600e3),new Date(+t+3600e3)):null;
     const age=m?metarAge(m):null;
-    return `<div class="wxcard"><div class="row" style="justify-content:space-between"><b class="code" style="font-size:18px">${esc(i)}</b><span style="font-size:12px;color:var(--muted)">${esc(ap(i)?.n||'')}　<a href="https://www3.metair.go.jp/" target="_blank" rel="noopener noreferrer" data-metair="1" style="color:var(--sky)">MetAir ↗</a></span></div>
+    return `<div class="wxcard"><div class="row" style="justify-content:space-between"><b class="code" style="font-size:18px">${esc(i)}</b><span style="font-size:12px;color:var(--muted)">${esc(ap(i)?.n||'')}　<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1" style="color:var(--sky)">MetAir ↗</a></span></div>
      ${m?`<div style="margin-top:6px">${wxBadge({vis:m.vis??10000,ceil:m.ceil,src:'現況METAR'})}</div>`:''}<div style="margin-top:6px"><b style="font-size:13px">現況 METAR</b> ${(S.wx[i]?.src||{}).metar==='auto'?'<span class="tag t-cau">参考：aviationweather.gov</span>':(S.wx[i]?.metar?'<span class="tag t-mute">MetAir</span>':'')} ${m?(age>70?`<span class="tag t-cau">${age}分前・古い</span>`:`<span class="tag t-mute">${age}分前</span>`):'<span class="tag t-mute">未入力</span>'}</div>
      ${m?`<div class="kv"><span>風 <b>${esc(windText(m.wind))}</b></span><span>視程 <b>${m.vis>=10000?'10km以上':m.vis+'m'}</b></span><span>雲高 <b>${m.ceil!=null?m.ceil+'ft':'なし'}</b></span>${m.ww?`<span>天気 <b>${esc(m.ww.join(' '))}</b></span>`:''}${fzl(i)!=null?`<span>予想0℃高度 <b>約${fzl(i).toLocaleString()}ft</b></span>`:''}${m.rvr?`<span>RVR <b>${esc(Object.entries(m.rvr).map(([k,v])=>k+':'+v).join(' '))}</b></span>`:''}</div><div class="raw">${esc(m.raw)}</div>`:''}
      <div style="margin-top:8px"><b style="font-size:13px">予報 TAF</b> ${(S.wx[i]?.src||{}).taf==='auto'?'<span class="tag t-cau">参考：aviationweather.gov</span>':(S.wx[i]?.taf?'<span class="tag t-mute">MetAir</span>':'')} ${t?`<span class="tag t-mute">${fmtZ(t)} ±1時間</span>`:''} ${w.taf?'':'<span class="tag t-mute">未入力</span>'}</div>
@@ -1073,7 +1073,7 @@ function condFor(icao,t){const w=wxFor(icao);
   if(w.metar)return {vis:w.metar.vis??10000,ceil:w.metar.ceil,src:'現況METAR'};return null}
 const CHK=[
  ['書類・機体',[['wb','重量・重心の計算'],['perf','離陸・着陸性能（滑走路長・気温・標高）'],['equip','計器・航法装置の作動状態、MEL']]],
- ['気象',[['wx','出発・経由・目的・代替のMETAR/TAF',' <a href="https://www3.metair.go.jp/" target="_blank" rel="noopener noreferrer" data-metair="1">MetAir</a>'],['sig','SIGMET・悪天予想図（着氷・雷・乱気流）'],['wind','高層風・気温予想と巡航高度']]],
+ ['気象',[['wx','出発・経由・目的・代替のMETAR/TAF',' <a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1">MetAir</a>'],['sig','SIGMET・悪天予想図（着氷・雷・乱気流）'],['wind','高層風・気温予想と巡航高度']]],
  ['航空情報',[['notam','NOTAM（飛行場・航法施設・航空路・空域）','（SWIMで確認）'],['airac','チャートとデータベースのAIRAC有効性'],['raim','GPS RAIM予測（RNAVを使う場合）',' <a href="https://raim-japan.mlit.go.jp/Login.aspx" target="_blank" rel="noopener">RAIM予測</a>']]],
  ['計画',[['sidstar','SID・STAR・進入方式の選定と確認'],['alt','代替飛行場の選定'],['fuel','燃料計算（目的地＋代替＋待機＋予備）'],['mea','最低経路高度（MEA/MOCA）と着氷層の確認']]],
  ['提出',[['fpl','飛行計画の提出（ETDの60分前まで）','（SWIM）'],['atis','出発前にATIS・クリアランスを確認']]]];
@@ -2307,8 +2307,11 @@ function bind(){
     for(const r of res){const k=r.icao;if(!mergeReport(r,'metair'))continue;const lab=k+' '+(r.type==='TAF'?'TAF':r.type);if(!add.includes(lab))add.push(lab)}
     save();renderAll();$('wxIn').value='';
     $('wxResult').innerHTML=res.length?`<div class="msg ok">${res.length}件を読み取り、${add.length}件を取り込みました。<br><small class="code">${esc(add.join('、')||'（すでに同じか新しい報があります）')}</small></div>`:'<div class="msg">METAR・TAFが見つかりませんでした。MetAirで報文が表示されている画面を選択してください。</div>'};
-  try{if((navigator.standalone||matchMedia('(display-mode: standalone)').matches)&&$('metairHint'))$('metairHint').style.display=''}catch(e){}
-  $('copyMetair').onclick=async()=>{const u='https://www3.metair.go.jp/';try{await navigator.clipboard.writeText(u);$('copyMetair').textContent='コピーしました：'+u}catch(e){$('copyMetair').textContent=u}};
+  // MetAir: open in the device's own browser app (not the in-app view of the home-screen app)
+  document.addEventListener('click',e=>{const a=e.target.closest('a[data-metair]');if(!a)return;const u=a.href;const ua=navigator.userAgent;
+    const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches;const ios=/iPad|iPhone|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);const android=/Android/.test(ua);
+    if(ios&&standalone){e.preventDefault();location.href='x-safari-'+u;return}
+    if(android){e.preventDefault();location.href='intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url='+encodeURIComponent(u)+';end';return}},true);
   $('copyIcao').onclick=async()=>{const s=wxAirports().join(' ');if(!s)return;try{await navigator.clipboard.writeText(s);$('copyIcao').textContent='コピーしました：'+s}catch(e){$('copyIcao').textContent=s}};
   $('wxClear').onclick=()=>{S.wx={};save();renderAll()};
   $('strip').addEventListener('click',e=>{const c=e.target.closest('[data-pk]');if(c)apPickOpen(c.dataset.pk)});
