@@ -3747,13 +3747,16 @@ function v3ScnStep(st,dt){ const T=THREE, S=st.scn, ac=st.ac, ex=st.ex; S.t+=dt;
   if(st.acLine) st.acLine.visible=false;
   // 実際に飛んだ航跡（黄色）
   if(!S.trT||S.t-S.trT>0.25){ S.trT=S.t; S.trail.push(w.clone()); if(S.trLine) S.trLine.parent.remove(S.trLine); S.trLine=new T.Line(new T.BufferGeometry().setFromPoints(S.trail),new T.LineBasicMaterial({color:0xffc107})); st.sc.add(S.trLine); st.trLines=(st.trLines||[]); st.trLines.push(S.trLine); }
-  const obs=+(($('mObs')||{}).value)||0, yR=w.y/ex; let minC=v3Clear(st,w.x,yR-V3WH,w.z)-obs;
-  for(let k=0;k<4;k++){ const a=h+k*Math.PI/2, rx=w.x+Math.sin(a)*ROTOR_D/2, rz=w.z-Math.cos(a)*ROTOR_D/2; minC=Math.min(minC,v3Clear(st,rx,yR+1.8,rz)-obs); }
+  // 判定点：車輪＋メインローター先端4点（バンク・ピッチで傾いた円盤の高さで判定）。地面までと、地図で入れた障害物（樹高など）上端までを分けて見る
+  const obs=+(($('mObs')||{}).value)||0, yR=w.y/ex, Rr=ROTOR_D/2, sp=Math.sin(q.pitch), sr=Math.sin(q.roll+phi);
+  const pts=[['車輪',w.x,yR-V3WH,w.z]]; const nm=['ローター先端（前）','ローター先端（右）','ローター先端（後）','ローター先端（左）'], dy=[Rr*sp,-Rr*sr,-Rr*sp,Rr*sr];
+  for(let k=0;k<4;k++){ const a=h+k*Math.PI/2; pts.push([nm[k],w.x+Math.sin(a)*Rr,yR+1.8+dy[k],w.z-Math.cos(a)*Rr]); }
+  let minC=1e9, hitP='', gndC=1e9; for(const t of pts){ const c=v3Clear(st,t[1],t[2],t[3]); gndC=Math.min(gndC,c); if(c-obs<minC){ minC=c-obs; hitP=t[0]; } }
   S.minC=Math.min(S.minC,minC); const r=$('v3Res'), loss=Math.max(0,(S.trail[0].y-w.y)/ex), bk=Math.round(S.maxBank/RAD), ex2=Math.round(S.extra*FT);
   const extraTxt=ex2>=1?`・旋回で余分に ${ex2} ft 沈下（最大バンク ${bk}°）`:'';
-  if(minC<0){ v3Boom(st,w); r.className='v3res bad'; r.innerHTML=`💥 衝突：${S.name}　開始から ${S.t.toFixed(1)} 秒・高度低下 ${Math.round(loss*FT)} ft${extraTxt}<small>↺ 元の位置で戻る。機首方位・高さ・旋回の向きを変えて再挑戦</small>`; st.scn=null; return; }
+  if(minC<0){ v3Boom(st,w); r.className='v3res bad'; const what=gndC<0?`${hitP}が<b>地面</b>に接触`:`${hitP}が<b>障害物（高さ ${Math.round(obs*FT)} ft の樹木など）</b>に接触　地面まではまだ ${Math.round(gndC*FT)} ft`; r.innerHTML=`💥 衝突：${S.name}　開始から ${S.t.toFixed(1)} 秒・高度低下 ${Math.round(loss*FT)} ft${extraTxt}<br>${what}<small>↺ 元の位置で戻る。機首方位・高さ・旋回の向きを変えて再挑戦</small>`; st.scn=null; return; }
   if(S.i>=S.P.length-1){ r.className='v3res ok'; r.innerHTML=`✓ ${S.name}：地形・障害物をクリア　最小間隔 ${Math.round(S.minC*FT)} ft${S.minC*FT<(+RC.mg||30)?'（余裕不足）':''}${extraTxt}<small>↺ 元の位置で戻る</small>`; st.scn=null; return; }
-  if(!S.hud||performance.now()-S.hud>200){ S.hud=performance.now(); r.innerHTML=`▶ ${S.name}　${S.t.toFixed(1)} 秒・高度低下 ${Math.round(loss*FT)} ft・地形まで ${Math.round(minC*FT)} ft<small>バンク ${Math.round(phi/RAD)}°・荷重 ${n.toFixed(2)} G${ex2>=1?`・旋回の沈下 ${ex2} ft`:''}　（左右の入力で旋回）</small>`; } }
+  if(!S.hud||performance.now()-S.hud>200){ S.hud=performance.now(); r.innerHTML=`▶ ${S.name}　${S.t.toFixed(1)} 秒・高度低下 ${Math.round(loss*FT)} ft・${obs>0?'障害物上端':'地形'}まで ${Math.round(minC*FT)} ft<small>バンク ${Math.round(phi/RAD)}°・荷重 ${n.toFixed(2)} G${ex2>=1?`・旋回の沈下 ${ex2} ft`:''}　（左右の入力で旋回）</small>`; } }
 function v3Boom(st,w){ const T=THREE; st.ac.visible=false; const g=new T.Group(); st.sc.add(g); st.boomG=g;
   const N=500, pos=new Float32Array(N*3), col=new Float32Array(N*3), vel=[]; for(let i=0;i<N;i++){ pos.set([w.x,w.y,w.z],i*3); const a=Math.random()*Math.PI*2, e=Math.random()*Math.PI*0.5, sp=8+Math.random()*28; vel.push([Math.cos(a)*Math.cos(e)*sp,Math.sin(e)*sp*1.2,Math.sin(a)*Math.cos(e)*sp]); const f=Math.random(); col.set(f<0.6?[1,0.45+Math.random()*0.4,0.05]:[0.35,0.35,0.35],i*3); }
   const geo=new T.BufferGeometry(); geo.setAttribute('position',new T.BufferAttribute(pos,3)); geo.setAttribute('color',new T.BufferAttribute(col,3)); const pt=new T.Points(geo,new T.PointsMaterial({size:2.2,vertexColors:true,transparent:true,opacity:1,depthWrite:false})); pt.frustumCulled=false; g.add(pt);
