@@ -487,7 +487,7 @@ details.mset>summary.msh{cursor:pointer}
 .v3hud{position:absolute;left:50%;top:calc(var(--v3t,110px) + 8px);transform:translateX(-50%);display:flex;gap:10px;background:rgba(13,27,42,.78);color:#e6edf6;padding:6px 12px;border-radius:12px;font-variant-numeric:tabular-nums;z-index:3}.v3hud{flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 180px)}.v3hud span{white-space:nowrap;display:flex;flex-direction:column;align-items:center;line-height:1.1}.v3hud small{font-size:10px;opacity:.75}.v3hud b{font-size:16px}
 .v3home{position:absolute;right:18px;top:calc(var(--v3t,110px) + 8px);z-index:3;font:inherit;font-size:13px;padding:6px 12px;border-radius:16px;border:1px solid #2f4d6d;background:rgba(29,53,80,.9);color:#fff;cursor:pointer}
 .v3big{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;z-index:3;background:rgba(13,27,42,.75);color:#ffd166;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;pointer-events:none;white-space:nowrap}.v3big[hidden]{display:none}.v3hsp{position:absolute;right:18px;top:calc(var(--v3t,110px) + 52px);z-index:3;display:flex;flex-direction:column;gap:6px;align-items:stretch;background:rgba(13,27,42,.7);padding:8px;border-radius:12px}.v3hsp[hidden]{display:none}
-.v3hsp button{font:inherit;font-size:15px;font-weight:800;padding:10px 14px;border-radius:10px;border:1px solid #2f4d6d;background:#1d3550;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}.v3hsp button.hstop{font-size:12px;padding:4px}.v3hsp button.hcut{background:#5a1a1a;border-color:#a33;font-size:13px}.v3hsp button.hcut.alert{background:#e53935;border-color:#fff;animation:v3blink .5s infinite alternate;font-size:16px}.v3hsp button.hcut:disabled{opacity:.5}@keyframes v3blink{to{background:#7f0000}}.v3hsp b{color:#ffd166;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.v3hsp button{font:inherit;font-size:15px;font-weight:800;padding:10px 14px;border-radius:10px;border:1px solid #2f4d6d;background:#1d3550;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}.v3hsp button.hstop{font-size:12px;padding:4px}.v3hsp button.hcut{background:#5a1a1a;border-color:#a33;font-size:13px}.v3hsp button.hcut.alert{background:#e53935;border-color:#fff;animation:v3blink .5s infinite alternate;font-size:16px}.v3hsp button.hcut:disabled{opacity:.5}@keyframes v3blink{to{background:#7f0000}}.v3hsp .hkg{display:flex;align-items:center;gap:4px;justify-content:space-between}.v3hsp .hkg button{padding:4px 9px;font-size:14px}.v3hsp .hkg span{color:#fff;font-size:12px;font-weight:700;text-align:center;line-height:1.1;white-space:nowrap}.v3hsp b{color:#ffd166;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 .v3hud .hsh b{color:#ffd166}.v3hud .ige b{color:#4fd18b}.v3hud .oge b{color:#8fc7ff}.v3hud .hsh.w b{color:#ff6b5e}
 .v3scn{position:absolute;left:18px;top:calc(var(--v3t,110px) + 60px);z-index:3;display:flex;flex-direction:column;gap:6px;background:rgba(13,27,42,.75);padding:8px;border-radius:12px;color:#e6edf6;font-size:12px}.v3scn[hidden],.v3res[hidden]{display:none}
 .v3scn button{font:inherit;font-size:13px;font-weight:800;padding:8px 10px;border-radius:9px;border:1px solid #2f4d6d;background:#1d3550;color:#fff;text-align:left;cursor:pointer}.v3scn button[data-scn=oei]{border-color:#d32f2f}.v3scn small{opacity:.7;font-size:10.5px}
@@ -3650,13 +3650,11 @@ function v3AW139(){ const T=THREE, P=V3PAINT[V3LIV]||V3PAINT.generic, G=new T.Gr
   G.userData={rotor:rot,trotor:tr}; return G; }
 // ラジコン操縦：入力から速度を少しずつ変え、地面より下には行かない。速さは表示範囲が広いほど早回し
 function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.rc?st.keys:new Set(), I=st.rc?st.in:{lx:0,ly:0,rx:0,ry:0};
-  const real=!!(st.rc&&st.cycReal&&!st.hs), kX=(K.has('d')?1:0)-(K.has('a')?1:0), kY=(K.has('w')?1:0)-(K.has('s')?1:0);
+  const real=!!(st.rc&&st.cycReal), kX=(K.has('d')?1:0)-(K.has('a')?1:0), kY=(K.has('w')?1:0)-(K.has('s')?1:0);
   if(real&&(kX||kY)){ I.rx=Math.max(-1,Math.min(1,I.rx+kX*0.8*dt)); I.ry=Math.max(-1,Math.min(1,I.ry+kY*0.8*dt)); st.knobR&&st.knobR(); }
   const lx=I.lx+((K.has('ArrowRight')?1:0)-(K.has('ArrowLeft')?1:0)), ly=I.ly+((K.has('ArrowUp')?1:0)-(K.has('ArrowDown')?1:0)), rx=I.rx+(real?0:kX), ry=I.ry+(real?0:kY);
   const f=1, kx=111320*Math.cos(st.lat*RAD), ky=110540, cl=v=>Math.max(-1,Math.min(1,v)); let Vh=6, Vs=6;
-  if(st.hs){ // ホイストモード：低速の精密操作（速度指令）
-    const Vz=3; st.hdg+=cl(lx)*0.35*dt; const a=Math.min(1,dt*0.7); st.v[0]+=(cl(ry)*Vh-st.v[0])*a; st.v[1]+=(cl(rx)*Vs-st.v[1])*a; st.v[2]+=(cl(ly)*Vz-st.v[2])*a; st.pitch=-0.22*st.v[0]/Vh; st.roll=0.22*st.v[1]/Vs; st.bank=0; }
-  else{ // 右＝サイクリック（姿勢指令）・左＝コレクティブ（上下）とペダル（左右）
+  { // 右＝サイクリック（姿勢指令）・左＝コレクティブ（上下）とペダル（左右）
     // 前後：ピッチ姿勢（最大 20°）→ 加速度 g·tanθ − 抗力。全量前で 167 kt に落ち着く。スティックを戻すと姿勢が水平に戻り減速
     const sc=v=>Math.sign(v)*Math.pow(Math.abs(v),0.8);   // 小さな入力でも効くように少し敏感なカーブ
     const thT=-cl(sc(ry))*60*RAD; st.pitch=(st.pitch||0)+(thT-(st.pitch||0))*Math.min(1,dt*7);
@@ -3720,13 +3718,14 @@ function v3Hoist(st,dt){ const T=THREE, H=st.H, ac=st.ac; if(!H||!ac) return; co
   const windAt=p=>{ const hg=Math.max(0,p.y-gyR(p.x,p.z)); return UW.clone().multiplyScalar(Math.pow(Math.min(1,(hg+1)/30),0.25)); };
   const air=p=>{ const dep0=rc.y-p.y, tt=Math.max(0,dep0)/Math.max(3,w0), dx=p.x-(rc.x+UW.x*tt), dz=p.z-(rc.z+UW.z*tt), r=Math.hypot(dx,dz), dep=dep0; if(dep<0) return windAt(p); const spread=R+dep*0.15, fz=Math.exp(-Math.pow(r/spread,4)), dec=Math.max(0.25,1-dep/(4*ROTOR_D));
       const v=new T.Vector3(0,-w0*dec*fz,0); const hg=p.y-gyR(p.x,p.z); if(hg<R&&dep>hR*0.6){ const out=w0*0.7*dec*Math.exp(-Math.pow(Math.max(0,r-R)/(3*R),2))*(1-hg/R); if(r>0.1){ v.x+=dx/r*out; v.z+=dz/r*out; } v.y*=hg/R; } return v.add(windAt(p)); };
+  const mL=Math.max(10,H.kg||100), CdA=mL<25?0.15:Math.min(1.4,0.55+0.004*mL);   // 吊り荷の質量（kg）と抗力面積（人が吊られた姿勢で約0.8 m²）。重いほど風・ダウンウォッシュで流されにくい
   const obsM=+(($('mObs')||{}).value)||0;
   if(H.cutP){ // カット後：フック側は機体から外れ、隊員（荷）は引っかかった所に残る
     H.P.copy(H.cutP); H.wire.visible=false; H.man.position.set(H.P.x,H.P.y*ex,H.P.z); H.man.visible=true; H.man.quaternion.identity(); H.agl=0; H.ang=0; v3HSnagUI(st); }
   else if(H.snag){ // 引っかかり中：末端は支点に固定。ワイヤーは支点まで（張れば機体を引く＝v3ScnStep 側で拘束）
     H.P.copy(H.snag); H.V.set(0,0,0); }
   else if(H.L<0.3){ H.P.copy(hk); H.V.copy(vh); }
-  else{ const n=6, h=dt/n; for(let it=0;it<n;it++){ const ua=air(H.P), rel=ua.clone().sub(H.V), dr=rel.clone().multiplyScalar(0.035*rel.length());
+  else{ const n=6, h=dt/n; for(let it=0;it<n;it++){ const ua=air(H.P), rel=ua.clone().sub(H.V), dr=rel.clone().multiplyScalar(0.5*1.1*CdA*rel.length()/mL);
       H.V.addScaledVector(new T.Vector3(0,-9.81,0).add(dr),h); H.V.multiplyScalar(1-0.08*h); H.P.addScaledVector(H.V,h);
       const d=H.P.clone().sub(hk), dl=d.length(); if(dl>H.L){ const nn=d.divideScalar(dl); H.P.copy(hk).addScaledVector(nn,H.L); const vr=H.V.clone().sub(vh).dot(nn); if(vr>0) H.V.addScaledVector(nn,-vr); }
       const g=gyR(H.P.x,H.P.z); if(H.P.y<g){ H.P.y=g; if(H.V.y<0) H.V.y=0; H.V.x*=0.85; H.V.z*=0.85; }
@@ -3832,17 +3831,20 @@ async function open3D(lat,lon,label){ const old=$('v3Ov'); if(old) old.remove();
     <button type="button" class="v3rcb" id="v3RC" aria-pressed="false">🎮 操縦</button><button type="button" class="v3rcb" id="v3HS" aria-pressed="false">🪝 ホイスト</button><button type="button" class="v3x" aria-label="閉じる">×</button></div><div class="v3c" id="v3C"></div><div class="v3msg" id="v3M">読み込み中…</div><div class="v3hint">1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく</div>
     <div class="v3hud" id="v3Hud" hidden></div><div class="v3js l" id="v3JL" hidden><i></i><span>コレクティブ（上下）・ペダル（左右）</span></div><div class="v3js r" id="v3JR" hidden><i></i><span>サイクリック（前後・左右）</span></div><button type="button" class="v3cyc" id="v3Cyc" hidden></button><button type="button" class="v3home" id="v3Home" hidden>↺ 元の位置</button>
     <div class="v3scn" id="v3Scn" hidden><b>緊急操作</b><button type="button" data-scn="oei">⚠ 片発（OEI）離脱</button><button type="button" data-scn="vu">🌀 ヴィチャード回復</button><button type="button" data-scn="cl">⬆ クラシック回復</button><small>今の機首方位・高さから開始。<br>飛行中は左右の入力でバンク旋回（最大60°）</small></div><div class="v3res" id="v3Res" hidden></div>
-    <div class="v3big" id="v3Big" hidden></div><div class="v3hsp" id="v3HSP" hidden><button type="button" data-hw="-1">▲ 巻上</button><b id="v3HL">0 ft</b><button type="button" data-hw="1">▼ 降下</button><button type="button" class="hstop" data-hw="0">■</button><button type="button" class="hcut" id="v3Cut">✂ ワイヤーカット</button></div>`;
+    <div class="v3big" id="v3Big" hidden></div><div class="v3hsp" id="v3HSP" hidden><div class="hkg"><button type="button" data-kg="-20">−</button><span id="v3Kg">100 kg</span><button type="button" data-kg="20">＋</button></div><button type="button" data-hw="-1">▲ 巻上</button><b id="v3HL">0 ft</b><button type="button" data-hw="1">▼ 降下</button><button type="button" class="hstop" data-hw="0">■</button><button type="button" class="hcut" id="v3Cut">✂ ワイヤーカット</button></div>`;
   document.body.appendChild(ov); document.body.classList.add('v3open'); ov.style.setProperty('--v3t',(ov.querySelector('.v3bar').offsetHeight)+'px');
   const close=()=>{ st.alive=false; try{ st.unbind&&st.unbind(); }catch(e){} try{ st.ren&&st.ren.dispose(); }catch(e){} cancelAnimationFrame(st.raf); ov.remove(); document.body.classList.remove('v3open'); };
   ov.querySelector('.v3x').onclick=close;
   st.in={lx:0,ly:0,rx:0,ry:0}; st.keys=new Set();
   $('v3RC').onclick=()=>{ st.rc=!st.rc; $('v3RC').setAttribute('aria-pressed',st.rc); ['v3JL','v3JR','v3Cyc'].forEach(id=>$(id).hidden=!st.rc); $('v3Scn').hidden=!(st.rc||st.hs); $('v3Hud').hidden=!(st.rc||st.hs); $('v3Home').hidden=!(st.rc||st.hs); ov.querySelector('.v3hint').textContent=st.rc?'左スティック：コレクティブ（上下）・ペダル（左右）　右スティック：サイクリック（前後・左右／速度が出るとバンク旋回）　（キーボード：W/S・A/D サイクリック・↑/↓ コレクティブ・←/→ ペダル）':'1本指：回転　2本指：拡大・移動　ダブルタップ：機体に近づく'; if(st.rc&&st.heli){ const d=st.cam.position.clone().sub(st.ctl.target); st.ctl.target.copy(st.ac.position); st.cam.position.copy(st.ac.position).add(d.setLength(Math.max(80,(st.acK||1)*90))); } };
   const showHud=()=>{ $('v3Hud').hidden=!(st.rc||st.hs); $('v3Home').hidden=!(st.rc||st.hs); };
-  $('v3HS').onclick=()=>{ st.hs=!st.hs; $('v3HS').setAttribute('aria-pressed',st.hs); $('v3HSP').hidden=!st.hs; $('v3Scn').hidden=!(st.rc||st.hs); showHud(); v3HoistVis(st,st.hs); };
+  $('v3HS').onclick=()=>{ st.hs=!st.hs; $('v3HS').setAttribute('aria-pressed',st.hs); $('v3HSP').hidden=!st.hs; $('v3Scn').hidden=!(st.rc||st.hs); showHud(); v3HoistVis(st,st.hs); if(st.H) st.H.kg=st.hkg; };
   $('v3HSP').querySelectorAll('[data-hw]').forEach(b=>{ const v=+b.dataset.hw; if(v===0){ b.onclick=()=>{ st.hw=0; }; return; } b.addEventListener('pointerdown',e=>{ st.hw=v; e.preventDefault(); }); ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{ if(st.hw===v&&!st.hwLatch) st.hw=0; })); b.ondblclick=()=>{ st.hw=v; st.hwLatch=true; setTimeout(()=>{ st.hwLatch=false; },50); }; });
   $('v3Scn').querySelectorAll('[data-scn]').forEach(b=>b.onclick=()=>{ if(st.H) v3HReset(st); v3ScnStart(st,b.dataset.scn); });
   $('v3Cut').onclick=()=>v3Cut(st);
+  const kgUI=()=>{ const k=st.hkg; $('v3Kg').innerHTML=`吊り荷<br>${k} kg<br><small style="font-weight:400;opacity:.8">${k<25?'フックのみ':k<=130?'隊員1名':'隊員＋要救助者'}</small>`; if(st.H) st.H.kg=k; };
+  st.hkg=(()=>{ let v=0; try{ v=Math.round(hlSum()); }catch(e){} return v>0?v:100; })();
+  $('v3HSP').querySelectorAll('[data-kg]').forEach(b=>b.onclick=()=>{ st.hkg=Math.max(10,Math.min(HLMAX,st.hkg+ +b.dataset.kg)); kgUI(); }); kgUI();
   $('v3Home').onclick=()=>{ v3ScnClear(st); if(!st.home||!st.ac) return; const [x,y,z,h]=st.home, d=new THREE.Vector3(x,y,z).sub(st.ac.position); st.ac.position.set(x,y,z); st.hdg=h; st.v=[0,0,0]; st.bank=0; st.pitch=0; st.roll=0; st.in.rx=0; st.in.ry=0; st.knobR&&st.knobR(); v3HReset(st); st.cam.position.add(d); st.ctl.target.add(d); };
   const stick=(el,kx,ky,cyc)=>{ const knob=el.querySelector('i'); let id=null, b0=null; const R0=()=>el.getBoundingClientRect().width/2;
     const draw=()=>{ const R=R0(); knob.style.transform=(st.in[kx]||st.in[ky])?`translate(${st.in[kx]*R*0.8}px,${-st.in[ky]*R*0.8}px)`:''; }; if(cyc) st.knobR=draw;
