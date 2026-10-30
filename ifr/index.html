@@ -1777,7 +1777,7 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
   return {dist,opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
 function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.r;
   let h=`<div class="row" style="justify-content:space-between;align-items:center"><b>おすすめルート（最短距離）</b><button class="sub" type="button" id="sugGo">${r?'探し直す':'探す'}</button></div>
-   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。</p>`;
+   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化。</p>`;
   if(r){if(!r.opts.length)h+=`<div class="msg cau">${esc(r.why)}</div>`;
     h+=r.opts.map((o,i)=>`<div class="sugopt" style="border-top:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div style="flex:1 1 240px;min-width:0"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b>
       <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}</div>
@@ -1959,8 +1959,10 @@ function renderEnr(){
 let GEO=null,WGEO=null;
 function loadGeo(){if(window.__geoTried)return;window.__geoTried=1;
   const tryLoad=(urls,glob,done)=>{if(!urls.length)return;const s=document.createElement('script');s.src=urls[0];s.onload=()=>{if(window[glob])done(window[glob]);else tryLoad(urls.slice(1),glob,done)};s.onerror=()=>tryLoad(urls.slice(1),glob,done);document.head.appendChild(s)};
+  // Japan outline (地球地図日本・国土地理院, simplified) served with the app itself
+  const here=/github\.io$/.test(location.hostname)||/^(localhost|127\.)/.test(location.hostname);tryLoad([(here?'':'https://realbon1-max.github.io/IFR/')+'jp.js'],'JPGEO',g=>{if(!GEO){GEO=g;try{renderAll()}catch(e){renderEnr()}}});
   const B='https://cdn.jsdelivr.net/npm/@amcharts/amcharts4-geodata';
-  try{tryLoad([B+'@4.1.28/dist/script/japanLow.js',B+'/dist/script/japanLow.js'],'am4geodata_japanLow',g=>{GEO=g;try{renderAll()}catch(e){renderEnr()}});
+  try{tryLoad([B+'@4.1.28/dist/script/japanLow.js',B+'/dist/script/japanLow.js'],'am4geodata_japanLow',g=>{if(GEO)return;GEO=g;try{renderAll()}catch(e){renderEnr()}});
       tryLoad([B+'@4.1.28/dist/script/worldLow.js',B+'/dist/script/worldLow.js'],'am4geodata_worldLow',g=>{WGEO=g;try{renderAll()}catch(e){renderEnr()}})}catch(e){}}
 
 /* ---------- procedure ↔ fix index ---------- */
