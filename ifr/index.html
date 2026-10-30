@@ -1777,7 +1777,7 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
   return {dist,opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
 function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.r;
   let h=`<div class="row" style="justify-content:space-between;align-items:center"><b>おすすめルート（最短距離）</b><button class="sub" type="button" id="sugGo">${r?'探し直す':'探す'}</button></div>
-   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化。</p>`;
+   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化、湖は © OpenStreetMap contributors。</p>`;
   if(r){if(!r.opts.length)h+=`<div class="msg cau">${esc(r.why)}</div>`;
     h+=r.opts.map((o,i)=>`<div class="sugopt" style="border-top:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div style="flex:1 1 240px;min-width:0"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b>
       <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}</div>
@@ -1844,7 +1844,9 @@ function thumbSvg(smp,opt){opt=opt||{};let pts=smp||[];if(opt.keep)pts=pts.filte
       for(const f of feats){const g=f.geometry;if(!g)continue;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
         for(const pg of polys){const ring=pg[0];let bx0=1e9,bx1=-1e9,by0=1e9,by1=-1e9;for(const c of ring){const xx=c[0]*kx,yy=-c[1];if(xx<bx0)bx0=xx;if(xx>bx1)bx1=xx;if(yy<by0)by0=yy;if(yy>by1)by1=yy}
           if(bx1<vx0||bx0>vx1||by1<vy0||by0>vy1)continue;d+='M'+ring.map(c=>px([c[1],c[0]])+','+py([c[1],c[0]])).join('L')+'Z'}}
-      if(d)s+=`<path d="${d}" fill="var(--land)" stroke="var(--coast)" stroke-width=".8"/>`}}catch(e){}
+      if(d)s+=`<path d="${d}" fill="var(--land)" stroke="var(--coast)" stroke-width=".8"/>`}
+    if(LAKES){let d='';for(const L of LAKES)for(const ring of L.c){let bx0=1e9,bx1=-1e9,by0=1e9,by1=-1e9;for(const c of ring){const xx=c[0]*kx,yy=-c[1];if(xx<bx0)bx0=xx;if(xx>bx1)bx1=xx;if(yy<by0)by0=yy;if(yy>by1)by1=yy}if(bx1<x0||bx0>x1||by1<y0||by0>y1)continue;d+='M'+ring.map(c=>px([c[1],c[0]])+','+py([c[1],c[0]])).join('L')+'Z'}
+      if(d)s+=`<path d="${d}" fill="var(--sea)" stroke="var(--coast)" stroke-width=".6"/>`}}catch(e){}
   {const nmPx=sc/60;const cand=[5,10,20,25,50,100,200];const L=cand.find(v=>v*nmPx>=W*0.18)||200;const bw=L*nmPx;if(bw<W*0.6){const bx=W-bw-8,byy=H-8;s+=`<g stroke="var(--muted)" stroke-width="1.2"><line x1="${bx.toFixed(1)}" y1="${byy}" x2="${(bx+bw).toFixed(1)}" y2="${byy}"/><line x1="${bx.toFixed(1)}" y1="${byy-3}" x2="${bx.toFixed(1)}" y2="${byy}"/><line x1="${(bx+bw).toFixed(1)}" y1="${byy-3}" x2="${(bx+bw).toFixed(1)}" y2="${byy}"/></g><text x="${(bx+bw/2).toFixed(1)}" y="${byy-3}" font-size="8.5" text-anchor="middle" fill="var(--muted)" font-family="B612,sans-serif">${L}NM</text>`}}
   let i0=0;for(let i=1;i<=pts.length;i++){if(i===pts.length||pts[i].k!==pts[i0].k){const g=pts.slice(i0,Math.min(i+1,pts.length));const col=(PHC[pts[i0].k]||['','#888'])[1];const dim=opt.keep&&!opt.keep.includes(pts[i0].k);
       s+=`<polyline points="${g.map(o=>px(o.p)+','+py(o.p)).join(' ')}" fill="none" stroke="${col}" stroke-width="${dim?1.5:2.6}" stroke-opacity="${dim?0.45:1}" stroke-linejoin="round" stroke-linecap="round"/>`;i0=i}}
@@ -1956,11 +1958,12 @@ function renderEnr(){
   $('rteLegs').innerHTML=rows.length?`<div class="tbl"><table><thead><tr><th>区間</th><th>経路</th><th>距離</th><th>時間</th><th>MEA</th><th>備考</th></tr></thead><tbody>${html}</tbody></table></div>
    <p class="note">SID・STAR・進入は、TASで標準旋回（3°/秒、旋回半径 約${turnR(tas).toFixed(1)}NM）をしたと仮定した概算です。上昇率 ${S.perf.roc||500}ft/分。待機・方式旋回は含みません${S.proc&&S.proc.arrMode==='vec'?'（レーダー誘導は見込みの距離を加算）':'。レーダー誘導は含みません'}。管制区は計画高度 ${C.lvl.toLocaleString()}ft で判定しています（ENR 2.1）。</p>`:'<div class="empty">ルートタブで出発・目的飛行場を選ぶと、ここに区間と時間が出ます。</div>';
 }
-let GEO=null,WGEO=null;
+let GEO=null,WGEO=null,LAKES=null;
 function loadGeo(){if(window.__geoTried)return;window.__geoTried=1;
   const tryLoad=(urls,glob,done)=>{if(!urls.length)return;const s=document.createElement('script');s.src=urls[0];s.onload=()=>{if(window[glob])done(window[glob]);else tryLoad(urls.slice(1),glob,done)};s.onerror=()=>tryLoad(urls.slice(1),glob,done);document.head.appendChild(s)};
   // Japan outline (地球地図日本・国土地理院, simplified) served with the app itself
   const here=/github\.io$/.test(location.hostname)||/^(localhost|127\.)/.test(location.hostname);tryLoad([(here?'':'https://realbon1-max.github.io/IFR/')+'jp.js'],'JPGEO',g=>{if(!GEO){GEO=g;try{renderAll()}catch(e){renderEnr()}}});
+  tryLoad([(here?'':'https://realbon1-max.github.io/IFR/')+'lakes.js'],'JPLAKES',g=>{LAKES=g;try{renderAll()}catch(e){}});
   const B='https://cdn.jsdelivr.net/npm/@amcharts/amcharts4-geodata';
   try{tryLoad([B+'@4.1.28/dist/script/japanLow.js',B+'/dist/script/japanLow.js'],'am4geodata_japanLow',g=>{if(GEO)return;GEO=g;try{renderAll()}catch(e){renderEnr()}});
       tryLoad([B+'@4.1.28/dist/script/worldLow.js',B+'/dist/script/worldLow.js'],'am4geodata_worldLow',g=>{WGEO=g;try{renderAll()}catch(e){renderEnr()}})}catch(e){}}
@@ -2316,7 +2319,8 @@ function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s=''
   const feats0=[...(WGEO?WGEO.features.filter(f=>f.id!=='JP'&&!(f.properties&&f.properties.id==='JP')):[]),...(GEO?GEO.features:[])];
   const feats=feats0;if(BGon&&feats.length){s+='<g fill="var(--land)" stroke="none">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
   if(BGon)s+=`<g class="mapTiles" opacity="${(mapF().bgo||70)/100}" style="pointer-events:none"></g>`;
-  else if(feats.length){s+='<g fill="var(--land)" stroke="var(--coast)" stroke-width="0.8" vector-effect="non-scaling-stroke">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path vector-effect="non-scaling-stroke" d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
+  else if(feats.length){s+='<g fill="var(--land)" stroke="var(--coast)" stroke-width="0.8" vector-effect="non-scaling-stroke">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path vector-effect="non-scaling-stroke" d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>';
+    if(LAKES){s+='<g fill="var(--sea)" stroke="var(--coast)" stroke-width="0.6">';for(const L of LAKES)for(const ring of L.c)s+=`<path vector-effect="non-scaling-stroke" d="M${ring.map(c=>P([c[1],c[0]])).join('L')}Z"/>`;s+='</g>'}}
   for(const [nm,v] of Object.entries(SECT)){for(const pt of v[2]){if(!(C.lvl>=pt[0]&&C.lvl<pt[1]))continue;const col=v[0]==='Tokyo'?'#2B6A94':v[0]==='Fukuoka'?'#8E3B5E':'#2E7D4F';
       s+=`<path d="M${pt[2].map(P).join('L')}Z" fill="${col}" fill-opacity=".035" stroke="${col}" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="6 3" vector-effect="non-scaling-stroke"/>`;
       const cx=pt[2].reduce((a,p)=>a+p[0],0)/pt[2].length,cy=pt[2].reduce((a,p)=>a+p[1],0)/pt[2].length;s+=`<text class="ml sl" x="${PX([cx,cy])}" y="${PY([cx,cy])}" text-anchor="middle" fill="${col}">${nm} ${v[1][0]||''}</text>`}}
