@@ -49,6 +49,10 @@ header.top h1{font-size:20px;margin:0;font-weight:700}
 .leg .icao{font-family:var(--code);font-size:30px;font-weight:700;line-height:1.1}
 .leg .nm{font-size:11px;color:var(--muted);white-space:nowrap}
 .leg .wx{font-family:var(--code);font-size:12px;margin-top:4px}
+.leg .wxd{margin-top:5px;padding-top:4px;border-top:1px dashed var(--line);font-family:var(--sans,system-ui);font-size:10.5px;line-height:1.35}
+.leg .wxd .cl{display:flex;gap:4px;align-items:center;white-space:nowrap}
+.leg .wxd .cl b{font-weight:700}
+.leg .wxd .tq{display:flex;flex-wrap:wrap;gap:2px 8px;margin-top:2px;white-space:nowrap}
 .leg.alt{border-style:dashed;margin-left:10px;border-left:1px dashed var(--line)}
 .leg{cursor:pointer}.leg:hover{border-color:var(--sky)}.leg .edit{position:absolute;top:6px;right:8px;font-size:11px;color:var(--sky)}
 .leg.add{display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:70px;border-style:dashed;color:var(--muted)}
@@ -856,7 +860,7 @@ function parseWx(tokens){ // tokens of a single condition group
     else if(t==='CAVOK'){o.vis=10000;o.clouds=[];o.cavok=1}
     else if(/^\d{4}$/.test(t)&&o.vis===undefined){o.vis=+t===9999?10000:+t}
     else if((m=t.match(/^(FEW|SCT|BKN|OVC)(\d{3})/))){(o.clouds=o.clouds||[]).push({c:m[1],h:+m[2]*100})}
-    else if((m=t.match(/^VV(\d{3})/))){(o.clouds=o.clouds||[]).push({c:'VV',h:+m[1]*100})}
+    else if((m=t.match(/^VV(\d{3}|\/\/\/)/))){(o.clouds=o.clouds||[]).push({c:'VV',h:m[1]==='///'?0:+m[1]*100})}
     else if(t==='NSC'||t==='SKC'||t==='NCD'){o.clouds=[]}
     else if((m=t.match(/^R(\d{2}[LRC]?)\/[PM]?(\d{4})/))){(o.rvr=o.rvr||{})[m[1]]=+m[2]}
     else if(/^[-+]?(VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)+$/.test(t)||/^[-+]?(VC)?(TS|SH)$/.test(t)){(o.ww=o.ww||[]).push(t)}
@@ -1075,13 +1079,44 @@ function wxIcon(m,size){size=size||40;if(!m)return '';const ww=(m.ww||[]).map(wx
   if(vc)s+=`<text x="3" y="9" font-size="7" font-weight="700" fill="var(--muted)" font-family="sans-serif">VC</text>`;
   if(!s)s=sun(20,20,8);
   return `<svg class="wxi" viewBox="0 0 40 40" width="${size}" height="${size}" role="img" aria-label="${esc(wxJa(m))}">${s}</svg>`}
+// ---------- cloud layers (amount, type, base), temperature / dew point and QNH from the METAR text ----------
+const CLT={CI:'巻雲',CC:'巻積雲',CS:'巻層雲',AC:'高積雲',AS:'高層雲',NS:'乱層雲',SC:'層積雲',ST:'層雲',CU:'積雲',TCU:'塔状積雲',CB:'積乱雲','///':'不明'};
+const CLA={SKC:[0,'0'],NSC:[0,'0'],NCD:[0,'0'],FEW:[2,'1/8〜2/8'],SCT:[4,'3/8〜4/8'],BKN:[6,'5/8〜7/8'],OVC:[8,'8/8'],VV:[9,'天空不明'],'///':[-1,'不明']};
+function metarDetail(raw){const tk=tokenize(raw||'');const ti=tk.findIndex(t=>/^\d{6}Z$/.test(t));if(ti<0)return null;const ri=tk.indexOf('RMK');const main=tk.slice(ti+1,ri>=0?ri:tk.length),rmk=ri>=0?tk.slice(ri+1):[];
+  const o={layers:[],types:[],t:null,td:null,q:null,a:null,skc:false};
+  for(const t of main){let m;if(['TEMPO','BECMG','NOSIG'].includes(t))break;
+    if((m=t.match(/^(FEW|SCT|BKN|OVC|\/\/\/)(\d{3}|\/\/\/)(CB|TCU|\/\/\/)?$/)))o.layers.push({c:m[1],h:m[2]==='///'?null:+m[2]*100,cb:m[3]&&m[3]!=='///'?m[3]:''});
+    else if((m=t.match(/^VV(\d{3}|\/\/\/)$/)))o.layers.push({c:'VV',h:m[1]==='///'?null:+m[1]*100,cb:''});
+    else if(/^(SKC|NSC|NCD|CLR|CAVOK)$/.test(t))o.skc=t;
+    else if((m=t.match(/^(M?\d{2})\/(M?\d{2})?$/))){const f=s=>s==null?null:(s[0]==='M'?-+s.slice(1):+s);o.t=f(m[1]);o.td=f(m[2]||null)}
+    else if((m=t.match(/^Q(\d{4})$/)))o.q=+m[1];else if((m=t.match(/^A(\d{4})$/)))o.a=+m[1]/100}
+  for(const t of rmk){let m;if((m=t.match(/^(\d)(CI|CC|CS|AC|AS|NS|SC|ST|CU|TCU|CB|\/\/\/)(\d{3}|\/\/\/)?$/)))o.types.push({n:+m[1],ty:m[2],h:m[3]&&m[3]!=='///'?+m[3]*100:null});else if((m=t.match(/^A(\d{4})$/))&&o.a==null)o.a=+m[1]/100}
+  return o}
+function oktaSvg(n,sz){sz=sz||12;const r=sz/2-1,c=sz/2;let s=`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="currentColor" stroke-width="1.2"/>`;
+  if(n<0)s+=`<path d="M${c-r*0.7} ${c-r*0.7}L${c+r*0.7} ${c+r*0.7}M${c+r*0.7} ${c-r*0.7}L${c-r*0.7} ${c+r*0.7}" stroke="currentColor" stroke-width="1.2"/>`;
+  else if(n>=8)s+=`<circle cx="${c}" cy="${c}" r="${r}" fill="currentColor"/>`;
+  else if(n===9)s+=`<circle cx="${c}" cy="${c}" r="${r}" fill="currentColor"/><path d="M${c-r*0.6} ${c-r*0.6}L${c+r*0.6} ${c+r*0.6}M${c+r*0.6} ${c-r*0.6}L${c-r*0.6} ${c+r*0.6}" stroke="var(--card)" stroke-width="1.3"/>`;
+  else if(n>0){const a=n/8*2*Math.PI;const x=c+r*Math.sin(a),y=c-r*Math.cos(a);s+=`<path d="M${c} ${c}L${c} ${c-r}A${r} ${r} 0 ${a>Math.PI?1:0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z" fill="currentColor"/>`}
+  return `<svg viewBox="0 0 ${sz} ${sz}" width="${sz}" height="${sz}" style="flex:0 0 auto;vertical-align:-2px" aria-hidden="true">${s}</svg>`}
+function wxDetailHtml(raw){const d=metarDetail(raw);if(!d)return '';const rows=[];
+  // pair each METAR layer with its RMK cloud type (same base height)
+  const used=new Set();
+  d.layers.forEach(L=>{const A=CLA[L.c]||[-1,'不明'];const T=d.types.filter((x,i)=>!used.has(i)&&x.h===L.h).map(x=>{used.add(d.types.indexOf(x));return x});
+    const tyTxt=L.cb?CLT[L.cb]:T.map(x=>CLT[x.ty]||x.ty).join('・');const okt=T.length===1?T[0].n:A[0];
+    rows.push(`<div class="cl" title="${esc(L.c+(L.h!=null?String(L.h/100).padStart(3,'0'):'///')+(L.cb||''))}" style="${L.cb==='CB'?'color:var(--no)':L.cb==='TCU'?'color:var(--cau,#C98A00)':''}">${oktaSvg(okt)}<span>${L.c==='VV'?'鉛直視程':(T.length===1?T[0].n+'/8':A[1])}</span><b>${esc(tyTxt||'')}</b><span>${L.h!=null?L.h.toLocaleString()+'ft':'高さ不明'}</span></div>`)});
+  // types reported only in RMK (e.g. upper clouds)
+  d.types.forEach((x,i)=>{if(used.has(i))return;rows.push(`<div class="cl">${oktaSvg(x.n)}<span>${x.n}/8</span><b>${esc(CLT[x.ty]||x.ty)}</b><span>${x.h!=null?x.h.toLocaleString()+'ft':''}</span></div>`)});
+  if(!d.layers.length&&d.skc)rows.push(`<div class="cl">${oktaSvg(0)}<span>${d.skc==='CAVOK'?'CAVOK':'雲なし'}</span></div>`);
+  let tq='';if(d.t!=null){const sp=d.td!=null?d.t-d.td:null;tq+=`<span title="気温/露点" style="${sp!=null&&sp<=3?'color:var(--no)':''}"><svg viewBox="0 0 12 12" width="12" height="12" style="vertical-align:-2px" aria-hidden="true"><rect x="4.5" y="1" width="3" height="7" rx="1.5" fill="none" stroke="currentColor"/><circle cx="6" cy="9" r="2.3" fill="currentColor"/></svg>${d.t}℃/${d.td!=null?d.td+'℃':'—'}${sp!=null?`（差${sp}${sp<=3?'・霧注意':''}）`:''}</span>`}
+  if(d.q||d.a){tq+=`<span title="高度計規正値"><svg viewBox="0 0 12 12" width="12" height="12" style="vertical-align:-2px" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor"/><path d="M6 6L8.5 3.5" stroke="currentColor" stroke-width="1.3"/></svg>${d.q?'Q'+d.q:''}${d.a?' A'+d.a.toFixed(2):''}</span>`}
+  return `<div class="wxd">${rows.join('')}${tq?`<div class="tq">${tq}</div>`:''}</div>`}
 function renderStrip(){
   const r=S.route; const legs=route(); const el=$('strip');
   const addc=(key,lab,x)=>`<div class="leg add${x?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${lab}を選ぶ"><div class="icao">＋</div><div class="nm">${lab}</div></div>`;
   if(!legs.length){el.innerHTML=addc('dep','出発')+'<div class="arrow"></div>'+addc('dst','目的');$('stripnote').textContent='カードをタップして飛行場を選べます。';return}
   const cell=(role,i,alt,key)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
-    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
+    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>${wxDetailHtml(m.raw)}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
   const swb='<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;flex:0 0 auto;min-width:40px;font-size:18px;line-height:1;padding:8px 9px;margin:0 2px">⇄</button>';
   el.innerHTML=main.map((c,k)=>k===0?c:(k===1&&r.dep&&r.dst?swb:'<div class="arrow"></div>')+c).join('')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
