@@ -1766,7 +1766,29 @@ function thumbSvg(smp,opt){opt=opt||{};let pts=smp||[];if(opt.keep)pts=pts.filte
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="経路の概略図" style="flex:0 0 auto;max-width:100%;background:var(--bg2,rgba(127,127,127,.07));border:1px solid var(--line);border-radius:8px">${s}</svg>`}
 function thumbRoute(o){return withChoice(P=>{S.route.rte=o.rte;S.route.depMode='ifr';P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec'},()=>{const C=routeCalc();const smp=calcSamples(C);const A=ap(S.route.dep),B=ap(S.route.dst);
   return thumbSvg(smp,{marks:[A&&{p:A.p,n:S.route.dep},B&&{p:B.p,n:S.route.dst}].filter(Boolean)})})||''}
-function thumbRec(kind,o){return withChoice(P=>{if(kind==='sid'){P.sid=o.sid;P.sidT=o.sidT;P.sidE=0;if(o.rw)P.drw=o.rw}else if(kind==='star'){P.star=o.star;P.starE=o.starE;P.arrMode='star'}else{P.app=o.x.n;if(P.arrMode==='vec')P.arrMode='full'}},()=>{const C=routeCalc();const smp=calcSamples(C);
+// generic sketch: lines [{pts:[[lat,lon]],col,w,dash,op}], marks [{p,n,sq}], legend [[col,label,dash]]
+function thumbLines(lines,marks,legend,opt){opt=opt||{};lines=lines.filter(l=>l.pts&&l.pts.length>1);if(!lines.length)return '';const ex=[...lines.flatMap(l=>l.pts),...(marks||[]).map(m=>m.p)];
+  const lat0=ex.reduce((s,q)=>s+q[0],0)/ex.length;const kx=Math.cos(lat0*RAD);const X=q=>q[1]*kx,Y=q=>-q[0];
+  let x0=Math.min(...ex.map(X)),x1=Math.max(...ex.map(X)),y0=Math.min(...ex.map(Y)),y1=Math.max(...ex.map(Y));const pad=Math.max(x1-x0,y1-y0)*0.08+0.01;x0-=pad;x1+=pad;y0-=pad;y1+=pad;
+  const W=opt.w||200,H=opt.h||130,LH=legend&&legend.length?14:0;const sc=Math.min(W/(x1-x0),(H-LH)/(y1-y0));const ox=(W-(x1-x0)*sc)/2,oy=(H-LH-(y1-y0)*sc)/2;const px=q=>+(ox+(X(q)-x0)*sc).toFixed(1),py=q=>+(oy+(Y(q)-y0)*sc).toFixed(1);
+  let s='';lines.forEach(l=>{s+=`<polyline points="${l.pts.map(q=>px(q)+','+py(q)).join(' ')}" fill="none" stroke="${l.col}" stroke-width="${l.w||2.6}" ${l.dash?`stroke-dasharray="${l.dash}"`:''} stroke-opacity="${l.op||1}" stroke-linejoin="round" stroke-linecap="round"/>`});
+  (marks||[]).forEach(m=>{if(m.sq)s+=`<rect x="${px(m.p)-3.5}" y="${py(m.p)-3.5}" width="7" height="7" fill="var(--ink)"/>`;else s+=`<circle cx="${px(m.p)}" cy="${py(m.p)}" r="2.6" fill="${m.col||'var(--ink)'}"/>`;
+    if(m.n)s+=`<text x="${px(m.p)+5}" y="${py(m.p)-4}" font-size="9" font-weight="700" fill="var(--ink)" paint-order="stroke" stroke="var(--card)" stroke-width="2.5" font-family="B612,sans-serif">${esc(m.n)}</text>`});
+  if(LH){let lx=6;legend.forEach(([c,t,d])=>{s+=`<line x1="${lx}" x2="${lx+12}" y1="${H-6}" y2="${H-6}" stroke="${c}" stroke-width="2.4" ${d?'stroke-dasharray="3 2"':''}/><text x="${lx+15}" y="${H-3}" font-size="9" fill="var(--muted)">${esc(t)}</text>`;lx+=15+t.length*9+8})}
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="経路の概略図" style="flex:0 0 auto;max-width:100%;background:var(--bg2,rgba(127,127,127,.07));border:1px solid var(--line);border-radius:8px">${s}</svg>`}
+// approach sketch: only the procedure itself — transitions (teal), final approach (red), missed approach (dashed)
+function thumbApp(o){const apt=S.route.dst,B=ap(apt);if(!B)return '';const name=o.x.n;const TR='#1B8A9A',FI='#C0392B';const lines=[],marks=[{p:B.p,n:apt,sq:1}];const seenF=new Set();
+  const E=plFind(apt,'APP',name);
+  if(E){let prevEnd=null;E[2].forEach(seg=>{const legs=seg[2]||[];if(!legs.length)return;let start=null;if(legs[0][0]!=='IF'&&!(legs[0][1]&&plPos(apt,legs[0][1])))start=prevEnd;const tr=plTrack(apt,legs,start,{app:1});if(tr.pts.length<2)return;
+      if(tr.maFrom>=0){lines.push({pts:tr.pts.slice(0,tr.maFrom+1),col:FI});lines.push({pts:tr.pts.slice(tr.maFrom),col:FI,w:1.6,dash:'3 3',op:.85})}else lines.push({pts:tr.pts,col:TR,w:2.2});
+      const f0=legs[0][1];if(f0&&!seenF.has(f0)&&!/^RW/.test(f0)){seenF.add(f0);const q=plPos(apt,f0);if(q)marks.push({p:q,n:f0,col:tr.maFrom>=0?FI:TR})}
+      prevEnd=tr.pts[tr.maFrom>=0?tr.maFrom:tr.pts.length-1]});
+    const hasT=lines.some(l=>l.col===TR);const out=thumbLines(lines,marks,[...(hasT?[[TR,'トランジション']]:[]),[FI,'進入'],[FI,'復行',1]]);if(out&&lines.some(l=>l.col===FI))return out;lines.length=0;marks.length=1;seenF.clear()}
+  // conventional: compute as "fly the full procedure from the IAF", then keep only the part from the IAF
+  return withChoice(P=>{P.app=name;P.star='';P.arrMode='full';const iaf=((o.x.r||{}).IAF||[]).find(f=>fixPos(f))||(o.x.bt&&o.x.bt[0])||((o.x.r||{}).IF||[]).find(f=>fixPos(f));if(iaf)S.route.rte=iaf},()=>{const C=routeCalc();const a=C.arr||{};const tr=(a.appTrack||[]).filter(Boolean);if(tr.length<2)return '';
+    (a.appFix||[]).filter(f=>f[1]==='IAF'||f[1]==='IF'||f[1]==='FAF').forEach(f=>{const q=fixPos(f[0]);if(q&&!seenF.has(f[0])){seenF.add(f[0]);marks.push({p:q,n:f[0],col:FI})}});
+    lines.push({pts:tr,col:FI});if(a.maTrack&&a.maTrack.length>1)lines.push({pts:a.maTrack,col:FI,w:1.6,dash:'3 3',op:.85});return thumbLines(lines,marks,[[FI,'進入'],[FI,'復行',1]])})||''}
+function thumbRec(kind,o){if(kind==='app')return thumbApp(o);return withChoice(P=>{if(kind==='sid'){P.sid=o.sid;P.sidT=o.sidT;P.sidE=0;if(o.rw)P.drw=o.rw}else if(kind==='star'){P.star=o.star;P.starE=o.starE;P.arrMode='star'}else{P.app=o.x.n;if(P.arrMode==='vec')P.arrMode='full'}},()=>{const C=routeCalc();const smp=calcSamples(C);
   if(kind==='sid'){const A=ap(S.route.dep);return thumbSvg(smp,{keep:['SID','TRN'],marks:A?[{p:A.p,n:S.route.dep}]:[]})}
   const B=ap(S.route.dst);return thumbSvg(smp,{keep:kind==='star'?['STAR','APP']:['APP'],ma:kind==='app'?(C.arr&&C.arr.maTrack)||[]:[],marks:B?[{p:B.p,n:S.route.dst}]:[]})})||''}
 function recBox(kind){if(kind==='sid'&&S.route.depMode==='vfr'&&S.route.ifrFix)return '';let L=[],h='';try{L=kind==='sid'?recSid():kind==='star'?recStar():recApp()}catch(e){return ''}if(!L.length)return kind==='app'?'':`<div class="box"><b>${kind==='sid'?'おすすめのSID・トランジション':'おすすめのSTAR'}</b><p class="note">${esc(limText())}。この高さで飛べる${kind==='sid'?'SID':'STAR'}がありません（${kind==='sid'?'レーダー誘導での出発':'レーダー誘導での到着'}を考えてください）。</p></div>`;
