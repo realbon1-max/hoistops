@@ -859,7 +859,7 @@ function parseWx(tokens){ // tokens of a single condition group
     else if((m=t.match(/^VV(\d{3})/))){(o.clouds=o.clouds||[]).push({c:'VV',h:+m[1]*100})}
     else if(t==='NSC'||t==='SKC'||t==='NCD'){o.clouds=[]}
     else if((m=t.match(/^R(\d{2}[LRC]?)\/[PM]?(\d{4})/))){(o.rvr=o.rvr||{})[m[1]]=+m[2]}
-    else if(/^[-+]?(VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)+$/.test(t)||t==='TS'){(o.ww=o.ww||[]).push(t)}
+    else if(/^[-+]?(VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)+$/.test(t)||/^[-+]?(VC)?(TS|SH)$/.test(t)){(o.ww=o.ww||[]).push(t)}
   }
   if(o.clouds){const c=o.clouds.filter(x=>['BKN','OVC','VV'].includes(x.c)).map(x=>x.h);o.ceil=c.length?Math.min(...c):null}
   return o;
@@ -1033,13 +1033,55 @@ function swapApt(){const r=S.route;if(!r.dep&&!r.dst)return;[r.dep,r.dst]=[r.dst
   for(const k of ['dep','dst']){const el=$(k);if(el)el.value=r[k]||'';const s=$(k+'_s');if(s)s.value=DB[r[k]]?r[k]:''}if($('rteIn'))$('rteIn').value=r.rte||'';try{renderVia()}catch(e){}
   save();renderAll();try{alertBox(`出発 ${r.dep||'—'} ⇄ 目的 ${r.dst||'—'} に入れ替えました。SID・STAR・進入は選び直してください。`)}catch(e){}}
 document.addEventListener('click',e=>{if(e.target.closest('[data-swap]')){e.preventDefault();e.stopPropagation();swapApt()}},true);
+// ---------- weather pictogram from METAR (present weather + cloud cover) ----------
+const WXJ={RA:'雨',SN:'雪',DZ:'霧雨',SG:'霧雪',GR:'雹',GS:'霰',PL:'凍雨',IC:'細氷',FG:'霧',BR:'もや',HZ:'煙霧',FU:'煙',VA:'火山灰',DU:'塵',SA:'砂',SQ:'スコール',FC:'竜巻・漏斗雲',PO:'塵旋風',SS:'砂じん嵐',DS:'砂じん嵐',UP:'不明の降水'};
+const WXD={SH:'しゅう雨性の',TS:'雷',FZ:'着氷性の',BC:'散在する',PR:'部分的な',MI:'低い',DR:'低い地吹',BL:'高い地吹'};
+function wxParse(t){const m=String(t).match(/^([-+]?)(VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?((?:DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)*)$/);if(!m)return null;const ph=(m[4].match(/../g)||[]);return {int:m[1]||'',vc:!!m[2],d:m[3]||'',ph}}
+function wxJa(m){if(!m)return '';const ww=(m.ww||[]).map(wxParse).filter(Boolean);if(ww.length){return ww.map(w=>{const ii=w.int==='-'?'弱い':w.int==='+'?'強い':'';const d=w.d==='TS'?'':w.d?WXD[w.d]:'';let ph=w.ph.map(c=>WXJ[c]||c).join('・');if(w.d==='TS')ph=ph?'雷を伴う'+ph:'雷電';if(w.d==='SH'&&ph)ph=ph.replace(/^雨/,'雨').replace(/^/,'');if(w.d==='SH'&&!ph)ph='雨';return (w.vc?'付近で':'')+ii+(w.d==='SH'?'しゅう':d)+ph}).join('、')}
+  const c=m.clouds||[];if(m.cavok)return 'CAVOK';if(!c.length)return '雲なし';const top=c.some(x=>x.c==='OVC'||x.c==='VV')?'曇り':c.some(x=>x.c==='BKN')?'曇り（雲多い）':c.some(x=>x.c==='SCT')?'晴れ時々雲':'晴れ';return top}
+function wxIcon(m,size){size=size||40;if(!m)return '';const ww=(m.ww||[]).map(wxParse).filter(Boolean);const all=ww.flatMap(w=>w.ph);const has=c=>all.includes(c);const any=d=>ww.some(w=>w.d===d);
+  const int=ww.some(w=>w.int==='+')?2:ww.some(w=>w.int==='-')?0:1;const vc=ww.length&&ww.every(w=>w.vc);
+  const c=m.clouds||[];const cov=m.cavok||!c.length?0:c.some(x=>x.c==='OVC'||x.c==='VV')?4:c.some(x=>x.c==='BKN')?3:c.some(x=>x.c==='SCT')?2:1;
+  // day / night (Japan local time from the METAR hour)
+  const hh=m.time?+m.time.slice(2,4):12;const lt=(hh+9)%24;const night=lt<6||lt>=18;
+  const SUN='#F5A623',CL='#B8C4CF',CLD='#8A97A3',RAIN='#2F7CF6',ICE='#52C7E8',SNOW='#7FA8C9',BOLT='#FFC400',FOG='#9AA5AE';
+  let s='';const sun=(x,y,r)=>night?`<path d="M${x+r*0.4} ${y-r}a${r} ${r} 0 1 0 ${r*0.7} ${r*1.55}a${r*0.8} ${r*0.8} 0 1 1 -${r*0.7} -${r*1.55}z" fill="#F2D16B"/>`:`<g stroke="${SUN}" stroke-width="2" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>{const r1=r*1.35,r2=r*1.75,ca=Math.cos(a*Math.PI/180),sa=Math.sin(a*Math.PI/180);return `<line x1="${(x+r1*ca).toFixed(1)}" y1="${(y+r1*sa).toFixed(1)}" x2="${(x+r2*ca).toFixed(1)}" y2="${(y+r2*sa).toFixed(1)}"/>`}).join('')}</g><circle cx="${x}" cy="${y}" r="${r}" fill="${SUN}"/>`;
+  const cloud=(x,y,w,col)=>{const cx=x+w/2;return `<g fill="${col}"><circle cx="${cx-w*0.22}" cy="${y-w*0.2}" r="${w*0.2}"/><circle cx="${cx+w*0.03}" cy="${y-w*0.3}" r="${w*0.27}"/><circle cx="${cx+w*0.28}" cy="${y-w*0.17}" r="${w*0.18}"/><rect x="${cx-w*0.42}" y="${y-w*0.2}" width="${w*0.88}" height="${w*0.2}" rx="${w*0.1}"/></g>`};
+  const precip=all.some(x=>['RA','DZ','SN','SG','GR','GS','PL','IC','UP'].includes(x))||any('TS');
+  const obsc=['FG','BR','HZ','FU','VA','DU','SA'].find(has);
+  // sky
+  if(has('VA')){s+=`<path d="M8 34l9-14h6l9 14z" fill="#8B6B4A"/><path d="M20 20c-3-4 2-6 0-10c3 1 6 4 3 10" fill="#6E6E6E"/>`;}
+  else if(has('FC')){s+=cloud(6,14,28,CLD)+`<path d="M14 15h12l-3 6h-2l-1 6h-1l-1 5-1-5h-1l-1-6h-2z" fill="#5E6A75"/>`}
+  else if(has('SQ')){s+=cloud(6,16,28,CLD)+`<g stroke="#5E6A75" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M6 23h20a3 3 0 1 0-3-3"/><path d="M4 28h24a3 3 0 1 1-3 3"/><path d="M8 33h12"/></g>`}
+  else{const showSun=(cov<=2&&!precip)||(any('SH')&&cov<4);
+    if(cov===0&&!precip&&!obsc)s+=sun(20,20,8);
+    else if(showSun){s+=sun(14,13,6);s+=cloud(10,precip?22:27,24,cov>=3?CLD:CL)}
+    else if(cov>0||precip)s+=cloud(5,precip||obsc==='FG'?20:26,30,cov>=4||any('TS')?CLD:CL);
+    else if(obsc&&obsc!=='FG')s+=sun(20,15,6)}
+  // precipitation
+  const n=[2,3,5][int];const cols=[];for(let i=0;i<n;i++)cols.push(9+i*(22/(n-1||1)));const by=any('SH')||cov<4?26:24;
+  const frz=any('FZ');
+  if(has('RA')||has('UP'))cols.forEach((x,i)=>{s+=`<line x1="${x+1.5}" y1="${by+(i%2)*2}" x2="${x-1.5}" y2="${by+7+(i%2)*2}" stroke="${frz?ICE:RAIN}" stroke-width="2.2" stroke-linecap="round"/>`});
+  if(has('DZ'))cols.forEach((x,i)=>{s+=`<circle cx="${x}" cy="${by+3+(i%2)*4}" r="1.3" fill="${frz?ICE:RAIN}"/><circle cx="${x+2}" cy="${by+8-(i%2)*3}" r="1.1" fill="${frz?ICE:RAIN}"/>`});
+  if(has('SN')||has('SG')||has('IC'))cols.forEach((x,i)=>{const y=by+4+(i%2)*3,r=has('SN')?3:2;s+=`<g stroke="${SNOW}" stroke-width="1.4" stroke-linecap="round"><line x1="${x-r}" y1="${y}" x2="${x+r}" y2="${y}"/><line x1="${x-r*0.5}" y1="${y-r*0.87}" x2="${x+r*0.5}" y2="${y+r*0.87}"/><line x1="${x-r*0.5}" y1="${y+r*0.87}" x2="${x+r*0.5}" y2="${y-r*0.87}"/></g>`});
+  if(has('GR')||has('GS')||has('PL'))cols.forEach((x,i)=>{s+=`<circle cx="${x}" cy="${by+4+(i%2)*3}" r="${has('GR')?2.6:1.9}" fill="#fff" stroke="${ICE}" stroke-width="1.4"/>`});
+  if(frz)s+=`<text x="33" y="39" font-size="7" font-weight="700" fill="${ICE}" text-anchor="end" font-family="sans-serif">FZ</text>`;
+  if(any('TS'))s+=`<path d="M21 21l-5 9h4l-2 8 7-10h-4l3-7z" fill="${BOLT}" stroke="#C78F00" stroke-width=".6"/>`;
+  // obscuration
+  if(obsc&&!has('VA')){const part=ww.some(w=>(w.d==='BC'||w.d==='PR'||w.d==='MI')&&w.ph.includes(obsc));const col=obsc==='HZ'?'#C9A66B':obsc==='FU'?'#7D7D7D':obsc==='DU'||obsc==='SA'?'#B98B5A':FOG;
+    const ys=obsc==='FG'?[26,30,34]:[29,33];const dash=obsc==='HZ'||obsc==='DU'||obsc==='SA'?'2 2.5':part?'5 4':'';
+    s+=ys.map((y,i)=>`<line x1="${6+(i%2)*3}" y1="${y}" x2="${34-(i%2)*3}" y2="${y}" stroke="${col}" stroke-width="${obsc==='BR'?1.8:2.4}" stroke-linecap="round" ${dash?`stroke-dasharray="${dash}"`:''}/>`).join('');
+    if(obsc==='FU')s+=`<path d="M26 22c-3-3 1-5-1-8c3 1 4 4 2 8" fill="#9A9A9A"/>`}
+  if(vc)s+=`<text x="3" y="9" font-size="7" font-weight="700" fill="var(--muted)" font-family="sans-serif">VC</text>`;
+  if(!s)s=sun(20,20,8);
+  return `<svg class="wxi" viewBox="0 0 40 40" width="${size}" height="${size}" role="img" aria-label="${esc(wxJa(m))}">${s}</svg>`}
 function renderStrip(){
   const r=S.route; const legs=route(); const el=$('strip');
   const addc=(key,lab,x)=>`<div class="leg add${x?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${lab}を選ぶ"><div class="icao">＋</div><div class="nm">${lab}</div></div>`;
   if(!legs.length){el.innerHTML=addc('dep','出発')+'<div class="arrow"></div>'+addc('dst','目的');$('stripnote').textContent='カードをタップして飛行場を選べます。';return}
   const cell=(role,i,alt,key)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
-    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
+    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
   const swb='<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;flex:0 0 auto;min-width:40px;font-size:18px;line-height:1;padding:8px 9px;margin:0 2px">⇄</button>';
   el.innerHTML=main.map((c,k)=>k===0?c:(k===1&&r.dep&&r.dst?swb:'<div class="arrow"></div>')+c).join('')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
@@ -2587,7 +2629,8 @@ function v3dBind(){const o=V3D.ov,cv=V3D.cv;v3dBtn();
 function v3dHome(){const c=V3D.cam;c.tx=0;c.ty=0;c.tz=0;c.dist=V3D.R*1.0;c.yaw=-0.5;c.pitch=0.45}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v3d]');if(b)v3dOpen(b.dataset.v3d)});
 
-function renderAll(){try{lvlListUpdate()}catch(e){}const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
+function wxAutoOnChange(){try{const ids=wxAirports().filter(isIcao).sort().join(' ');if(!ids||ids===window.__wxKey)return;window.__wxKey=ids;clearTimeout(window.__wxT);window.__wxT=setTimeout(()=>{try{if(typeof wxBusy!=='undefined'&&wxBusy){window.__wxKey='';setTimeout(wxAutoOnChange,1500);return}wxAutoFetch(false)}catch(e){}},500)}catch(e){}}
+function renderAll(){try{lvlListUpdate()}catch(e){}setTimeout(wxAutoOnChange,0);const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
 /* ---------- inputs ---------- */
 function norm(v){return (v||'').trim().toUpperCase().slice(0,4)}
