@@ -742,7 +742,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   <h2>気象を取り込む</h2>
   <div class="box" id="autoBox">
     <div class="row" style="justify-content:space-between"><b>自動取得（参考）</b><span class="tag t-cau">公式ではありません</span></div>
-    <p class="note" style="margin-top:4px">ルートの空港のMETAR/TAF（気象庁発表の報を米国気象局 aviationweather.gov が中継したもの。霞目 RJSU など自衛隊の飛行場のMETARは国際気象海洋 IMOC のページから）を、GitHubで10分ごとに自動巡回したデータから取ります。運航判断はMetAirの報で確認してください。MetAirで貼り付けた報が同じ時刻以上なら、そちらを優先して残します。</p>
+    <p class="note" style="margin-top:4px">ルートの空港のMETAR/TAF（第一優先は国際気象海洋 IMOC のページ。IMOCに報が無い飛行場だけ、米国気象局 aviationweather.gov が中継した気象庁の報で補います）を、GitHubで10分ごとに自動巡回したデータから取ります。運航判断はMetAirの報で確認してください。MetAirで貼り付けた報が同じ時刻以上なら、そちらを優先して残します。</p>
     <div class="row" style="margin-top:6px"><button class="act" id="wxAuto" type="button">今すぐ取得</button><label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wxPoll"> 開いている間、10分ごとに自動で巡回</label></div>
     <div id="wxAutoSt" class="note" style="margin-top:6px"></div>
   </div>

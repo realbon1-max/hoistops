@@ -43,24 +43,40 @@ def imoc_metars():
             if icao not in out or out[icao]['ts'] < ts: out[icao] = {'ts': ts, 'raw': raw}
         time.sleep(1)
     return out
+def imoc_tafs():
+    # IMOC TAF一覧（地域0〜3）
+    out = {}
+    pat = re.compile(r'(?:\bTAF\s+(?:(?:AMD|COR)\s+)?)?\b(R[JO][A-Z]{2})\s+(\d{6}Z)\s+(\d{4}/\d{4})\s+([^=　-￿]{0,1500}?)=')
+    for area in range(4):
+        url = f'https://imoc.co.jp/SmartPhone/d/taf.php?Lang=Jpn&Area={area}'
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+                txt = r.read().decode('utf-8', 'replace')
+        except Exception as e:
+            print('imoc taf', area, e, file=sys.stderr); continue
+        txt = H.unescape(re.sub(r'<[^>]+>', ' ', txt)); txt = re.sub(r'\s+', ' ', txt)
+        for icao, ts, valid, body in pat.findall(txt):
+            body = body.strip()
+            if not body or body.startswith('NIL'): continue
+            dd = int(ts[:2]); now = time.gmtime(); prev = time.gmtime(time.time() - 86400)
+            if dd not in (now.tm_mday, prev.tm_mday): continue
+            raw = f'TAF {icao} {ts} {valid} {body}='
+            if icao not in out or out[icao]['ts'] < ts: out[icao] = {'ts': ts, 'raw': raw}
+        time.sleep(1)
+    return out
+# 第一優先は国際気象海洋（IMOC）。IMOCに報が無い飛行場だけ NOAA Aviation Weather Center の中継で補う
+im = imoc_metars(); it = imoc_tafs()
 m = get('metar'); time.sleep(2); t = get('taf')
-im = imoc_metars()
-if m is None and t is None and not im: sys.exit('no data')
-out = {'t': int(time.time()), 'src': 'NOAA Aviation Weather Center（気象庁発表の METAR/TAF を中継）', 'metar': [], 'taf': []}
+if m is None and t is None and not im and not it: sys.exit('no data')
+out = {'t': int(time.time()), 'src': '国際気象海洋 IMOC（第一優先）／NOAA Aviation Weather Center（IMOCに無い飛行場を補完）', 'metar': [], 'taf': []}
+for icao, v in im.items(): out['metar'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc'})
+for icao, v in it.items(): out['taf'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc'})
+hm = set(im); ht = set(it); n_nm = n_nt = 0
 for x in m or []:
-    out['metar'].append({'id': x.get('icaoId'), 'name': x.get('name'), 'lat': x.get('lat'), 'lon': x.get('lon'), 'elev': x.get('elev'),
-                         'obs': x.get('obsTime'), 'raw': x.get('rawOb')})
-have = {x['id']: (x.get('raw') or '') for x in out['metar']}
-def ts_of(raw):
-    g = re.search(r'\s(\d{6})Z', raw or ''); return g.group(1) if g else ''
-n_im = 0
-for icao, v in im.items():
-    # NOAAに無い空港、またはIMOCの方が新しい報だけ追加（アプリ側は新しい方を採用）
-    if icao not in have or ts_of(v['raw']) > ts_of(have[icao]):
-        out['metar'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc'}); n_im += 1
-out['src'] += '／国際気象海洋 IMOC（自衛隊飛行場などNOAAに無いMETAR）'
+    if x.get('icaoId') in hm or not x.get('rawOb'): continue
+    out['metar'].append({'id': x.get('icaoId'), 'raw': x.get('rawOb'), 'via': 'noaa'}); n_nm += 1
 for x in t or []:
-    out['taf'].append({'id': x.get('icaoId'), 'name': x.get('name'), 'lat': x.get('lat'), 'lon': x.get('lon'),
-                       'issue': x.get('issueTime'), 'raw': x.get('rawTAF')})
+    if x.get('icaoId') in ht or not x.get('rawTAF'): continue
+    out['taf'].append({'id': x.get('icaoId'), 'raw': x.get('rawTAF'), 'via': 'noaa'}); n_nt += 1
 json.dump(out, open(sys.argv[1] if len(sys.argv) > 1 else 'wx.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-print('metar', len(out['metar']), 'taf', len(out['taf']), 'imoc added', n_im)
+print('metar imoc', len(im), 'noaa', n_nm, '/ taf imoc', len(it), 'noaa', n_nt)
