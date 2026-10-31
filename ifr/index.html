@@ -700,6 +700,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   </div>
 
   <h2>機体・許可</h2>
+  <div class="box acbox"></div>
   <div class="cards3">
     <div class="box">
       <h3 class="bh">着陸・風の制限</h3>
@@ -1299,7 +1300,28 @@ function renderChk(){let n=0,d=0;
   $('chkList').querySelectorAll('input').forEach(c=>c.onchange=()=>{S.chk[c.dataset.k]=c.checked;save();renderChk()});
 }
 /* ---------- FMS entry guide (Honeywell Primus Epic / AW139 FMS NZ7.3) ---------- */
-function fmsSet(){return S.fms=Object.assign({u:'KG',sg:0.79,bow:'',bcg:'',pil:'',row:'',bag:'',hook:'',str:'',clb:'',dsc:'',ang:'3.0',wind:''},S.fms||{})}
+// keep the same object: input handlers hold a reference to it
+function keepDef(k,D){if(!S[k]||typeof S[k]!=='object')S[k]={};for(const x in D)if(S[k][x]===undefined)S[k][x]=D[x];return S[k]}
+
+/* ---------- saved aircraft (per tail): FPL item 7/9/10/18 values, performance, equipment, FMS weights ---------- */
+function acList(){try{return JSON.parse(localStorage.getItem('ifr-aircraft')||'[]')}catch(e){return []}}
+function acStore(L){try{localStorage.setItem('ifr-aircraft',JSON.stringify(L));return true}catch(e){return false}}
+function acSnapshot(name){const F=fmsSet();const fms={};['u','sg','bow','bcg','pil','hook','str','clb','dsc','ang','crz'].forEach(k=>{if(F[k]!==undefined)fms[k]=F[k]});
+  const fpl={};['id','type','ac','wake','tas','sur','end','rmk'].forEach(k=>fpl[k]=S.fpl[k]);
+  return {name,at:new Date().toISOString(),fpl,perf:JSON.parse(JSON.stringify(S.perf||{})),prof:JSON.parse(JSON.stringify(S.prof||{})),fms}}
+function acPanel(){const L=acList();const cur=S.acName||'';
+  return `<h3 class="bh">機体データ（記録・呼び出し）</h3><p class="note" style="margin:0 0 6px">登録記号・型式・装備・性能・FMSの基本重量などを機体ごとに記録して、次からワンタップで呼び出せます（この端末に保存）。乗客・手荷物・風は記録しません。</p>
+   <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
+    <label class="f" style="margin:0;min-width:180px">記録した機体<select data-ac="sel"><option value="">選ぶ…</option>${L.map((a,i)=>`<option value="${i}" ${a.name===cur?'selected':''}>${esc(a.name)}</option>`).join('')}</select></label>
+    <button type="button" class="act" data-ac="load">呼び出す</button><button type="button" class="sub" data-ac="del">削除</button>
+    <label class="f" style="margin:0;min-width:160px">名前<input data-ac="name" value="${esc(cur||S.fpl.id||'')}" placeholder="例 JA01AB"></label>
+    <button type="button" class="act" data-ac="save">記録する</button></div><div class="note" data-ac="msg" style="margin-top:4px"></div>`}
+function acRenderAll(){document.querySelectorAll('.acbox').forEach(b=>{if(!b.closest('#fmsOut')&&!b.contains(document.activeElement))b.innerHTML=acPanel()})}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ac]');if(!b||b.tagName!=='BUTTON')return;const box=b.closest('.acbox');const q=s=>box.querySelector(`[data-ac="${s}"]`);const msg=t=>{const m=q('msg');if(m)m.textContent=t};const L=acList();const act=b.dataset.ac;
+  if(act==='save'){const n=(q('name').value||'').trim().toUpperCase();if(!n){msg('名前（登録記号など）を入れてください。');return}const i=L.findIndex(a=>a.name===n);const snap=acSnapshot(n);if(i>=0)L[i]=snap;else L.push(snap);if(!acStore(L)){msg('保存できませんでした（端末の保存領域）。');return}S.acName=n;save();acRenderAll();if(typeof renderFms==='function')try{renderFms()}catch(e){};try{alertBox(`${n} を記録しました`)}catch(e){}}
+  else if(act==='load'){const i=q('sel').value;if(i===''){msg('呼び出す機体を選んでください。');return}const a=L[+i];if(!a)return;Object.assign(S.fpl,a.fpl||{});S.perf=Object.assign(S.perf||{},a.perf||{});if(a.prof)S.prof=Object.assign(S.prof||{},a.prof);Object.assign(fmsSet(),a.fms||{});S.acName=a.name;save();location.reload()}
+  else if(act==='del'){const i=q('sel').value;if(i===''){msg('削除する機体を選んでください。');return}const n=L[+i]&&L[+i].name;L.splice(+i,1);acStore(L);if(S.acName===n)S.acName='';save();acRenderAll();try{renderFms()}catch(e){};msg(`${n} を削除しました。`)}});
+function fmsSet(){return keepDef('fms',{u:'KG',sg:0.79,bow:'',bcg:'',pil:'',row:'',bag:'',hook:'',str:'',clb:'',dsc:'',ang:'3.0',wind:''})}
 function casFromTas(tas,alt){const s=Math.pow(1-6.8756e-6*(alt||0),4.2559);return Math.round(tas*Math.sqrt(s))}
 function toFmsFuel(v,perHour){const F=fmsSet(),u='kg';if(v===''||v==null||isNaN(+v))return '';v=+v;let kg;
   if(u==='kg')kg=v;else if(u==='lb')kg=v*0.4536;else if(u==='L')kg=v*(+F.sg||0.79);else if(u==='USG')kg=v*3.785*(+F.sg||0.79);
@@ -1326,6 +1348,7 @@ function renderFms(){const F=fmsSet(),r=S.route,P=procSel(),C=routeCalc();const 
   const gw=[F.bow,fob,F.pil,F.row,F.bag,F.hook,F.str].map(v=>+v||0);const gross=F.bow&&fob&&F.pil?gw.reduce((a,b)=>a+b,0):'';
   const step=(n,title,where,body)=>`<div class="fstep"><div class="fsh"><span class="atcn">${n}</span><div><b>${title}</b><div class="note" style="margin:0">${where}</div></div></div>${body}</div>`;
   let h=`<p class="hint">Honeywell FMS（AW139、ソフト NZ7.3）のパイロットガイドの手順に沿って、この計画で入れる値を並べました。水色の文字が入力する値です。MCDUの右下の 6R キーで次の手順に進みます。</p>
+  <div class="box acbox">${acPanel()}</div>
   <div class="box"><h3 class="bh">FMSの単位と重量（入力すると下の画面に反映）</h3><div class="grid">
    <label class="f">FMSの重量単位<select id="fm_u"><option ${U==='KG'?'selected':''}>KG</option><option ${U==='LB'?'selected':''}>LB</option></select></label>
    <label class="f">基本重量 BOW<span class="inp"><input type="number" id="fm_bow" value="${esc(F.bow)}"><em>${U}</em></span></label>
@@ -2337,7 +2360,7 @@ function bindProfile(){const box=$('profSvg');if(!box||!PROF)return;let raf=0;co
 /* ---------- interactive enroute map ---------- */
 const MK=Math.cos(36*RAD);const PX=p=>p[1]*60*MK, PY=p=>-p[0]*60;
 let MAP=null;
-function mapF(){return S.mapF=Object.assign({on:0,src:'lvl',alt:'',dr:1,bg:'none',bgo:70},S.mapF||{})}
+function mapF(){return keepDef('mapF',{on:0,src:'lvl',alt:'',dr:1,bg:'none',bgo:70})}
 /* GSI (国土地理院) tiles, drawn tile-by-tile into the map's own projection */
 const BGS={none:['簡易地図（海岸線のみ）'],pale:['淡色地図','pale','png',5,18],std:['標準地図','std','png',5,18],relief:['色別標高図','relief','png',5,15],hill:['陰影起伏図','hillshademap','png',5,16],photo:['写真','seamlessphoto','jpg',5,18]};
 function tilesUpdate(svg,vb0,at0){const f=mapF(),B=BGS[f.bg],at=at0||$('mapAttr');if(at)at.innerHTML=B&&B[1]?'背景：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener" style="color:inherit">地理院タイル</a>（'+B[0]+'）':'';const g=svg.querySelector('.mapTiles');if(!g)return;
@@ -2741,7 +2764,7 @@ function v3dHome(){const c=V3D.cam;c.tx=0;c.ty=0;c.tz=0;c.dist=V3D.R*1.0;c.yaw=-
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v3d]');if(b)v3dOpen(b.dataset.v3d)});
 
 function wxAutoOnChange(){try{const ids=wxAirports().filter(isIcao).sort().join(' ');if(!ids||ids===window.__wxKey)return;window.__wxKey=ids;clearTimeout(window.__wxT);window.__wxT=setTimeout(()=>{try{if(typeof wxBusy!=='undefined'&&wxBusy){window.__wxKey='';setTimeout(wxAutoOnChange,1500);return}wxAutoFetch(false)}catch(e){}},500)}catch(e){}}
-function renderAll(){try{lvlListUpdate()}catch(e){}setTimeout(wxAutoOnChange,0);const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
+function renderAll(){try{lvlListUpdate()}catch(e){}try{acRenderAll()}catch(e){}setTimeout(wxAutoOnChange,0);const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
 /* ---------- inputs ---------- */
 function norm(v){return (v||'').trim().toUpperCase().slice(0,4)}
