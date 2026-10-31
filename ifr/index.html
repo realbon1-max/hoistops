@@ -675,6 +675,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
       <div class="f" style="flex:1;min-width:220px;margin:0">代替飛行場（目的地の代替）<div class="apsel"><input class="code" id="alt" list="apList" placeholder="RJSF" autocomplete="off" aria-label="代替飛行場のICAO"><select id="alt_s" aria-label="代替飛行場をリストから選ぶ"></select></div></div>
       </div>
     </div>
+    <div id="zBox" class="box" style="display:none;margin:8px 0;background:var(--cau-soft)"></div>
     <h3>経由地</h3>
     <div class="row"><div class="apsel" style="flex:1;min-width:220px"><input class="code" id="viaIn" list="apList" placeholder="RJSF" autocomplete="off" aria-label="経由地のICAO"><select id="viaIn_s" aria-label="経由地をリストから選ぶ"></select></div><button class="sub" id="viaAdd" type="button">経由地を追加</button></div>
     <p class="hint">気象を確認したい途中の飛行場です。航空路とfixは「航空路」タブで組み立てます。</p>
@@ -697,6 +698,15 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
       <label class="f">承認限界点（空欄なら目的飛行場）<input class="code" id="clrLimit" list="fixList" placeholder="例 KAGIS" autocomplete="off"></label>
     </div>
     <p class="hint" id="depModeHint"></p>
+  </div>
+
+  <h2>到着の方式</h2>
+  <div class="box">
+    <div class="grid">
+      <label class="f">到着の方式<select id="arrRule"><option value="ifr">IFRのまま目的飛行場へ（計器進入）</option><option value="vfr">途中のfixでIFRを終え、VFRで目的地へ（Yプラン）</option></select></label>
+      <label class="f" id="vfrFixL">IFRを終える地点（fix）<input class="code" id="vfrFix" list="fixList" placeholder="例 SDE" autocomplete="off"></label>
+    </div>
+    <p class="hint" id="arrRuleHint"></p>
   </div>
 
   <h2>機体・許可</h2>
@@ -1033,11 +1043,11 @@ function wxPollSet(on){S.wxPoll=on?1:0;save();if(wxTimer){clearInterval(wxTimer)
 /* ---------- renderers ---------- */
 function route(){const r=S.route;return [['出発',r.dep],...r.via.map(v=>['経由',v]),['目的',r.dst]].filter(x=>x[1])}
 // swap departure and destination: reverse the route and via points, clear the procedure choices (they belong to the other airport)
-function swapApt(){const r=S.route;if(!r.dep&&!r.dst)return;[r.dep,r.dst]=[r.dst,r.dep];r.via=(r.via||[]).slice().reverse();
+function swapApt(){const r=S.route;if(!r.dep&&!r.dst)return;[r.dep,r.dst]=[r.dst,r.dep];[r.depZ,r.dstZ]=[r.dstZ,r.depZ];if(r.dep==='ZDST')r.dep='ZDEP';if(r.dst==='ZDEP')r.dst='ZDST';try{zSync()}catch(e){}r.via=(r.via||[]).slice().reverse();
   const tk=(r.rte||'').toUpperCase().trim().split(/\s+/).filter(Boolean);if(tk.length){const pts=[],via=[];let i=0;pts.push(tk[0]);for(i=1;i<tk.length;i++){const t=tk[i];if(isAwy(t)||t==='DCT'){via.push(t);pts.push(tk[++i]||'')}else{via.push('DCT');pts.push(t)}}
     const out=[pts[pts.length-1]];for(let k=via.length-1;k>=0;k--){if(via[k]!=='DCT'||true)out.push(via[k]);out.push(pts[k])}r.rte=out.filter(Boolean).join(' ').replace(/ DCT /g,' DCT ')}
   r.depMode='ifr';r.ifrFix='';r.clrLimit='';S.proc={};S.plView={};S._aw=null;S._selAw=null;S._selFx=null;S._selDr=null;if(typeof SUG!=='undefined')SUG=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';
-  for(const k of ['dep','dst']){const el=$(k);if(el)el.value=r[k]||'';const s=$(k+'_s');if(s)s.value=DB[r[k]]?r[k]:''}if($('rteIn'))$('rteIn').value=r.rte||'';try{renderVia()}catch(e){}
+  for(const k of ['dep','dst']){const el=$(k);if(el)el.value=dispIcao(r[k]);const s=$(k+'_s');if(s)s.value=DB[r[k]]&&!isZ(r[k])?r[k]:''}if($('rteIn'))$('rteIn').value=r.rte||'';try{renderVia()}catch(e){}
   save();renderAll();try{alertBox(`出発 ${r.dep||'—'} ⇄ 目的 ${r.dst||'—'} に入れ替えました。SID・STAR・進入は選び直してください。`)}catch(e){}}
 document.addEventListener('click',e=>{if(e.target.closest('[data-swap]')){e.preventDefault();e.stopPropagation();swapApt()}},true);
 // ---------- weather pictogram from METAR (present weather + cloud cover) ----------
@@ -1119,7 +1129,7 @@ function renderStrip(){
   if(!legs.length){el.innerHTML=addc('dep','出発')+'<div class="arrow"></div>'+addc('dst','目的');$('stripnote').textContent='カードをタップして飛行場を選べます。';return}
   const cell=(role,i,alt,key)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
-    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(i)}</div><div class="nm">${esc(A?A.n:'データなし')}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>${wxDetailHtml(m.raw)}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
+    return `<div class="leg${alt?' alt':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(dispIcao(i))}</div><div class="nm">${esc(A?A.n:(isZ(i)?'位置を入力':'データなし'))}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>${wxDetailHtml(m.raw)}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
   const swb='<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;flex:0 0 auto;min-width:40px;font-size:18px;line-height:1;padding:8px 9px;margin:0 2px">⇄</button>';
   el.innerHTML=main.map((c,k)=>k===0?c:(k===1&&r.dep&&r.dst?swb:'<div class="arrow"></div>')+c).join('')+addc('via:+','経由',1)+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1));
@@ -1253,7 +1263,7 @@ function renderDep0(){const i=S.route.dep,A=ap(i);
    <h3>使用滑走路の候補</h3>${rwyTable(ev)}
    <h3>SIDの一覧</h3>${A.sid.length?`<div class="sidgrid">${A.sid.map(s=>{const bad=s[1]&&!rn;const on=s[0]===P.sid;return `<button type="button" data-pick="sid|${esc(s[0])}" class="sidc ${on?'on':''} ${bad?'dim':''}"><b class="code">${esc(s[3]&&s[3].length?s[3].join(' / '):s[0])}</b><span>${s[1]?'<span class="tag t-rnav">RNAV</span>':'<span class="tag t-mute">従来型</span>'} ${bad?'<span class="tag t-no">RNAV1の許可が必要</span>':''}${on?'<span class="tag t-go">選択中</span>':''}</span><small>${(s[2]||[]).filter(e=>!e[5]).map(e=>'RWY'+e[0].join('/')+'：'+e[1].join('-')).slice(0,3).map(esc).join('<br>')||'経路の記述を読み取れず'}</small></button>`}).join('')}</div><p class="note">SIDの選択は航空路タブで行います。滑走路・時間帯との対応はチャートとATISで確認してください。</p>`:'<div class="empty">公示されたSIDはありません。</div>'}`;
 }
-function renderArr(){try{renderArr0()}finally{bindProc($('arrOut'));try{recBind($('arrOut'))}catch(e){}try{arrMini()}catch(e){}try{plBind('arr')}catch(e){}}}
+function renderArr(){try{renderArr0()}finally{try{if(S.route.arrRule==='vfr'&&$('arrOut')){const d=document.createElement('div');d.className='msg cau';d.style.margin='0 0 10px';d.innerHTML=`到着は<b>${esc(S.route.vfrFix||'（fix未設定）')}でIFRを終えてVFR</b>（Yプラン）の設定です。STAR・計器進入は飛行計画・経路・時間に使いません（ルートタブの「到着の方式」で変更）。下の進入方式は参考として表示しています。`;$('arrOut').prepend(d)}}catch(e){}bindProc($('arrOut'));try{recBind($('arrOut'))}catch(e){}try{arrMini()}catch(e){}try{plBind('arr')}catch(e){}}}
 function renderArr0(){const i=S.route.dst,A=ap(i);
   if(!A){$('arrOut').innerHTML='<div class="empty">ルートタブで目的飛行場を選んでください。</div>';return}
   const t=utc(S.route.eta); const cond=condFor(i,t); const winds=windsFor(i,t); const rn=S.prof.caps.rnav1;const ev=rwyEval(i,winds);const C=routeCalc();const P=procSel();
@@ -1457,8 +1467,10 @@ function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id
       if(app||twA||rdA){const u=app||twA||rdA;msgs.push(['ATC',`${cs}, contact ${u.cs.split(' ').slice(-1)[0]} ${u.f}.`],['PIL',`${u.f}, ${cs}.`])}}
     if(nx){msgs.push(['ATC',`${cs}, contact ${accName(nx)} ${ff(nx)}.`],['PIL',`${ff(nx)}, ${cs}.`])}
     steps.push({ph:'ENR',st:{cs:`${accName(k)}（${k}）`,f:ff(k)},title:i===0?'管制部（航空路）':'管制区の切替',ref:last?'規程(Ⅱ)7(4)b：進入方式が判断できないときは EXPECT〔type〕APPROACH を通報':'',msgs})});
-  if(atA)steps.push({ph:'STAR',st:atA,title:'目的地のATIS',ref:'',msgs:[['info',`到着前に目的地のATIS（information ${B}）を聞き、使用滑走路・風・QNHを確認します。受信を伝えると、管制官はこれらの通報を省けます（規程(Ⅱ)7(4)）。`]]});
-  if(app&&useStar)steps.push({ph:'STAR',st:app,title:'STAR経由の進入許可',ref:'規程(Ⅱ)7(7)b(a)：進入許可と同時に接続するSTARを承認（CLEARED FOR〔type〕APPROACH VIA〔STAR name〕）。できない場合は(b)「Descend via STAR to ○○. Cleared for approach.」',msgs:[['PIL',`${app.cs}, ${cs}, ${B}, information ${B}.`],['ATC',`${cs}, ${app.cs}, radar contact, cleared for ${x?aps+' ':''}approach via ${starN}.`],['PIL',`Cleared for ${x?aps+' ':''}approach via ${starN}, ${cs}.`],['info','航空機は最低経路高度とSTARの高度・速度の制限に従って降下し、そのまま進入します（規程(Ⅱ)7(7)b 注）。'],['ATC',`${cs}, contact Tower ${twA?twA.f:B}.`],['PIL',`${twA?twA.f:B}, ${cs}.`]]});
+  const vfrArrA=S.route.arrRule==='vfr'&&S.route.vfrFix;
+  if(vfrArrA){steps.push({ph:'ENR',st:{cs:'管制部（航空路）',f:''},title:`IFRのキャンセル（${S.route.vfrFix}でVFRへ）`,ref:'IFRで始まり途中からVFRに変える飛行（飛行計画「Y」）。VMCを維持できることを確かめてから、管制機関にIFRの終了を通報します。',msgs:[['PIL',`${'Control'}, ${cs}, approaching ${S.route.vfrFix}, request cancel IFR.`],['ATC',`${cs}, IFR cancellation received at ${B}. Squawk ${B}${''}.`],['PIL',`IFR cancellation received, squawk ${B}, ${cs}.`],['info',`以後はVFRで目的地（${dispIcao(S.route.dst)}${isZ(S.route.dst)?'・'+((S.route.dstZ||{}).n||'場外'):''}）へ。管制圏・情報圏に入る場合は、その機関へ通報してください。`]]})}
+  if(atA&&!vfrArrA)steps.push({ph:'STAR',st:atA,title:'目的地のATIS',ref:'',msgs:[['info',`到着前に目的地のATIS（information ${B}）を聞き、使用滑走路・風・QNHを確認します。受信を伝えると、管制官はこれらの通報を省けます（規程(Ⅱ)7(4)）。`]]});
+  if(vfrArrA){}else if(app&&useStar)steps.push({ph:'STAR',st:app,title:'STAR経由の進入許可',ref:'規程(Ⅱ)7(7)b(a)：進入許可と同時に接続するSTARを承認（CLEARED FOR〔type〕APPROACH VIA〔STAR name〕）。できない場合は(b)「Descend via STAR to ○○. Cleared for approach.」',msgs:[['PIL',`${app.cs}, ${cs}, ${B}, information ${B}.`],['ATC',`${cs}, ${app.cs}, radar contact, cleared for ${x?aps+' ':''}approach via ${starN}.`],['PIL',`Cleared for ${x?aps+' ':''}approach via ${starN}, ${cs}.`],['info','航空機は最低経路高度とSTARの高度・速度の制限に従って降下し、そのまま進入します（規程(Ⅱ)7(7)b 注）。'],['ATC',`${cs}, contact Tower ${twA?twA.f:B}.`],['PIL',`${twA?twA.f:B}, ${cs}.`]]});
   else if(app){const gate=isRnav?`${B} miles ${B} of ${B}, cleared for ${aps} approach`:`${B} miles from ${B}, turn ${B} heading ${B}, cleared for ${aps} approach`;
     steps.push({ph:'APP',st:app,title:'進入（レーダー誘導）',ref:'規程(Ⅳ)4(5)：誘導の目的を明示（vector to〔approach〕final approach course）。(Ⅳ)8(5)：アプローチゲートまでに、フィックスとの位置関係・会合する針路・通信の移管を伝えて進入許可。'+(isRnav?'(Ⅳ)8-5(3)：RNAV進入はフィックスからの位置を通報して許可、または IAF/IF への直行（proceed direct）で誘導を終了':''),
       msgs:[['PIL',`${app.cs}, ${cs}, leaving ${B} descending ${B}, information ${B}.`],['ATC',`${cs}, ${app.cs}, radar contact, fly heading ${B} vector to ${x?aps+' ':''}final approach course, descend and maintain ${B}.`],['PIL',`Fly heading ${B}, descend and maintain ${B}, ${cs}.`],['ATC',`${cs}, reduce speed to ${B}.`],['PIL',`Reduce ${B}, ${cs}.`],['ATC',`${cs}, turn ${B} heading ${B}, descend and maintain ${B}.`],['PIL',`${B} heading ${B}, descend and maintain ${B}, ${cs}.`],
@@ -1592,13 +1604,13 @@ function awySeg(id,from,to){const r=NAV.R[id];const i=r.p.indexOf(from),j=r.p.in
   const out=[];if(i<j){for(let k=i;k<j;k++)out.push({a:r.p[k],b:r.p[k+1],mea:r.m[k]})}else{for(let k=i;k>j;k--)out.push({a:r.p[k],b:r.p[k-1],mea:r.m[k-1]})}return out}
 function pubDirect(a,b){const l=(DIR[a]||[]).find(x=>x.to===b&&x.path.length===2);return l||null}
 // Entry fixes of the chosen arrival: STAR start, or (no STAR) the approach's IAF/IF. The flown route ends there even if the typed route goes further.
-function arrEntryFixes(){const P=procSel(),A=ap(S.route.dst);if(!A)return [];const out=new Set();
+function arrEntryFixes(){if(S.route.arrRule==='vfr'&&S.route.vfrFix&&fixPos(S.route.vfrFix))return [S.route.vfrFix];const P=procSel(),A=ap(S.route.dst);if(!A)return [];const out=new Set();
   if(P.star&&P.arrMode==='star'){try{const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e&&e[1]&&e[1][0])out.add(e[1][0])}catch(e){}return [...out]}
   if(P.app&&P.arrMode!=='vec'){const pl=(typeof PLD!=='undefined'&&PLD[S.route.dst])||[];const e=pl.find(q=>q[0]==='APP'&&q[1]===P.app);if(e)(e[2]||[]).forEach(t=>{const l=(t[2]||[])[0];if(l&&l[1]&&!/^RW/.test(l[1]))out.add(l[1])});
     const x=(A.iac||[]).find(q=>q.n===P.app);if(x&&x.r)['IAF','IF'].forEach(k=>(x.r[k]||[]).forEach(f=>out.add(f)))}
   return [...out].filter(f=>fixPos(f))}
 function rteEff(){const s=(S.route.rte||'').trim();if(!s)return s;const ents=arrEntryFixes();if(!ents.length)return s;
-  const tk=s.toUpperCase().replace(/[\u3000,]/g,' ').split(/\s+/).filter(Boolean);if(ents.includes(tk[0]))return s;let cur=tk[0];const out=[cur];
+  const tk=s.toUpperCase().replace(/[\u3000,]/g,' ').split(/\s+/).filter(Boolean);if(ents.includes(tk[0]))return S.route.arrRule==='vfr'?tk[0]:s;let cur=tk[0];const out=[cur];
   for(let i=1;i<tk.length;i++){const t=tk[i];
     if(isAwy(t)){const to=tk[i+1];i++;if(!to){out.push(t);break}
       if(NAV.R[t].p.includes(cur)&&NAV.R[t].p.includes(to)){const seg=awySeg(t,cur,to);const hit=seg.find(q=>ents.includes(q.b));if(hit){out.push(t,hit.b);return out.join(' ')}}
@@ -1765,7 +1777,8 @@ function sectorChanges(path,alt){const out=[];let cur=undefined,cum=0;
 function routeCalc(){const r=parseRoute(rteEff());const tas=S.fpl.tas||120;const rows=[];let tot=0;
   const dep=ap(S.route.dep),dst=ap(S.route.dst);
   const vfrDep=S.route.depMode==='vfr'&&S.route.ifrFix&&fixPos(S.route.ifrFix);
-  const sid=dep&&!vfrDep?sidCalc(tas):null, arr=dst?starAppCalc(tas):null; const path=[];
+  const vfrArr=S.route.arrRule==='vfr'&&S.route.vfrFix&&fixPos(S.route.vfrFix);
+  const sid=dep&&!vfrDep&&!dep.zz?sidCalc(tas):null, arr=dst&&!vfrArr&&!dst.zz?starAppCalc(tas):null; const path=[];
   const push=o=>{rows.push(o);if(o.d)tot+=o.d};
   if(vfrDep&&dep){const fp=fixPos(S.route.ifrFix);const d=gc(dep.p,fp);push({a:S.route.dep,b:S.route.ifrFix,via:'VFR',d,kind:'VFR',note:'VFRで飛行し、この地点からIFR'});path.push(dep.p,fp);
     if(r.pts.length&&r.pts[0]!==S.route.ifrFix&&fixPos(r.pts[0])){const d2=gc(fp,fixPos(r.pts[0]));push({a:S.route.ifrFix,b:r.pts[0],via:S.route.ifrVia==='dct'?'DCT':'レーダー誘導',d:d2,kind:'ENR',note:'IFRの承認後'});path.push(fixPos(r.pts[0]))}}
@@ -1782,6 +1795,10 @@ function routeCalc(){const r=parseRoute(rteEff());const tas=S.fpl.tas||120;const
     if(arr.starD)push({a:arr.pre?arr.fixes[1]:arr.fixes[0],b:arr.fixes[arr.fixes.length-1],via:arr.label||'直行',d:arr.starD,kind:'STAR',note:'標準旋回で概算'});
     push({a:arr.fixes[arr.fixes.length-1],b:S.route.dst+(arr.rw?' RWY'+arr.rw:''),via:arr.app?arr.app.n:'直行（進入方式未選択）',d:arr.appD,kind:'APP',note:arr.app?(S.proc.arrMode==='vec'?`レーダー誘導：最短経路＋誘導で増える見込み ${+S.proc.vecNm||0}NM`:(arr.appFix&&arr.appFix.some(a=>a[1]==='IAF'||a[1]==='IF')?`チャートの ${arr.appFix.filter(a=>a[1]&&a[1]!=='MA').map(a=>a[0]+'('+a[1]+')').join('→')} の順で概算（待機は含まず）`:`最終進入 ${arr.fl}NM＋標準旋回で会合（待機・方式旋回は含まず）`)):''});
     path.push(...arr.track,...arr.appTrack)}
+  if(vfrArr&&dst){const vp=fixPos(S.route.vfrFix);const lastP=path.length?path[path.length-1]:(dep&&dep.p);const lastN=r.pts.length?r.pts[r.pts.length-1]:(vfrDep?S.route.ifrFix:S.route.dep);
+    if(lastN!==S.route.vfrFix&&lastP){const d=gc(lastP,vp);push({a:lastN,b:S.route.vfrFix,via:'DCT',d,kind:'ENR',note:'IFRを終える地点まで直行'});path.push(vp)}
+    else if(!path.length&&dep){path.push(dep.p,vp)}
+    const d2=gc(vp,dst.p);push({a:S.route.vfrFix,b:S.route.dst,via:'VFR',d:d2,kind:'VFR',note:'IFRキャンセル後、VFRで目的地へ'});path.push(dst.p)}
   if(!rows.length&&dep&&dst){const d=gc(dep.p,dst.p);push({a:S.route.dep,b:S.route.dst,via:'直行（経路未入力）',d,kind:'ENR',note:'航空路タブで経路を入れると正確になります'});path.push(dep.p,dst.p)}
   if(dst&&path.length)path.push(dst.p);
   const cons=[];const P_=procSel();
@@ -2434,8 +2451,9 @@ function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s=''
       const mid=all[Math.floor(all.length/2)];s+=`<text class="ml rl" x="${PX(mid)}" y="${PY(mid)}" style="fill:${cols[i]}">案${i+1} 約${Math.round(o.tot)}NM（タップで選択）</text>`})}}catch(e){}
   // route overlays
   const seg=(pts,col,dash)=>pts&&pts.length>1?`<polyline points="${pts.map(P).join(' ')}" fill="none" stroke="${col}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"${dash?' stroke-dasharray="6 5"':''} style="pointer-events:none"/>`:'';
-  let ln='';const vfr=C.rows.find(l=>l.kind==='VFR');
-  if(C.sid)ln+=seg(C.sid.track,'#2E8B57');else if(vfr)ln+=seg([ap(S.route.dep).p,fixPos(S.route.ifrFix)],'#5B7FA6',1);else if(ap(S.route.dep)&&C.path.length)ln+=seg([ap(S.route.dep).p,C.path[1]||C.path[0]],'var(--muted)',1);
+  let ln='';const vfr=S.route.depMode==='vfr'&&S.route.ifrFix&&fixPos(S.route.ifrFix)&&C.rows.find(l=>l.kind==='VFR'&&l.b===S.route.ifrFix);
+  {const va=C.rows.find(l=>l.kind==='VFR'&&l.a===S.route.vfrFix&&S.route.arrRule==='vfr');if(va&&fixPos(S.route.vfrFix)&&ap(S.route.dst))ln+=seg([fixPos(S.route.vfrFix),ap(S.route.dst).p],'#5B7FA6',1)}
+  if(C.sid)ln+=seg(C.sid.track,'#2E8B57');else if(vfr&&ap(S.route.dep))ln+=seg([ap(S.route.dep).p,fixPos(S.route.ifrFix)],'#5B7FA6',1);else if(ap(S.route.dep)&&C.path.length)ln+=seg([ap(S.route.dep).p,C.path[1]||C.path[0]],'var(--muted)',1);
   C.r.legs.forEach(l=>{const a=fixPos(l.a),b=fixPos(l.b);if(a&&b)ln+=seg([a,b],l.via==='DCT'?'var(--sky)':'var(--mag)')});
   if(C.arr){ln+=seg(C.arr.track,'#C98A00');ln+=seg([C.arr.track[C.arr.track.length-1],...C.arr.appTrack].filter(Boolean),'#C0392B')}
   if(!C.r.legs.length&&!C.sid&&!(C.arr&&C.arr.fixes.length)&&C.path.length)ln+=seg(C.path,'var(--muted)',1);
@@ -2509,16 +2527,18 @@ function renderFpl(){const F=S.fpl,r=S.route;const C=routeCalc();const pr=C.r;co
   let rte=(pr.pts.length?rteEff().toUpperCase().replace(/\s+/g,' '):'DCT');
   const vfrD=r.depMode==='vfr'&&r.ifrFix;const chg=vfrD?`${r.ifrFix}/${spd}${lvl} IFR`:'';
   if(vfrD){const tk=rte.split(' ');rte=tk[0]===r.ifrFix?`DCT ${chg} ${tk.slice(1).join(' ')}`.trim():`DCT ${chg} DCT ${rte}`}
+  const vfrA=r.arrRule==='vfr'&&r.vfrFix;if(vfrA){const tk=rte.split(' ');rte=(tk[tk.length-1]===r.vfrFix?rte:`${rte==='DCT'?'':rte+' '}DCT ${r.vfrFix}`).trim()+' VFR DCT'}
+  const rule=vfrD?'Z':vfrA?'Y':'I';const zpos=k=>{const Z=r[k+'Z'];if(!Z||!Z.p)return '';const nm=(Z.n||'').toUpperCase().replace(/[^A-Z0-9 ]/g,'').trim();return (nm?nm+' ':'')+posCode(Z.p)};
   const eetChg=vfrD?(()=>{const row=C.rows.find(l=>l.kind==='VFR');return row?hhmm(((row.d||0)/(F.tas||120))*60):''})():'';
   const fu=fuelCalc(C.time,C.tot); const end=F.end||(fu&&fu.endur>0?hhmm(fu.endur):'');
-  const i18=[pbn.length?'PBN/'+pbn.join(''):'',eetChg?'EET/'+r.ifrFix+eetChg:'',dof?'DOF/'+dof:'',r.talt?'TALT/'+r.talt:'',F.id?'REG/'+F.id.toUpperCase():'',F.rmk?F.rmk.toUpperCase():''].filter(Boolean).join(' ');
-  const txt=`(FPL-${(F.id||'______').toUpperCase()}-${vfrD?'Z':'I'}${F.type}
+  const i18=[pbn.length?'PBN/'+pbn.join(''):'',isZ(r.dep)?'DEP/'+zpos('dep'):'',isZ(r.dst)?'DEST/'+zpos('dst'):'',eetChg?'EET/'+r.ifrFix+eetChg:'',dof?'DOF/'+dof:'',r.talt?'TALT/'+r.talt:'',F.id?'REG/'+F.id.toUpperCase():'',F.rmk?F.rmk.toUpperCase():''].filter(Boolean).join(' ');
+  const txt=`(FPL-${(F.id||'______').toUpperCase()}-${rule}${F.type}
 -${(F.ac||'____').toUpperCase()}/${F.wake}-${equip()}/${(F.sur||'_').toUpperCase()}
--${r.dep||'____'}${etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):'____'}
+-${dispIcao(r.dep)||'____'}${etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):'____'}
 -${spd}${vfrD?'VFR':lvl} ${rte}
--${r.dst||'____'}${eet?hhmm(eet):'____'}${r.alt?' '+r.alt:''}
+-${dispIcao(r.dst)||'____'}${eet?hhmm(eet):'____'}${r.alt?' '+r.alt:''}
 -${i18||'0'})`;
-  const rows=[['7','航空機識別',(F.id||'').toUpperCase()],['8','飛行方式／飛行の種類',(vfrD?'Z（VFRで始まり途中からIFR）':'I')+'／'+F.type],['9','型式／後方乱気流区分',`${(F.ac||'').toUpperCase()}／${F.wake}`],['10','装備／監視装置',`${equip()}／${(F.sur||'').toUpperCase()}`],['13','出発飛行場／時刻（UTC）',`${r.dep}／${etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):''}`],['15','巡航速度／高度／経路',vfrD?`${spd}／VFR／${rte}`:`${spd}／${lvl}／${rte}`],['16','目的飛行場／所要時間／代替',`${r.dst}／${eet?hhmm(eet):''}／${r.alt||''}`],['18','その他の情報',i18||'0'],['19','燃料で飛行可能な時間／搭乗者数',`E/${end}　P/${F.pob||''}`]];
+  const rows=[['7','航空機識別',(F.id||'').toUpperCase()],['8','飛行方式／飛行の種類',(rule==='Z'?'Z（VFRで始まり途中からIFR）'+(vfrA?'・途中からVFR':''):rule==='Y'?'Y（IFRで始まり途中からVFR）':'I')+'／'+F.type],['9','型式／後方乱気流区分',`${(F.ac||'').toUpperCase()}／${F.wake}`],['10','装備／監視装置',`${equip()}／${(F.sur||'').toUpperCase()}`],['13','出発飛行場／時刻（UTC）',`${dispIcao(r.dep)}${isZ(r.dep)?'（18欄 DEP/ に位置）':''}／${etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):''}`],['15','巡航速度／高度／経路',vfrD?`${spd}／VFR／${rte}`:`${spd}／${lvl}／${rte}`],['16','目的飛行場／所要時間／代替',`${dispIcao(r.dst)}${isZ(r.dst)?'（18欄 DEST/ に位置）':''}／${eet?hhmm(eet):''}／${r.alt||''}`],['18','その他の情報',i18||'0'],['19','燃料で飛行可能な時間／搭乗者数',`E/${end}　P/${F.pob||''}`]];
   let fuelH='';
   const FC=['#8A97A3','#A3195B','#2B6A94','#1B8A9A','#C98A00','#6B7B88'];
   const fbar=fu?(()=>{const mx=Math.max(fu.req,fu.fob||0)||1;let x=0;return `<div class="fbar">${fu.it.map((q,i)=>{const w=q[1]/mx*100;const s=`<div style="width:${w}%;background:${FC[i%FC.length]}" title="${esc(q[0])}"></div>`;x+=w;return s}).join('')}${fu.fob?`<div class="fob" style="left:${Math.min(100,fu.fob/mx*100)}%"><span>搭載 ${Math.round(fu.fob)}kg</span></div>`:''}</div><div class="plegend">${fu.it.map((q,i)=>`<span><i style="background:${FC[i%FC.length]}"></i>${esc(q[0].split('（')[0])} ${Math.round(q[1])}kg</span>`).join('')}</div>`})():'';
@@ -2764,7 +2784,24 @@ function v3dHome(){const c=V3D.cam;c.tx=0;c.ty=0;c.tz=0;c.dist=V3D.R*1.0;c.yaw=-
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v3d]');if(b)v3dOpen(b.dataset.v3d)});
 
 function wxAutoOnChange(){try{const ids=wxAirports().filter(isIcao).sort().join(' ');if(!ids||ids===window.__wxKey)return;window.__wxKey=ids;clearTimeout(window.__wxT);window.__wxT=setTimeout(()=>{try{if(typeof wxBusy!=='undefined'&&wxBusy){window.__wxKey='';setTimeout(wxAutoOnChange,1500);return}wxAutoFetch(false)}catch(e){}},500)}catch(e){}}
-function renderAll(){try{lvlListUpdate()}catch(e){}try{acRenderAll()}catch(e){}setTimeout(wxAutoOnChange,0);const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
+
+/* ---------- ZZZZ: departure / destination that is not an aerodrome (heliport, off-field site) ---------- */
+const ZK={dep:'ZDEP',dst:'ZDST'};
+function isZ(i){return i==='ZDEP'||i==='ZDST'}
+function dispIcao(i){return isZ(i)?'ZZZZ':(i||'')}
+function parsePos(t){t=String(t||'').trim().toUpperCase();if(!t)return null;let m;
+  if((m=t.match(/^(\d{2})(\d{2})(\d{2})?([NS])\s*(\d{3})(\d{2})(\d{2})?([EW])$/))){const la=(+m[1]+m[2]/60+(m[3]?m[3]/3600:0))*(m[4]==='S'?-1:1),lo=(+m[5]+m[6]/60+(m[7]?m[7]/3600:0))*(m[8]==='W'?-1:1);return [la,lo]}
+  if((m=t.match(/^(-?\d{1,2}\.\d+)[\s,]+(-?\d{2,3}\.\d+)$/)))return [+m[1],+m[2]];
+  if((m=t.match(/^([A-Z0-9]{2,5})\s*(\d{3})\s*[\/\s]\s*(\d{1,3}(?:\.\d)?)$/))&&fixPos(m[1])){const A=Object.values(DB)[0];const p=dest(fixPos(m[1]),(+m[2]-8+360)%360,+m[3]);return p} // fix radial/distance (magnetic, VAR 8W approx)
+  if(fixPos(t))return fixPos(t);return null}
+function posCode(p){const f=(v,w)=>{const a=Math.abs(v);const d=Math.floor(a);const mm=Math.round((a-d)*60);return String(mm===60?d+1:d).padStart(w,'0')+String(mm===60?0:mm).padStart(2,'0')};return `${f(p[0],2)}${p[0]<0?'S':'N'}${f(p[1],3)}${p[1]<0?'W':'E'}`}
+function zSync(){for(const k of ['dep','dst']){const key=ZK[k];const Z=S.route[k+'Z'];if(S.route[k]===key&&Z&&Z.p){DB[key]={n:Z.n||'場外',r:'場外',e:+Z.e||0,mv:null,p:Z.p,rw:[],sid:[],star:[],iac:[],fq:[],zz:1}}else if(DB[key]&&DB[key].zz&&S.route[k]!==key){}else if(S.route[k]===key&&!(Z&&Z.p)){delete DB[key]}}}
+function zBoxRender(){const box=$('zBox');if(!box)return;const ks=['dep','dst'].filter(k=>isZ(S.route[k]));if(!ks.length){box.style.display='none';box.innerHTML='';return}box.style.display='';
+  box.innerHTML=`<b>飛行場ではない出発地・目的地（ZZZZ）</b><p class="note" style="margin:2px 0 6px">飛行計画の出発・目的は「ZZZZ」になり、その他情報（18欄）に DEP/・DEST/ として位置を書きます。位置は「3815N14052E」「38.25 140.87」「fix名」「fix名 方位/距離（例 SDE 270/12）」で入力できます。</p>`+
+   ks.map(k=>{const Z=S.route[k+'Z']||{};const lab=k==='dep'?'出発地':'目的地';return `<div class="grid" style="margin-bottom:4px"><label class="f">${lab}の名前<input data-z="${k}|n" value="${esc(Z.n||'')}" placeholder="例 ○○ヘリポート"></label><label class="f">${lab}の位置<input class="code" data-z="${k}|pos" value="${esc(Z.pos||'')}" placeholder="3815N14052E"></label><label class="f">標高<span class="inp"><input type="number" data-z="${k}|e" value="${esc(Z.e||'')}" placeholder="0"><em>ft</em></span></label><div class="f">　<button type="button" class="sub" data-zgeo="${k}">📍 現在地を入れる</button><small class="calc">${Z.p?'位置 '+posCode(Z.p)+'（'+Z.p[0].toFixed(4)+', '+Z.p[1].toFixed(4)+'）':'<span style="color:var(--no)">位置を入れてください</span>'}</small></div></div>`}).join('');
+  box.querySelectorAll('[data-z]').forEach(el=>el.onchange=()=>{const [k,f]=el.dataset.z.split('|');const Z=S.route[k+'Z']=S.route[k+'Z']||{};Z[f]=el.value;if(f==='pos'){const q=parsePos(el.value);Z.p=q;if(!q)alertBox('位置を読み取れませんでした（例 3815N14052E / 38.25 140.87 / SDE 270/12）')}zSync();save();renderAll()});
+  box.querySelectorAll('[data-zgeo]').forEach(b=>b.onclick=()=>{const k=b.dataset.zgeo;if(!navigator.geolocation){alertBox('この端末では現在地を取得できません');return}b.textContent='取得中…';navigator.geolocation.getCurrentPosition(g=>{const Z=S.route[k+'Z']=S.route[k+'Z']||{};Z.p=[+g.coords.latitude.toFixed(5),+g.coords.longitude.toFixed(5)];Z.pos=posCode(Z.p);if(g.coords.altitude!=null&&!Z.e)Z.e=Math.round(g.coords.altitude*3.281);zSync();save();renderAll()},e=>{b.textContent='📍 現在地を入れる';alertBox('現在地を取得できませんでした（位置情報の許可を確認）')},{enableHighAccuracy:true,timeout:15000})})}
+function renderAll(){try{zSync();zBoxRender()}catch(e){}try{lvlListUpdate()}catch(e){}try{acRenderAll()}catch(e){}setTimeout(wxAutoOnChange,0);const C0=syncEta();try{$('etaNote').textContent=C0.time>0?`地上走行 ${+S.perf.taxiMin||0}分＋飛行時間 ${hhmm(C0.time)}（${Math.round(C0.tot)}NM・TAS ${C0.tas}kt）から自動計算`+(S.route.etd?'':'　※ETDを入れると計算します'):'';const sg=+S.perf.sg||0.8;const iu=S.perf.iu||'kg';const q=(id,k,per)=>{const el=$(id);if(!el)return;const em=el.parentElement.querySelector('em');const kg=+S.perf[k];const h=per?'/時':'';if(em){const parts=[];if(kg){if(iu!=='kg')parts.push(Math.round(kg).toLocaleString()+' kg'+h);if(iu!=='L')parts.push(Math.round(kg/sg).toLocaleString()+' L'+h)}em.textContent=iu+h+(parts.length?'（'+parts.join('・')+'）':'')}};q('p_ff','ff',1);q('p_hf','hf',1);q('p_fob','fob');q('p_taxi','taxi')}catch(e){};loadGeo();renderStrip();renderWx();renderDep();renderEnr();renderArr();renderAlt();renderFpl();renderFms();renderAtc();renderChk()}
 
 /* ---------- inputs ---------- */
 function norm(v){return (v||'').trim().toUpperCase().slice(0,4)}
@@ -2772,6 +2809,10 @@ function bind(){
   const dm=()=>{const v=S.route.depMode==='vfr';$('ifrFixL').style.display=v?'':'none';$('ifrViaL').style.display=v?'':'none';$('depModeHint').innerHTML=v?'飛行計画の飛行方式は「Z」（VFRで始まり途中からIFR）になり、経路欄に「切替地点/速度高度 IFR」が入ります。飛行計画は、切替地点の通過予定時刻の25分前までにATMセンターが承認します（管制業務処理規程・航空交通管理の管制承認）。レーダー誘導は、レーダー覆域内で最低誘導高度以上にいられる場合に使われます（規程(Ⅳ)4(2)(3)）。':'承認限界点は原則として目的飛行場です。待機が予想される場合などはfixになります（規程(Ⅱ)1(3)）。'};
   $('depMode').value=S.route.depMode||'ifr';$('ifrFix').value=S.route.ifrFix||'';$('ifrVia').value=S.route.ifrVia||'vec';$('clrLimit').value=S.route.clrLimit||'';dm();
   $('depMode').onchange=()=>{S.route.depMode=$('depMode').value;dm();save();renderAll()};
+  const am=()=>{const v=S.route.arrRule==='vfr';$('vfrFixL').style.display=v?'':'none';$('arrRuleHint').textContent=v?'選んだfixでIFRを終え（IFRキャンセル）、そこから目的地まではVFRで飛びます。飛行計画は飛行方式「Y」、経路欄の最後が「fix VFR」になります。STAR・計器進入は使いません。'+(isZ(S.route.dst)?'目的地が飛行場ではない（ZZZZ）ので、この方式が基本です。':''):'目的飛行場まで IFR で飛び、STAR・計器進入で着陸します。'};
+  $('arrRule').value=S.route.arrRule||'ifr';$('vfrFix').value=S.route.vfrFix||'';am();
+  $('arrRule').onchange=()=>{S.route.arrRule=$('arrRule').value;am();save();renderAll()};
+  $('vfrFix').onchange=()=>{S.route.vfrFix=$('vfrFix').value.trim().toUpperCase();$('vfrFix').value=S.route.vfrFix;save();renderAll()};
   $('ifrVia').onchange=()=>{S.route.ifrVia=$('ifrVia').value;save();renderAll()};
   $('ifrFix').onchange=()=>{S.route.ifrFix=$('ifrFix').value.trim().toUpperCase();$('ifrFix').value=S.route.ifrFix;save();renderAll()};
   $('clrLimit').onchange=()=>{S.route.clrLimit=$('clrLimit').value.trim().toUpperCase();$('clrLimit').value=S.route.clrLimit;save();renderAll()};
@@ -2798,7 +2839,7 @@ function bind(){
   $('sens').querySelectorAll('input').forEach(c=>c.onchange=()=>{S.prof.sens[c.dataset.s]=c.checked?1:0;save();renderFpl()});
   $('caps').innerHTML=CAPS.map(([k,l])=>`<label><input type="checkbox" data-c="${k}" ${S.prof.caps[k]?'checked':''}>${l}</label>`).join('');
   $('caps').querySelectorAll('input').forEach(c=>c.onchange=()=>{S.prof.caps[c.dataset.c]=c.checked?1:0;save();renderAll()});
-  for(const k of ['dep','dst','alt','talt']){const el=$(k);el.value=S.route[k];$(k+'_s').value=DB[S.route[k]]?S.route[k]:'';el.onchange=()=>{S.route[k]=norm(el.value);el.value=S.route[k];$(k+'_s').value=DB[S.route[k]]?S.route[k]:'';save();renderAll()}}
+  try{zSync()}catch(e){}for(const k of ['dep','dst','alt','talt']){const el=$(k);el.value=dispIcao(S.route[k]);$(k+'_s').value=DB[S.route[k]]&&!isZ(S.route[k])?S.route[k]:'';el.onchange=()=>{let v=norm(el.value);if(v==='ZZZZ'&&ZK[k])v=ZK[k];S.route[k]=v;if(k==='dst'&&isZ(v)&&S.route.arrRule!=='vfr'){S.route.arrRule='vfr';if($('arrRule')){$('arrRule').value='vfr';$('arrRule').onchange&&$('arrRule').onchange()}}el.value=dispIcao(v);$(k+'_s').value=DB[v]&&!isZ(v)?v:'';zSync();save();renderAll()}}
   for(const k of ['etd','eta']){const el=$(k);el.value=S.route[k];el.onchange=()=>{S.route[k]=el.value;save();renderAll()}}
   $('altOff').value=S.route.altOff;$('altOff').onchange=()=>{S.route.altOff=+$('altOff').value||0;save();renderAll()};
   $('cat').value=S.prof.cat;$('cat').onchange=()=>{S.prof.cat=$('cat').value;save();renderAll()};
