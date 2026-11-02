@@ -2713,10 +2713,28 @@ function hpuDialog(la,lo,x){ document.querySelectorAll('.hpdlg').forEach(d=>d.re
     hpuSave(); close(); hpDraw(); try{ qkUI(); }catch(e){} if(!ed){ mapPick(row[1],row[2]); pickSync(row[1],row[2]); } else { try{ mapInfo(); }catch(e){} } mapMsg(`ヘリパッド「${nm}」を${ed?'保存':'登録'}しました`); };
   setTimeout(()=>{ const i=f.querySelector('[name=n]'); if(i&&!ed){ i.focus(); i.select(); } },50); }
 function hpCol(k,x){ if(x&&x.u) return '#00838f'; return /飛行場（|^飛行場$/.test(k)?'#6a1b9a':/拠点/.test(k)?'#c62828':/消防/.test(k)?'#e65100':/災害/.test(k)?'#1565c0':'#2e7d32'; }
+// 登山地図から読んだ線のうち、OSM・地理院の徒歩道と重なる所（約30 m以内）は描かない（コース名・目印だけ残す）
+const BTV={key:'',out:null};
+function btVisible(z){ try{ return btVisible0(z); }catch(e){ return BTRK.lines; } }
+function btVisible0(z){ const useO=TRV.on&&TRV.osm&&z>=12, useG=TRV.on&&TRV.gsi&&z>=13, key=[useO?OSMT.cells.size:0,useG?[...GSIF.values()].filter(Boolean).length:0,useO,useG].join('/');
+  if(BTV.key===key&&BTV.out) return BTV.out; BTV.key=key; if(!useO&&!useG){ BTV.out=BTRK.lines; return BTV.out; }
+  let s=90,n=-90,w=180,e=-180; BTRK.lines.forEach(L=>L.forEach(([a,b])=>{ s=Math.min(s,a); n=Math.max(n,a); w=Math.min(w,b); e=Math.max(e,b); }));
+  const C=22, ky=110540, kx=111320*Math.cos((s+n)/2*RAD), cell=(a,b)=>Math.floor(a*ky/C)+','+Math.floor(b*kx/C), G=new Set();
+  const addL=r=>{ for(let k=1;k<r.length;k++){ const a=r[k-1],b=r[k], m=Math.max(1,Math.ceil(vtDist(a[0],a[1],b[0],b[1])/10)); for(let t=0;t<=m;t++) G.add(cell(a[0]+(b[0]-a[0])*t/m,a[1]+(b[1]-a[1])*t/m)); } };
+  if(useO) osmLinesIn(s,w,n,e).forEach(l=>addL(l.p)); if(useG) GSIF.forEach(v=>{ if(v) v.forEach(addL); });
+  if(!G.size){ BTV.out=BTRK.lines; return BTV.out; }
+  const near=(a,b)=>{ const i=Math.floor(a*ky/C), j=Math.floor(b*kx/C); for(let di=-1;di<=1;di++) for(let dj=-1;dj<=1;dj++) if(G.has((i+di)+','+(j+dj))) return true; return false; };
+  const out=[]; BTRK.lines.forEach(L=>{ let run=[];
+    const flush=()=>{ if(run.length>1){ let len=0; for(let k=1;k<run.length;k++) len+=vtDist(run[k-1][0],run[k-1][1],run[k][0],run[k][1]); if(len>=50) out.push(run); } run=[]; };
+    for(let k=0;k<L.length;k++){ const a=L[k], b=L[k+1]; const m=b?Math.max(1,Math.ceil(vtDist(a[0],a[1],b[0],b[1])/10)):1;
+      for(let t=0;t<m;t++){ const q=b?[a[0]+(b[0]-a[0])*t/m,a[1]+(b[1]-a[1])*t/m]:a; if(near(q[0],q[1])) flush(); else run.push(q); } }
+    flush(); });
+  BTV.out=out; return out; }
 function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2; let h='';
-  if(BT.on&&z>=9&&BTRK.lines.length){ let d=''; BTRK.lines.forEach(L=>{ d+='M'+L.map(q=>(lon2x(q[1],z)-x0).toFixed(1)+','+(lat2y(q[0],z)-y0).toFixed(1)).join('L'); });
+  if(BT.on&&z>=9&&BTRK.lines.length){ let d=''; btVisible(z).forEach(L=>{ d+='M'+L.map(q=>(lon2x(q[1],z)-x0).toFixed(1)+','+(lat2y(q[0],z)-y0).toFixed(1)).join('L'); });
     h+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="5" stroke-opacity=".85" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#c2185b" stroke-width="2.6" stroke-dasharray="7 3" stroke-linejoin="round" stroke-linecap="round"/>`;
-    if(z>=12) BTRK.poi.forEach(q=>{ if(z<13&&!/S|P|H/.test(q[3])) return; const px=lon2x(q[2],z)-x0, py=lat2y(q[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const [ic,c]=BT_IC[q[3]]||['●','#333'];
+    if(z>=11) BTRK.poi.forEach(q=>{ if(z<13&&!/S|P|H|C/.test(q[3])) return; if(z<12&&q[3]!=='C') return; const px=lon2x(q[2],z)-x0, py=lat2y(q[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return;
+      if(q[3]==='C'){ const t=esc(q[0]), w=t.length*12+16; h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><rect x="${-w/2}" y="-11" width="${w}" height="21" rx="10.5" fill="#fff" fill-opacity=".92" stroke="#c2185b" stroke-width="1.6"/><text y="4.5" font-size="12" font-weight="900" fill="#ad1457" text-anchor="middle">🥾${t}</text></g>`; return; } const [ic,c]=BT_IC[q[3]]||['●','#333'];
       h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[水滝沼望]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text></g><text x="${(px+11).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11.5" font-weight="800" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${q[0]}</text>`; }); }
   if(z>=10) PEAKS.forEach(x=>{ if(!x.u) return; const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-30||py<-30||px>W+30||py>H+30) return; const ic=PKU_KIND[x[3]]||'▲', c='#4e342e';
     h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})">${ic==='▲'?'<path d="M0 -7 L6.5 4.5 H-6.5 Z" fill="#6d4c41" stroke="#fff" stroke-width="1.5"/>':`<circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[岩滝]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text>`}</g><text x="${(px+10).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12.5" font-weight="900" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(x[0])}${x[4]!=null&&isFinite(x[4])&&x[4]!==''?` ${x[4]}m`:''}</text>`; });
