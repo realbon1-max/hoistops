@@ -987,7 +987,7 @@ section.subsec>h2::before{display:none!important}
 #dialBtn[aria-expanded=true] .ico{color:#fff}
 #dialPanel:not([hidden]){border:1.5px solid #ff8a2a;box-shadow:0 0 0 1px rgba(255,138,42,.25)}
 .dmk{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}.dmkl{font-size:12px;color:var(--muted)}.dmk button{border:1.5px solid var(--rc)!important;color:var(--rc)!important;font-weight:700;border-radius:14px!important;padding:4px 9px!important;font-size:12.5px!important}
-.hpdlg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.hpdf{width:min(420px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.hpdf .hph{display:flex;align-items:center;gap:8px;font-size:16px;color:#00a3b4}.hpdf .hph svg{width:24px;height:24px}.hpdf .hph b{color:var(--ink)}.hpdf .hpx{margin-left:auto;border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}.hpdf .hpll{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.hpdf label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--muted)}.hpdf input,.hpdf select,.hpdf textarea{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.hpdf .hpbt{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}.hpdf .hpbt button{font:inherit;font-weight:800;font-size:14px;padding:9px 16px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}.hpdf .hpok{background:#00838f!important;border-color:#00838f!important;color:#fff!important}.hpdf .hpdel{margin-right:auto;color:#d32f2f!important;border-color:#d32f2f!important}.lpmenu{position:absolute;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.hpdlg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.hpdf{width:min(420px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.hpdf .hph{display:flex;align-items:center;gap:8px;font-size:16px;color:#00a3b4}.hpdf .hph svg{width:24px;height:24px}.pkdf .hph{color:#8d6e63}.pkdf .pkic{font-size:20px}.pkdf .hpok{background:#6d4c41!important;border-color:#6d4c41!important}.hpdf .hph b{color:var(--ink)}.hpdf .hpx{margin-left:auto;border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}.hpdf .hpll{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.hpdf label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--muted)}.hpdf input,.hpdf select,.hpdf textarea{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.hpdf .hpbt{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}.hpdf .hpbt button{font:inherit;font-weight:800;font-size:14px;padding:9px 16px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}.hpdf .hpok{background:#00838f!important;border-color:#00838f!important;color:#fff!important}.hpdf .hpdel{margin-right:auto;color:#d32f2f!important;border-color:#d32f2f!important}.lpmenu{position:absolute;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .lpmenu .lph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .lpmenu .lpx{font:inherit;font-size:16px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
 .lpmenu [data-lp]{font:inherit;font-size:13px;font-weight:700;padding:7px 6px;border:1.5px solid var(--rc);color:var(--rc);background:var(--paper);border-radius:10px;cursor:pointer}
@@ -2669,6 +2669,26 @@ const BT_IC={S:['△','#5d4037'],P:['P','#1565c0'],J:['◆','#ad1457'],A:['水',
 const HP={on:true,fav:['相澤病院','観音橋']};
 try{ const f=JSON.parse(localStorage.getItem('aw139hpfav')||'null'); if(Array.isArray(f)) HP.fav=f; }catch(e){}
 const hpFav=x=>HP.fav.includes(x[0]); try{ const v=localStorage.getItem('aw139hp'); if(v!==null) HP.on=v==='1'; }catch(e){}
+// ---- 自分で登録した山の名前・地名（端末に保存。[名前, 緯度, 経度, 種類, 標高m, メモ]）。検索・地図・3D に出る
+let peakListUpd=()=>{}; const PKU_K='aw139pku', PKU_KIND={'山頂':'▲','峠・鞍部':'◇','尾根':'∧','沢・谷':'≈','岩場':'岩','滝':'滝','地名・その他':'●'};
+try{ (JSON.parse(localStorage.getItem(PKU_K)||'[]')||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])){ const x=r.slice(0,6); x.u=1; PEAKS.push(x); } }); }catch(e){}
+function pkuSave(){ try{ localStorage.setItem(PKU_K,JSON.stringify(PEAKS.filter(x=>x.u).map(x=>x.slice(0,6)))); }catch(e){} }
+function pkuDialog(la,lo,x){ document.querySelectorAll('.hpdlg').forEach(d=>d.remove()); const ed=!!x, v=x||['',la,lo,'山頂',null,''];
+  const d=document.createElement('div'); d.className='hpdlg'; d.innerHTML=`<form class="hpdf pkdf"><div class="hph"><span class="pkic">▲</span><b>${ed?'山の名前を編集':'山の名前・地名を登録'}</b><button type="button" class="hpx" aria-label="閉じる">×</button></div>
+   <div class="hpll">${fmtLL(+v[1],+v[2],'dm')}</div>
+   <label>名前<input name="n" required value="${esc(v[0])}" placeholder="例：〇〇沢出合／△△の頭"></label>
+   <label>種類<select name="k">${Object.keys(PKU_KIND).map(k=>`<option${k===v[3]?' selected':''}>${k}</option>`).join('')}</select></label>
+   <label>標高（m）<input name="e" type="number" inputmode="numeric" value="${v[4]!=null&&isFinite(v[4])?v[4]:''}" placeholder="自動で入ります"></label>
+   <label>メモ<textarea name="nt" rows="2" placeholder="例：地元での呼び名・目印">${esc(v[5]||'')}</textarea></label>
+   <div class="hpbt">${ed?'<button type="button" class="hpdel">削除</button>':''}<button type="button" class="hpcn">やめる</button><button type="submit" class="hpok">${ed?'保存':'登録'}</button></div></form>`;
+  document.body.appendChild(d); const f=d.querySelector('form'), close=()=>d.remove(); d.querySelector('.hpx').onclick=close; d.querySelector('.hpcn').onclick=close; d.addEventListener('pointerdown',e=>{ if(e.target===d) close(); });
+  if(!ed||v[4]==null) elevAt(+v[1],+v[2]).then(h=>{ const i=f.querySelector('[name=e]'); if(i&&!i.value&&isFinite(h)) i.value=Math.round(h); }).catch(()=>{});
+  if(ed) twoStep(d.querySelector('.hpdel'),()=>{ const i=PEAKS.indexOf(x); if(i>=0) PEAKS.splice(i,1); pkuSave(); peakListUpd(); close(); hpDraw(); mapMsg(`「${x[0]}」を削除しました`); });
+  f.onsubmit=e=>{ e.preventDefault(); const F=new FormData(f), nm=String(F.get('n')||'').trim(); if(!nm) return; const ev=String(F.get('e')||'').trim(), row=[nm,+v[1],+v[2],F.get('k'),ev===''?null:Math.round(+ev),String(F.get('nt')||'').trim()];
+    if(ed) row.forEach((val,i)=>x[i]=val); else { row.u=1; PEAKS.push(row); }
+    pkuSave(); peakListUpd(); close(); hpDraw(); mapMsg(`「${nm}」を${ed?'保存':'登録'}しました（検索欄で名前から探せます）`); };
+  setTimeout(()=>{ const i=f.querySelector('[name=n]'); if(i&&!ed) i.focus(); },50); }
+document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-pkued]'); if(!a) return; const x=PEAKS.filter(y=>y.u)[+a.dataset.pkued]; if(x) pkuDialog(x[1],x[2],x); });
 // ---- 自分で登録したヘリパッド（端末に保存。[名前, 緯度, 経度, 種類, 所在地・目印, 管理者・連絡先, 広さ, メモ]）
 const HPU_K='aw139hpu'; function hpuLoad(){ let a=[]; try{ a=JSON.parse(localStorage.getItem(HPU_K)||'[]'); }catch(e){} return Array.isArray(a)?a:[]; }
 function hpuSave(){ try{ localStorage.setItem(HPU_K,JSON.stringify(HELIP.filter(x=>x.u).map(x=>x.slice(0,8)))); }catch(e){} }
@@ -2698,6 +2718,8 @@ function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=
     h+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="5" stroke-opacity=".85" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#c2185b" stroke-width="2.6" stroke-dasharray="7 3" stroke-linejoin="round" stroke-linecap="round"/>`;
     if(z>=12) BTRK.poi.forEach(q=>{ if(z<13&&!/S|P/.test(q[3])) return; const px=lon2x(q[2],z)-x0, py=lat2y(q[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const [ic,c]=BT_IC[q[3]]||['●','#333'];
       h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[水滝沼望]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text></g><text x="${(px+11).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11.5" font-weight="800" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${q[0]}</text>`; }); }
+  if(z>=10) PEAKS.forEach(x=>{ if(!x.u) return; const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-30||py<-30||px>W+30||py>H+30) return; const ic=PKU_KIND[x[3]]||'▲', c='#4e342e';
+    h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})">${ic==='▲'?'<path d="M0 -7 L6.5 4.5 H-6.5 Z" fill="#6d4c41" stroke="#fff" stroke-width="1.5"/>':`<circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[岩滝]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text>`}</g><text x="${(px+10).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12.5" font-weight="900" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(x[0])}${x[4]!=null&&isFinite(x[4])&&x[4]!==''?` ${x[4]}m`:''}</text>`; });
   if(!HP.on||MAP.z<9){ sv.innerHTML=h; return; }
   const r=z>=12?8:6.5, lab=z>=12;
   HELIP.forEach(x=>{ const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const c=hpCol(x[3],x);
@@ -2710,6 +2732,7 @@ function hpAt(la,lo){ let b=null; HELIP.forEach(x=>{ const d=Math.hypot((x[1]-la
 function hpLines(x){ if(x.u) return [`${x[0]}（${x[3]||'ヘリパッド'}・自分で登録）`, `所在地・目印 ${x[4]||'—'}`, `管理者・連絡先 ${x[5]||'—'}・広さ ${x[6]||'—'}`, ...(x[7]?[`メモ ${x[7]}`]:[]), '自分で登録した場所（使用の際は現地・管理者に確認）']; return [`${x[0]}（${x[3]||'ヘリポート'}）`, `所在地 ${x[4]||'—'}`, `管理者 ${x[5]||'—'}・広さ ${x[6]||'—'}`, '出典：国土数値情報（ヘリポートデータ）・使用の際は管理者に確認']; }
 function hpHit(px,py){ const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let b=null;
   if(BT.on&&z>=12) BTRK.poi.forEach(q=>{ const d=Math.hypot(lon2x(q[2],z)-x0-px,lat2y(q[1],z)-y0-py); if(d<=12&&(!b||d<b.d)) b={x:[q[0],q[1],q[2],'山の目印',q[4],'—','—'],d,bt:1}; }); if(b) return b.x;
+  if(z>=10) PEAKS.filter(x=>x.u).forEach((x,i)=>{ const d=Math.hypot(lon2x(x[2],z)-x0-px,lat2y(x[1],z)-y0-py); if(d<=14&&(!b||d<b.d)){ const y=[x[0],x[1],x[2],'山の名前',`${x[3]||''}${x[4]!=null&&x[4]!==''?'・標高 '+x[4]+' m':''}${x[5]?'・'+x[5]:''}`,'—','—']; y.pk=i; b={x:y,d}; } }); if(b) return b.x;
   if(!HP.on||MAP.z<9) return null;
   HELIP.forEach(x=>{ const d=Math.hypot(lon2x(x[2],z)-x0-px,lat2y(x[1],z)-y0-py); if(d<=14&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
 // ---- flight plan (base -> site)
@@ -2902,7 +2925,7 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st&&st.menu){ st=null; return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
-        const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; let la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { const hp=hpHit(px,py); if(hp){ la=hp[1]; lo=hp[2]; } mapPick(la,lo); pickSync(la,lo); if(hp) mapMsg(hp[3]==='山の目印'?`<b>${hp[0]}</b><br><small>${hp[4]}</small>`:`<b>${hp[0]}</b>（${hp[3]||'ヘリポート'}${hp.u?'・自分で登録':''}）<br><small>${hp[4]||'—'}・管理 ${hp[5]||'—'}・広さ ${hp[6]||'—'}${hp.u&&hp[7]?`<br>${esc(hp[7])}`:''}</small>`); } }
+        const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; let la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { const hp=hpHit(px,py); if(hp){ la=hp[1]; lo=hp[2]; } mapPick(la,lo); pickSync(la,lo); if(hp) mapMsg(hp.pk!=null?`<b>${esc(hp[0])}</b>（自分で登録）<br><small>${esc(hp[4])}</small> <button type="button" class="small" data-pkued="${hp.pk}">✎ 編集・削除</button>`:hp[3]==='山の目印'?`<b>${hp[0]}</b><br><small>${hp[4]}</small>`:`<b>${hp[0]}</b>（${hp[3]||'ヘリポート'}${hp.u?'・自分で登録':''}）<br><small>${hp[4]||'—'}・管理 ${hp[5]||'—'}・広さ ${hp[6]||'—'}${hp.u&&hp[7]?`<br>${esc(hp[7])}`:''}</small>`); } }
       st=null; }
     else if(pts.size===1&&st){ const p=[...pts.values()][0]; st={x:p.x,y:p.y,cx:MAP.cx,cy:MAP.cy,t:0,moved:true}; } };
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
@@ -2929,7 +2952,7 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
   const go=()=>{ const q=$('mLL').value; const pk=/\d/.test(q)?null:findPeak(q); const v=pk?[pk[1],pk[2]]:parseLL(q);
     if(!v||isNaN(v[0])||isNaN(v[1])||Math.abs(v[0])>90||Math.abs(v[1])>180){ mapMsg('山名か緯度経度を読み取れません。例：「奥穂高岳」「36.2892, 137.6481」「N36°17.352′ E137°38.886′」「36 17 21, 137 38 53」「361721N1373853E」'); return; }
     if(pk) $('mLL').value=pk[0]; else $('mLL').value=fmtLL(v[0],v[1]); mapMsg(); mapSetView(v[0],v[1],Math.max(MAP.z,14)); $('mBaseL').innerHTML=''; $('mOvL').innerHTML=''; mapPick(v[0],v[1]); };
-  $('peakList').innerHTML=PEAKS.map(p=>`<option value="${p[0]}">`).join('')+HELIP.map(p=>`<option value="${p[0]}">`).join('')+BTRK.poi.map(p=>`<option value="${p[0]}">`).join('');
+  peakListUpd=()=>{ $('peakList').innerHTML=PEAKS.map(p=>`<option value="${p[0]}">`).join('')+HELIP.map(p=>`<option value="${p[0]}">`).join('')+BTRK.poi.map(p=>`<option value="${p[0]}">`).join(''); }; peakListUpd();
   [['fpGs','gs'],['fpRoc','roc'],['fpRod','rod'],['fpFf','ff'],['fpSu','su'],['fpWork','work']].forEach(([id,k])=>{ $(id).value=FP[k]; $(id).addEventListener('input',()=>{ FP[k]=+$(id).value; try{localStorage.setItem('aw139fp',JSON.stringify(FP));}catch(e){} mapInfo(); }); });
   setFrom(FROM);
   $('fromGo').onclick=()=>{ const q=$('fromQ').value.trim(); if(!q) return; const pk=/\d/.test(q)?null:findPeak(q); const v=pk?[pk[1],pk[2]]:parseLL(q);
@@ -3925,7 +3948,8 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
       const sh=new T.Mesh(new T.CircleGeometry(ROTOR_D/2,24),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.25})); sh.rotation.x=-Math.PI/2; sh.position.set(q[0],q[1]+0.5,q[2]); grp.add(sh); st.acSh=sh;
       st.heli=new T.Vector3(q[0],hy,q[2]); } }
   // 山名・拠点（広域のとき）
-  if(st.S>=3000){ try{ const seen=new Set(); let n=0; PEAKS.forEach(([nm,la,lo])=>{ if(n>=40) return; const q=yOf(la,lo); if(!q) return; const e=(lo-st.lon)*kx, nn=(la-st.lat)*ky; if(Math.hypot(e,nn)<S*0.06) return; const k=nm.split('（')[0]; if(seen.has(k)) return; seen.add(k); n++;
+  try{ PEAKS.forEach(x=>{ if(!x.u) return; const q=yOf(x[1],x[2]); if(!q) return; const sp=v3Sprite(`${PKU_KIND[x[3]]||'▲'} ${x[0]}${x[4]!=null&&x[4]!==''?' '+x[4]+'m':''}`,'#4e342e'); sp.scale.multiplyScalar(0.8); sp.position.set(q[0],q[1]+Math.max(8,S*0.01),q[2]); grp.add(sp); }); }catch(e){}
+  if(st.S>=3000){ try{ const seen=new Set(); let n=0; PEAKS.forEach(([nm,la,lo,,,,],ii,arr)=>{ if(n>=40||arr[ii].u) return; const q=yOf(la,lo); if(!q) return; const e=(lo-st.lon)*kx, nn=(la-st.lat)*ky; if(Math.hypot(e,nn)<S*0.06) return; const k=nm.split('（')[0]; if(seen.has(k)) return; seen.add(k); n++;
       const sp=v3Sprite('▲ '+k,'#5d4037'); sp.position.set(q[0],q[1]+S*0.012,q[2]); grp.add(sp); }); }catch(e){} }
   // north marker
   { const sp=v3Sprite('N ↑','#c0392b'); const q=yOf(st.lat+S*0.92/ky,st.lon)||[0,0,-S*0.92]; sp.position.set(0,q[1]+S*0.05,-S*0.92); grp.add(sp); }
@@ -6012,7 +6036,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
 (function(){ const sl=$('dLp'); if(!sl) return; try{ if(!localStorage.getItem('aw139lp2')){ DISP.lp=2; localStorage.setItem('aw139lp2','1'); dispSave(); } }catch(e){} sl.value=String(DISP.lp||2); sl.onchange=()=>{ DISP.lp=+sl.value; try{ dispSave(); }catch(e){} }; })();
 function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z);
   const m=document.createElement('div'); m.className='lpmenu'; m.innerHTML=`<div class="lph">${fmtLL(la,lo,'dm')}<button type="button" class="lpx" aria-label="閉じる">×</button></div>
-   <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button><button type="button" data-lp="v3" style="--rc:#2f6fb0">🏔 3Dで見る</button><button type="button" data-lp="hpu" style="--rc:#00838f;grid-column:1/-1">🅷 ここをヘリパッドに登録</button>`;
+   <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button><button type="button" data-lp="v3" style="--rc:#2f6fb0">🏔 3Dで見る</button><button type="button" data-lp="pku" style="--rc:#6d4c41">▲ 山の名前を登録</button><button type="button" data-lp="hpu" style="--rc:#00838f">🅷 ヘリパッドを登録</button>`;
   const dot=document.createElement('div'); dot.className='lpdot'; dot.style.left=px+'px'; dot.style.top=py+'px';
   el.appendChild(dot); el.appendChild(m);
   const W=el.clientWidth, H=el.clientHeight, mw=m.offsetWidth, mh=m.offsetHeight; m.style.left=Math.max(6,Math.min(W-mw-6,px-mw/2))+'px'; m.style.top=(py+16+mh<H-6?py+16:Math.max(6,py-16-mh))+'px';
@@ -6022,6 +6046,7 @@ function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientW
     if(k==='pick'){ mapPick(la,lo); pickSync(la,lo); return; }
     if(k==='v3'){ open3D(la,lo,''); return; }
     if(k==='hpu'){ hpuDialog(la,lo); return; }
+    if(k==='pku'){ pkuDialog(la,lo); return; }
     let it; if(k==='pt'){ const n=DRAW.items.filter(x=>x.t==='pt').length+1; it={t:'pt',lat:la,lon:lo,label:'P'+n}; }
     else { it={t:'dest',role:k,lat:la,lon:lo,label:roleLabel(k),h:null,at:new Date().toTimeString().slice(0,5)}; elevAt(la,lo).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); }
     DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); mapMsg(`「${it.label}」を記録しました（長押しで移動できます）`); });
