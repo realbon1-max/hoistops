@@ -3675,7 +3675,7 @@ function v3Step(st,dt){ const T=THREE, ac=st.ac; if(!ac) return; const K=st.rc?s
     wY+=tu[1]; st.vg=[0,0,0]; st.wind3=[wX,wY,wZ]; }
   const h=st.hdg, p=ac.position.clone(); let x=p.x+(Math.sin(h)*st.v[0]+Math.cos(h)*st.v[1]+wX)*dt, z=p.z+(-Math.cos(h)*st.v[0]+Math.sin(h)*st.v[1]+wZ)*dt, y=p.y+(st.v[2]+wY)*dt*st.ex;
   if(st.vg){ const ex2=Math.sin(h)*st.v[0]+Math.cos(h)*st.v[1]+wX, ez=-Math.cos(h)*st.v[0]+Math.sin(h)*st.v[1]+wZ; st.vg=[Math.hypot(ex2,ez),0,st.v[2]+wY]; }
-  const Smax=st.S*0.98; x=Math.max(-Smax,Math.min(Smax,x)); z=Math.max(-Smax,Math.min(Smax,z));
+  if(!st.yOf(st.lat-z/ky,st.lon+x/kx)){ x=p.x; z=p.z; }
   const g=st.yOf(st.lat-z/ky,st.lon+x/kx), gy=g?g[1]:p.y, minY=gy+V3WH*st.ex; if(y<minY){ y=minY; if(st.v[2]<0) st.v[2]=0; }
   ac.position.set(x,y,z); ac.rotation.y=-h; ac.rotation.x=st.pitch||0; ac.rotation.z=-(st.roll||0);
   const d=ac.position.clone().sub(p); st.cam.position.add(d); st.ctl.target.add(d); st.heli=ac.position.clone();
@@ -3878,9 +3878,9 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
     const cam=new T.PerspectiveCamera(50,1,5,200000); st.cam=cam; const ctl=new T.OrbitControls(cam,ren.domElement); ctl.enableDamping=true; ctl.dampingFactor=0.12; ctl.maxPolarAngle=Math.PI*0.495; ctl.screenSpacePanning=true; st.ctl=ctl;
     const rs=()=>{ const w=box.clientWidth, h=box.clientHeight; ren.setSize(w,h); cam.aspect=w/Math.max(1,h); cam.updateProjectionMatrix(); }; rs(); st.rs=rs; addEventListener('resize',rs);
     ren.domElement.addEventListener('dblclick',()=>{ if(st.heli){ const d=st.cam.position.clone().sub(ctl.target), r=Math.max(60,(st.acK||1)*70); ctl.target.copy(st.heli); st.cam.position.copy(st.heli).add(d.setLength(r)); } });
-    let tPrev=performance.now(); const loop=()=>{ if(!st.alive) return; const tn=performance.now(), dt=Math.min(0.1,(tn-tPrev)/1000); tPrev=tn; if(st.scn) v3ScnStep(st,dt); else if(st.rc||st.hs) v3Step(st,dt); if(st.hs) v3Hoist(st,dt); if(st.boom) v3BoomStep(st,dt); v3AcZoom(st); if(st.rotor) st.rotor.rotation.y-=0.35; if(st.trotor) st.trotor.rotation.x+=0.9; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
+    let tPrev=performance.now(); const loop=()=>{ if(!st.alive) return; const tn=performance.now(), dt=Math.min(0.1,(tn-tPrev)/1000); tPrev=tn; if(st.scn) v3ScnStep(st,dt); else if(st.rc||st.hs) v3Step(st,dt); if(st.hs) v3Hoist(st,dt); if(st.boom) v3BoomStep(st,dt); v3AcZoom(st); v3ChTick(st); if(st.rotor) st.rotor.rotation.y-=0.35; if(st.trotor) st.trotor.rotation.x+=0.9; ctl.update(); ren.render(sc,cam); st.raf=requestAnimationFrame(loop); }; loop(); }
   // terrain
-  if(st.grp) st.sc.remove(st.grp); const grp=new T.Group(); st.grp=grp; st.sc.add(grp);
+  v3ChClear(st); if(st.grp) st.sc.remove(st.grp); const grp=new T.Group(); st.grp=grp; st.sc.add(grp);
   const geo=new T.PlaneGeometry(2*S,2*S,N,N); geo.rotateX(-Math.PI/2); const pos=geo.attributes.position;
   for(let k=0;k<pos.count;k++) pos.setY(k,(Z[k]-st.zc)*ex); geo.computeVertexNormals(); st.geo=geo;
   const mat=new T.MeshLambertMaterial({color:0xffffff}); st.mat=mat; const mesh=new T.Mesh(geo,mat); grp.add(mesh);
@@ -3888,9 +3888,9 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
   { const sk=[]; const yb=(Math.min(...Z)-st.zc)*ex-30; const edge=(f)=>{ const a=[]; for(let t=0;t<=N;t++) a.push(f(t)); return a; };
     const E=[edge(t=>[ -S+2*S*t/N, S, Z[t] ]), edge(t=>[ S, S-2*S*t/N, Z[t*(N+1)+N] ]), edge(t=>[ S-2*S*t/N, -S, Z[N*(N+1)+(N-t)] ]), edge(t=>[ -S, -S+2*S*t/N, Z[(N-t)*(N+1)] ])];
     E.forEach(L=>{ for(let t=0;t<L.length-1;t++){ const [e1,n1,z1]=L[t],[e2,n2,z2]=L[t+1]; sk.push(e1,(z1-st.zc)*ex,-n1, e2,(z2-st.zc)*ex,-n2, e2,yb,-n2, e1,(z1-st.zc)*ex,-n1, e2,yb,-n2, e1,yb,-n1); } });
-    const g2=new T.BufferGeometry(); g2.setAttribute('position',new T.Float32BufferAttribute(sk,3)); grp.add(new T.Mesh(g2,new T.MeshBasicMaterial({color:0x8d7a5f,side:T.DoubleSide}))); }
+    const g2=new T.BufferGeometry(); g2.setAttribute('position',new T.Float32BufferAttribute(sk,3)); st.skirt=new T.Mesh(g2,new T.MeshBasicMaterial({color:0x8d7a5f,side:T.DoubleSide})); grp.add(st.skirt); }
   // markers
-  const sprites=[]; const yOf=st.yOf=(la,lo)=>{ const e=(lo-st.lon)*kx, n=(la-st.lat)*ky, fi=(e+S)/(2*S)*N, fj=(S-n)/(2*S)*N; if(fi<0||fj<0||fi>N||fj>N) return null; const i=Math.min(N-1,Math.floor(fi)), j=Math.min(N-1,Math.floor(fj)), a=fi-i, b=fj-j, z=(Z[j*(N+1)+i]*(1-a)+Z[j*(N+1)+i+1]*a)*(1-b)+(Z[(j+1)*(N+1)+i]*(1-a)+Z[(j+1)*(N+1)+i+1]*a)*b; return [e,(z-st.zc)*ex,-n]; };
+  const sprites=[]; const yOf=st.yOf=(la,lo)=>{ const e=(lo-st.lon)*kx, n=(la-st.lat)*ky; let Z=st.Z, el=e, nl=n; if(Math.abs(e)>S||Math.abs(n)>S){ const ci=Math.round(e/(2*S)), cj=Math.round(n/(2*S)), c=st.ch&&st.ch.get(ci+','+cj); if(!c||!c.ready) return null; Z=c.Z; el=e-ci*2*S; nl=n-cj*2*S; } const fi=(el+S)/(2*S)*N, fj=(S-nl)/(2*S)*N; if(fi<0||fj<0||fi>N||fj>N) return null; const i=Math.min(N-1,Math.floor(fi)), j=Math.min(N-1,Math.floor(fj)), a=fi-i, b=fj-j, z=(Z[j*(N+1)+i]*(1-a)+Z[j*(N+1)+i+1]*a)*(1-b)+(Z[(j+1)*(N+1)+i]*(1-a)+Z[(j+1)*(N+1)+i+1]*a)*b; return [e,(z-st.zc)*ex,-n]; };
   const pin=(la,lo,txt,col,big)=>{ const q=yOf(la,lo); if(!q) return; const h=Math.max(25,S*0.04); const L=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(q[0],q[1],q[2]),new T.Vector3(q[0],q[1]+h,q[2])]),new T.LineBasicMaterial({color:col})); grp.add(L);
     const ball=new T.Mesh(new T.SphereGeometry(Math.max(4,S*0.005),12,8),new T.MeshBasicMaterial({color:col})); ball.position.set(q[0],q[1],q[2]); grp.add(ball);
     const sp=v3Sprite(txt,'#'+new T.Color(col).getHexString(),big); sp.position.set(q[0],q[1]+h,q[2]); grp.add(sp); };
@@ -3908,23 +3908,42 @@ async function v3Build(refetch){ const st=V3.st, ov=$('v3Ov'); if(!st||!ov) retu
   // north marker
   { const sp=v3Sprite('N ↑','#c0392b'); const q=yOf(st.lat+S*0.92/ky,st.lon)||[0,0,-S*0.92]; sp.position.set(0,q[1]+S*0.05,-S*0.92); grp.add(sp); }
   try{ v3Trails(st); }catch(e){ console.error(e); }
-  if(refetch||!st.camSet){ st.camSet=true; const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, d=S*1.25, t=st.heli||new T.Vector3(); st.ctl.target.copy(t); st.cam.position.set(t.x-Math.sin(hd)*d, t.y+S*0.55, t.z+Math.cos(hd)*d); st.ctl.maxDistance=S*4; st.ctl.minDistance=20; st.ctl.update(); st.sc.fog=new T.Fog(0xbfd9f2,S*2.2,S*6); }
+  if(refetch||!st.camSet){ st.camSet=true; const hd=((+(($('hdg')||{}).value)||0)%360)*RAD, d=S*1.25, t=st.heli||new T.Vector3(); st.ctl.target.copy(t); st.cam.position.set(t.x-Math.sin(hd)*d, t.y+S*0.55, t.z+Math.cos(hd)*d); st.ctl.maxDistance=S*4; st.ctl.addEventListener&&!st.chL&&(st.chL=1,st.ctl.addEventListener('change',()=>{ st.chT=0; })); st.ctl.minDistance=20; st.ctl.update(); st.sc.fog=new T.Fog(0xbfd9f2,S*2.2,S*6); }
   await v3Tex(); }
-async function v3Tex(){ const st=V3.st; if(!st||!st.geo) return; const msg=$('v3M'), T=THREE, S=st.S, N=st.N, kx=111320*Math.cos(st.lat*RAD), ky=110540, base=st.base, mx=(BASES[base]||{max:18}).max;
-  msg.hidden=false; msg.textContent='地図・写真を読み込み中…';
+async function v3Tex(){ const st=V3.st; if(!st||!st.geo) return; const msg=$('v3M'); msg.hidden=false; msg.textContent='地図・写真を読み込み中…';
+  const got=await v3TexFor(st,st.geo,st.mat,st.Z,0,0); if(V3.st!==st||!st.alive) return;
+  (st.ch?[...st.ch.values()]:[]).forEach(c=>{ if(c.ready) v3TexFor(st,c.geo,c.mat,c.Z,c.E,c.Nn); });
+  msg.hidden=got>0; if(!got){ msg.textContent='地図・写真を読み込めないため、標高から色付けしています（オフライン）'; setTimeout(()=>{ if(V3.st===st) msg.hidden=true; },5000); } }
+// 1枚の地形（中心から東へ E m・北へ Nn m ずらした ±S の正方形）に地図・写真を貼る
+async function v3TexFor(st,geo,mat,Z,E,Nn){ const T=THREE, S=st.S, N=st.N, kx=111320*Math.cos(st.lat*RAD), ky=110540, base=st.base, mx=(BASES[base]||{max:18}).max, cla=st.lat+Nn/ky, clo=st.lon+E/kx;
   const mpp=2*S/(S>4000?2600:1800), z=Math.max(10,Math.min(mx,Math.floor(Math.log2(156543.03*Math.cos(st.lat*RAD)/mpp))));
-  const la1=st.lat+S/ky, la0=st.lat-S/ky, lo0=st.lon-S/kx, lo1=st.lon+S/kx, X0=lon2x(lo0,z), X1=lon2x(lo1,z), Y0=lat2y(la1,z), Y1=lat2y(la0,z);
+  const la1=cla+S/ky, la0=cla-S/ky, lo0=clo-S/kx, lo1=clo+S/kx, X0=lon2x(lo0,z), X1=lon2x(lo1,z), Y0=lat2y(la1,z), Y1=lat2y(la0,z);
   const tx0=Math.floor(X0/256), tx1=Math.floor(X1/256), ty0=Math.floor(Y0/256), ty1=Math.floor(Y1/256), W=Math.ceil(X1-X0), H=Math.ceil(Y1-Y0);
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const g=cv.getContext('2d'); g.fillStyle='#c9d3c0'; g.fillRect(0,0,W,H); let got=0;
   const jobs=[]; for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++) jobs.push(v3Tile(base,z,tx,ty).then(im=>{ if(im){ got++; g.drawImage(im,tx*256-X0,ty*256-Y0); } }));
-  await Promise.all(jobs); if(V3.st!==st||!st.alive) return;
+  await Promise.all(jobs); if(V3.st!==st||!st.alive) return got;
   if(!got){ // オフライン：標高から陰影をつけた色
-    const Z=st.Z; for(let j=0;j<H;j+=2) for(let i=0;i<W;i+=2){ const fi=i/W*N, fj=j/H*N, ii=Math.min(N-1,fi|0), jj=Math.min(N-1,fj|0), z=Z[jj*(N+1)+ii], zx=Z[jj*(N+1)+ii+1]-z, zy=Z[(jj+1)*(N+1)+ii]-z, sh=Math.max(0,Math.min(1,0.6-zx*0.03+zy*0.03)), e=Math.min(1,(z-1000)/2000);
+    for(let j=0;j<H;j+=2) for(let i=0;i<W;i+=2){ const fi=i/W*N, fj=j/H*N, ii=Math.min(N-1,fi|0), jj=Math.min(N-1,fj|0), z=Z[jj*(N+1)+ii], zx=Z[jj*(N+1)+ii+1]-z, zy=Z[(jj+1)*(N+1)+ii]-z, sh=Math.max(0,Math.min(1,0.6-zx*0.03+zy*0.03)), e=Math.min(1,(z-1000)/2000);
       g.fillStyle=`rgb(${(150+60*e)*sh+60|0},${(160-20*e)*sh+60|0},${(110-10*e)*sh+50|0})`; g.fillRect(i,j,2,2); } }
   const tex=new T.CanvasTexture(cv); tex.anisotropy=8; tex.minFilter=T.LinearMipmapLinearFilter;
-  const uv=st.geo.attributes.uv; for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const e=-S+2*S*i/N, n=S-2*S*j/N, la=st.lat+n/ky, lo=st.lon+e/kx; uv.setXY(j*(N+1)+i,(lon2x(lo,z)-X0)/W,1-(lat2y(la,z)-Y0)/H); } uv.needsUpdate=true;
-  if(st.mat.map) st.mat.map.dispose(); st.mat.map=tex; st.mat.needsUpdate=true;
-  msg.hidden=got>0; if(!got){ msg.textContent='地図・写真を読み込めないため、標高から色付けしています（オフライン）'; setTimeout(()=>{ if(V3.st===st) msg.hidden=true; },5000); } }
+  const uv=geo.attributes.uv; for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const e=-S+2*S*i/N, n=S-2*S*j/N, la=cla+n/ky, lo=clo+e/kx; uv.setXY(j*(N+1)+i,(lon2x(lo,z)-X0)/W,1-(lat2y(la,z)-Y0)/H); } uv.needsUpdate=true;
+  if(mat.map) mat.map.dispose(); mat.map=tex; mat.needsUpdate=true; return got; }
+// ==== 3D の地形を途切れさせない：カメラの注視点（や機体）が端に近づいたら、隣の区画（同じ大きさ ±S）を読み込んで継ぎ足す。遠く離れた区画は捨てる ====
+function v3ChClear(st){ (st.ch?[...st.ch.values()]:[]).forEach(c=>{ if(c.mesh){ c.mesh.parent&&c.mesh.parent.remove(c.mesh); c.geo.dispose(); if(c.mat.map) c.mat.map.dispose(); c.mat.dispose(); } c.dead=true; }); st.ch=new Map(); if(st.skirt) st.skirt.visible=true; }
+async function v3ChLoad(st,ci,cj){ const T=THREE, S=st.S, N=st.N, kx=111320*Math.cos(st.lat*RAD), ky=110540, E=ci*2*S, Nn=cj*2*S, key=ci+','+cj, c={ci,cj,E,Nn,ready:false}; st.ch.set(key,c);
+  const Z=new Float32Array((N+1)*(N+1)), P=[]; for(let j=0;j<=N;j++) for(let i=0;i<=N;i++){ const e=E-S+2*S*i/N, n=Nn+S-2*S*j/N; P.push(v3Elev(st.lat+n/ky,st.lon+e/kx).then(v=>{ Z[j*(N+1)+i]=isNaN(v)?0:v; })); }
+  await Promise.all(P); if(c.dead||V3.st!==st||!st.alive) return;
+  const geo=new T.PlaneGeometry(2*S,2*S,N,N); geo.rotateX(-Math.PI/2); geo.translate(E,0,-Nn); const pos=geo.attributes.position; for(let k=0;k<pos.count;k++) pos.setY(k,(Z[k]-st.zc)*st.ex); geo.computeVertexNormals();
+  const mat=new T.MeshLambertMaterial({color:0xffffff}), mesh=new T.Mesh(geo,mat); Object.assign(c,{Z,geo,mat,mesh,ready:true}); st.grp.add(mesh); if(st.skirt) st.skirt.visible=false;
+  v3TexFor(st,geo,mat,Z,E,Nn); try{ v3Trails(st); }catch(e){} }
+function v3ChTick(st){ if(!st.grp||!st.ctl) return; const now=performance.now(); if(st.chT&&now-st.chT<400) return; st.chT=now; if(!st.ch) st.ch=new Map(); const S=st.S, D=2*S;
+  const pts=[st.ctl.target]; if(st.ac&&(st.rc||st.hs||st.scn)) pts.push(st.ac.position);
+  const want=new Set(); pts.forEach(p=>{ const e=p.x, n=-p.z; for(let ci=Math.round(e/D)-1;ci<=Math.round(e/D)+1;ci++) for(let cj=Math.round(n/D)-1;cj<=Math.round(n/D)+1;cj++){ const dx=Math.max(0,Math.abs(e-ci*D)-S), dy=Math.max(0,Math.abs(n-cj*D)-S); if(Math.hypot(dx,dy)<S*0.95) want.add(ci+','+cj); } });
+  want.delete('0,0'); let busy=[...st.ch.values()].filter(c=>!c.ready).length;
+  want.forEach(k=>{ if(st.ch.has(k)||busy>=3) return; busy++; const [ci,cj]=k.split(',').map(Number); v3ChLoad(st,ci,cj); });
+  // 遠い区画を捨てる（メモリ節約）
+  st.ch.forEach((c,k)=>{ if(!c.ready) return; const far=pts.every(p=>Math.hypot(p.x-c.E,-p.z-c.Nn)>S*3.2); if(far){ c.mesh.parent&&c.mesh.parent.remove(c.mesh); c.geo.dispose(); if(c.mat.map) c.mat.map.dispose(); c.mat.dispose(); c.dead=true; st.ch.delete(k); } });
+  if(st.skirt) st.skirt.visible=![...st.ch.values()].some(c=>c.ready); }
 function snapUI(){ if($('mSnap')) return; const b=document.createElement('button'); b.type='button'; b.id='mSnap'; b.className='msnap'; b.setAttribute('aria-label','地図を画像で共有'); b.title='地図を画像で共有';
   b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
   $('map').appendChild(b); b.addEventListener('pointerdown',e=>e.stopPropagation()); b.addEventListener('click',async e=>{ e.stopPropagation(); if(b.disabled) return; b.disabled=true; b.classList.add('busy');
@@ -4409,10 +4428,10 @@ function trvSvg(P,pp,vb,z){ if(!TRV.on||z<12) return ''; let h=''; const [s,w,n,
   return h; }
 // 3D に地形に沿わせて描く
 async function v3Trails(st){ const T=THREE; if(!st||!st.grp||!st.yOf) return; if(st.trG){ st.trG.parent&&st.trG.parent.remove(st.trG); st.trG=null; } if(!TRV.on3) return;
-  const S=st.S, kx=111320*Math.cos(st.lat*RAD), ky=110540, s=st.lat-S/ky, n=st.lat+S/ky, w=st.lon-S/kx, e=st.lon+S/kx, g=new T.Group(); st.trG=g; st.grp.add(g);
+  const S=st.S, kx=111320*Math.cos(st.lat*RAD), ky=110540, cs=[{ci:0,cj:0},...(st.ch?[...st.ch.values()].filter(c=>c.ready):[])], s=st.lat+(Math.min(...cs.map(c=>c.cj))*2*S-S)/ky, n=st.lat+(Math.max(...cs.map(c=>c.cj))*2*S+S)/ky, w=st.lon+(Math.min(...cs.map(c=>c.ci))*2*S-S)/kx, e=st.lon+(Math.max(...cs.map(c=>c.ci))*2*S+S)/kx, g=new T.Group(); st.trG=g; st.grp.add(g);
   const step=Math.max(8,S/160), lift=Math.max(2,S/1500)*st.ex;
   const add=(pts,col)=>{ const V=[]; for(let k=0;k<pts.length;k++){ const a=pts[k], b=pts[k+1]; const seg=b?Math.max(1,Math.ceil(vtDist(a[0],a[1],b[0],b[1])/step)):1; for(let t=0;t<seg;t++){ const f=t/seg, la=b?a[0]+(b[0]-a[0])*f:a[0], lo=b?a[1]+(b[1]-a[1])*f:a[1], q=st.yOf(la,lo); if(q) V.push(new T.Vector3(q[0],q[1]+lift,q[2])); else if(V.length>1){ g.add(new T.Line(new T.BufferGeometry().setFromPoints(V.splice(0)),new T.LineBasicMaterial({color:col}))); } else V.length=0; } } if(V.length>1) g.add(new T.Line(new T.BufferGeometry().setFromPoints(V),new T.LineBasicMaterial({color:col}))); };
-  if(TRV.gsi&&S<=3200) gsiFtIn(s,w,n,e,trvRedraw).forEach(r=>add(r,0x00bfa5));
+  if(TRV.gsi&&S<=3200&&cs.length<=4) gsiFtIn(s,w,n,e,trvRedraw).forEach(r=>add(r,0x00bfa5));
   if(TRV.osm){ osmNeed(osmCells(s,w,n,e).slice(0,30)); osmLinesIn(s,w,n,e).forEach(l=>add(l.p,new T.Color(SACC[l.s]||'#ff8f00').getHex())); }
   if(TRV.usr) TRL.lines.forEach(l=>{ if(l.bb[2]<s||l.bb[0]>n||l.bb[3]<w||l.bb[1]>e) return; add(l.p,0xff2fa0); }); }
 // 地図のボタンと設定パネル
