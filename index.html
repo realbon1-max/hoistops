@@ -987,7 +987,7 @@ section.subsec>h2::before{display:none!important}
 #dialBtn[aria-expanded=true] .ico{color:#fff}
 #dialPanel:not([hidden]){border:1.5px solid #ff8a2a;box-shadow:0 0 0 1px rgba(255,138,42,.25)}
 .dmk{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}.dmkl{font-size:12px;color:var(--muted)}.dmk button{border:1.5px solid var(--rc)!important;color:var(--rc)!important;font-weight:700;border-radius:14px!important;padding:4px 9px!important;font-size:12.5px!important}
-.lpmenu{position:absolute;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.hpdlg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.hpdf{width:min(420px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.hpdf .hph{display:flex;align-items:center;gap:8px;font-size:16px;color:#00a3b4}.hpdf .hph svg{width:24px;height:24px}.hpdf .hph b{color:var(--ink)}.hpdf .hpx{margin-left:auto;border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}.hpdf .hpll{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.hpdf label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--muted)}.hpdf input,.hpdf select,.hpdf textarea{font:inherit;font-size:15px;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}.hpdf .hpbt{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}.hpdf .hpbt button{font:inherit;font-weight:800;font-size:14px;padding:9px 16px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}.hpdf .hpok{background:#00838f!important;border-color:#00838f!important;color:#fff!important}.hpdf .hpdel{margin-right:auto;color:#d32f2f!important;border-color:#d32f2f!important}.lpmenu{position:absolute;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;width:250px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .lpmenu .lph{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .lpmenu .lpx{font:inherit;font-size:16px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0 4px}
 .lpmenu [data-lp]{font:inherit;font-size:13px;font-weight:700;padding:7px 6px;border:1.5px solid var(--rc);color:var(--rc);background:var(--paper);border-radius:10px;cursor:pointer}
@@ -2669,7 +2669,30 @@ const BT_IC={S:['△','#5d4037'],P:['P','#1565c0'],J:['◆','#ad1457'],A:['水',
 const HP={on:true,fav:['相澤病院','観音橋']};
 try{ const f=JSON.parse(localStorage.getItem('aw139hpfav')||'null'); if(Array.isArray(f)) HP.fav=f; }catch(e){}
 const hpFav=x=>HP.fav.includes(x[0]); try{ const v=localStorage.getItem('aw139hp'); if(v!==null) HP.on=v==='1'; }catch(e){}
-function hpCol(k){ return /飛行場（|^飛行場$/.test(k)?'#6a1b9a':/拠点/.test(k)?'#c62828':/消防/.test(k)?'#e65100':/災害/.test(k)?'#1565c0':'#2e7d32'; }
+// ---- 自分で登録したヘリパッド（端末に保存。[名前, 緯度, 経度, 種類, 所在地・目印, 管理者・連絡先, 広さ, メモ]）
+const HPU_K='aw139hpu'; function hpuLoad(){ let a=[]; try{ a=JSON.parse(localStorage.getItem(HPU_K)||'[]'); }catch(e){} return Array.isArray(a)?a:[]; }
+function hpuSave(){ try{ localStorage.setItem(HPU_K,JSON.stringify(HELIP.filter(x=>x.u).map(x=>x.slice(0,8)))); }catch(e){} }
+hpuLoad().forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])){ const x=r.slice(0,8); x.u=1; HELIP.push(x); } });
+const HPU_KIND=['臨時ヘリパッド','場外離着陸場','病院ヘリポート','消防・防災ヘリポート','訓練場所','その他'];
+function hpuDialog(la,lo,x){ document.querySelectorAll('.hpdlg').forEach(d=>d.remove()); const ed=!!x, v=x||[`ヘリパッド${HELIP.filter(y=>y.u).length+1}`,la,lo,'臨時ヘリパッド','','','',''];
+  const d=document.createElement('div'); d.className='hpdlg'; d.innerHTML=`<form class="hpdf"><div class="hph">${QKI.hp}<b>${ed?'ヘリパッドを編集':'ヘリパッドを登録'}</b><button type="button" class="hpx" aria-label="閉じる">×</button></div>
+   <div class="hpll">${fmtLL(+v[1],+v[2],'dm')}　<span id="hpEl"></span></div>
+   <label>名前<input name="n" required value="${esc(v[0])}"></label>
+   <label>種類<select name="k">${HPU_KIND.map(k=>`<option${k===v[3]?' selected':''}>${k}</option>`).join('')}</select></label>
+   <label>広さ<input name="sz" value="${esc(v[6]||'')}" placeholder="例：30×30 m"></label>
+   <label>所在地・目印<input name="ad" value="${esc(v[4]||'')}" placeholder="例：〇〇小学校グラウンド"></label>
+   <label>管理者・連絡先<input name="mg" value="${esc(v[5]||'')}" placeholder="例：〇〇町役場 0xx-xxx-xxxx"></label>
+   <label>メモ<textarea name="nt" rows="2" placeholder="例：南側に電線・進入は北から">${esc(v[7]||'')}</textarea></label>
+   <div class="hpbt">${ed?'<button type="button" class="hpdel">削除</button>':''}<button type="button" class="hpcn">やめる</button><button type="submit" class="hpok">${ed?'保存':'登録'}</button></div></form>`;
+  document.body.appendChild(d); const f=d.querySelector('form'), close=()=>d.remove(); d.querySelector('.hpx').onclick=close; d.querySelector('.hpcn').onclick=close; d.addEventListener('pointerdown',e=>{ if(e.target===d) close(); });
+  elevAt(+v[1],+v[2]).then(h=>{ const e=$('hpEl'); if(e&&isFinite(h)) e.textContent=`標高 ${Math.round(h)} m（${Math.round(h*FT).toLocaleString()} ft）`; }).catch(()=>{});
+  if(ed) twoStep(d.querySelector('.hpdel'),()=>{ const i=HELIP.indexOf(x); if(i>=0) HELIP.splice(i,1); const fi=HP.fav.indexOf(x[0]); if(fi>=0){ HP.fav.splice(fi,1); try{ localStorage.setItem('aw139hpfav',JSON.stringify(HP.fav)); }catch(e){} } hpuSave(); close(); hpDraw(); try{ mapInfo(); }catch(e){} try{ qkUI(); }catch(e){} mapMsg(`「${x[0]}」を削除しました`); });
+  f.onsubmit=e=>{ e.preventDefault(); const F=new FormData(f), nm=String(F.get('n')||'').trim()||v[0]; const row=[nm,+v[1],+v[2],F.get('k'),String(F.get('ad')||'').trim(),String(F.get('mg')||'').trim(),String(F.get('sz')||'').trim(),String(F.get('nt')||'').trim()];
+    if(ed){ const fi=HP.fav.indexOf(x[0]); if(fi>=0&&nm!==x[0]){ HP.fav[fi]=nm; try{ localStorage.setItem('aw139hpfav',JSON.stringify(HP.fav)); }catch(e){} } row.forEach((val,i)=>x[i]=val); }
+    else { row.u=1; HELIP.push(row); HP.on=true; try{ localStorage.setItem('aw139hp','1'); }catch(e){} }
+    hpuSave(); close(); hpDraw(); try{ qkUI(); }catch(e){} if(!ed){ mapPick(row[1],row[2]); pickSync(row[1],row[2]); } else { try{ mapInfo(); }catch(e){} } mapMsg(`ヘリパッド「${nm}」を${ed?'保存':'登録'}しました`); };
+  setTimeout(()=>{ const i=f.querySelector('[name=n]'); if(i&&!ed){ i.focus(); i.select(); } },50); }
+function hpCol(k,x){ if(x&&x.u) return '#00838f'; return /飛行場（|^飛行場$/.test(k)?'#6a1b9a':/拠点/.test(k)?'#c62828':/消防/.test(k)?'#e65100':/災害/.test(k)?'#1565c0':'#2e7d32'; }
 function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2; let h='';
   if(BT.on&&z>=9&&BTRK.lines.length){ let d=''; BTRK.lines.forEach(L=>{ d+='M'+L.map(q=>(lon2x(q[1],z)-x0).toFixed(1)+','+(lat2y(q[0],z)-y0).toFixed(1)).join('L'); });
     h+=`<path d="${d}" fill="none" stroke="#fff" stroke-width="5" stroke-opacity=".85" stroke-linejoin="round" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#c2185b" stroke-width="2.6" stroke-dasharray="7 3" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -2677,14 +2700,14 @@ function hpDraw(){ const sv=$('mHp'), el=$('map'); if(!sv||!el) return; const W=
       h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="8" fill="#fff" stroke="${c}" stroke-width="1.8"/><text y="4" font-size="${ic.length>1||/[水滝沼望]/.test(ic)?9:11}" font-weight="900" fill="${c}" text-anchor="middle">${ic}</text></g><text x="${(px+11).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11.5" font-weight="800" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${q[0]}</text>`; }); }
   if(!HP.on||MAP.z<9){ sv.innerHTML=h; return; }
   const r=z>=12?8:6.5, lab=z>=12;
-  HELIP.forEach(x=>{ const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const c=hpCol(x[3]);
+  HELIP.forEach(x=>{ const px=lon2x(x[2],z)-x0, py=lat2y(x[1],z)-y0; if(px<-20||py<-20||px>W+20||py>H+20) return; const c=hpCol(x[3],x);
     if(hpFav(x)){ const R=r+3; h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="${R+2}" fill="none" stroke="#ffd600" stroke-width="2.5"/><circle r="${R}" fill="#0d47a1" stroke="#fff" stroke-width="1.8"/><text y="${(R*0.42).toFixed(1)}" font-size="${(R*1.25).toFixed(1)}" font-weight="900" fill="#ffd600" text-anchor="middle">H</text></g>`;
       if(z>=10) h+=`<text x="${(px+R+5).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12.5" font-weight="900" fill="#0d47a1" paint-order="stroke" stroke="#ffd600" stroke-width="3.5">★${x[0]}</text>`; return; }
-    h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><circle r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/><text y="${(r*0.42).toFixed(1)}" font-size="${(r*1.25).toFixed(1)}" font-weight="900" fill="${c}" text-anchor="middle">H</text></g>`;
+    h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})">${x.u?`<rect x="${-r-2.5}" y="${-r-2.5}" width="${2*r+5}" height="${2*r+5}" rx="3" fill="#fff" stroke="${c}" stroke-width="2.2"/>`:''}<circle r="${r}" fill="#fff" stroke="${c}" stroke-width="2"/><text y="${(r*0.42).toFixed(1)}" font-size="${(r*1.25).toFixed(1)}" font-weight="900" fill="${c}" text-anchor="middle">H</text></g>`;
     if(lab) h+=`<text x="${(px+r+3).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11" font-weight="700" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${x[0]}</text>`; });
   sv.innerHTML=h; }
 function hpAt(la,lo){ let b=null; HELIP.forEach(x=>{ const d=Math.hypot((x[1]-la)*111000,(x[2]-lo)*111000*Math.cos(la*Math.PI/180)); if(d<=40&&(!b||d<b.d)) b={x,d}; }); return b&&b.x; }
-function hpLines(x){ return [`${x[0]}（${x[3]||'ヘリポート'}）`, `所在地 ${x[4]||'—'}`, `管理者 ${x[5]||'—'}・広さ ${x[6]||'—'}`, '出典：国土数値情報（ヘリポートデータ）・使用の際は管理者に確認']; }
+function hpLines(x){ if(x.u) return [`${x[0]}（${x[3]||'ヘリパッド'}・自分で登録）`, `所在地・目印 ${x[4]||'—'}`, `管理者・連絡先 ${x[5]||'—'}・広さ ${x[6]||'—'}`, ...(x[7]?[`メモ ${x[7]}`]:[]), '自分で登録した場所（使用の際は現地・管理者に確認）']; return [`${x[0]}（${x[3]||'ヘリポート'}）`, `所在地 ${x[4]||'—'}`, `管理者 ${x[5]||'—'}・広さ ${x[6]||'—'}`, '出典：国土数値情報（ヘリポートデータ）・使用の際は管理者に確認']; }
 function hpHit(px,py){ const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let b=null;
   if(BT.on&&z>=12) BTRK.poi.forEach(q=>{ const d=Math.hypot(lon2x(q[2],z)-x0-px,lat2y(q[1],z)-y0-py); if(d<=12&&(!b||d<b.d)) b={x:[q[0],q[1],q[2],'山の目印',q[4],'—','—'],d,bt:1}; }); if(b) return b.x;
   if(!HP.on||MAP.z<9) return null;
@@ -2786,9 +2809,10 @@ function llAll(la,lo,altFt){ const f=DISP.coord, alt={dm:()=>fmtAny(la,lo,'dm'),
 function hpBar(){ const p=MAP.pick, box=$('mInfo'); if(!p||p.loading||!box||typeof hpAt!=='function') return; const x=hpAt(p.lat,p.lon); if(!x) return;
   const isF=Math.abs(FROM.lat-x[1])<1e-5&&Math.abs(FROM.lon-x[2])<1e-5, isD=DST&&Math.abs(DST.lat-x[1])<1e-5&&Math.abs(DST.lon-x[2])<1e-5, vi=VIA.findIndex(v=>Math.abs(v.lat-x[1])<1e-5&&Math.abs(v.lon-x[2])<1e-5);
   const d=document.createElement('div'); d.className='destbar hpbar';
-  d.innerHTML=`<div class="destlab">🅷 ${esc(x[0])}（${esc(x[3]||'ヘリポート')}）を飛行経路に登録</div><div class="destbtns"><button type="button" class="destb${isF?' on':''}" data-hpr="from" style="--rc:#b0268c">🛫 出発地にする</button><button type="button" class="destb${vi>=0?' on':''}" data-hpr="via" style="--rc:#ef6c00">⤳ 中継地点${vi>=0?'（登録済み・押すと外す）':'に追加'}</button><button type="button" class="destb${hpFav(x)?' on':''}" data-hpr="fav" style="--rc:#0d47a1">★ よく使う${hpFav(x)?'（押すと外す）':''}</button><button type="button" class="destb${isD?' on':''}" data-hpr="dst" style="--rc:#2e7d32">🏁 目的地${isD?'（登録済み・押すと外す）':'にする'}</button></div><div class="hint" style="font-size:11px;margin:2px 0 0">経路：出発地 → 中継地点 → 現場 → 目的地（搬送先・帰投先。未設定なら${esc(BASE.name)}へ帰投）。中継地点は通過点として距離・時間に入れます。</div>`;
+  d.innerHTML=`<div class="destlab">🅷 ${esc(x[0])}（${esc(x[3]||'ヘリポート')}）を飛行経路に登録</div><div class="destbtns"><button type="button" class="destb${isF?' on':''}" data-hpr="from" style="--rc:#b0268c">🛫 出発地にする</button><button type="button" class="destb${vi>=0?' on':''}" data-hpr="via" style="--rc:#ef6c00">⤳ 中継地点${vi>=0?'（登録済み・押すと外す）':'に追加'}</button><button type="button" class="destb${hpFav(x)?' on':''}" data-hpr="fav" style="--rc:#0d47a1">★ よく使う${hpFav(x)?'（押すと外す）':''}</button><button type="button" class="destb${isD?' on':''}" data-hpr="dst" style="--rc:#2e7d32">🏁 目的地${isD?'（登録済み・押すと外す）':'にする'}</button>${x.u?'<button type="button" class="destb" data-hpr="edit" style="--rc:#00838f">✎ 編集・削除</button>':''}</div><div class="hint" style="font-size:11px;margin:2px 0 0">経路：出発地 → 中継地点 → 現場 → 目的地（搬送先・帰投先。未設定なら${esc(BASE.name)}へ帰投）。中継地点は通過点として距離・時間に入れます。</div>`;
   box.prepend(d);
   d.querySelectorAll('[data-hpr]').forEach(b=>b.onclick=()=>{ const k=b.dataset.hpr, o={name:x[0],lat:x[1],lon:x[2],elev:isFinite(p.h)?p.h:NaN};
+    if(k==='edit'){ hpuDialog(x[1],x[2],x); return; }
     if(k==='fav'){ const i=HP.fav.indexOf(x[0]); if(i>=0) HP.fav.splice(i,1); else HP.fav.push(x[0]); try{ localStorage.setItem('aw139hpfav',JSON.stringify(HP.fav)); }catch(e){} hpDraw(); mapInfo(); return; }
     if(k==='from'){ setFromLL(x[0],x[1],x[2]); mapMsg(`出発地を「${x[0]}」にしました`); }
     else if(k==='via'){ if(vi>=0) VIA.splice(vi,1); else VIA.push(withElev(o)); rtSave(); mapMsg(vi>=0?`中継地点「${x[0]}」を外しました`:`中継地点に「${x[0]}」を追加しました（${VIA.length}か所目）。次に現場を選ぶと、ここを経由した時間・燃料になります`); }
@@ -2878,7 +2902,7 @@ function mapPick(lat,lon){ try{ const v=$('fpTo')&&$('fpTo').value; if(v){ const
         drawSave(); drawPanel(); } drawLayer(); if(!was&&false){ /* a plain tap on a handle falls through to the normal tap */ const r=el.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top, wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { mapPick(la,lo); pickSync(la,lo); } } return; }
     if(pts.size===0&&st&&st.menu){ st=null; return; }
     if(pts.size===0&&st){ if(!st.moved&&Date.now()-st.t<700){ const r=el.getBoundingClientRect(); const px=e.clientX-r.left, py=e.clientY-r.top;
-        const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; let la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { const hp=hpHit(px,py); if(hp){ la=hp[1]; lo=hp[2]; } mapPick(la,lo); pickSync(la,lo); if(hp) mapMsg(hp[3]==='山の目印'?`<b>${hp[0]}</b><br><small>${hp[4]}</small>`:`<b>${hp[0]}</b>（${hp[3]||'ヘリポート'}）<br><small>${hp[4]}・管理 ${hp[5]}・広さ ${hp[6]}</small>`); } }
+        const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py; let la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z); if(DRAW.mode!=='pick') drawTap(la,lo); else { const hp=hpHit(px,py); if(hp){ la=hp[1]; lo=hp[2]; } mapPick(la,lo); pickSync(la,lo); if(hp) mapMsg(hp[3]==='山の目印'?`<b>${hp[0]}</b><br><small>${hp[4]}</small>`:`<b>${hp[0]}</b>（${hp[3]||'ヘリポート'}${hp.u?'・自分で登録':''}）<br><small>${hp[4]||'—'}・管理 ${hp[5]||'—'}・広さ ${hp[6]||'—'}${hp.u&&hp[7]?`<br>${esc(hp[7])}`:''}</small>`); } }
       st=null; }
     else if(pts.size===1&&st){ const p=[...pts.values()][0]; st={x:p.x,y:p.y,cx:MAP.cx,cy:MAP.cy,t:0,moved:true}; } };
   el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
@@ -5988,7 +6012,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
 (function(){ const sl=$('dLp'); if(!sl) return; try{ if(!localStorage.getItem('aw139lp2')){ DISP.lp=2; localStorage.setItem('aw139lp2','1'); dispSave(); } }catch(e){} sl.value=String(DISP.lp||2); sl.onchange=()=>{ DISP.lp=+sl.value; try{ dispSave(); }catch(e){} }; })();
 function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientWidth/2+px, wy=MAP.cy-el.clientHeight/2+py, la=y2lat(wy,MAP.z), lo=x2lon(wx,MAP.z);
   const m=document.createElement('div'); m.className='lpmenu'; m.innerHTML=`<div class="lph">${fmtLL(la,lo,'dm')}<button type="button" class="lpx" aria-label="閉じる">×</button></div>
-   <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button><button type="button" data-lp="v3" style="--rc:#2f6fb0">🏔 3Dで見る</button>`;
+   <button type="button" data-lp="pt" style="--rc:#b0268c">📍 ポイント</button><button type="button" data-lp="vic" style="--rc:#d62828">✕ 要救助者</button><button type="button" data-lp="drop" style="--rc:#1e8449">↓ 降下地点</button><button type="button" data-lp="lift" style="--rc:#1565c0">↑ 揚収地点</button><button type="button" data-lp="pick" style="--rc:var(--ink)">🚁 ここの性能を見る</button><button type="button" data-lp="v3" style="--rc:#2f6fb0">🏔 3Dで見る</button><button type="button" data-lp="hpu" style="--rc:#00838f;grid-column:1/-1">🅷 ここをヘリパッドに登録</button>`;
   const dot=document.createElement('div'); dot.className='lpdot'; dot.style.left=px+'px'; dot.style.top=py+'px';
   el.appendChild(dot); el.appendChild(m);
   const W=el.clientWidth, H=el.clientHeight, mw=m.offsetWidth, mh=m.offsetHeight; m.style.left=Math.max(6,Math.min(W-mw-6,px-mw/2))+'px'; m.style.top=(py+16+mh<H-6?py+16:Math.max(6,py-16-mh))+'px';
@@ -5997,6 +6021,7 @@ function lpMenu(px,py){ const el=$('map'); lpClose(); const wx=MAP.cx-el.clientW
   m.querySelectorAll('[data-lp]').forEach(b=>b.onclick=()=>{ const k=b.dataset.lp; lpClose();
     if(k==='pick'){ mapPick(la,lo); pickSync(la,lo); return; }
     if(k==='v3'){ open3D(la,lo,''); return; }
+    if(k==='hpu'){ hpuDialog(la,lo); return; }
     let it; if(k==='pt'){ const n=DRAW.items.filter(x=>x.t==='pt').length+1; it={t:'pt',lat:la,lon:lo,label:'P'+n}; }
     else { it={t:'dest',role:k,lat:la,lon:lo,label:roleLabel(k),h:null,at:new Date().toTimeString().slice(0,5)}; elevAt(la,lo).then(v=>{ if(isFinite(v)){ it.h=Math.round(v); drawSave(); drawPanel(); } }).catch(()=>{}); }
     DRAW.items.push(it); drawSave(); drawLayer(); drawPanel(); mapMsg(`「${it.label}」を記録しました（長押しで移動できます）`); });
