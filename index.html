@@ -4378,7 +4378,7 @@ setTimeout(trlLoad,300);
 // ==== 登山道レイヤー：OSM（Overpass API・名前と難易度つき）＋地理院の徒歩道（ベクトルタイル）＋読み込んだ GPX 等 ====
 const TRV={on:true,osm:true,gsi:true,usr:true,on3:true}; try{ Object.assign(TRV,JSON.parse(localStorage.getItem('aw139trv')||'{}')); }catch(e){}
 const trvSave=()=>{ try{ localStorage.setItem('aw139trv',JSON.stringify(TRV)); }catch(e){} };
-const OSMC=0.25, OSMT={cells:new Map(),pend:new Set(),q:[],busy:false,msg:'',bulk:null,fail:{}};
+const OSMC=0.25, OSMT={cells:new Map(),pts:new Map(),pend:new Set(),q:[],busy:false,msg:'',bulk:null,fail:{}};
 const OVP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
 const TRV_PREF={'長野県':[35.0,137.25,37.25,138.75],'宮城県':[37.75,140.25,39.0,141.75]};
 function osmCells(s,w,n,e){ const o=[]; for(let i=Math.floor(s/OSMC);i<=Math.floor((n-1e-9)/OSMC);i++) for(let j=Math.floor(w/OSMC);j<=Math.floor((e-1e-9)/OSMC);j++) o.push(i+'_'+j); return o; }
@@ -4386,18 +4386,30 @@ function osmBB(l){ let a=90,b=-90,c=180,d=-180; l.p.forEach(([x,y])=>{ a=Math.mi
 // 難易度（sac_scale）→ 色：一般登山道＝橙、難路（T3）＝赤、岩稜・バリエーション（T4以上）＝紫
 const SACC={hiking:'#ef6c00',mountain_hiking:'#ef6c00',demanding_mountain_hiking:'#d32f2f',alpine_hiking:'#7b1fa2',demanding_alpine_hiking:'#7b1fa2',difficult_alpine_hiking:'#7b1fa2'};
 const SACN={hiking:'T1 一般',mountain_hiking:'T2 山道',demanding_mountain_hiking:'T3 難路',alpine_hiking:'T4 岩稜',demanding_alpine_hiking:'T5 岩稜（難）',difficult_alpine_hiking:'T6 岩稜（最難）'};
+const TRPT={peak:['▲','#6d4c41','山頂'],volcano:['▲','#6d4c41','山頂'],saddle:['◇','#5d4037','鞍部'],pass:['◇','#5d4037','峠'],hut:['🏠','#c62828','山小屋'],shelter:['⛺','#c62828','避難小屋'],view:['👁','#1565c0','展望地'],gp:['🪧','#2e7d32','道標'],spring:['💧','#0277bd','水場'],jn:['⑂','#e65100','分岐']};
 async function osmFetch(key){ const [i,j]=key.split('_').map(Number), s=i*OSMC, w=j*OSMC, n=s+OSMC, e=w+OSMC;
-  const q=`[out:json][timeout:90][bbox:${s},${w},${n},${e}];(way["highway"~"^(path|steps|via_ferrata)$"];way["highway"~"^(footway|track|bridleway)$"]["sac_scale"];)->.a;rel(bw.a)["route"~"^(hiking|foot)$"]->.r;.a out tags geom qt;.r out body qt;`;
+  const q=`[out:json][timeout:90][bbox:${s},${w},${n},${e}];(way["highway"~"^(path|steps|via_ferrata)$"];way["highway"~"^(footway|track|bridleway)$"]["sac_scale"];)->.a;rel(bw.a)["route"~"^(hiking|foot)$"]->.r;(node["natural"~"^(peak|volcano|saddle)$"]["name"];node["mountain_pass"="yes"]["name"];node["tourism"~"^(alpine_hut|wilderness_hut)$"];node["amenity"="shelter"]["name"];node["tourism"="viewpoint"]["name"];node["information"="guidepost"];node["natural"="spring"]["name"];)->.p;.a out tags geom qt;.r out body qt;.p out body qt;`;
   let J=null, last=''; for(const u of OVP){ try{ const r=await fetch(u,{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'}}); if(!r.ok){ last='HTTP '+r.status; continue; } J=await r.json(); break; }catch(err){ last=err.message||'通信エラー'; } }
   if(!J) throw new Error(last);
-  const rn=new Map(); (J.elements||[]).filter(x=>x.type==='relation').forEach(r=>{ const nm=r.tags&&(r.tags['name:ja']||r.tags.name); if(nm) (r.members||[]).forEach(m=>{ if(m.type==='way'&&!rn.has(m.ref)) rn.set(m.ref,nm); }); });
-  return (J.elements||[]).filter(x=>x.type==='way'&&x.geometry&&x.geometry.length>1).map(x=>{ const t=x.tags||{}; return {id:x.id,n:t['name:ja']||t.name||rn.get(x.id)||'',s:t.sac_scale||'',p:simplifyM(x.geometry.map(g=>[+g.lat.toFixed(6),+g.lon.toFixed(6)]),3)}; }); }
+  const E=J.elements||[], rn=new Map(); E.filter(x=>x.type==='relation').forEach(r=>{ const nm=r.tags&&(r.tags['name:ja']||r.tags.name); if(nm) (r.members||[]).forEach(m=>{ if(m.type!=='way') return; const a=rn.get(m.ref)||[]; if(!a.includes(nm)) a.push(nm); rn.set(m.ref,a); }); });
+  const W=E.filter(x=>x.type==='way'&&x.geometry&&x.geometry.length>1);
+  // 分岐点：3本以上の道がつながる点（同じ OSM ノード＝同じ座標）
+  const deg=new Map(); W.forEach(x=>{ const g=x.geometry, L=g.length-1; g.forEach((q,k)=>{ const kk=q.lat.toFixed(7)+','+q.lon.toFixed(7); deg.set(kk,(deg.get(kk)||0)+(k===0||k===L?1:2)); }); });
+  const pt=[]; E.filter(x=>x.type==='node'&&x.tags).forEach(x=>{ const t=x.tags, nm=t['name:ja']||t.name||''; let k=null;
+      if(t.natural==='peak'||t.natural==='volcano') k='peak'; else if(t.mountain_pass==='yes') k='pass'; else if(t.natural==='saddle') k='saddle'; else if(t.tourism==='alpine_hut') k='hut'; else if(t.tourism==='wilderness_hut'||t.amenity==='shelter') k='shelter'; else if(t.tourism==='viewpoint') k='view'; else if(t.information==='guidepost') k='gp'; else if(t.natural==='spring') k='spring';
+      if(k) pt.push({id:x.id,k,n:nm,e:t.ele?Math.round(parseFloat(t.ele)):null,la:+x.lat.toFixed(6),lo:+x.lon.toFixed(6)}); });
+  const gps=pt.filter(o=>o.k==='gp'&&o.n); let jid=-1;
+  deg.forEach((d,kk)=>{ if(d<3) return; const [la,lo]=kk.split(',').map(Number); if(la<s||la>=n||lo<w||lo>=e) return; let nm='', bd=40; gps.forEach(o=>{ const dd=vtDist(la,lo,o.la,o.lo); if(dd<bd){ bd=dd; nm=o.n; } }); pt.push({id:jid--,k:'jn',n:nm,la:+la.toFixed(6),lo:+lo.toFixed(6)}); });
+  const l=W.map(x=>{ const t=x.tags||{}, rs=rn.get(x.id)||[]; return {id:x.id,n:t['name:ja']||t.name||'',c:rs.join('・'),s:t.sac_scale||'',p:simplifyM(x.geometry.map(g=>[+g.lat.toFixed(6),+g.lon.toFixed(6)]),3)}; });
+  return {l,pt}; }
+function osmPtsIn(s,w,n,e){ const seen=new Set(), out=[]; osmCells(s,w,n,e).forEach(k=>{ const P=OSMT.pts.get(k); if(P) P.forEach(o=>{ const id=o.k+o.id+(o.id<0?k:''); if(seen.has(id)||o.la<s||o.la>n||o.lo<w||o.lo>e) return; seen.add(id); out.push(o); }); }); return out; }
+const trName=l=>l.c||l.n||'';
 function osmNeed(keys,net=true){ keys.forEach(k=>{ if(OSMT.cells.has(k)||OSMT.pend.has(k)) return; OSMT.pend.add(k);
-    tsGet('meta/osm/'+k).then(v=>{ if(v){ try{ const j=JSON.parse(v); OSMT.cells.set(k,(j.l||[]).map(osmBB)); OSMT.pend.delete(k); trvRedraw(); return; }catch(e){} } if(net){ OSMT.q.push(k); osmRun(); } else OSMT.pend.delete(k); }).catch(()=>{ OSMT.pend.delete(k); }); }); }
+    tsGet('meta/osm/'+k).then(v=>{ if(v){ try{ const j=JSON.parse(v); OSMT.cells.set(k,(j.l||[]).map(osmBB)); OSMT.pts.set(k,j.pt||[]); trvRedraw(); if(j.v>=2||!net||navigator.onLine===false){ OSMT.pend.delete(k); return; } OSMT.cells.delete(k); OSMT.q.push(k); osmRun(); return; }catch(e){} } if(net){ OSMT.q.push(k); osmRun(); } else OSMT.pend.delete(k); }).catch(()=>{ OSMT.pend.delete(k); }); }); }
 async function osmRun(){ if(OSMT.busy) return; OSMT.busy=true;
   while(OSMT.q.length){ const k=OSMT.q.shift(); if(OSMT.cells.has(k)){ OSMT.pend.delete(k); continue; } if(navigator.onLine===false){ OSMT.msg='オフラインのため OSM の登山道を取得できません'; OSMT.pend.delete(k); OSMT.q.forEach(x=>OSMT.pend.delete(x)); OSMT.q=[]; OSMT.bulk=null; break; }
     OSMT.msg=`OSM の登山道を取得中…（残り ${OSMT.q.length+1} 区画）`; trvUI();
-    try{ const l=await osmFetch(k); OSMT.cells.set(k,l.map(osmBB)); if(MAP.pick&&osmCells(MAP.pick.lat-0.02,MAP.pick.lon-0.02,MAP.pick.lat+0.02,MAP.pick.lon+0.02).includes(k)) trvXs(); await tsPut('meta/osm/'+k,JSON.stringify({t:Date.now(),l})).catch(()=>{}); OSMT.msg=''; if(OSMT.bulk) OSMT.bulk.done++; }
+    try{ const R=await osmFetch(k), l=R.l; OSMT.cells.set(k,l.map(osmBB)); OSMT.pts.set(k,R.pt); if(MAP.pick&&osmCells(MAP.pick.lat-0.02,MAP.pick.lon-0.02,MAP.pick.lat+0.02,MAP.pick.lon+0.02).includes(k)) trvXs(); await tsPut('meta/osm/'+k,JSON.stringify({v:2,t:Date.now(),l,pt:R.pt})).catch(()=>{}); OSMT.msg=''; if(OSMT.bulk) OSMT.bulk.done++; }
     catch(err){ const f=(OSMT.fail[k]||0)+1; OSMT.fail[k]=f; if(f<3){ OSMT.msg=`OSM の取得に失敗（${err.message}）。少し待って再試行します`; OSMT.q.push(k); trvUI(); await new Promise(r=>setTimeout(r,8000)); } else OSMT.msg=`OSM の登山道を取得できませんでした（${err.message}）`; }
     OSMT.pend.delete(k); trvRedraw(); await new Promise(r=>setTimeout(r,1100)); }
   if(OSMT.bulk&&!OSMT.q.length){ OSMT.msg=`${OSMT.bulk.name}の登山道を端末に保存しました（${OSMT.bulk.n} 区画）`; OSMT.bulk=null; }
@@ -4419,7 +4431,11 @@ function trvSvg(P,pp,vb,z){ if(!TRV.on||z<12) return ''; let h=''; const [s,w,n,
   if(TRV.osm){ osmNeed(osmCells(s,w,n,e).slice(0,16)); const L=osmLinesIn(s,w,n,e);
     if(L.length){ const by={}; L.forEach(l=>{ const c=SACC[l.s]||'#ef6c00'; (by[c]=by[c]||[]).push(l); });
       h+=`<g fill="none" stroke-linejoin="round" stroke-linecap="round"><g stroke="#fff" stroke-width="5" opacity=".8">${L.map(l=>`<polyline points="${pp(l.p)}"/>`).join('')}</g>${Object.entries(by).map(([c,ls])=>`<g stroke="${c}" stroke-width="2.6"${c==='#7b1fa2'?' stroke-dasharray="7 3"':''}>${ls.map(l=>`<polyline points="${pp(l.p)}"/>`).join('')}</g>`).join('')}</g>`;
-      if(z>=14){ const seen=new Set(); let nl=0; L.forEach(l=>{ if(!l.n||seen.has(l.n)||nl>=25||l.p.length<2) return; const m=l.p[Math.floor(l.p.length/2)], q=P(m[0],m[1]); if(q[0]<0||q[1]<0||q[0]>4000||q[1]>4000) return; seen.add(l.n); nl++; h+=`<text x="${q[0].toFixed(1)}" y="${(q[1]-5).toFixed(1)}" font-size="11" font-weight="700" fill="${SACC[l.s]||'#bf5000'}" paint-order="stroke" stroke="#fff" stroke-width="3" text-anchor="middle">🥾${esc(l.n)}${l.s&&SACN[l.s]?`（${SACN[l.s]}）`:''}</text>`; }); } } }
+      if(z>=13){ const seen=new Set(); let nl=0; L.slice().sort((a,b)=>(b.c?1:0)-(a.c?1:0)).forEach(l=>{ const nmL=trName(l); if(!nmL||seen.has(nmL)||nl>=25||l.p.length<2||(z<14&&!l.c)) return; const m=l.p[Math.floor(l.p.length/2)], q=P(m[0],m[1]); if(q[0]<0||q[1]<0||q[0]>4000||q[1]>4000) return; seen.add(nmL); nl++; h+=`<text x="${q[0].toFixed(1)}" y="${(q[1]-5).toFixed(1)}" font-size="11" font-weight="700" fill="${SACC[l.s]||'#bf5000'}" paint-order="stroke" stroke="#fff" stroke-width="3" text-anchor="middle">🥾${esc(nmL)}${l.s&&SACN[l.s]?`（${SACN[l.s]}）`:''}</text>`; }); } }
+    const PT=osmPtsIn(s,w,n,e).filter(o=>o.k==='peak'?z>=12:o.k==='jn'?(o.n?z>=14:z>=15):o.k==='gp'?z>=15&&o.n:z>=13); let np=0;
+    PT.sort((a,b)=>'peak,hut,pass,saddle,shelter,jn,spring,view,gp'.indexOf(a.k)-'peak,hut,pass,saddle,shelter,jn,spring,view,gp'.indexOf(b.k)).forEach(o=>{ if(np>=120) return; const q=P(o.la,o.lo), D=TRPT[o.k]; if(q[0]<-20||q[1]<-20||q[0]>4000||q[1]>4000) return; np++;
+      const nm=o.k==='jn'?(o.n||''):(o.n||D[2]); h+=o.k==='jn'?`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4" fill="#fff" stroke="${D[1]}" stroke-width="2"/>`:o.k==='peak'?`<path d="M${q[0].toFixed(1)} ${(q[1]-6).toFixed(1)} l5.5 9 h-11 z" fill="${D[1]}" stroke="#fff" stroke-width="1.2"/>`:`<text x="${q[0].toFixed(1)}" y="${(q[1]+5).toFixed(1)}" font-size="14" text-anchor="middle">${D[0]}</text>`;
+      if(nm) h+=`<text x="${(q[0]+8).toFixed(1)}" y="${(q[1]+4).toFixed(1)}" font-size="11.5" font-weight="800" fill="${D[1]}" paint-order="stroke" stroke="#fff" stroke-width="3.2">${esc(nm)}${o.k==='peak'&&o.e?` ${o.e}m`:''}${o.k==='jn'&&o.n&&!/分岐/.test(o.n)?' 分岐':''}</text>`; }); }
   return h; }
 // 3D に地形に沿わせて描く
 async function v3Trails(st){ const T=THREE; if(!st||!st.grp||!st.yOf) return; if(st.trG){ st.trG.parent&&st.trG.parent.remove(st.trG); st.trG=null; } if(!TRV.on3) return;
@@ -4428,7 +4444,9 @@ async function v3Trails(st){ const T=THREE; if(!st||!st.grp||!st.yOf) return; if
   const add=(pts,col)=>{ const V=[]; for(let k=0;k<pts.length;k++){ const a=pts[k], b=pts[k+1]; const seg=b?Math.max(1,Math.ceil(vtDist(a[0],a[1],b[0],b[1])/step)):1; for(let t=0;t<seg;t++){ const f=t/seg, la=b?a[0]+(b[0]-a[0])*f:a[0], lo=b?a[1]+(b[1]-a[1])*f:a[1], q=st.yOf(la,lo); if(q) V.push(new T.Vector3(q[0],q[1]+lift,q[2])); else if(V.length>1){ g.add(new T.Line(new T.BufferGeometry().setFromPoints(V.splice(0)),new T.LineBasicMaterial({color:col}))); } else V.length=0; } } if(V.length>1) g.add(new T.Line(new T.BufferGeometry().setFromPoints(V),new T.LineBasicMaterial({color:col}))); };
   if(TRV.gsi&&S<=3200&&cs.length<=4) gsiFtIn(s,w,n,e,trvRedraw).forEach(r=>add(r,0x00bfa5));
   if(TRV.osm){ osmNeed(osmCells(s,w,n,e).slice(0,30)); osmLinesIn(s,w,n,e).forEach(l=>add(l.p,new T.Color(SACC[l.s]||'#ff8f00').getHex())); }
-  if(TRV.usr) TRL.lines.forEach(l=>{ if(l.bb[2]<s||l.bb[0]>n||l.bb[3]<w||l.bb[1]>e) return; add(l.p,0xff2fa0); }); }
+  if(TRV.usr) TRL.lines.forEach(l=>{ if(l.bb[2]<s||l.bb[0]>n||l.bb[3]<w||l.bb[1]>e) return; add(l.p,0xff2fa0); });
+  if(TRV.osm){ let np=0; const ord='peak,hut,pass,saddle,shelter,jn,spring,view'; osmPtsIn(s,w,n,e).filter(o=>o.k!=='gp'&&(o.k!=='jn'||o.n)&&(o.k!=='jn'||S<=3200)).sort((a,b)=>ord.indexOf(a.k)-ord.indexOf(b.k)).forEach(o=>{ if(np>=50) return; const q=st.yOf(o.la,o.lo); if(!q) return; np++; const D=TRPT[o.k];
+      const sp=v3Sprite(`${D[0]} ${o.n||D[2]}${o.k==='peak'&&o.e?' '+o.e+'m':''}`,D[1]); sp.scale.multiplyScalar(0.72); sp.position.set(q[0],q[1]+lift*2,q[2]); g.add(sp); }); } }
 // 地図のボタンと設定パネル
 function trvUI(){ const p=$('trPop'); if(!p||p.hidden) return; const nC=OSMT.cells.size;
   p.innerHTML=`<div class="trh">🥾 登山道<button type="button" class="trx" aria-label="閉じる">×</button></div>
@@ -4779,7 +4797,7 @@ async function vtProfile(prof,key){ const pick=MAP.pick; if(!pick) return; const
       P.pw=out; });
     // 登山道（地理院 徒歩道・OSM・読み込んだルート）と断面の交点
     if(TRV.osm){ const Rg0=Math.abs(all[0].ds[0])/111000*1.6, ks=osmCells(pick.lat-Rg0,pick.lon-Rg0*1.3,pick.lat+Rg0,pick.lon+Rg0*1.3); osmNeed(ks,navigator.onLine!==false); await osmWait(ks,6000); }
-    { const Rg=Math.abs(all[0].ds[0])/111000*1.6, la0b=pick.lat, lo0b=pick.lon, TRx=!TRV.on?[]:[...(TRV.gsi?ln.filter(o=>o.cat==='ft'):[]).map(o=>({r:o.r,n:''})),...(TRV.osm?osmLinesIn(la0b-Rg,lo0b-Rg*1.3,la0b+Rg,lo0b+Rg*1.3).map(l=>({r:l.p,n:l.n,sc:l.s})):[]),...(TRV.usr?TRL.lines:[]).filter(l=>!(l.bb[2]<la0b-Rg||l.bb[0]>la0b+Rg||l.bb[3]<lo0b-Rg*1.3||l.bb[1]>lo0b+Rg*1.3)).map(l=>({r:l.p,n:l.n||'読み込んだルート',u:1}))];
+    { const Rg=Math.abs(all[0].ds[0])/111000*1.6, la0b=pick.lat, lo0b=pick.lon, TRx=!TRV.on?[]:[...(TRV.gsi?ln.filter(o=>o.cat==='ft'):[]).map(o=>({r:o.r,n:''})),...(TRV.osm?osmLinesIn(la0b-Rg,lo0b-Rg*1.3,la0b+Rg,lo0b+Rg*1.3).map(l=>({r:l.p,n:trName(l),sc:l.s})):[]),...(TRV.usr?TRL.lines:[]).filter(l=>!(l.bb[2]<la0b-Rg||l.bb[0]>la0b+Rg||l.bb[3]<lo0b-Rg*1.3||l.bb[1]>lo0b+Rg*1.3)).map(l=>({r:l.p,n:l.n||'読み込んだルート',u:1}))];
       all.forEach(P=>{ const b=P.brg*RAD, ux=Math.sin(b), uy=Math.cos(b), R=Math.abs(P.ds[0]), hits=[];
         TRx.forEach(o=>{ const V=o.r.map(q=>{ const m=M(q); return [m[0]*ux+m[1]*uy, m[0]*uy-m[1]*ux]; }); for(let k=1;k<V.length;k++){ const [s1,l1]=V[k-1],[s2,l2]=V[k]; if((l1>0)!==(l2>0)&&l1!==l2){ const t=l1/(l1-l2), sx=s1+t*(s2-s1); if(Math.abs(sx)<=R) hits.push({k:'tr',s:sx,n:o.n,sc:o.sc,u:o.u}); } } });
         hits.sort((a,b)=>(b.n?1:0)-(a.n?1:0)).forEach(hh=>{ if(!P.pw.some(q=>q.k==='tr'&&Math.abs(q.s-hh.s)<20)) P.pw.push(hh); }); }); }
