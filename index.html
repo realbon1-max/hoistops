@@ -2670,7 +2670,8 @@ let BTMV=null; const BT_KN={C:'コース名',S:'山頂',J:'分岐・目印',A:'�
 const BTX_K='aw139btx'; let BTX={ed:{},del:[],add:[]}; try{ Object.assign(BTX,JSON.parse(localStorage.getItem(BTX_K)||'{}')); }catch(e){}
 BTRK.poi.forEach(q=>{ q.k=q[0]+'|'+q[3]; const e=BTX.ed[q.k]; if(e){ e.forEach((v,i)=>q[i]=v); q.ed=1; } });
 for(let i=BTRK.poi.length-1;i>=0;i--) if(BTX.del.includes(BTRK.poi[i].k)) BTRK.poi.splice(i,1);
-(BTX.add||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])){ const q=r.slice(0,5); q.ua=1; BTRK.poi.push(q); } });
+const fxNear=(A,r,m)=>A.some(x=>!x.u&&!x.ua&&String(x[0]).replace(/\s/g,'')===String(r[0]).replace(/\s/g,'')&&Math.hypot((x[1]-r[1])*110540,(x[2]-r[2])*111320*Math.cos(r[1]*Math.PI/180))<(m||80));
+(BTX.add||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&!fxNear(BTRK.poi,r)){ const q=r.slice(0,5); q.ua=1; BTRK.poi.push(q); } });
 function btxSave(){ BTX.ed={}; BTRK.poi.forEach(q=>{ if(q.ed&&!q.ua&&q.k) BTX.ed[q.k]=q.slice(0,5); }); BTX.add=BTRK.poi.filter(q=>q.ua).map(q=>q.slice(0,5)); try{ localStorage.setItem(BTX_K,JSON.stringify(BTX)); }catch(e){} try{ peakListUpd(); }catch(e){} }
 function btxDialog(la,lo,q){ document.querySelectorAll('.hpdlg').forEach(d=>d.remove()); const ed=!!q, v=q||['',la,lo,'C',''];
   const d=document.createElement('div'); d.className='hpdlg'; d.innerHTML=`<form class="hpdf btdf"><div class="hph"><span class="pkic">🥾</span><b>${ed?'コース名・目印を編集':'コース名・目印を登録'}</b><button type="button" class="hpx" aria-label="閉じる">×</button></div>
@@ -2695,7 +2696,7 @@ try{ const f=JSON.parse(localStorage.getItem('aw139hpfav')||'null'); if(Array.is
 const hpFav=x=>HP.fav.includes(x[0]); try{ const v=localStorage.getItem('aw139hp'); if(v!==null) HP.on=v==='1'; }catch(e){}
 // ---- 自分で登録した山の名前・地名（端末に保存。[名前, 緯度, 経度, 種類, 標高m, メモ]）。検索・地図・3D に出る
 let peakListUpd=()=>{}; const PKU_K='aw139pku', PKU_KIND={'山頂':'▲','峠・鞍部':'◇','尾根':'∧','沢・谷':'≈','岩場':'岩','滝':'滝','地名・その他':'●'};
-try{ (JSON.parse(localStorage.getItem(PKU_K)||'[]')||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])){ const x=r.slice(0,6); x.u=1; PEAKS.push(x); } }); }catch(e){}
+try{ (JSON.parse(localStorage.getItem(PKU_K)||'[]')||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])&&!fxNear(PEAKS,r)){ const x=r.slice(0,6); x.u=1; PEAKS.push(x); } }); }catch(e){}
 function pkuSave(){ try{ localStorage.setItem(PKU_K,JSON.stringify(PEAKS.filter(x=>x.u).map(x=>x.slice(0,6)))); }catch(e){} }
 function pkuDialog(la,lo,x){ document.querySelectorAll('.hpdlg').forEach(d=>d.remove()); const ed=!!x, v=x||['',la,lo,'山頂',null,''];
   const d=document.createElement('div'); d.className='hpdlg'; d.innerHTML=`<form class="hpdf pkdf"><div class="hph"><span class="pkic">▲</span><b>${ed?'山の名前を編集':'山の名前・地名を登録'}</b><button type="button" class="hpx" aria-label="閉じる">×</button></div>
@@ -2716,7 +2717,7 @@ document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closes
 // ---- 自分で登録したヘリパッド（端末に保存。[名前, 緯度, 経度, 種類, 所在地・目印, 管理者・連絡先, 広さ, メモ]）
 const HPU_K='aw139hpu'; function hpuLoad(){ let a=[]; try{ a=JSON.parse(localStorage.getItem(HPU_K)||'[]'); }catch(e){} return Array.isArray(a)?a:[]; }
 function hpuSave(){ try{ localStorage.setItem(HPU_K,JSON.stringify(HELIP.filter(x=>x.u).map(x=>x.slice(0,8)))); }catch(e){} }
-hpuLoad().forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])){ const x=r.slice(0,8); x.u=1; HELIP.push(x); } });
+hpuLoad().forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&isFinite(r[2])&&!fxNear(HELIP,r)){ const x=r.slice(0,8); x.u=1; HELIP.push(x); } });
 const HPU_KIND=['臨時ヘリパッド','場外離着陸場','病院ヘリポート','消防・防災ヘリポート','訓練場所','その他'];
 function hpuDialog(la,lo,x){ document.querySelectorAll('.hpdlg').forEach(d=>d.remove()); const ed=!!x, v=x||[`ヘリパッド${HELIP.filter(y=>y.u).length+1}`,la,lo,'臨時ヘリパッド','','','',''];
   const d=document.createElement('div'); d.className='hpdlg'; d.innerHTML=`<form class="hpdf"><div class="hph">${QKI.hp}<b>${ed?'ヘリパッドを編集':'ヘリパッドを登録'}</b><button type="button" class="hpx" aria-label="閉じる">×</button></div>
@@ -4561,6 +4562,23 @@ async function v3Trails(st){ const T=THREE; if(!st||!st.grp||!st.yOf) return; if
   if(TRV.osm&&TRV.m3){ let np=0; const ord='peak,hut,pass,saddle,shelter,jn,spring,view'; osmPtsIn(s,w,n,e).filter(o=>o.k!=='gp'&&(o.k!=='jn'||o.n)&&(o.k!=='jn'||S<=3200)).sort((a,b)=>ord.indexOf(a.k)-ord.indexOf(b.k)).forEach(o=>{ if(np>=50) return; const q=st.yOf(o.la,o.lo); if(!q) return; np++; const D=TRPT[o.k];
       const sp=v3Sprite(`${D[0]} ${o.n||D[2]}${o.k==='peak'&&o.e?' '+o.e+'m':''}`,D[1]); sp.scale.multiplyScalar(0.72); sp.position.set(q[0],q[1]+lift*2,q[2]); g.add(sp); }); } }
 // 地図のボタンと設定パネル
+function fxData(){ return {app:'HOIST OPS',kind:'local-fixes',ver:1,at:new Date().toISOString(),host:location.host||'',
+  btx:{ed:BTX.ed||{},del:BTX.del||[],add:BTRK.poi.filter(q=>q.ua).map(q=>q.slice(0,5))},
+  peaks:PEAKS.filter(x=>x.u).map(x=>x.slice(0,6)), helip:HELIP.filter(x=>x.u).map(x=>x.slice(0,8))}; }
+function fxSum(){ const d=fxData(), a=[]; const ne=Object.keys(d.btx.ed).length; if(ne) a.push(`目印の修正 ${ne}`); if(d.btx.del.length) a.push(`目印の削除 ${d.btx.del.length}`); if(d.btx.add.length) a.push(`追加した目印 ${d.btx.add.length}`); if(d.peaks.length) a.push(`山の名前 ${d.peaks.length}`); if(d.helip.length) a.push(`ヘリパッド ${d.helip.length}`); return a.length?a.join('・'):'まだありません'; }
+async function fxExport(){ const n=new Date(), fn=`HOISTOPS_修正_${n.getFullYear()}${String(n.getMonth()+1).padStart(2,'0')}${String(n.getDate()).padStart(2,'0')}_${String(n.getHours()).padStart(2,'0')}${String(n.getMinutes()).padStart(2,'0')}.json`;
+  const b=new Blob([JSON.stringify(fxData(),null,1)],{type:'application/json'}); let done=false;
+  try{ const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null; if(dl){ try{ await dl.save({filename:fn,data:b}); done=true; }catch(e){} } }catch(e){}
+  if(!done){ try{ const f=new File([b],fn,{type:'application/json'}); if(navigator.canShare&&navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:fn}); done=true; } }catch(e){ if(e&&e.name==='AbortError') done=true; } }
+  if(!done){ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=fn; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},2000); }
+  OSMT.msg=`${fn} を書き出しました`; trvUI(); }
+function fxImport(d){ if(!d||d.kind!=='local-fixes') throw 0; let n=0; const same=(a,b)=>String(a[0])===String(b[0])&&Math.abs(a[1]-b[1])<1e-6&&Math.abs(a[2]-b[2])<1e-6;
+  const bx=d.btx||{}; Object.entries(bx.ed||{}).forEach(([k,v])=>{ const q=BTRK.poi.find(x=>x.k===k&&!x.ua); if(q&&Array.isArray(v)){ v.slice(0,5).forEach((x,i)=>q[i]=x); q.ed=1; n++; } });
+  (bx.del||[]).forEach(k=>{ const i=BTRK.poi.findIndex(x=>x.k===k&&!x.ua); if(i>=0){ BTRK.poi.splice(i,1); if(!BTX.del.includes(k)) BTX.del.push(k); n++; } });
+  (bx.add||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&!BTRK.poi.some(x=>same(x,r))&&!fxNear(BTRK.poi,r)){ const q=r.slice(0,5); q.ua=1; BTRK.poi.push(q); n++; } }); btxSave();
+  (d.peaks||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&!PEAKS.some(x=>same(x,r))&&!fxNear(PEAKS,r)){ const x=r.slice(0,6); x.u=1; PEAKS.push(x); n++; } }); pkuSave();
+  (d.helip||[]).forEach(r=>{ if(Array.isArray(r)&&isFinite(r[1])&&!HELIP.some(x=>same(x,r))&&!fxNear(HELIP,r)){ const x=r.slice(0,8); x.u=1; HELIP.push(x); n++; } }); hpuSave();
+  try{ peakListUpd(); }catch(e){} try{ hpDraw(); }catch(e){} try{ qkUI(); }catch(e){} return n?`${n}件の修正を取り込みました`:'新しい修正はありませんでした'; }
 function trvUI(){ const p=$('trPop'); if(!p||p.hidden) return; const nC=OSMT.cells.size;
   p.innerHTML=`<div class="trh">🥾 登山道<button type="button" class="trx" aria-label="閉じる">×</button></div>
   <label class="chk"><input type="checkbox" data-tv="on" ${TRV.on?'checked':''}> 地図に表示（ズーム12以上）</label>
@@ -4572,6 +4590,7 @@ function trvUI(){ const p=$('trPop'); if(!p||p.hidden) return; const nC=OSMT.cel
    <label class="trlfile">📂 GPX・KML・GeoJSON を読み込む<input type="file" id="trvFile" multiple accept=".gpx,.geojson,.json,.kml,application/gpx+xml,application/geo+json,application/json,application/vnd.google-earth.kml+xml"></label>
    ${TRL.lines.length?`<small>読み込み済み ${TRL.lines.length.toLocaleString()}本・${TRL.km.toFixed(0)} km${TRL.src?`（${esc(TRL.src.slice(0,60))}）`:''} <button type="button" id="trvDel">消す</button></small>`:'<small>ヤマレコ等で保存した自分の記録・公開ルートの GPX をそのまま読めます</small>'}</div>
   <div class="trs"><b>オフライン用に保存</b><div class="trb">${Object.keys(TRV_PREF).map(k=>`<button type="button" data-pref="${k}">${k}</button>`).join('')}</div><small>OSM の登山道を県単位でまとめて端末に保存（数分かかります）。保存済み ${nC} 区画</small></div>
+  <div class="trs"><b>自分で直した・足した地点</b><small>${fxSum()}</small><div class="trb"><button type="button" id="fxOut">📤 書き出す</button><label class="trlfile" style="display:inline-block;margin:0">📥 読み込む<input type="file" id="fxIn" accept=".json,application/json"></label></div><small>目印の位置直し・名前変更・削除、追加した目印・山の名前・ヘリパッドを1つのファイルにまとめます。チャットに送れば次の版に組み込めます。別の端末で「読み込む」と同じ修正が入ります</small></div>
   ${OSMT.msg?`<div class="trm">${esc(OSMT.msg)}${OSMT.bulk?`　${OSMT.bulk.done}/${OSMT.bulk.n}`:''}</div>`:''}
   <small class="tra">登山道 © OpenStreetMap contributors（ODbL）・地理院ベクトルタイル。実際の道と違うことがあります</small>`;
   p.querySelector('.trx').onclick=()=>{ p.hidden=true; };
@@ -4580,6 +4599,7 @@ function trvUI(){ const p=$('trPop'); if(!p||p.hidden) return; const nC=OSMT.cel
   p.querySelectorAll('[data-pref]').forEach(b=>b.onclick=()=>{ const [s,w,n,e]=TRV_PREF[b.dataset.pref], ks=osmCells(s,w,n,e); OSMT.bulk={name:b.dataset.pref,n:ks.length,done:ks.filter(k=>OSMT.cells.has(k)).length}; OSMT.msg=`${b.dataset.pref}の登山道を保存中…`; osmNeed(ks); trvUI(); });
   const f=$('trvFile'); if(f) f.onchange=async ev=>{ const fs=[...ev.target.files]; let nn=0; for(const fl of fs){ try{ const ls=parseTrails(await fl.text(),fl.name); TRL.lines.push(...ls); nn+=ls.length; TRL.src=(TRL.src?TRL.src+'・':'')+fl.name; }catch(err){ OSMT.msg=`${fl.name} を読めませんでした`; } } trlStat(); await trlSave(); TRV.usr=true; trvSave();
     if(nn&&TRL.lines.length){ const l=TRL.lines[TRL.lines.length-1], m=l.p[Math.floor(l.p.length/2)]; try{ mapSetView(m[0],m[1],Math.max(MAP.z,13)); }catch(e){} } OSMT.msg=nn?`${nn}本のルートを読み込みました`:OSMT.msg; trvRedraw(); trvXs(); try{ drawPanel(); }catch(e){} };
+  { const b=$('fxOut'); if(b) b.onclick=fxExport; const i=$('fxIn'); if(i) i.onchange=async ev=>{ const f=ev.target.files[0]; if(!f) return; try{ OSMT.msg=fxImport(JSON.parse(await f.text())); }catch(err){ OSMT.msg=`${f.name} を読めませんでした`; } trvUI(); }; }
   const d=$('trvDel'); if(d) twoStep(d,()=>{ TRL.lines=[]; TRL.km=0; TRL.src=''; tsPut('meta/trails',JSON.stringify({lines:[]})).catch(()=>{}); trvRedraw(); try{ drawPanel(); }catch(e){} }); }
 const QKI={hp:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 7.4v9.2M15.4 7.4v9.2M8.6 12h6.8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
   tr:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.2" cy="3.6" r="2" fill="currentColor" stroke="none"/><rect x="7.3" y="7" width="3.4" height="5.6" rx="1.1" fill="currentColor" stroke="none" transform="rotate(16 9 9.8)"/><path d="M12.6 7.2l-1.9 6.2 3 2.9.9 5.2M10.7 13.4l-2.4 3.6-1.1 4.5M12.6 7.6l2.7 3.6 2.6.6M19 8.6v12.9"/></svg>',
