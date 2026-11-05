@@ -665,6 +665,7 @@ html[data-theme="tac"] ::-webkit-scrollbar-thumb:hover { background: var(--ink);
   <h2>ルート</h2>
   <div class="box">
     <datalist id="apList"></datalist>
+    <div class="row" style="margin-bottom:6px"><button type="button" class="act" id="mapPickBtn">🗺 大きな地図から飛行場を選ぶ</button></div>
     <div class="grid">
       <div style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-end">
       <div class="f" style="flex:1;min-width:0;margin:0">出発飛行場<div class="apsel"><input class="code" id="dep" list="apList" placeholder="RJTT" autocomplete="off" aria-label="出発飛行場のICAO"><select id="dep_s" aria-label="出発飛行場をリストから選ぶ"></select></div></div>
@@ -1143,11 +1144,52 @@ const PK_LAB={dep:'出発飛行場',dst:'目的飛行場',talt:'離陸代替飛�
 function pkCur(key){if(key.startsWith('via:')){const n=key.slice(4);return n==='+'?'':S.route.via[+n]||''}return S.route[key]||''}
 function pkSet(key,v){if(key.startsWith('via:')){const n=key.slice(4);if(n==='+'){if(v&&!S.route.via.includes(v))S.route.via.push(v)}else if(v)S.route.via[+n]=v;else S.route.via.splice(+n,1);save();try{renderVia()}catch(e){}renderAll();return}
   const el=$(key);el.value=v;el.dispatchEvent(new Event('change'))}
-function apPickOpen(key){let pk=$('apPick');if(!pk){pk=document.createElement('div');pk.id='apPick';pk.innerHTML='<div class="sheet" role="dialog" aria-modal="true"><div class="hd"><b id="pkT"></b><span class="row" style="gap:6px"><button class="sub" id="pkClr" type="button">外す</button><button class="sub" id="pkX" type="button">閉じる</button></span></div><input id="pkQ" placeholder="ICAOコードか名前（例 RJSS / SENDAI）" autocomplete="off" autocapitalize="characters"><div class="lst" id="pkL"></div></div>';document.body.appendChild(pk);
+
+/* ---------- big map picker for aerodromes (route tab / strip cards) ---------- */
+const MPK={role:'dep',vb:null};
+function mapPickOpen(role){MPK.role=role||(!S.route.dep?'dep':!S.route.dst?'dst':'dep');try{loadGeo()}catch(e){}
+  let o=$('mapPick');if(!o){o=document.createElement('div');o.id='mapPick';document.body.appendChild(o)}
+  o.innerHTML=`<style>#mapPick{position:fixed;inset:0;z-index:8500;background:var(--card);display:flex;flex-direction:column}#mapPick .hd{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;border-bottom:1px solid var(--line)}
+   #mapPick .hd b{margin-right:auto;font-size:15px}#mapPick .rl{font:600 13px system-ui;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink)}#mapPick .rl.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+   #mpSvg{flex:1;width:100%;display:block;background:var(--sea);touch-action:none}#mpSvg .ml{font-family:B612,sans-serif;font-size:calc(10px*var(--k));paint-order:stroke;stroke:var(--card);stroke-width:calc(3px*var(--k));pointer-events:none}
+   #mpSvg .lb{display:none}#mpSvg.z1 .lb{display:inline}#mpSvg .lb.sel{display:inline;font-weight:700;font-size:calc(13px*var(--k))}
+   #mapPick .ft{padding:8px 10px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);font-size:13px;min-height:44px}</style>
+   <div class="hd"><b>地図から飛行場を選ぶ</b><span style="font-size:12px;color:var(--muted)">選ぶもの</span>${[['dep','出発'],['dst','目的'],['via:+','経由を追加'],['talt','離陸代替'],['alt','代替']].map(([k,l])=>`<button type="button" class="rl${MPK.role===k?' on':''}" data-mr="${k}">${l}</button>`).join('')}<button type="button" class="sub" data-mx="1">✕ 閉じる</button></div>
+   <svg id="mpSvg" preserveAspectRatio="xMidYMid meet"></svg><div class="ft" id="mpFt"></div>`;
+  o.style.display='flex';document.body.style.overflow='hidden';
+  o.querySelectorAll('[data-mr]').forEach(b=>b.onclick=()=>{MPK.role=b.dataset.mr;o.querySelectorAll('[data-mr]').forEach(x=>x.classList.toggle('on',x===b));mpFoot()});
+  o.querySelector('[data-mx]').onclick=mapPickClose;
+  const svg=$('mpSvg');if(!MPK.vb){const x0=PX([0,128]),x1=PX([0,146]),y0=PY([46,0]),y1=PY([30,0]);MPK.vb={x:x0,y:y0,w:x1-x0,h:y1-y0}}
+  const A=ap(S.route.dep)||ap(S.route.dst);if(A&&A.p&&!MPK.kept){const w=420;MPK.vb={x:PX(A.p)-w/2,y:PY(A.p)-w*0.4,w,h:w*0.8}}MPK.kept=1;
+  mpDraw();const apply=()=>{const W=svg.clientWidth||600,H=svg.clientHeight||400,v=MPK.vb;const ar=H/W;if(Math.abs(v.h/v.w-ar)>0.001){const cy=v.y+v.h/2;v.h=v.w*ar;v.y=cy-v.h/2}svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);svg.style.setProperty('--k',v.w/W);svg.classList.toggle('z1',v.w<700)};
+  apply();let raf=0;const req=()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;apply()})};MPK.apply=apply;
+  gestures(svg,{pan:(dx,dy)=>{const k=MPK.vb.w/svg.clientWidth;MPK.vb.x-=dx*k;MPK.vb.y-=dy*k;req()},
+    zoom:(f,cx,cy)=>{const v=MPK.vb,k=v.w/svg.clientWidth;const ux=v.x+cx*k,uy=v.y+cy*k;const nw=Math.max(40,Math.min(2200,v.w/f));const nf=nw/v.w;v.x=ux-(ux-v.x)*nf;v.y=uy-(uy-v.y)*nf;v.w=nw;v.h=v.h*nf;req()},
+    dbl:e=>{const r=svg.getBoundingClientRect(),v=MPK.vb,k=v.w/svg.clientWidth;const ux=v.x+(e.clientX-r.left)*k,uy=v.y+(e.clientY-r.top)*k;v.w/=2;v.h/=2;v.x=ux-v.w/2;v.y=uy-v.h/2;req()},
+    tap:e=>{const r0=svg.getBoundingClientRect(),v=MPK.vb,k=v.w/svg.clientWidth;const ux=v.x+(e.clientX-r0.left)*k,uy=v.y+(e.clientY-r0.top)*k;
+      const near=Object.entries(DB).filter(([kk,vv])=>vv.p&&!vv.zz).map(([kk,vv])=>({i:kk,d:Math.hypot(PX(vv.p)-ux,PY(vv.p)-uy)/k})).filter(x=>x.d<=16).sort((a,b)=>a.d-b.d);if(!near.length)return;
+      if(near.length>1&&near[1].d-near[0].d<8&&v.w>60){const f=3;v.w/=f;v.h/=f;v.x=ux-v.w/2;v.y=uy-v.h/2;req();mpFoot();const ft=$('mpFt');if(ft)ft.insertAdjacentHTML('afterbegin','近くに飛行場が重なっているので拡大しました。もう一度タップしてください。<br>');return}
+      const i=near[0].i;const role=MPK.role;pkSet(role,i);
+      if(role==='dep')MPK.role='dst';else if(role==='dst'&&!S.route.alt)MPK.role='alt';o.querySelectorAll('[data-mr]').forEach(x=>x.classList.toggle('on',x.dataset.mr===MPK.role));mpDraw();mpFoot(i)}});
+  window.addEventListener('resize',apply);mpFoot()}
+function mapPickClose(){const o=$('mapPick');if(o){o.style.display='none';o.innerHTML=''}document.body.style.overflow=''}
+function mpFoot(last){const f=$('mpFt');if(!f)return;const r=S.route;const L={dep:'出発',dst:'目的','via:+':'経由',talt:'離陸代替',alt:'代替'};
+  f.innerHTML=`${last?`<b>${esc(last)}</b> ${esc((ap(last)||{}).n||'')} を設定しました。　`:''}いま選ぶもの：<b>${L[MPK.role]}</b>（飛行場の印をタップ。ピンチで拡大、ダブルタップで寄る）<br><span class="code">出発 ${esc(dispIcao(r.dep)||'—')}${(r.via||[]).length?' → 経由 '+esc(r.via.join(' ')):''} → 目的 ${esc(dispIcao(r.dst)||'—')}　離陸代替 ${esc(r.talt||'—')}　代替 ${esc(r.alt||'—')}</span>`}
+function mpDraw(){const svg=$('mpSvg');if(!svg)return;const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s='';
+  const feats=[...((typeof GEO!=='undefined'&&GEO)?GEO.features:[])];if(feats.length){let d='';for(const f of feats){const g=f.geometry;if(!g)continue;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys)d+='M'+pg[0].map(c=>P([c[1],c[0]])).join('L')+'Z'}s+=`<path d="${d}" fill="var(--land)" stroke="var(--coast)" stroke-width="0.6" vector-effect="non-scaling-stroke"/>`}
+  if(typeof LAKES!=='undefined'&&LAKES){let d='';for(const L of LAKES)for(const ring of L.c)d+='M'+ring.map(c=>P([c[1],c[0]])).join('L')+'Z';s+=`<path d="${d}" fill="var(--sea)" stroke="var(--coast)" stroke-width="0.5" vector-effect="non-scaling-stroke"/>`}
+  const r=S.route;const seq=[r.dep,...(r.via||[]),r.dst].filter(i=>ap(i));if(seq.length>1)s+=`<polyline points="${seq.map(i=>P(ap(i).p)).join(' ')}" fill="none" stroke="var(--mag)" stroke-width="2.5" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>`;
+  const role={};if(r.dep)role[r.dep]='出発';(r.via||[]).forEach(v=>role[v]=role[v]||'経由');if(r.dst)role[r.dst]=role[r.dst]?role[r.dst]+'・目的':'目的';if(r.talt)role[r.talt]=role[r.talt]||'離陸代替';if(r.alt)role[r.alt]=role[r.alt]||'代替';
+  const G=(p,inner)=>`<g transform="translate(${PX(p).toFixed(2)} ${PY(p).toFixed(2)})"><g style="transform:scale(var(--k))">${inner}</g></g>`;
+  const list=Object.entries(DB).filter(([k,v])=>v.p&&!v.zz);
+  for(const [k,v] of list){const a=AIPX.ap.find(x=>x[0]===k);const heli=(a&&a[2]==='ヘリポート')||v.heli;const ifr=a?/IFR/.test(a[6]||''):v.iac.length>0;const col=ifr?'#1F4E79':'#6B7B88';const sel=role[k];
+    s+=`<g data-mp="${k}" style="cursor:pointer">${G(v.p,`<circle r="13" fill="transparent"/>`+(sel?`<circle r="9.5" fill="none" stroke="var(--mag)" stroke-width="2.5"/>`:'')+(heli?`<circle r="6" fill="#fff" stroke="${col}" stroke-width="1.5"/><text y="3.3" text-anchor="middle" font-size="9" font-weight="700" fill="${col}" font-family="sans-serif">H</text>`:`<circle r="5.5" fill="${ifr?col:'#fff'}" stroke="${col}" stroke-width="1.5"/><circle r="2" fill="${ifr?'#fff':col}"/>`))}<text class="ml lb${sel?' sel':''}" x="${PX(v.p)}" y="${PY(v.p)}" dx="0" fill="${sel?'var(--mag)':col}" style="transform:translate(calc(9px*var(--k)),calc(4px*var(--k)))">${k}${sel?' '+sel:''}</text></g>`}
+  svg.innerHTML=s;if(MPK.apply)MPK.apply()}
+function apPickOpen(key){let pk=$('apPick');if(!pk){pk=document.createElement('div');pk.id='apPick';pk.innerHTML='<div class="sheet" role="dialog" aria-modal="true"><div class="hd"><b id="pkT"></b><span class="row" style="gap:6px"><button class="sub" id="pkMap" type="button">🗺 地図で選ぶ</button><button class="sub" id="pkClr" type="button">外す</button><button class="sub" id="pkX" type="button">閉じる</button></span></div><input id="pkQ" placeholder="ICAOコードか名前（例 RJSS / SENDAI）" autocomplete="off" autocapitalize="characters"><div class="lst" id="pkL"></div></div>';document.body.appendChild(pk);
     pk.onclick=e=>{if(e.target===pk)apPickClose()};$('pkX').onclick=apPickClose;$('pkQ').oninput=()=>apPickList();
     $('pkQ').onkeydown=e=>{if(e.key==='Enter'){const f=$('pkL').querySelector('.ap');if(f)f.click()}else if(e.key==='Escape')apPickClose()};
     $('pkL').onclick=e=>{const b=e.target.closest('.ap');if(!b)return;pkSet(pk.dataset.key,b.dataset.v);apPickClose()};
-    $('pkClr').onclick=()=>{pkSet(pk.dataset.key,'');apPickClose()}}
+    $('pkClr').onclick=()=>{pkSet(pk.dataset.key,'');apPickClose()};$('pkMap').onclick=()=>{const k=pk.dataset.key;apPickClose();mapPickOpen(k.startsWith('via:')?'via:+':k)}}
   pk.dataset.key=key;const via=key.startsWith('via:');$('pkT').textContent=via?(key==='via:+'?'経由地を追加':'経由地を変更'):PK_LAB[key];
   $('pkClr').style.display=pkCur(key)?'':'none';$('pkQ').value='';apPickList();pk.classList.add('on');document.body.style.overflow='hidden';
   if(matchMedia('(pointer:fine)').matches)setTimeout(()=>$('pkQ').focus(),30);
@@ -2886,6 +2928,7 @@ function bind(){
   $('copyIcao').onclick=async()=>{const s=wxAirports().join(' ');if(!s)return;try{await navigator.clipboard.writeText(s);$('copyIcao').textContent='コピーしました：'+s}catch(e){$('copyIcao').textContent=s}};
   $('wxClear').onclick=()=>{S.wx={};save();renderAll()};
   $('strip').addEventListener('click',e=>{const c=e.target.closest('[data-pk]');if(c)apPickOpen(c.dataset.pk)});
+  $('mapPickBtn').onclick=()=>mapPickOpen();
   $('strip').addEventListener('keydown',e=>{const c=e.target.closest('[data-pk]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();apPickOpen(c.dataset.pk)}});
   $('wxAuto').onclick=()=>wxAutoFetch(true);$('wxPoll').checked=!!S.wxPoll;$('wxPoll').onchange=()=>wxPollSet($('wxPoll').checked);
   document.addEventListener('visibilitychange',()=>{if(S.wxPoll&&document.visibilityState==='visible'&&(!S.wxAutoAt||Date.now()-new Date(S.wxAutoAt)>10*60e3))wxAutoFetch(false)});
