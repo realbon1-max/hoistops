@@ -49,7 +49,7 @@ header.top h1{font-size:20px;margin:0;font-weight:700}
 .leg .icao{font-family:var(--code);font-size:30px;font-weight:700;line-height:1.1}
 .leg .nm{font-size:11px;color:var(--muted);white-space:nowrap}
 .leg .wx{font-family:var(--code);font-size:12px;margin-top:4px}
-.msmt{border-collapse:collapse;font-size:12px;min-width:100%}.msmt th,.msmt td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:center;white-space:nowrap;vertical-align:middle}.msmt th{color:var(--muted);font-weight:600;text-align:left}.msmr td{text-align:left}
+.msmt{border-collapse:collapse;font-size:12px;min-width:100%}.msmh th:first-child{position:sticky;left:0;z-index:1;background:var(--card);box-shadow:2px 0 0 var(--line)}.msmh td{min-width:64px}.msmt th,.msmt td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:center;white-space:nowrap;vertical-align:middle}.msmt th{color:var(--muted);font-weight:600;text-align:left}.msmr td{text-align:left}
 .leg .wxd{margin-top:5px;padding-top:4px;border-top:1px dashed var(--line);font-family:var(--sans,system-ui);font-size:10.5px;line-height:1.35}
 .leg .wxd .cl{display:flex;gap:4px;align-items:center;white-space:nowrap}
 .leg .wxd .cl b{font-weight:700}
@@ -1208,7 +1208,7 @@ const MSM={key:'',data:null,busy:false,err:'',at:null};
 const MSM_LV=[1000,925,850,700,500,400,300];
 function msmUrl(pts,withLv){const sv='temperature_2m,dew_point_2m,relative_humidity_2m,precipitation,weather_code,pressure_msl,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m';
   const lv=withLv?','+MSM_LV.flatMap(L=>['temperature','relative_humidity','wind_speed','wind_direction','geopotential_height'].map(v=>`${v}_${L}hPa`)).join(','):'';
-  return `https://api.open-meteo.com/v1/jma?latitude=${pts.map(p=>p[0].toFixed(3)).join(',')}&longitude=${pts.map(p=>p[1].toFixed(3)).join(',')}&hourly=${sv}${lv}&models=jma_msm&wind_speed_unit=kn&timezone=GMT&forecast_days=3`}
+  return `https://api.open-meteo.com/v1/jma?latitude=${pts.map(p=>p[0].toFixed(3)).join(',')}&longitude=${pts.map(p=>p[1].toFixed(3)).join(',')}&hourly=${sv}${lv}&models=jma_msm&wind_speed_unit=kn&timezone=GMT&past_hours=3&forecast_days=4`}
 function msmPlan(){const ap0=[['出発',S.route.dep],['目的',S.route.dst],['代替',S.route.alt],['離陸代替',S.route.talt]].filter(x=>x[1]&&ap(x[1]));
   const etd=utc(S.route.etd)||new Date(),eta=utc(S.route.eta)||new Date(+etd+3600e3);let T=null;try{T=trk3d()}catch(e){}
   const rp=[];if(T&&T.smp&&T.smp.length>1){const step=Math.max(4,T.tot/18);let next=0,lastK='';T.smp.forEach((o,i)=>{if(o.d>=next||o.k!==lastK||i===T.smp.length-1){rp.push({p:o.p,ft:o.a,k:o.k,d:o.d,t:new Date(T.t0+o.d/T.tas*3600e3),i});next=o.d+step;lastK=o.k}})}
@@ -1236,10 +1236,10 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;bindMsm();return}
   const J=D.j;const nA=pl.air.length;
   // airports: hours around the planned time
-  const airH=pl.air.map((a,ai)=>{const Jx=J[ai];if(!Jx)return '';const c=msmIdx(Jx,+a.t);if(c<0)return `<div class="note">${esc(a.icao)}：予報の範囲外の時刻です</div>`;const H=Jx.hourly;const cols=[];for(let i=Math.max(0,c-2);i<=Math.min(H.time.length-1,c+3);i++)cols.push(i);
-    const td=(i,v)=>`<td style="${i===c?'background:var(--sky-soft,rgba(43,106,148,.12));font-weight:700':''}">${v}</td>`;
-    const row=(lab,f)=>`<tr><th>${lab}</th>${cols.map(i=>td(i,f(i))).join('')}</tr>`;
-    return `<div style="margin:8px 0"><b class="code">${esc(a.icao)}</b> <span class="tag t-mute">${a.role}・${fmtZ(a.t)}</span><div style="overflow-x:auto"><table class="msmt"><tr><th></th>${cols.map(i=>td(i,H.time[i].slice(11,16)+'Z')).join('')}</tr>
+  const airH=pl.air.map((a,ai)=>{const Jx=J[ai];if(!Jx)return '';const c=msmIdx(Jx,+a.t);if(c<0)return `<div class="note">${esc(a.icao)}：予報の範囲外の時刻です</div>`;const H=Jx.hourly;const now=Date.now()-3600e3;const cols=[];for(let i=0;i<H.time.length;i++){if(H.weather_code[i]==null&&H.temperature_2m[i]==null)continue;if(Date.parse(H.time[i]+'Z')<now&&i<c)continue;cols.push(i)}
+    const td=(i,v)=>`<td style="${i===c?'background:var(--sky-soft,rgba(43,106,148,.16));font-weight:700':''}${H.time[i].slice(11,13)==='00'?';border-left:2px solid var(--muted)':''}">${v}</td>`;
+    const row=(lab,f)=>`<tr><th>${lab}</th>${cols.map(i=>td(i,f(i))).join('')}</tr>`;const last=cols.length?H.time[cols[cols.length-1]]:'';
+    return `<div style="margin:8px 0"><b class="code">${esc(a.icao)}</b> <span class="tag t-mute">${a.role}・${fmtZ(a.t)}</span> <span class="note" style="margin:0">${cols.length}時間分（〜${last.slice(8,10)}日 ${last.slice(11,16)}Z）・横にスライド</span><div class="msmscroll" data-c="${cols.indexOf(c)}" style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="msmt msmh"><tr><th>日付(UTC)</th>${cols.map(i=>td(i,+H.time[i].slice(8,10)+'日')).join('')}</tr><tr><th></th>${cols.map(i=>td(i,H.time[i].slice(11,16)+'Z<br><small>'+String((+H.time[i].slice(11,13)+9)%24).padStart(2,'0')+'時JST</small>')).join('')}</tr>
       ${row('天気',i=>{const m=wmoToM(H.weather_code[i],H.cloud_cover[i],+H.time[i].slice(11,13));return wxIcon(m,30)+'<br><small>'+esc(wxJa(m))+'</small>'})}
       ${row('雲 低/中/高',i=>`${H.cloud_cover_low?.[i]??'—'}/${H.cloud_cover_mid?.[i]??'—'}/${H.cloud_cover_high?.[i]??'—'}%`)}
       ${row('降水',i=>H.precipitation[i]!=null?H.precipitation[i].toFixed(1)+'mm':'—')}
@@ -1307,7 +1307,7 @@ function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;
   const leg=`<div class="plegend" style="margin:4px 0 0"><span><i style="background:rgba(110,120,132,.62)"></i>雲中（湿度98%以上）</span><span><i style="background:rgba(150,160,170,.3)"></i>雲の可能性（90〜98%）</span><span><i style="background:repeating-linear-gradient(45deg,#52C7E8 0 2px,transparent 2px 5px)"></i>着氷の目安（+2〜−20℃・湿度85%以上）</span><span><i style="border-top:2px dashed #2F7CF6;height:0;width:14px"></i>0℃高度</span><span><i style="border-top:2px dashed #7FA8C9;height:0;width:14px"></i>−10℃・−20℃</span><span>矢印＝計画高度の風の進行方向成分（→追い風・←向かい風、数字kt、赤＝向かい風10kt超）</span></div>`;
   return `<div class="box"><b>経路の気象（断面図）</b><p class="note" style="margin:2px 0 4px">横軸＝出発からの距離（下に通過時刻）、縦軸＝高度。選んだSID・航空路・STAR・進入の計画高度（色の線）に、通過時刻のMSMの雲・着氷・気温・風を重ねています。</p>${D.lv?'':'<div class="msg cau">高度ごとのデータが取得できなかったため、雲・気温・風の断面は出せません。</div>'}${sec}${leg}</div>
    <div class="box"><b>経路の気象（俯瞰図）</b><p class="note" style="margin:2px 0 4px">各地点の地上の天気マーク、計画高度の風（矢印は風が吹いていく向き）と気温、着氷の目安。地点の丸の大きさ＝下層雲の量、青いほど降水あり。</p>${plan}</div>`}
-function bindMsm(){const b=$('msmGo');if(b)b.onclick=()=>msmFetch(true)}
+function bindMsm(){const b=$('msmGo');if(b)b.onclick=()=>msmFetch(true);document.querySelectorAll('.msmscroll').forEach(el=>{const c=+el.dataset.c;const cells=el.querySelectorAll('tr:first-child td');if(c>0&&cells[c]){el.scrollLeft=Math.max(0,cells[c].offsetLeft-el.clientWidth*0.35)}})}
 function renderWx(){try{setTimeout(renderMsm,0)}catch(e){}
   try{$('wxNeed').innerHTML=wxAirports().map(i=>{const w=S.wx[i]||{};const ok=w.metar&&w.taf;const s=w.src||{},a=k=>s[k]==='auto'?'(参考)':'';return `<span class="chip ${ok?'ok':'ng'}">${i} ${w.metar?'✓METAR'+a('metar'):'－METAR'} ${w.taf?'✓TAF'+a('taf'):'－TAF'}</span>`}).join('')}catch(e){}
   const all=[...new Set([...route().map(x=>x[1]),S.route.alt].filter(Boolean))];
