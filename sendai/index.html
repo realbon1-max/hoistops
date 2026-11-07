@@ -5576,14 +5576,14 @@ const MW={tgt:'wind',show:true,open:true}; try{ const v=JSON.parse(localStorage.
 function mwSave(){ try{ localStorage.setItem('sd139mw',JSON.stringify({tgt:MW.tgt,show:MW.show,open:MW.open})); }catch(e){} }
 function mwTrue(){ if(wmode!=='true'){ const hd=+$('hdg').value||0, rel=+$('rel').value||0; $('wdir').value=((hd+rel)%360+360)%360; document.querySelector('#wmode [data-m="true"]').click(); } }
 function jmaBind2(){ const b2=$('jmaGo2'); if(!b2||b2.dataset.b) return; b2.dataset.b=1; b2.addEventListener('pointerdown',e=>e.stopPropagation());
-  b2.onclick=async e=>{ e.stopPropagation(); const g=$('jmaGo'); if(!g) return; const t=b2.textContent; b2.disabled=true; b2.textContent='読み込み中…'; try{ await g.onclick(); }catch(_){} const nb=$('jmaGo2'); if(nb){ nb.disabled=false; nb.textContent=t; } mapMsg($('jmaMsg').innerText+'（時刻は「② 条件」の「高度ごとの気温と風」の表で変えられます）'); }; }
+  b2.onclick=async e=>{ e.stopPropagation(); const g=$('jmaGo'); if(!g) return; const t=b2.textContent; b2.disabled=true; b2.textContent='読み込み中…'; try{ await g.onclick(); }catch(_){} const nb=$('jmaGo2'); if(nb){ nb.disabled=false; nb.textContent=t; } mapMsg($('jmaMsg').querySelector('[data-wxuse]')?$('jmaMsg').innerHTML:$('jmaMsg').innerText+'（時刻は「② 条件」の「高度ごとの気温と風」の表で変えられます）'); }; }
 function mwVals(){ const hd=((+$('hdg').value%360)+360)%360, wd=wmode==='true'?((+$('wdir').value%360)+360)%360:((hd+(+$('rel').value||0))%360+360)%360; return {hd,wd,ws:+$('ws').value||0}; }
 function mapWind(){ setTimeout(()=>{ try{ mmsgPlace(); }catch(e){} },0); mkHeli(); const box=$('mWind'); if(!box) return; const {hd,wd,ws}=mwVals(), R0=58, C=70, P3=v=>String(Math.round(v)%360||360).padStart(3,'0');
   const pt=(a,r)=>[C+r*Math.sin(a*RAD),C-r*Math.cos(a*RAD)];
   const rel=((wd-hd+540)%360)-180, ar=Math.abs(rel), side=ar<15||ar>165?'':rel>0?'右':'左';
   const kind=ws<=0?'無風':ar<=45?'向かい風':ar>=135?'背風（追い風）':'横風';
   const relTxt=ws<=0?'無風':`機首から${side}${side?Math.round(ar<=90?ar:180-ar)+'°の':''}${kind}`;
-  if(!MW.open){ box.innerHTML=`<button type="button" class="mwopen" id="mwOpen" title="風と機首方位の入力を開く">🧭 風 ${P3(wd)}°/${ws}kt・HDG ${P3(hd)}°</button><button type="button" class="mwmsm" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 MSM</button>`; $('mwOpen').onclick=()=>{ MW.open=true; mwSave(); mapWind(); }; jmaBind2(); mapWindField(); return; }
+  if(!MW.open){ box.innerHTML=`<button type="button" class="mwopen" id="mwOpen" title="風と機首方位の入力を開く">🧭 風 ${P3(wd)}°/${ws}kt・HDG ${P3(hd)}°</button><button type="button" class="mwmsm" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 MSM</button><button type="button" class="mwmsm" id="amdGo" title="現場に近い気象庁アメダスの今の風（実測）を見る">📡 アメダス</button>`; $('mwOpen').onclick=()=>{ MW.open=true; mwSave(); mapWind(); }; jmaBind2(); mapWindField(); return; }
   let g=`<circle cx="${C}" cy="${C}" r="${R0+10}" fill="rgba(255,255,255,.96)" stroke="#555" stroke-width="1.2"/><circle cx="${C}" cy="${C}" r="${R0-14}" fill="#eef3f8"/>`;
   for(let b=0;b<360;b+=10){ const [x0,y0]=pt(b,R0+10-(b%30?3:6)), [x1,y1]=pt(b,R0+10); g+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#666" stroke-width="${b%30?0.7:1.4}"/>`; }
   [['N',0,'#d62828'],['E',90,'#333'],['S',180,'#1d5fd0'],['W',270,'#333']].forEach(([l,a,c])=>{ const [x,y]=pt(a,R0-3); g+=`<text x="${x}" y="${y+5}" font-size="${l==='N'||l==='S'?14:11}" font-weight="900" text-anchor="middle" fill="${c}">${l}</text>`; });
@@ -5604,7 +5604,7 @@ function mapWind(){ setTimeout(()=>{ try{ mmsgPlace(); }catch(e){} },0); mkHeli(
    <div class="mwv">${vtxt}</div>
    <input type="range" id="mwWs" class="mwrange" min="0" max="60" step="1" value="${ws}" aria-label="風速（kt）">
    <div class="mwv2">${vtxt2}</div>
-   <label class="mwc"><input type="checkbox" id="mwShow" ${MW.show?'checked':''}> 地図に風の矢羽</label><button type="button" class="mwmsm wide" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 気象庁MSMで入力</button>`;
+   <label class="mwc"><input type="checkbox" id="mwShow" ${MW.show?'checked':''}> 地図に風の矢羽</label><button type="button" class="mwmsm wide" id="jmaGo2" title="選んだ地点の上空の気温と風を気象庁の数値予報（MSM）から読み込む">🌐 気象庁MSMで入力</button><button type="button" class="mwmsm wide" id="amdGo" title="現場に近い気象庁アメダスの今の風（実測）を見る">📡 近くのアメダス（実測）</button>`;
   const sv=$('mwSvg');
   const ang=e=>{ const r=sv.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*140-C, y=(e.clientY-r.top)/r.height*140-C; return [(Math.atan2(x,-y)/RAD+360)%360, Math.hypot(x,y)]; };
   const setA=e=>{ const a=Math.round(ang(e)[0]/5)*5%360; if(MW.grab==='wind') mwSetWd(a); else mwSetHd(a); update(); };
@@ -5918,11 +5918,53 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
       const tv=$('fpTo').value; let eta=-1; if(tv){ /* default to the takeoff hour when given */ }
       const sel=$('jmaT'); sel.innerHTML=T.map((t,i)=>{ const ok=i>=best&&d.hourly[`temperature_${JMA.lv[3]}hPa`]&&d.hourly[`temperature_${JMA.lv[3]}hPa`][i]!=null&&(i-best<=48||+t.slice(11,13)%3===0); return ok?`<option value="${i}"${i===best?' selected':''}>${t.slice(5,10).replace('-','/')} ${t.slice(11,16)}${i===best?'（今）':''}</option>`:''; }).join('');
       JMA.ll=[la,lo]; JMA.best=best; jmaApply(); radarAt(la,lo).then(()=>{ try{ update(); }catch(e){} }); }
-    catch(e){ m.innerHTML=`<b class="warn">読み込めませんでした</b>（${esc(errJa(e))}）。電波の状態を確認するか、手入力してください。`; }
+    catch(e){ let fb=''; try{ const h=await metnoHourly(la,lo), i=metnoNow(h), wd=h.wind_direction_10m[i], ws=h.wind_speed_10m[i], gu=h.wind_gusts_10m[i], t=h.temperature_2m[i];
+        if(wd!=null&&ws!=null) fb=`<br>代わりに MET Norway の予報（ECMWF・約9km・地上10m・${h.time[i].slice(11,16)}）：<b>${String(Math.round(wd)%360||360).padStart(3,'0')}°／${Math.round(ws)} kt</b>${gu!=null?`（突風 ${Math.round(gu)} kt）`:''}${t!=null?`・${t.toFixed(1)}℃`:''} <button type="button" class="mwmsm" data-wxuse="${Math.round(wd)},${Math.round(ws)}">風に反映</button>。上空の風はありません。近くの実測は地図の風パネルの「📡 アメダス」で見られます`; }catch(_){}
+      m.innerHTML=`<b class="warn">オープンメテオ（気象庁MSM）を読み込めませんでした</b>（${esc(errJa(e))}）。${fb||'電波の状態を確認するか、手入力してください。'}`; }
     b.disabled=false; b.innerHTML='<svg class="jic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span>読み込み直す</span>'; };
   $('wpClr').onclick=()=>{ WP.rows.forEach(r=>{ r.t=''; r.d=''; r.s=''; }); const tb=$('wpTab'); tb.dataset.built=''; wpSave(); wpDraw(); };
   wpDraw(); })();
 
+
+// ---- オープンメテオに接続できないときの代替：MET Norway の地点予報（地上）と気象庁アメダスの実測
+const WXFB={mn:{},tab:null,tabT:0};
+const WXSYM=s=>{ s=String(s||''); return /thunder/.test(s)?95:/heavysnow/.test(s)?75:/lightsnow/.test(s)?71:/snow/.test(s)?73:/sleet/.test(s)?68:/heavyrain/.test(s)?(/showers/.test(s)?82:65):/lightrain/.test(s)?(/showers/.test(s)?80:61):/rain/.test(s)?(/showers/.test(s)?81:63):/fog/.test(s)?45:/^cloudy/.test(s)?3:/partlycloudy/.test(s)?2:/fair/.test(s)?1:/clearsky/.test(s)?0:null; };
+async function metnoHourly(la,lo){ const k=la.toFixed(2)+','+lo.toFixed(2), c=WXFB.mn[k]; if(c&&Date.now()<c.exp) return c.h;
+  try{ const s=JSON.parse(localStorage.getItem('hoWxMn:'+k)||'null'); if(s&&Date.now()<s.exp&&s.h&&s.h.time){ WXFB.mn[k]=s; return s.h; } }catch(e){}
+  if(navigator.onLine===false) throw new Error('offline');
+  const r=await fetch(`https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${la.toFixed(4)}&lon=${lo.toFixed(4)}`);
+  if(!r.ok) throw new Error('HTTP '+r.status); const j=await r.json(); const ts=j&&j.properties&&j.properties.timeseries; if(!ts||!ts.length) throw new Error('データなし');
+  const KT=1.943844, nz=v=>v==null||!isFinite(v)?null:v;
+  const h={time:[],temperature_2m:[],wind_speed_10m:[],wind_direction_10m:[],wind_gusts_10m:[],relative_humidity_2m:[],dew_point_2m:[],cloud_cover_low:[],precipitation:[],weather_code:[],pressure_msl:[]};
+  ts.forEach(t=>{ const d=(t.data&&t.data.instant&&t.data.instant.details)||{}, n1=t.data.next_1_hours||null, n6=t.data.next_6_hours||null, nx=n1||n6||{};
+    h.time.push(new Date(Date.parse(t.time)+9*3600e3).toISOString().slice(0,16));
+    h.temperature_2m.push(nz(d.air_temperature)); h.wind_speed_10m.push(d.wind_speed!=null?d.wind_speed*KT:null); h.wind_direction_10m.push(nz(d.wind_from_direction));
+    h.wind_gusts_10m.push(d.wind_speed_of_gust!=null?d.wind_speed_of_gust*KT:null); h.relative_humidity_2m.push(nz(d.relative_humidity)); h.dew_point_2m.push(nz(d.dew_point_temperature));
+    h.cloud_cover_low.push(nz(d.cloud_area_fraction_low)); h.pressure_msl.push(nz(d.air_pressure_at_sea_level));
+    h.precipitation.push(n1&&n1.details?nz(n1.details.precipitation_amount):null); h.weather_code.push(WXSYM(nx.summary&&nx.summary.symbol_code)); });
+  h.__src='metno'; h.__alt=j.geometry&&j.geometry.coordinates?j.geometry.coordinates[2]:null;
+  const ex=Date.parse(r.headers.get('Expires')||''), o={h,exp:isFinite(ex)&&ex>Date.now()?ex:Date.now()+30*60e3};
+  WXFB.mn[k]=o; try{ localStorage.setItem('hoWxMn:'+k,JSON.stringify(o)); }catch(e){} return h; }
+function metnoNow(h){ const key=new Date(Date.now()+9*3600e3).toISOString().slice(0,13); let i=0; h.time.forEach((t,ii)=>{ if(t.slice(0,13)<=key) i=ii; }); return i; }
+const WXDIR16=c=>c==null||c===0?null:(c%16)*22.5;
+async function amdNear(la,lo,n){ const J='https://www.jma.go.jp/bosai/amedas/';
+  if(!WXFB.tab||Date.now()-WXFB.tabT>864e5){ const r=await fetch(J+'const/amedastable.json'); if(!r.ok) throw new Error('HTTP '+r.status); WXFB.tab=await r.json(); WXFB.tabT=Date.now(); }
+  const lt=(await (await fetch(J+'data/latest_time.txt',{cache:'no-store'})).text()).trim(); const t0=Date.parse(lt); if(!isFinite(t0)) throw new Error('時刻なし');
+  const z=new Date(t0+9*3600e3).toISOString(), id=z.slice(0,4)+z.slice(5,7)+z.slice(8,10)+z.slice(11,13)+z.slice(14,16)+'00';
+  const r=await fetch(J+`data/map/${id}.json`); if(!r.ok) throw new Error('HTTP '+r.status); const m=await r.json(); const KT=1.943844;
+  const L=Object.entries(WXFB.tab).filter(([k])=>m[k]&&m[k].wind&&m[k].wind[0]!=null).map(([k,v])=>{ const sla=v.lat[0]+v.lat[1]/60, slo=v.lon[0]+v.lon[1]/60, x=m[k], g=gc(la,lo,sla,slo);
+    return {id:k,n:v.kjName,alt:v.alt,la:sla,lo:slo,nm:g.nm,brg:g.brg!=null?g.brg:g.crs,ws:x.wind[0]*KT,wd:WXDIR16(x.windDirection?x.windDirection[0]:null),gu:x.gust&&x.gust[0]!=null?x.gust[0]*KT:null,t:x.temp?x.temp[0]:null}; })
+    .sort((a,b)=>a.nm-b.nm).slice(0,n||4);
+  return {time:z.slice(11,16),L}; }
+async function amdShow(){ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=p?p.lat:y2lat(MAP.cy,MAP.z), lo=p?p.lon:x2lon(MAP.cx,MAP.z);
+  mapMsg('近くのアメダスを読み込み中…');
+  try{ const a=await amdNear(la,lo,4); const P3=v=>String(Math.round(v)%360||360).padStart(3,'0');
+    const rows=a.L.map(s=>`<b>${esc(s.n)}</b>（${Math.round(s.alt)} m・${s.nm.toFixed(1)} NM）　${s.wd==null?(s.ws<1?'静穏':'風向不明'):P3(s.wd)+'°'}／<b>${Math.round(s.ws)} kt</b>${s.gu!=null?`・最大瞬間 ${Math.round(s.gu)} kt`:''}${s.t!=null?`・${s.t.toFixed(1)}℃`:''} ${s.wd!=null?`<button type="button" class="uix" data-wxuse="${Math.round(s.wd)},${Math.round(s.ws)}">風に反映</button>`:''}`).join('<br>');
+    mapMsg(`<b>近くのアメダス（${a.time} の実測）</b>${p?'':'<small>（現場を選んでいないので地図の中心から）</small>'}<br><small>${rows}</small><br><small style="opacity:.75">気象庁アメダス・地上約10mの10分間平均。谷や尾根の観測点は現場と風が違うことがあります</small>`); }
+  catch(e){ mapMsg(`近くのアメダスを読み込めませんでした（${esc(errJa(e))}）`); } }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-wxuse]'); if(b){ e.stopPropagation(); const [wd,ws]=b.dataset.wxuse.split(',').map(Number); try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=ws; if($('wsR')) $('wsR').value=ws; update(); mapWind&&mapWind(); }catch(_){} b.textContent='反映しました'; return; }
+  const a=e.target.closest&&e.target.closest('#amdGo'); if(a){ e.stopPropagation(); amdShow(); } },true);
+document.addEventListener('pointerdown',e=>{ if(e.target.closest&&e.target.closest('#amdGo')) e.stopPropagation(); },true);
 function errJa(e){ const t=String(e&&e.message||e||''); if(/Failed to fetch|NetworkError|Load failed|network/i.test(t)) return '通信できません。電波の状態を確認してください'; if(/HTTP 4\d\d/.test(t)) return 'データの要求が受け付けられませんでした（'+t+'）'; if(/HTTP 5\d\d/.test(t)) return '相手のサーバーが応答しません（'+t+'）'; if(/timeout|abort/i.test(t)) return '時間切れで読み込めませんでした'; return t; }
 setTimeout(()=>mapWind(),400);
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.drose'); if(!b) return; const it=DRAW.items[+b.dataset.rose]; if(!it) return; it.rose=!it.rose; b.setAttribute('aria-pressed',it.rose); b.textContent=(it.rose?'✓ ':'')+'磁方位'; drawSave(); drawLayer(); });
@@ -6078,7 +6120,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
         g+=`<g transform="translate(24 ${yh})"><path d="M-9 -4h18M0 -4v2" stroke="#15253a" stroke-width="1.6" stroke-linecap="round"/><path d="M-6 -2h7a4 3 0 0 1 0 6h-7a3 3 0 0 1 0-6z" fill="${inC?'#d62828':'#15253a'}"/><path d="M-6 1h-7l-1-3" fill="none" stroke="${inC?'#d62828':'#15253a'}" stroke-width="1.6" stroke-linecap="round"/></g>`;
         const nx=bands.find(b=>b[0]>hA+50);
         if(nx&&nx[0]<=Vm){ const yb=Y(nx[0]); if(yh-yb>16) g+=`<path d="M48 ${yh-2}V${yb+3}M45.5 ${yb+6}l2.5-3 2.5 3M45.5 ${yh-5}l2.5 3 2.5-3" stroke="#455a64" stroke-width="1.1" fill="none"/><text x="44" y="${(yh+yb)/2+3}" font-size="7.5" text-anchor="end" font-weight="800" fill="#455a64">${fm(Math.round((nx[0]-hA)/100)*100)}</text>`; }
-        const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=inC?'雲中':below&&!nx?'雲上':nx?'雲の下':'雲なし';
+        const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=d.__src==='metno'?'雲 不明':inC?'雲中':below&&!nx?'雲上':nx?'雲の下':'雲なし';
         return `<i class="wxv${inC?' d':below&&!nx?' w':''}" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b>${st}</b>${nx?`<small>雲まで ${fm(Math.round((nx[0]-hA)/100)*100)} ft</small>`:''}</i>`; })()}${(()=>{ // 日の出・日没・薄明のグラフィック（表示中の予報時刻の位置）
         try{ const tS=new Date(T[i]+':00+09:00'), st=SUN.times(jstDay(tS),p.lat,p.lon); if(!st.rise||!st.set) return '';
           const hh=d=>{ const j=new Date(d.getTime()+9*3600e3); return j.getUTCHours()+j.getUTCMinutes()/60; }, X=h=>12+Math.max(0,Math.min(24,h))/24*216, hR=hh(st.rise), hS=hh(st.set), hD=st.dawn?hh(st.dawn):hR-0.45, hK=st.dusk?hh(st.dusk):hS+0.45, hT=hh(tS);
@@ -6109,7 +6151,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
           const bad=w!=null&&(w>=95||w===66||w===67||w===56||w===57)||vv!=null&&vv<1600, cau=!bad&&(w===45||w===48||w!=null&&w>=63&&w<95||vv!=null&&vv<5000||gg!=null&&gg>=25);
           h+=`<button type="button" class="wsc ph-${sunPhase(new Date(t+':00+09:00'),p.lat,p.lon)}${k===i?' on':''}${bad?' bad':cau?' cau':''}" data-k="${k}"><small>${k===iNow?'今':hr+'時'}</small>${k===iEta&&iEta!==iNow?'<em>到着</em>':''}${w!=null?wxIcon(w,(hr<6||hr>=18)?new Date(t+':00+09:00').getTime():false):''}<b>${tt!=null?Math.round(tt)+'°':''}</b><small class="wsw">${a!=null&&sp!=null?`<i style="transform:rotate(${Math.round(a)}deg)">↓</i>${Math.round(sp)}`:''}</small></button>`; }
         return `<div class="wxstrip" data-key="${key}">${h}</div>`; })()}
-      <div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${man!=null?`${+T[i].slice(8,10)}日 `:''}${T[i].slice(11,16)} 予報${man!=null?`<button type="button" class="wxeta">✈ 到着時刻に戻す</button>`:''}<button type="button" class="wxuse" title="この予報の風（ホバリング高度・海抜）を風向・風速に入れる">風に反映</button></div>`;
+      ${d.__src==='metno'?'<div class="wxt wxsrc">⚠ オープンメテオに接続できないため、MET Norway の予報（ECMWF・約9km・地上10mの風）で代わりに表示。上空の風・雲底はありません</div>':''}<div class="wxt" title="ホバリング高度 ${fm(Math.round(H/100)*100)} ft の MSM 予報">🕒 ${man!=null?`${+T[i].slice(8,10)}日 `:''}${T[i].slice(11,16)} 予報${man!=null?`<button type="button" class="wxeta">✈ 到着時刻に戻す</button>`:''}<button type="button" class="wxuse" title="この予報の風（ホバリング高度・海抜）を風向・風速に入れる">風に反映</button></div>`;
     { const st=b.querySelector('.wxstrip'); if(st){ if(WXS.sl&&WXS.sl[0]===key) st.scrollLeft=WXS.sl[1]; else { const on=st.querySelector('.wsc.on'); if(on) st.scrollLeft=Math.max(0,on.offsetLeft-st.clientWidth/3); }
         st.addEventListener('scroll',()=>{ WXS.sl=[key,st.scrollLeft]; },{passive:true});
         st.querySelectorAll('.wsc').forEach(c=>c.onclick=()=>{ const k=+c.dataset.k; WXS.sel=k===iEta?null:{key,i:k}; draw(d); }); }
@@ -6122,10 +6164,11 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const s1=['weather_code','temperature_2m','wind_speed_10m','wind_direction_10m'], s2=['wind_gusts_10m','visibility','relative_humidity_2m','dew_point_2m','cloud_cover_low','precipitation'];
     const pl=[]; LV.forEach(l=>pl.push(`temperature_${l}hPa`,`relative_humidity_${l}hPa`,`geopotential_height_${l}hPa`,`wind_speed_${l}hPa`,`wind_direction_${l}hPa`)); const pc=LV.map(l=>`cloud_cover_${l}hPa`);
     let d=null, el=null;
-    for(const v of [s1.concat(s2,pl,pc),s1.concat(s2,pl),s1.concat(pl),s1]){ const r=await fetch(base+v.join(',')); if(!r.ok) continue; const j=await r.json(); if(j.hourly&&j.hourly.time){ d=j.hourly; el=j.elevation; break; } }
+    for(const v of [s1.concat(s2,pl,pc),s1.concat(s2,pl),s1.concat(pl),s1]){ let r; try{ r=await fetch(base+v.join(',')); }catch(_){ break; } if(!r.ok) continue; const j=await r.json(); if(j.hourly&&j.hourly.time){ d=j.hourly; el=j.elevation; break; } }
+    if(!d){ try{ d=await metnoHourly(p.lat,p.lon); el=d.__alt; }catch(_){ d=null; } }
     if(!d) throw 0; d.__el=el;
     try{ const r=await fetch(base.replace('&hourly=','&hourly=')+s2.filter(x=>!d[x]).join(',')); if(s2.some(x=>!d[x])&&r.ok){ const j=await r.json(); if(j.hourly) s2.forEach(x=>{ if(!d[x]&&j.hourly[x]) d[x]=j.hourly[x]; }); } }catch(e){}
-    WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
+    if(d.__src!=='metno') WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
   catch(e){ const b=$('wxSite'); if(b) b.innerHTML='<div class="wxt">予報を読み込めません</div>'; }
   finally{ WXS.busy[key]=0; } }
 
@@ -6455,6 +6498,7 @@ body.fly #qTrS{display:none!important}
 .mwrow button{height:38px!important;min-width:38px;font-size:17px!important}
 .mwh .mwx,#mwClose{width:38px!important;height:34px!important;font-size:18px!important}
 .mwind .mwmsm{min-height:38px}
+.wxsrc{color:#d99a1e!important;font-weight:700}
 body.fly .mwrow button{height:48px!important;min-width:48px}
 /* map message: dark sheet with a visible close mark */
 :root[data-theme=dark] .mmsg{background:#13202e!important;color:#e3e9f0!important;border:1px solid #3a4c60!important;border-left-width:1px!important;border-radius:12px!important;box-shadow:0 10px 28px rgba(0,0,0,.45)}
