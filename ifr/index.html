@@ -1581,10 +1581,21 @@ function msmPlan(){const ap0=[['出発',S.route.dep],['目的',S.route.dst],['�
   const rp=[];if(T&&T.smp&&T.smp.length>1){const step=Math.max(4,T.tot/18);let next=0,lastK='';T.smp.forEach((o,i)=>{if(o.d>=next||o.k!==lastK||i===T.smp.length-1){rp.push({p:o.p,ft:o.a,k:o.k,d:o.d,t:new Date(T.t0+o.d/T.tas*3600e3),i});next=o.d+step;lastK=o.k}})}
   const air=ap0.map(([r,i])=>({role:r,icao:i,p:ap(i).p,t:r==='出発'||r==='離陸代替'?etd:eta}));
   const pts=[...air.map(a=>a.p),...rp.map(r=>r.p)];return {air,rp,pts,T}}
+/* ---------- Open-Meteo：回数制限（HTTP 429）のときは自動取得を止める・取れたデータは30分使い回す ---------- */
+const OM={until:0,t:null};try{OM.until=+localStorage.getItem('om-block')||0}catch(e){}
+function omBlocked(){return Date.now()<OM.until}
+function omBlockMin(){return Math.max(1,Math.ceil((OM.until-Date.now())/60000))}
+function omHit429(){OM.until=Date.now()+10*60e3;try{localStorage.setItem('om-block',String(OM.until))}catch(e){}clearTimeout(OM.t);OM.t=setTimeout(()=>{OM.until=0;try{msmFetch(true)}catch(e){}try{if(wxoF().wx)wxoFetch(true)}catch(e){}},OM.until-Date.now()+1500)}
+function omErrText(e){return /429/.test(e)?`Open-Meteoへのアクセスが多すぎるため、一時的に断られました（HTTP 429）。約${omBlockMin()}分後に自動で取り直します`:`取得できませんでした（${e}）。通信を確認して「更新」を押してください`}
+function omCacheGet(k){try{const o=JSON.parse(localStorage.getItem('om-c:'+k)||'null');if(o&&Date.now()-o.t<30*60e3)return o}catch(e){}return null}
+function omCacheSet(k,v){try{Object.keys(localStorage).filter(x=>x.startsWith('om-c:')&&x!=='om-c:'+k).forEach(x=>localStorage.removeItem(x));localStorage.setItem('om-c:'+k,JSON.stringify({t:Date.now(),v}))}catch(e){}}
 async function msmFetch(force){const pl=msmPlan();if(!pl.pts.length)return;const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(!force&&MSM.key===key&&MSM.data)return;if(MSM.busy)return;
+  if(!force){const c=omCacheGet('msm|'+key);if(c){MSM.data={j:c.v.j,lv:c.v.lv,plan:pl};MSM.key=key;MSM.at=new Date(c.t);MSM.err='';try{renderMsm()}catch(e){}return}
+    if(omBlocked()){MSM.err='429';MSM.failKey=key;MSM.failAt=Date.now();try{renderMsm()}catch(e){}return}
+    if(MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)return}
   MSM.busy=true;MSM.err='';try{renderMsm()}catch(e){}
-  try{let r=await fetch(msmUrl(pl.pts,true));let lv=true;if(!r.ok){r=await fetch(msmUrl(pl.pts,false));lv=false}if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
-    MSM.data={j,lv,plan:pl};MSM.key=key;MSM.at=new Date()}catch(e){MSM.err=String(e.message||e)}finally{MSM.busy=false;try{renderMsm()}catch(e){}}}
+  try{let r=await fetch(msmUrl(pl.pts,true));let lv=true;if(r.status===400){r=await fetch(msmUrl(pl.pts,false));lv=false}if(r.status===429){omHit429();throw new Error('HTTP 429')}if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
+    MSM.data={j,lv,plan:pl};MSM.key=key;MSM.at=new Date();MSM.failKey=null;omCacheSet('msm|'+key,{j,lv})}catch(e){MSM.err=String(e.message||e);MSM.failKey=key;MSM.failAt=Date.now()}finally{MSM.busy=false;try{renderMsm()}catch(e){}}}
 function msmIdx(J,t){const tt=J.hourly.time;let bi=0,bd=1e18;for(let i=0;i<tt.length;i++){const d=Math.abs(Date.parse(tt[i]+'Z')-t);if(d<bd){bd=d;bi=i}}return bd<=2*3600e3?bi:-1}
 function wmoToM(code,cc,hh){const map={0:[],1:[],2:[],3:[],45:['FG'],48:['FZFG'],51:['-DZ'],53:['DZ'],55:['+DZ'],56:['-FZDZ'],57:['FZDZ'],61:['-RA'],63:['RA'],65:['+RA'],66:['-FZRA'],67:['FZRA'],71:['-SN'],73:['SN'],75:['+SN'],77:['SG'],80:['-SHRA'],81:['SHRA'],82:['+SHRA'],85:['-SHSN'],86:['SHSN'],95:['TS'],96:['TSGR'],99:['+TSGR']};
   const ww=map[code]||[];const c=cc==null?null:cc<6?[]:cc<25?[{c:'FEW',h:3000}]:cc<50?[{c:'SCT',h:3000}]:cc<87.5?[{c:'BKN',h:3000}]:[{c:'OVC',h:3000}];return {ww,clouds:c||[],time:'00'+String(hh).padStart(2,'0')+'00'}}
@@ -1597,9 +1608,9 @@ function icingTxt(t,rh){if(t==null||rh==null)return '';if(t<=2&&t>=-20&&rh>=85)r
 function nearFix(p){let best=null,bd=1e9;for(const [k,v] of Object.entries(NAV.F)){const d=gc(p,[v[0],v[1]]);if(d<bd){bd=d;best=k}}return best&&bd<=3?best:best?`${best}から${Math.round(bd)}NM`:''}
 function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   if(!pl.pts.length){box.innerHTML='';return}
-  const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(MSM.key!==key&&!MSM.busy){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false),400)}
+  const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(MSM.key!==key&&!MSM.busy&&!(MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false),400)}
   const D=MSM.data&&MSM.key===key?MSM.data:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM 予報（気象庁メソモデル）</b><button class="sub" type="button" id="msmGo">${MSM.busy?'取得中…':'更新'}</button></div>
-   <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">取得できませんでした（${esc(MSM.err)}）。通信を確認して「更新」を押してください。</div>`:''}`;
+   <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
   if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;bindMsm();return}
   const J=D.j;const nA=pl.air.length;
   // airports: hours around the planned time
@@ -2999,18 +3010,20 @@ function wxoGrid(){if(!MAP||!MAP.C)return null;const pts=MAP.C.path&&MAP.C.path.
   let ny=Math.round((la1-la0)/st)+1,nx=Math.round((lo1-lo0)/st)+1;let s2=st;while(nx*ny>196){s2*=2;ny=Math.round((la1-la0)/s2)+1;nx=Math.round((lo1-lo0)/s2)+1}
   const g=[];for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)g.push([la0+j*s2,lo0+i*s2]);return {la0,lo0,st:s2,nx,ny,pts:g}}
 async function wxoFetch(force){if(!wxoF().wx)return;const G=wxoGrid();if(!G)return;const W=wxoWin();const key=[G.la0,G.lo0,G.st,G.nx,G.ny,W.s,W.e].join('|');
-  if(!force&&WXO.key===key&&WXO.data)return;if(WXO.busy)return;WXO.busy=true;WXO.err='';wxoStatus();
+  if(!force&&WXO.key===key&&WXO.data)return;if(WXO.busy)return;
+  if(!force){if(omBlocked()){WXO.err='429';wxoStatus();return}if(WXO.failKey===key&&Date.now()-(WXO.failAt||0)<120e3)return}
+  WXO.busy=true;WXO.err='';wxoStatus();
   const sv='temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m';const lv=MSM_LV.flatMap(L=>['temperature','relative_humidity','wind_speed','wind_direction','geopotential_height'].map(v=>`${v}_${L}hPa`)).join(',');
   const url=`https://api.open-meteo.com/v1/jma?latitude=${G.pts.map(p=>p[0].toFixed(2)).join(',')}&longitude=${G.pts.map(p=>p[1].toFixed(2)).join(',')}&hourly=${sv},${lv}&models=jma_msm&wind_speed_unit=kn&timezone=GMT&start_hour=${W.s}&end_hour=${W.e}`;
-  try{const r=await fetch(url);if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
-    WXO.data={j,G};WXO.key=key;WXO.at=new Date();const tt=j[0]&&j[0].hourly?j[0].hourly.time:[];let bi=0,bd=1e18;tt.forEach((x,i)=>{const d=Math.abs(Date.parse(x+'Z')-W.mid);if(d<bd){bd=d;bi=i}});WXO.ti=bi}
-  catch(e){WXO.err=String(e.message||e)}finally{WXO.busy=false;wxoStatus();wxoRedraw()}}
+  try{const r=await fetch(url);if(r.status===429)omHit429();if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
+    WXO.data={j,G};WXO.key=key;WXO.failKey=null;WXO.at=new Date();const tt=j[0]&&j[0].hourly?j[0].hourly.time:[];let bi=0,bd=1e18;tt.forEach((x,i)=>{const d=Math.abs(Date.parse(x+'Z')-W.mid);if(d<bd){bd=d;bi=i}});WXO.ti=bi}
+  catch(e){WXO.err=String(e.message||e);WXO.failKey=key;WXO.failAt=Date.now()}finally{WXO.busy=false;wxoStatus();wxoRedraw()}}
 function wxoRedraw(){const svg=$('mapSvg');if(!svg||!MAP)return;svg.innerHTML=mapContent(MAP.C);try{tilesUpdate(svg)}catch(e){}}
 function wxoTimes(){return WXO.data&&WXO.data.j[0]&&WXO.data.j[0].hourly?WXO.data.j[0].hourly.time:[]}
 function wxoTLabel(i){const t=wxoTimes()[i];if(!t)return '—';const d=new Date(t+'Z');const j=new Date(+d+9*3600e3);return `${String(d.getUTCDate()).padStart(2,'0')}日 ${String(d.getUTCHours()).padStart(2,'0')}Z（${j.getUTCHours()}時JST）`}
 function wxoStatus(){const el=$('mf_wxs');if(!el)return;const f=wxoF();const tl=$('mf_wxtl'),sl=$('mf_wxt');const n=wxoTimes().length;
   if(sl){sl.max=Math.max(0,n-1);if(WXO.ti!=null)sl.value=WXO.ti;sl.disabled=!n}if(tl)tl.textContent=n?wxoTLabel(WXO.ti??0):'—';
-  el.textContent=WXO.busy?'MSM予報を読み込み中…':WXO.err?'読み込めませんでした（'+WXO.err+'）。通信を確認してください':WXO.data?`気象庁MSM・格子${WXO.data.G.st}°（約${Math.round(WXO.data.G.st*60)}NM）・高度 ${wxoAlt().toLocaleString()}ft`:''}
+  el.textContent=WXO.busy?'MSM予報を読み込み中…':WXO.err?omErrText(WXO.err):WXO.data?`気象庁MSM・格子${WXO.data.G.st}°（約${Math.round(WXO.data.G.st*60)}NM）・高度 ${wxoAlt().toLocaleString()}ft`:''}
 /* 格子の値（選んだ時刻・高度） */
 function wxoField(){const D=WXO.data;if(!D)return null;const i=WXO.ti??0;const A=wxoAlt();const G=D.G;
   const V=D.j.map(J=>{if(!J||!J.hourly||!J.hourly.time[i])return null;const m=msmAt(J,i,A);let fz=null;for(let ft=0;ft<=18000;ft+=250){const q=msmAt(J,i,ft);if(q&&q.t!=null&&q.t<=0){fz=ft;break}}return m?{...m,fz}:null});
@@ -3754,7 +3767,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261107131638';
+window.APPV='20261107132924';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
