@@ -1382,7 +1382,7 @@ a{color:#7cc4ff}
               <label class="chk"><input type="checkbox" id="wpAuto"> 入力があれば最優先：地図で地点を選ぶ・高度を変えるたびに、その高さの気温と風を自動で反映</label></div>
             <div class="wpscroll"><table id="wpTab"></table></div>
             <div class="jmabox"><div class="jtop"><button type="button" class="pri jgo" id="jmaGo"><svg class="jic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span>予報を読み込む</span></button>
-<span class="wxmseg" id="jmaSeg" role="group" aria-label="予報モデル"><button type="button" data-wxm="ecmwf" aria-pressed="false" title="ヨーロッパ中期予報センター・9km（上空の風は約25km）・10日先"><b>ECMWF</b><small>9km</small></button><button type="button" data-wxm="gfs" aria-pressed="false" title="アメリカ海洋大気庁・約22km・10日先"><b>GFS</b><small>22km</small></button><button type="button" data-wxm="icon" aria-pressed="false" title="ドイツ気象局・13km・7日先"><b>ICON</b><small>13km</small></button><button type="button" data-wxm="msm" aria-pressed="true" title="気象庁メソモデル・5km・約4日先"><b>MSM</b><small>5km</small></button><button type="button" data-wxm="gsm" aria-pressed="false" title="気象庁全球モデル・約20km・11日先"><b>GSM</b><small>20km</small></button></span><div class="wxminfo" id="wxmInfo"></div>
+<span class="wxmseg" id="jmaSeg" role="group" aria-label="予報モデル"><button type="button" data-wxm="ecmwf" aria-pressed="false" title="ヨーロッパ中期予報センター・9km（上空の風は約25km）・10日先"><b>ECMWF</b><small>9km</small></button><button type="button" data-wxm="gfs" aria-pressed="false" title="アメリカ海洋大気庁・約22km・10日先"><b>GFS</b><small>22km</small></button><button type="button" data-wxm="icon" aria-pressed="false" title="ドイツ気象局・13km・7日先"><b>ICON</b><small>13km</small></button><button type="button" data-wxm="msm" aria-pressed="true" title="気象庁メソモデル・5km・約4日先"><b>MSM</b><small>5km</small></button><button type="button" data-wxm="gsm" aria-pressed="false" title="気象庁全球モデル・約20km・11日先"><b>GSM</b><small>20km</small></button></span><div class="wxminfo"><span id="wxmInfo"></span> <button type="button" class="wxdiagb" id="wxDiagB">通信テスト</button></div><div id="wxDiag" hidden></div>
 <select id="jmaM" aria-label="モデル" hidden><option value="ecmwf">ecmwf</option><option value="gfs">gfs</option><option value="icon">icon</option><option value="msm">msm</option><option value="gsm">gsm</option></select>
 <label class="jhum" title="湿った空気は軽いので、密度高度が少し高くなる（安全側）"><input type="checkbox" id="humOn"><span>💧 湿度を密度高度に含める</span></label></div>
 <select id="jmaT" aria-label="時刻" hidden></select><div class="jstrip" id="jmaStrip" hidden></div><div class="jmadet" id="jmaDet" hidden></div><div class="hint" id="jmaMsg">📍 地図で選んだ地点の上空の気温・風を、気象庁の数値予報から各気圧面に入れます（オンライン時のみ）。読み込んだら下の時刻を選んでください。</div></div>
@@ -1446,6 +1446,19 @@ function wxUrl(la,lo,vars,days,dp){ const m=WXM[WXMC]; return `https://api.open-
 function wxMerge(j){ const m=WXM[WXMC]; if(!j||!j.hourly||m.om.length<2) return j; const h=j.hourly, o={time:h.time}, K=Object.keys(h);
   m.om.forEach(id=>K.forEach(k=>{ if(!k.endsWith('_'+id)) return; const b=k.slice(0,-id.length-1), v=h[k]; if(!Array.isArray(v)) return; if(!o[b]) o[b]=v.slice(); else v.forEach((x,i)=>{ if(o[b][i]==null&&x!=null) o[b][i]=x; }); }));
   K.forEach(k=>{ if(!(k in o)&&!m.om.some(id=>k.endsWith('_'+id))) o[k]=h[k]; }); j.hourly=o; return j; }
+
+async function wxDiag(){ const box=$('wxDiag'); if(!box) return; box.hidden=false; box.innerHTML='<div class="hint">通信テスト中…</div>';
+  const T=[['オープンメテオ（MSM）','https://api.open-meteo.com/v1/jma?latitude=38.27&longitude=140.87&models=jma_msm&hourly=temperature_2m&forecast_days=1'],
+    ['オープンメテオ（ECMWF・GFS・ICON）','https://api.open-meteo.com/v1/forecast?latitude=38.27&longitude=140.87&models=gfs_seamless&hourly=temperature_2m&forecast_days=1'],
+    ['MET Norway','https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=38.27&lon=140.87'],
+    ['気象庁（アメダス・ナウキャスト）','https://www.jma.go.jp/bosai/amedas/data/latest_time.txt']];
+  const one=async([n,u])=>{ const ac=new AbortController(), to=setTimeout(()=>ac.abort(),10000), t0=Date.now();
+    try{ const r=await fetch(u,{signal:ac.signal,cache:'no-store'}); let why=''; if(!r.ok){ try{ const j=await r.clone().json(); why=j.reason||''; }catch(_){} }
+      return [n,r.ok,r.ok?`OK（${Date.now()-t0} ms）`:`HTTP ${r.status}${r.status===429?'：アクセスが多すぎて一時的に止められています（しばらく待つと戻ります）':r.status===403?'：接続を断られました':''}${why?'・'+why:''}`]; }
+    catch(e){ return [n,false,e&&e.name==='AbortError'?'時間切れ（10秒）':`接続できません（${String(e&&e.message||e)}）`]; } finally{ clearTimeout(to); } };
+  const R=await Promise.all(T.map(one));
+  box.innerHTML=`<table class="amdt"><tbody>${R.map(([n,ok,t])=>`<tr><td>${ok?'✓':'✕'} <b>${n}</b></td><td>${esc(t)}</td></tr>`).join('')}</tbody></table>${!R[0][1]&&!R[1][1]&&(R[2][1]||R[3][1])?'<div class="hint"><b>オープンメテオだけにつながりません。</b>同じ回線からの使いすぎによる一時的な制限（1日・1時間ごとの上限）か、オープンメテオ側の停止の可能性があります。しばらく待つか、別の回線（モバイル通信など）で試してください。その間は MET Norway の地上予報とアメダスで代わりに表示します</div>':''}${R.every(r=>!r[1])?'<div class="hint"><b>どこにもつながりません。</b>電波・機内モード・フィルタリング（職場のネットワーク制限など）を確認してください</div>':''}<div class="hint">ネット：${navigator.onLine===false?'オフライン':'オンライン'}・このページ：${esc(location.origin||'')}・${new Date().toLocaleTimeString('ja-JP')}</div>`; }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#wxDiagB'); if(b){ e.stopPropagation(); wxDiag(); } },true);
 function wxModelUI(){ document.querySelectorAll('[data-wxm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.wxm===WXMC)); const m=WXM[WXMC];
   const i=$('wxmInfo'); if(i) i.textContent=m.d+(m.ep==='forecast'?'・オープンメテオ経由':'・オープンメテオ経由（気象庁）');
   const sel=$('jmaM'); if(sel) sel.value=WXMC; const g=$('jmaGo'); if(g&&!g.disabled){ const sp=g.querySelector('span'); if(sp) sp.textContent=`${m.lab} の予報を読み込む`; }
@@ -5944,7 +5957,7 @@ function wfShow(fromPad,fromWheel){ const r=wfRow(); if(!r){ wfClose(); return; 
       const sel=$('jmaT'); sel.innerHTML=T.map((t,i)=>{ const ok=i>=best&&d.hourly[`temperature_${JMA.lv[3]}hPa`]&&d.hourly[`temperature_${JMA.lv[3]}hPa`][i]!=null&&(i-best<=48||+t.slice(11,13)%3===0); return ok?`<option value="${i}"${i===best?' selected':''}>${t.slice(5,10).replace('-','/')} ${t.slice(11,16)}${i===best?'（今）':''}</option>`:''; }).join('');
       JMA.ll=[la,lo]; JMA.best=best; jmaApply(); radarAt(la,lo).then(()=>{ try{ update(); }catch(e){} }); }
     catch(e){ let fb=''; try{ const h=await metnoHourly(la,lo), i=metnoNow(h), wd=h.wind_direction_10m[i], ws=h.wind_speed_10m[i], gu=h.wind_gusts_10m[i], t=h.temperature_2m[i];
-        if(wd!=null&&ws!=null) fb=`<br>代わりに MET Norway の予報（ECMWF・約9km・地上10m・${h.time[i].slice(11,16)}）：<b>${String(Math.round(wd)%360||360).padStart(3,'0')}°／${Math.round(ws)} kt</b>${gu!=null?`（突風 ${Math.round(gu)} kt）`:''}${t!=null?`・${t.toFixed(1)}℃`:''} <button type="button" class="mwmsm" data-wxuse="${Math.round(wd)},${Math.round(ws)}">風に反映</button>。上空の風はありません。近くの実測は下の「近くのアメダス（実測）」で見られます`; }catch(_){}
+        if(wd!=null&&ws!=null) fb=`<br>代わりに MET Norway の予報（ECMWF・約9km・地上10m・${h.time[i].slice(11,16)}）：<b>${String(Math.round(wd)%360||360).padStart(3,'0')}°／${Math.round(ws)} kt</b>${gu!=null?`（突風 ${Math.round(gu)} kt）`:''}${t!=null?`・${t.toFixed(1)}℃`:''} <button type="button" class="mwmsm" data-wxuse="${Math.round(wd)},${Math.round(ws)}">風に反映</button>。上空の風はありません。近くの実測は下の「近くのアメダス（実測）」で見られます`; }catch(e2){ fb=`<br>代わりの MET Norway も読み込めませんでした（${esc(errJa(e2))}）。上の「通信テスト」でどこにつながらないか確かめられます`; }
       m.innerHTML=`<b class="warn">オープンメテオ（${WXM[WXMC].lab}）を読み込めませんでした</b>（${esc(errJa(e))}）。${fb||'電波の状態を確認するか、手入力してください。'}`; }
     b.disabled=false; b.innerHTML='<svg class="jic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg><span>読み込み直す</span>'; };
   $('wpClr').onclick=()=>{ WP.rows.forEach(r=>{ r.t=''; r.d=''; r.s=''; }); const tb=$('wpTab'); tb.dataset.built=''; wpSave(); wpDraw(); };
@@ -5991,7 +6004,7 @@ async function amdShow(){ const p=MAP.pick&&!MAP.pick.loading?MAP.pick:null, la=
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-wxuse]'); if(b){ e.stopPropagation(); const [wd,ws]=b.dataset.wxuse.split(',').map(Number); try{ mwSetWd(Math.round(wd/10)*10%360); $('ws').value=ws; if($('wsR')) $('wsR').value=ws; update(); mapWind&&mapWind(); }catch(_){} b.textContent='反映しました'; return; }
   const a=e.target.closest&&e.target.closest('#amdGo'); if(a){ e.stopPropagation(); amdShow(); } },true);
 document.addEventListener('pointerdown',e=>{ if(e.target.closest&&e.target.closest('#amdGo')) e.stopPropagation(); },true);
-function errJa(e){ const t=String(e&&e.message||e||''); if(/Failed to fetch|NetworkError|Load failed|network/i.test(t)) return '通信できません。電波の状態を確認してください'; if(/HTTP 4\d\d/.test(t)) return 'データの要求が受け付けられませんでした（'+t+'）'; if(/HTTP 5\d\d/.test(t)) return '相手のサーバーが応答しません（'+t+'）'; if(/timeout|abort/i.test(t)) return '時間切れで読み込めませんでした'; return t; }
+function errJa(e){ const t=String(e&&e.message||e||''); if(/Failed to fetch|NetworkError|Load failed|network/i.test(t)) return '通信できません。電波の状態を確認してください'; if(/HTTP 429/.test(t)) return 'アクセスが多すぎて一時的に止められています（HTTP 429）。しばらく待つと戻ります'; if(/HTTP 4\d\d/.test(t)) return 'データの要求が受け付けられませんでした（'+t+'）'; if(/HTTP 5\d\d/.test(t)) return '相手のサーバーが応答しません（'+t+'）'; if(/timeout|abort/i.test(t)) return '時間切れで読み込めませんでした'; return t; }
 setTimeout(()=>mapWind(),400);
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.drose'); if(!b) return; const it=DRAW.items[+b.dataset.rose]; if(!it) return; it.rose=!it.rose; b.setAttribute('aria-pressed',it.rose); b.textContent=(it.rose?'✓ ':'')+'磁方位'; drawSave(); drawLayer(); });
 (function(){ const b=$('skinBtn'), st=document.getElementById('eliteCss'); if(!b||!st) return;
@@ -6531,6 +6544,8 @@ body.fly #qTrS{display:none!important}
 .wxmseg button small{font-size:11.5px;font-weight:600;opacity:.75}
 .wxmseg button[aria-pressed=true]{background:var(--uiOn,#3aa7e0);border-color:var(--uiOn,#3aa7e0);color:#06202e}
 .wxmseg button[aria-pressed=true] small{opacity:.85}
+.wxdiagb{font:inherit;font-size:12.5px;font-weight:700;min-height:34px;padding:0 10px;margin-left:6px;border-radius:8px;border:1.5px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}
+#wxDiag{margin:4px 0 8px;flex-basis:100%}
 .wxminfo{font-size:12.5px;color:var(--muted);margin:2px 2px 6px;flex-basis:100%}
 #jmaMsg{flex-basis:100%}
 .amdt{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
