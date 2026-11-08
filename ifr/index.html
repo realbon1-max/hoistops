@@ -820,6 +820,8 @@ button:active:not(:disabled){transform:scale(.96);filter:brightness(1.25)}
 .ttc{r:calc(6px*var(--k));fill:var(--mag);stroke:var(--card);stroke-width:calc(2px*var(--k))}
 tr.lead.tt td{background:color-mix(in srgb,var(--mag) 8%,transparent)}
 tr.lead.tt.sum td{font-size:13.5px}
+.wxold{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);min-height:0;cursor:pointer}
+.wxold.arm{border-color:var(--mag);color:var(--mag);background:color-mix(in srgb,var(--mag) 10%,transparent)}
 /* summary END */
 /* === ACE THEME（ファイター・パイロット風／オリジナル） === */
 :root[data-theme="ace"]{
@@ -1585,7 +1587,7 @@ function msmPlan(){const ap0=[['出発',S.route.dep],['目的',S.route.dst],['�
 const OM={until:0,t:null};try{OM.until=+localStorage.getItem('om-block')||0}catch(e){}
 function omBlocked(){try{OM.until=Math.max(OM.until,+localStorage.getItem('om-block')||0)}catch(e){}return Date.now()<OM.until}
 function omBlockMin(){return Math.max(1,Math.ceil((OM.until-Date.now())/60000))}
-function omHit429(){OM.until=Math.max(Date.now()+10*60e3,(()=>{try{return +localStorage.getItem('om-block')||0}catch(e){return 0}})());try{localStorage.setItem('om-block',String(OM.until))}catch(e){}clearTimeout(OM.t);OM.t=setTimeout(()=>{if(omBlocked())return;try{msmFetch(true)}catch(e){}try{if(wxoF().wx)wxoFetch(true)}catch(e){}},Math.min(OM.until-Date.now()+1500,2**31-1))}
+function omHit429(){OM.until=Math.max(Date.now()+10*60e3,(()=>{try{return +localStorage.getItem('om-block')||0}catch(e){return 0}})());try{localStorage.setItem('om-block',String(OM.until))}catch(e){}clearTimeout(OM.t);OM.t=setTimeout(()=>{if(omBlocked())return;try{msmFetch(true)}catch(e){}},Math.min(OM.until-Date.now()+1500,2**31-1))}
 function omErrText(e){return /429/.test(e)?`Open-Meteoへのアクセスが多すぎるため、一時的に断られました（HTTP 429）。${omBlockMin()>90?new Date(OM.until).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（日本時間）以降に取り直します（1日の利用上限）':'約'+omBlockMin()+'分後に自動で取り直します'}`:`取得できませんでした（${e}）。通信を確認して「更新」を押してください`}
 function omCacheGet(k){try{const o=JSON.parse(localStorage.getItem('om-c:'+k)||'null');if(o&&Date.now()-o.t<30*60e3)return o}catch(e){}return null}
 function omCacheSet(k,v){try{Object.keys(localStorage).filter(x=>x.startsWith('om-c:')&&x!=='om-c:'+k).forEach(x=>localStorage.removeItem(x));localStorage.setItem('om-c:'+k,JSON.stringify({t:Date.now(),v}))}catch(e){}}
@@ -3011,8 +3013,7 @@ function wxoGrid(){if(!MAP||!MAP.C)return null;const pts=MAP.C.path&&MAP.C.path.
   const g=[];for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)g.push([la0+j*s2,lo0+i*s2]);return {la0,lo0,st:s2,nx,ny,pts:g}}
 async function wxoFetch(force){if(!wxoF().wx)return;const G=wxoGrid();if(!G)return;const W=wxoWin();const key=[G.la0,G.lo0,G.st,G.nx,G.ny,W.s,W.e].join('|');
   if(!force&&WXO.key===key&&WXO.data)return;if(WXO.busy)return;
-  if(!force){if(omBlocked()){WXO.err='429';wxoStatus();return}if(WXO.failKey===key&&Date.now()-(WXO.failAt||0)<120e3)return;
-    const ago=Date.now()-(WXO.lastAt||0);if(ago<45e3){clearTimeout(WXO.dt);WXO.dt=setTimeout(()=>wxoFetch(),45e3-ago+200);return}}
+  if(omBlocked()){WXO.err='429';wxoStatus();return}if(!force&&WXO.failKey===key&&Date.now()-(WXO.failAt||0)<120e3)return;
   WXO.lastAt=Date.now();WXO.busy=true;WXO.err='';wxoStatus();
   const sv='temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m';const lv=MSM_LV.filter(L=>L>=500).flatMap(L=>['temperature','relative_humidity','wind_speed','wind_direction','geopotential_height'].map(v=>`${v}_${L}hPa`)).join(',');
   const url=`https://api.open-meteo.com/v1/jma?latitude=${G.pts.map(p=>p[0].toFixed(2)).join(',')}&longitude=${G.pts.map(p=>p[1].toFixed(2)).join(',')}&hourly=${sv},${lv}&models=jma_msm&wind_speed_unit=kn&timezone=GMT&start_hour=${W.s}&end_hour=${W.e}`;
@@ -3024,7 +3025,7 @@ function wxoTimes(){return WXO.data&&WXO.data.j[0]&&WXO.data.j[0].hourly?WXO.dat
 function wxoTLabel(i){const t=wxoTimes()[i];if(!t)return '—';const d=new Date(t+'Z');const j=new Date(+d+9*3600e3);return `${String(d.getUTCDate()).padStart(2,'0')}日 ${String(d.getUTCHours()).padStart(2,'0')}Z（${j.getUTCHours()}時JST）`}
 function wxoStatus(){const el=$('mf_wxs');if(!el)return;const f=wxoF();const tl=$('mf_wxtl'),sl=$('mf_wxt');const n=wxoTimes().length;
   if(sl){sl.max=Math.max(0,n-1);if(WXO.ti!=null)sl.value=WXO.ti;sl.disabled=!n}if(tl)tl.textContent=n?wxoTLabel(WXO.ti??0):'—';
-  el.textContent=WXO.busy?'MSM予報を読み込み中…':WXO.err?omErrText(WXO.err):WXO.data?`気象庁MSM・格子${WXO.data.G.st}°（約${Math.round(WXO.data.G.st*60)}NM）・高度 ${wxoAlt().toLocaleString()}ft`:''}
+  el.textContent=WXO.busy?'MSM予報を読み込み中…':WXO.err?omErrText(WXO.err):!WXO.data&&!WXO.err?'まだ読み込んでいません。通信制限のため自動では読み込みません（左のボタンを2回押す）':WXO.data?`気象庁MSM・格子${WXO.data.G.st}°（約${Math.round(WXO.data.G.st*60)}NM）・高度 ${wxoAlt().toLocaleString()}ft`:''}
 /* 格子の値（選んだ時刻・高度） */
 function wxoField(){const D=WXO.data;if(!D)return null;const i=WXO.ti??0;const A=wxoAlt();const G=D.G;
   const V=D.j.map(J=>{if(!J||!J.hourly||!J.hourly.time[i])return null;const m=msmAt(J,i,A);let fz=null;for(let ft=0;ft<=18000;ft+=250){const q=msmAt(J,i,ft);if(q&&q.t!=null&&q.t<=0){fz=ft;break}}return m?{...m,fz}:null});
@@ -3070,13 +3071,15 @@ function wxoCtl(){const f=wxoF();const alts=[['plan','計画の巡航高度'],..
    <span style="font-size:13px">時刻</span><input type="range" id="mf_wxt" min="0" max="0" step="1" value="0" style="width:160px" aria-label="予報の時刻"><b class="code" id="mf_wxtl" style="font-size:13px">—</b></div>
    <div class="row" style="gap:14px;flex-wrap:wrap"><label class="tgl" style="margin:0"><input type="checkbox" id="mf_wxw" ${f.wxw?'checked':''}>風（矢羽根）</label><label class="tgl" style="margin:0"><input type="checkbox" id="mf_wxtt" ${f.wxt?'checked':''}>気温・0℃線・0℃高度</label><label class="tgl" style="margin:0"><input type="checkbox" id="mf_wxc" ${f.wxc?'checked':''}>雲域・着氷域</label></div>
    <div class="wxoleg"><span><i style="background:#8E5BD6;opacity:.6"></i>着氷の恐れ（0〜-20℃・湿度85%以上）</span><span><i style="background:#7E8B99;opacity:.55"></i>雲（湿度90%以上）</span><span><i style="background:#9AA6B2;opacity:.35"></i>湿り（80%以上）</span><span><i style="border-top:3px solid #1F6FE0;height:0;width:14px"></i>0℃線</span><span><i style="border-top:2px dashed #4A86C8;height:0;width:14px"></i>等温線（3℃ごと）</span><span><i style="border-top:2px dotted #0E8F8F;height:0;width:14px"></i>0℃高度（2,000ftごと）</span></div>
-   <div class="zhint" id="mf_wxs"></div></div></div>`}
+   <div class="row" style="gap:8px;align-items:center;margin-top:2px"><button type="button" class="wxold" id="mf_wxld" title="2回押すと読み込みます（Open-Meteoの通信制限のため自動では読み込みません）">${WXO.data?'再読み込み':'予報を読み込む'}</button><div class="zhint" id="mf_wxs" style="margin:0"></div></div></div></div>`}
 function wxoBind(){const g=id=>$(id);if(!g('mf_wx'))return;const f=wxoF();
-  g('mf_wx').onchange=()=>{f.wx=g('mf_wx').checked?1:0;g('mf_wxrow').style.display=f.wx?'':'none';save();if(f.wx)wxoFetch();wxoRedraw();wxoStatus()};
+  g('mf_wx').onchange=()=>{f.wx=g('mf_wx').checked?1:0;g('mf_wxrow').style.display=f.wx?'':'none';save();wxoRedraw();wxoStatus()};
   g('mf_wxa').onchange=()=>{f.wxa=g('mf_wxa').value;save();wxoRedraw();wxoStatus()};
   g('mf_wxt').oninput=()=>{WXO.ti=+g('mf_wxt').value;$('mf_wxtl').textContent=wxoTLabel(WXO.ti);wxoRedraw()};
   [['mf_wxw','wxw'],['mf_wxtt','wxt'],['mf_wxc','wxc']].forEach(([id,k])=>{g(id).onchange=()=>{f[k]=g(id).checked?1:0;save();wxoRedraw()}});
-  wxoStatus();if(f.wx)wxoFetch()}
+  const lb=g('mf_wxld');if(lb){let arm=0,tm=null;lb.onclick=()=>{if(WXO.busy)return;if(!arm){arm=1;lb.classList.add('arm');lb.textContent='もう一度押すと読み込みます';clearTimeout(tm);tm=setTimeout(()=>{arm=0;lb.classList.remove('arm');lb.textContent=WXO.data?'再読み込み':'予報を読み込む'},3000);return}
+    arm=0;clearTimeout(tm);lb.classList.remove('arm');lb.textContent='読み込み中…';wxoFetch(true).finally(()=>{const b=$('mf_wxld');if(b)b.textContent=WXO.data?'再読み込み':'予報を読み込む'})}}
+  wxoStatus()}
 
 function mapLimit(){const f=mapF();if(f.src==='lvl')return lvlFt(S.fpl.lvl);if(f.src==='fz')return routeFzl();return f.alt?+f.alt:null}
 function mapKey(C){return [S.route.dep,S.route.dst,S.route.rte,S.proc&&S.proc.sid,S.proc&&S.proc.star].join('|')}
@@ -3768,7 +3771,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261107162124';
+window.APPV='20261108134003';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
