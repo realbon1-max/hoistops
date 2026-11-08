@@ -3629,10 +3629,10 @@ function apItemV(E,lbl){if(!E.cond)return `${lbl}の天気がありません`;if
   return `${esc(E.top.x.n)}${E.picked?'':'（おすすめ）'}：${b?esc(b.j.t):'ミニマはチャートで確認'}<small>${esc(condText(E.cond))}${E.top.e&&E.top.e.ok!==null?`・RWY${E.top.e.r.id} 横風${E.top.e.worstX}kt${E.top.e.ok?'':'（'+limTxt(E.top.e)+'）'}`:''}</small>`}
 
 /* ---------- MSM icing / freezing level along the route ---------- */
-function msmIcing(){if(typeof MSM==='undefined')return null;const D=MSM.data;if(!D||!D.lv||!D.plan)return null;const pl=D.plan;const na=pl.air.length;const hit=[];let fz=null;
+function msmIcing(){if(typeof MSM==='undefined')return null;const D=MSM.data;if(!D||!D.lv||!D.plan)return null;const pl=D.plan;const na=pl.air.length;const hit=[];let fz=null,fzAt=null;
   pl.rp.forEach((r,k)=>{const J=D.j[na+k];if(!J||!J.hourly)return;const i=msmIdx(J,+r.t);if(i<0)return;const m=msmAt(J,i,r.ft);if(m&&icingTxt(m.t,m.rh))hit.push({r,m});
-    for(let ft=0;ft<=16000;ft+=500){const q=msmAt(J,i,ft);if(q&&q.t!=null&&q.t<=0){fz=fz==null?ft:Math.min(fz,ft);break}}});
-  return {hit,fz,n:pl.rp.length}}
+    for(let ft=0;ft<=16000;ft+=500){const q=msmAt(J,i,ft);if(q&&q.t!=null&&q.t<=0){if(fz==null||ft<fz){fz=ft;fzAt=r.p}break}}});
+  return {hit,fz,fzAt,n:pl.rp.length}}
 
 /* ---------- the briefing items (shared by summary, badges and checklist) ---------- */
 function briefItems(){const r=S.route;const okD=i=>i&&(ap(i)||isZ(i));if(!okD(r.dep)||!okD(r.dst))return null;const P=procSel();const etd=utc(r.etd),eta=utc(r.eta);const I=[];
@@ -3652,8 +3652,8 @@ function briefItems(){const r=S.route;const okD=i=>i&&(ap(i)||isZ(i));if(!okD(r.
   {const M=msmIcing();const fz=M&&M.fz!=null?M.fz:routeFzl();let s='unk',v='MSM予報を取得すると、経路上の着氷を判定します';
     if(M){s=M.hit.length?'cau':'go';v=M.hit.length?`経路上 ${M.hit.length}か所で着氷の恐れ（${esc(nearFix(M.hit[0].r.p))} 付近 ${Math.round(M.hit[0].r.ft).toLocaleString()}ft・${Math.round(M.hit[0].m.t)}℃）`:'計画高度で着氷の恐れはありません（MSM）'}
     else if(fz!=null){s='cau';v='経路の気象（MSM）が未読み込みです'}
-    if(fz!=null)v+=`<small>0℃の高さ 約${Math.round(fz).toLocaleString()}ft${M&&M.fz!=null?'（MSM）':'（地上気温から推定）'}</small>`;
-    const sig=iceSig(M);if(s!=='go'&&S.ackIce&&S.ackIce===sig){s='go';v='<b>確認済み</b>：'+v}else if(s!=='go')v+=` <button type="button" class="sub ackice" data-ackice="${esc(sig)}">確認した</button>`;
+    if(fz!=null)v+=`<small>0℃の高さ ${M&&M.fz!=null?`経路上で最も低い所 ${fz<500?'地上付近':'約'+Math.round(fz).toLocaleString()+'ft'}${M.fzAt?'（'+esc(String(nearFix(M.fzAt)))+'）':''}・MSM`:'約'+Math.round(fz).toLocaleString()+'ft（地上気温から推定）'}</small>`;
+    const sig=iceSig(M);if(s!=='go'&&S.ackIce&&S.ackIce===sig){s='go';v='<b>確認済み</b>：'+v}
     I.push({k:'ice',l:'着氷・0℃高度',s,v,tab:'wx',fx:M?'':'MSMを見る'})}
   {const ex=new Date().toISOString().slice(0,10)>=AIRAC_NEXT;I.push({k:'airac',l:'航空データ',s:ex?'cau':'go',v:ex?`AIRAC ${AIRAC_EFF} は期限切れ（${AIRAC_NEXT} 更新）<small>手順・ミニマは公式チャートで確認</small>`:`AIRAC ${AIRAC_EFF} 有効（次回 ${AIRAC_NEXT}）`,tab:'chk'})}
   I.push(S.fpl.id?{k:'reg',l:'登録記号',s:'go',v:`<span class="code">${esc(S.fpl.id)}</span>`,tab:'fpl',el:'f_id'}:{k:'reg',l:'登録記号',s:'cau',v:'未入力です（飛行計画・ATC文例に入ります）',tab:'fpl',el:'f_id',fx:'登録記号を入力'});
@@ -3820,7 +3820,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261108184703';
+window.APPV='20261108185344';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
