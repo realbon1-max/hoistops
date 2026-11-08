@@ -822,6 +822,8 @@ tr.lead.tt td{background:color-mix(in srgb,var(--mag) 8%,transparent)}
 tr.lead.tt.sum td{font-size:13.5px}
 .wxold{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);min-height:0;cursor:pointer}
 .wxold.arm{border-color:var(--mag);color:var(--mag);background:color-mix(in srgb,var(--mag) 10%,transparent)}
+.msmair:empty{display:none}
+.msmairh{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 /* summary END */
 /* === ACE THEME（ファイター・パイロット風／オリジナル） === */
 :root[data-theme="ace"]{
@@ -1579,10 +1581,11 @@ function msmUrl(pts,withLv){const sv='temperature_2m,dew_point_2m,relative_humid
   const lv=withLv?','+MSM_LV.flatMap(L=>['temperature','relative_humidity','wind_speed','wind_direction','geopotential_height'].map(v=>`${v}_${L}hPa`)).join(','):'';
   return `https://api.open-meteo.com/v1/jma?latitude=${pts.map(p=>p[0].toFixed(3)).join(',')}&longitude=${pts.map(p=>p[1].toFixed(3)).join(',')}&hourly=${sv}${lv}&models=jma_msm&wind_speed_unit=kn&timezone=GMT&past_hours=3&forecast_days=4`}
 function msmPlan(){const ap0=[['出発',S.route.dep],['目的',S.route.dst],['代替',S.route.alt],['離陸代替',S.route.talt]].filter(x=>x[1]&&ap(x[1]));
-  const etd=utc(S.route.etd)||new Date(),eta=utc(S.route.eta)||new Date(+etd+3600e3);let T=null;try{T=trk3d()}catch(e){}
-  const rp=[];if(T&&T.smp&&T.smp.length>1){const step=Math.max(4,T.tot/18);let next=0,lastK='';T.smp.forEach((o,i)=>{if(o.d>=next||o.k!==lastK||i===T.smp.length-1){rp.push({p:o.p,ft:o.a,k:o.k,d:o.d,t:new Date(T.t0+o.d/T.tas*3600e3),i});next=o.d+step;lastK=o.k}})}
+  let etd=utc(S.route.etd)||new Date(),eta=utc(S.route.eta)||new Date(+etd+3600e3);let T=null;try{T=trk3d()}catch(e){}
+  let shift=0;if(+etd<Date.now()-3600e3){shift=Date.now()-etd;etd=new Date(+etd+shift);eta=new Date(+eta+shift)}
+  const rp=[];if(T&&T.smp&&T.smp.length>1){if(shift)T=Object.assign({},T,{t0:T.t0+shift});const step=Math.max(4,T.tot/18);let next=0,lastK='';T.smp.forEach((o,i)=>{if(o.d>=next||o.k!==lastK||i===T.smp.length-1){rp.push({p:o.p,ft:o.a,k:o.k,d:o.d,t:new Date(T.t0+o.d/T.tas*3600e3),i});next=o.d+step;lastK=o.k}})}
   const air=ap0.map(([r,i])=>({role:r,icao:i,p:ap(i).p,t:r==='出発'||r==='離陸代替'?etd:eta}));
-  const pts=[...air.map(a=>a.p),...rp.map(r=>r.p)];return {air,rp,pts,T}}
+  const pts=[...air.map(a=>a.p),...rp.map(r=>r.p)];return {air,rp,pts,T,shift}}
 /* ---------- Open-Meteo：回数制限（HTTP 429）のときは自動取得を止める・取れたデータは30分使い回す ---------- */
 const OM={until:0,t:null};try{OM.until=+localStorage.getItem('om-block')||0}catch(e){}
 function omBlocked(){try{OM.until=Math.max(OM.until,+localStorage.getItem('om-block')||0)}catch(e){}return Date.now()<OM.until}
@@ -1613,19 +1616,20 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(MSM.key!==key&&!MSM.busy&&!(MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false),400)}
   const D=MSM.data&&MSM.key===key?MSM.data:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM 予報（気象庁メソモデル）</b><button class="sub" type="button" id="msmGo">${MSM.busy?'取得中…':'更新'}</button></div>
    <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
-  if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;bindMsm();return}
+  if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;document.querySelectorAll('[data-msmair]').forEach(el=>el.innerHTML=`<div class="msmairh"><b style="font-size:13px">予報 MSM</b> <span class="tag t-mute">${MSM.busy?'取得中…':MSM.err?'取得できませんでした（下の「MSM 予報」を参照）':'未取得'}</span></div>`);bindMsm();return}
   const J=D.j;const nA=pl.air.length;
   // airports: hours around the planned time
-  const airH=pl.air.map((a,ai)=>{const Jx=J[ai];if(!Jx)return '';const c=msmIdx(Jx,+a.t);if(c<0)return `<div class="note">${esc(a.icao)}：予報の範囲外の時刻です</div>`;const H=Jx.hourly;const now=Date.now()-3600e3;const cols=[];for(let i=0;i<H.time.length;i++){if(H.weather_code[i]==null&&H.temperature_2m[i]==null)continue;if(Date.parse(H.time[i]+'Z')<now&&i<c)continue;cols.push(i)}
+  const airH=pl.air.map((a,ai)=>{const Jx=J[ai];if(!Jx)return '';let c=msmIdx(Jx,+a.t);let out=false;if(c<0){c=msmIdx(Jx,Date.now());out=true}if(c<0)return `<div class="note">予報の範囲外の時刻です</div>`;const H=Jx.hourly;const now=Date.now()-3600e3;const cols=[];for(let i=0;i<H.time.length;i++){if(H.weather_code[i]==null&&H.temperature_2m[i]==null)continue;if(Date.parse(H.time[i]+'Z')<now&&i<c)continue;cols.push(i)}
     const td=(i,v)=>`<td style="${i===c?'background:var(--sky-soft,rgba(43,106,148,.16));font-weight:700':''}${H.time[i].slice(11,13)==='00'?';border-left:2px solid var(--muted)':''}">${v}</td>`;
     const row=(lab,f)=>`<tr><th>${lab}</th>${cols.map(i=>td(i,f(i))).join('')}</tr>`;const last=cols.length?H.time[cols[cols.length-1]]:'';
-    return `<div style="margin:8px 0"><b class="code">${esc(a.icao)}</b> <span class="tag t-mute">${a.role}・${fmtZ(a.t)}</span> <span class="note" style="margin:0">${cols.length}時間分（〜${last.slice(8,10)}日 ${last.slice(11,16)}Z）・横にスライド</span><div class="msmscroll" data-c="${cols.indexOf(c)}" style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="msmt msmh"><tr><th>日付(UTC)</th>${cols.map(i=>td(i,+H.time[i].slice(8,10)+'日')).join('')}</tr><tr><th></th>${cols.map(i=>td(i,H.time[i].slice(11,16)+'Z<br><small>'+String((+H.time[i].slice(11,13)+9)%24).padStart(2,'0')+'時JST</small>')).join('')}</tr>
+    return `<div style="margin:2px 0 0"><span class="tag t-mute">${a.role}・${out?'今の時刻':fmtZ(a.t)}</span>${pl.shift&&!out?' <span class="tag t-cau">ETDが過去なので、今出発した場合の時刻</span>':''}${out?' <span class="tag t-cau">計画の時刻は予報の範囲外</span>':''} <span class="note" style="margin:0">${cols.length}時間分（〜${last.slice(8,10)}日 ${last.slice(11,16)}Z）・横にスライド</span><div class="msmscroll" data-c="${cols.indexOf(c)}" style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="msmt msmh"><tr><th>日付(UTC)</th>${cols.map(i=>td(i,+H.time[i].slice(8,10)+'日')).join('')}</tr><tr><th></th>${cols.map(i=>td(i,H.time[i].slice(11,16)+'Z<br><small>'+String((+H.time[i].slice(11,13)+9)%24).padStart(2,'0')+'時JST</small>')).join('')}</tr>
       ${row('天気',i=>{const m=wmoToM(H.weather_code[i],H.cloud_cover[i],+H.time[i].slice(11,13));return wxIcon(m,30)+'<br><small>'+esc(wxJa(m))+'</small>'})}
       ${row('雲 低/中/高',i=>`${H.cloud_cover_low?.[i]??'—'}/${H.cloud_cover_mid?.[i]??'—'}/${H.cloud_cover_high?.[i]??'—'}%`)}
       ${row('降水',i=>H.precipitation[i]!=null?H.precipitation[i].toFixed(1)+'mm':'—')}
       ${row('地上風',i=>H.wind_direction_10m[i]!=null?String(Math.round(H.wind_direction_10m[i]/10)*10).padStart(3,'0')+'°/'+Math.round(H.wind_speed_10m[i])+'kt':'—')}
       ${row('気温/露点',i=>`${Math.round(H.temperature_2m[i])}/${Math.round(H.dew_point_2m[i])}℃`)}
-      ${row('QNH',i=>H.pressure_msl[i]!=null?Math.round(H.pressure_msl[i])+'hPa':'—')}</table></div></div>`}).join('');
+      ${row('QNH',i=>H.pressure_msl[i]!=null?Math.round(H.pressure_msl[i])+'hPa':'—')}</table></div></div>`});
+  const airFill=()=>{document.querySelectorAll('[data-msmair]').forEach(el=>{const k=pl.air.findIndex(a=>a.icao===el.dataset.msmair);el.innerHTML=k>=0&&airH[k]?`<div class="msmairh"><b style="font-size:13px">予報 MSM</b> <span class="tag t-mute">気象庁メソモデル・${MSM.at?fmtZ(MSM.at)+'取得':''}</span></div>`+airH[k]:''})};
   // along the route, by phase
   const PH={SID:'離陸・上昇',TRN:'離陸・上昇',VFR:'離陸・上昇',ENR:'航空路',STAR:'到着・進入',APP:'到着・進入'};const groups={};
   pl.rp.forEach((r,k)=>{const Jx=J[nA+k];if(!Jx)return;const i=msmIdx(Jx,+r.t);if(i<0)return;const H=Jx.hourly;const up=D.lv?msmAt(Jx,i,r.ft):null;
@@ -1638,7 +1642,8 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
       <td>${ice?`<span class="tag" style="background:#52C7E833;color:#1B6F8A">❄ ${ice}</span>`:''}</td></tr>`)});
   const order=['離陸・上昇','航空路','到着・進入'];const col={'離陸・上昇':'#2E8B57','航空路':'#A3195B','到着・進入':'#C0392B'};
   const rt=order.filter(g=>groups[g]).map(g=>`<h4 style="margin:10px 0 4px;border-left:4px solid ${col[g]};padding-left:6px">${g}</h4><div style="overflow-x:auto"><table class="msmt msmr"><tr><th>時刻</th><th>位置</th><th>計画高度</th><th>天気（地上）</th><th>高度の風</th><th>高度の気温</th><th></th></tr>${groups[g].join('')}</table></div>`).join('');
-  box.innerHTML=`<div class="box">${head}${airH}</div>${(()=>{try{return msmVisual(pl,D)}catch(e){return ''}})()}${rt?`<div class="box"><b>飛行フェーズごとの天気（経路・計画高度・通過時刻のMSM）</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから計算。高度の風・気温は${D.lv?'気圧面の値を計画高度に内挿':'取得できなかったため表示なし'}。着氷は気温+2〜−20℃かつ湿度85%以上で表示する目安です。</p>${rt}</div>`:''}`;bindMsm()}
+  airFill();
+  box.innerHTML=`<div class="box">${head}<p class="note" style="margin:0">各空港の時間ごとの予報は、上の空港の欄（METAR・TAFの下）に入れています。${pl.shift?'計画のETDが過去なので、今出発した場合の時刻で表示しています。':''}</p></div>${(()=>{try{return msmVisual(pl,D)}catch(e){return ''}})()}${rt?`<div class="box"><b>飛行フェーズごとの天気（経路・計画高度・通過時刻のMSM）</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから計算。高度の風・気温は${D.lv?'気圧面の値を計画高度に内挿':'取得できなかったため表示なし'}。着氷は気温+2〜−20℃かつ湿度85%以上で表示する目安です。</p>${rt}</div>`:''}`;bindMsm()}
 
 // ---------- visual weather along the chosen SID / airways / STAR / approach: vertical cross-section and plan view ----------
 function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;if(rp.length<2||!pl.T)return '';const T=pl.T;const tot=T.tot;
@@ -1702,7 +1707,7 @@ function renderWx(){try{setTimeout(renderMsm,0)}catch(e){}
      ${m?`<div class="kv"><span>風 <b>${esc(windText(m.wind))}</b></span><span>視程 <b>${m.vis>=10000?'10km以上':m.vis+'m'}</b></span><span>雲高 <b>${m.ceil!=null?m.ceil+'ft':'なし'}</b></span>${m.ww?`<span>天気 <b>${esc(m.ww.join(' '))}</b></span>`:''}${fzl(i)!=null?`<span>予想0℃高度 <b>約${fzl(i).toLocaleString()}ft</b></span>`:''}${m.rvr?`<span>RVR <b>${esc(Object.entries(m.rvr).map(([k,v])=>k+':'+v).join(' '))}</b></span>`:''}</div><div class="raw">${esc(m.raw)}</div>`:''}
      <div style="margin-top:8px"><b style="font-size:13px">予報 TAF</b> ${(S.wx[i]?.src||{}).taf==='auto'?'<span class="tag t-cau">参考：自動取得</span>':(S.wx[i]?.taf?'<span class="tag t-mute">MetAir</span>':'')} ${t?`<span class="tag t-mute">${fmtZ(t)} ±1時間</span>`:''} ${w.taf?'':'<span class="tag t-mute">未入力</span>'}</div>
      ${tw?`<div class="kv"><span>最低視程 <b>${tw.vis>=10000?'10km以上':tw.vis+'m'}</b></span><span>最低雲高 <b>${tw.ceil!=null?tw.ceil+'ft':'なし'}</b></span><span>風 <b>${esc(tw.winds.map(windText).join('、')||'—')}</b></span>${tw.ww.length?`<span>天気 <b>${esc(tw.ww.join(' '))}</b></span>`:''}</div>${tw.inPeriod?'':'<p class="note" style="color:var(--no)">指定時刻がTAFの有効期間外です。</p>'}`:(w.taf&&!t?'<p class="note">ルートタブで時刻を入れると、その時間帯の予報を判定します。</p>':'')}
-     ${w.taf?`<div class="raw">${esc(w.taf.raw)}</div>`:''}</div>`}).join('');
+     ${w.taf?`<div class="raw">${esc(w.taf.raw)}</div>`:''}<div class="msmair" data-msmair="${esc(i)}"></div></div>`}).join('');
 }
 function windsFor(icao,t){const w=wxFor(icao);const ws=[];
   if(w.taf&&t){const tw=tafWindow(w.taf,new Date(+t-3600e3),new Date(+t+3600e3));if(tw)ws.push(...tw.winds)}
@@ -3771,7 +3776,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261108134003';
+window.APPV='20261108134845';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
