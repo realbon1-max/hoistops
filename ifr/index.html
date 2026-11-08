@@ -1590,17 +1590,23 @@ function msmPlan(){const ap0=[['出発',S.route.dep],['目的',S.route.dst],['�
 const OM={until:0,t:null};try{OM.until=+localStorage.getItem('om-block')||0}catch(e){}
 function omBlocked(){try{OM.until=Math.max(OM.until,+localStorage.getItem('om-block')||0)}catch(e){}return Date.now()<OM.until}
 function omBlockMin(){return Math.max(1,Math.ceil((OM.until-Date.now())/60000))}
-function omHit429(){OM.until=Math.max(Date.now()+10*60e3,(()=>{try{return +localStorage.getItem('om-block')||0}catch(e){return 0}})());try{localStorage.setItem('om-block',String(OM.until))}catch(e){}clearTimeout(OM.t);OM.t=setTimeout(()=>{if(omBlocked())return;try{msmFetch(true)}catch(e){}},Math.min(OM.until-Date.now()+1500,2**31-1))}
+function omHit429(){OM.until=Math.max(Date.now()+10*60e3,(()=>{try{return +localStorage.getItem('om-block')||0}catch(e){return 0}})());try{localStorage.setItem('om-block',String(OM.until))}catch(e){}clearTimeout(OM.t);OM.t=setTimeout(()=>{if(omBlocked())return;try{msmFetch(true,false)}catch(e){}},Math.min(OM.until-Date.now()+1500,2**31-1))}
 function omErrText(e){return /429/.test(e)?`Open-Meteoへのアクセスが多すぎるため、一時的に断られました（HTTP 429）。${omBlockMin()>90?new Date(OM.until).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（日本時間）以降に取り直します（1日の利用上限）':'約'+omBlockMin()+'分後に自動で取り直します'}`:`取得できませんでした（${e}）。通信を確認して「更新」を押してください`}
 function omCacheGet(k){try{const o=JSON.parse(localStorage.getItem('om-c:'+k)||'null');if(o&&Date.now()-o.t<30*60e3)return o}catch(e){}return null}
 function omCacheSet(k,v){try{Object.keys(localStorage).filter(x=>x.startsWith('om-c:')&&x!=='om-c:'+k).forEach(x=>localStorage.removeItem(x));localStorage.setItem('om-c:'+k,JSON.stringify({t:Date.now(),v}))}catch(e){}}
-async function msmFetch(force){const pl=msmPlan();if(!pl.pts.length)return;const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(!force&&MSM.key===key&&MSM.data)return;if(MSM.busy)return;
-  if(!force){const c=omCacheGet('msm|'+key);if(c){MSM.data={j:c.v.j,lv:c.v.lv,plan:pl};MSM.key=key;MSM.at=new Date(c.t);MSM.err='';try{renderMsm()}catch(e){}return}
+const msmK=pts=>pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');
+/* 空港の分（自動）と、経路の分（断面図・俯瞰図・地点ごと＝手動）を分けて取る */
+async function msmFetch(force,full){const pl=msmPlan();if(!pl.pts.length)return;const aP=pl.air.map(a=>a.p);const akey=msmK(aP),fkey=msmK(pl.pts);
+  if(full&&!pl.rp.length)full=false;const key=full?fkey:akey;const use=(j,lv,at)=>{const isF=j.length>=pl.pts.length&&full!==false&&key===fkey;MSM.data={j,lv,plan:isF?pl:Object.assign({},pl,{rp:[],pts:aP})};MSM.key=isF?fkey:akey;MSM.akey=akey;MSM.full=isF;MSM.at=at;MSM.err=''};
+  if(!force&&MSM.data&&MSM.akey===akey&&(!full||MSM.key===fkey))return;if(MSM.busy)return;
+  if(!force){const c=omCacheGet('msm|'+fkey)||(full?null:omCacheGet('msm|'+akey));if(c){const isF=c.v.j.length>=pl.pts.length;const pl2=isF?pl:Object.assign({},pl,{rp:[],pts:aP});MSM.data={j:c.v.j,lv:c.v.lv,plan:pl2};MSM.key=isF?fkey:akey;MSM.akey=akey;MSM.full=isF;MSM.at=new Date(c.t);MSM.err='';try{renderMsm()}catch(e){}return}
     if(omBlocked()){MSM.err='429';MSM.failKey=key;MSM.failAt=Date.now();try{renderMsm()}catch(e){}return}
-    if(MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)return}
-  MSM.busy=true;MSM.err='';try{renderMsm()}catch(e){}
-  try{let r=await fetch(msmUrl(pl.pts,true));let lv=true;if(r.status===400){r=await fetch(msmUrl(pl.pts,false));lv=false}if(r.status===429){omHit429();throw new Error('HTTP 429')}if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
-    MSM.data={j,lv,plan:pl};MSM.key=key;MSM.at=new Date();MSM.failKey=null;omCacheSet('msm|'+key,{j,lv})}catch(e){MSM.err=String(e.message||e);MSM.failKey=key;MSM.failAt=Date.now()}finally{MSM.busy=false;try{renderMsm()}catch(e){}}}
+    if(!full&&MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)return}
+  if(full&&omBlocked()){MSM.err='429';try{renderMsm()}catch(e){}return}
+  MSM.busy=full?'full':'air';MSM.err='';try{renderMsm()}catch(e){}
+  const pts=full?pl.pts:aP;
+  try{let r=await fetch(msmUrl(pts,true));let lv=true;if(r.status===400){r=await fetch(msmUrl(pts,false));lv=false}if(r.status===429){omHit429();throw new Error('HTTP 429')}if(!r.ok)throw new Error('HTTP '+r.status);let j=await r.json();if(!Array.isArray(j))j=[j];
+    MSM.data={j,lv,plan:full?pl:Object.assign({},pl,{rp:[],pts:aP})};MSM.key=key;MSM.akey=akey;MSM.full=!!full;MSM.at=new Date();MSM.failKey=null;omCacheSet('msm|'+key,{j,lv})}catch(e){MSM.err=String(e.message||e);MSM.failKey=key;MSM.failAt=Date.now()}finally{MSM.busy=false;try{renderMsm()}catch(e){}}}
 function msmIdx(J,t){const tt=J.hourly.time;let bi=0,bd=1e18;for(let i=0;i<tt.length;i++){const d=Math.abs(Date.parse(tt[i]+'Z')-t);if(d<bd){bd=d;bi=i}}return bd<=2*3600e3?bi:-1}
 function wmoToM(code,cc,hh){const map={0:[],1:[],2:[],3:[],45:['FG'],48:['FZFG'],51:['-DZ'],53:['DZ'],55:['+DZ'],56:['-FZDZ'],57:['FZDZ'],61:['-RA'],63:['RA'],65:['+RA'],66:['-FZRA'],67:['FZRA'],71:['-SN'],73:['SN'],75:['+SN'],77:['SG'],80:['-SHRA'],81:['SHRA'],82:['+SHRA'],85:['-SHSN'],86:['SHSN'],95:['TS'],96:['TSGR'],99:['+TSGR']};
   const ww=map[code]||[];const c=cc==null?null:cc<6?[]:cc<25?[{c:'FEW',h:3000}]:cc<50?[{c:'SCT',h:3000}]:cc<87.5?[{c:'BKN',h:3000}]:[{c:'OVC',h:3000}];return {ww,clouds:c||[],time:'00'+String(hh).padStart(2,'0')+'00'}}
@@ -1613,9 +1619,9 @@ function icingTxt(t,rh){if(t==null||rh==null)return '';if(t<=2&&t>=-20&&rh>=85)r
 function nearFix(p){let best=null,bd=1e9;for(const [k,v] of Object.entries(NAV.F)){const d=gc(p,[v[0],v[1]]);if(d<bd){bd=d;best=k}}return best&&bd<=3?best:best?`${best}から${Math.round(bd)}NM`:''}
 function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   if(!pl.pts.length){box.innerHTML='';return}
-  const key=pl.pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(';');if(MSM.key!==key&&!MSM.busy&&!(MSM.failKey===key&&Date.now()-(MSM.failAt||0)<120e3)){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false),400)}
-  const D=MSM.data&&MSM.key===key?MSM.data:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM 予報（気象庁メソモデル）</b><button class="sub" type="button" id="msmGo">${MSM.busy?'取得中…':'更新'}</button></div>
-   <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
+  const akey=msmK(pl.air.map(a=>a.p)),fkey=msmK(pl.pts);if(MSM.akey!==akey&&!MSM.busy&&!(MSM.failKey===akey&&Date.now()-(MSM.failAt||0)<120e3)){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false,false),400)}
+  const D=MSM.data&&MSM.akey===akey?MSM.data:null;const DF=D&&MSM.full&&MSM.key===fkey?D:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM 予報（気象庁メソモデル）</b><button class="sub" type="button" id="msmGo">${MSM.busy==='air'?'取得中…':'更新'}</button></div>
+   <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。空港の予報は自動で、経路の気象（断面図・俯瞰図・地点ごと）は下のボタンで読み込みます。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
   if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;document.querySelectorAll('[data-msmair]').forEach(el=>el.innerHTML=`<div class="msmairh"><b style="font-size:13px">予報 MSM</b> <span class="tag t-mute">${MSM.busy?'取得中…':MSM.err?'取得できませんでした（下の「MSM 予報」を参照）':'未取得'}</span></div>`);bindMsm();return}
   const J=D.j;const nA=pl.air.length;
   // airports: hours around the planned time
@@ -1632,7 +1638,7 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   const airFill=()=>{document.querySelectorAll('[data-msmair]').forEach(el=>{const k=pl.air.findIndex(a=>a.icao===el.dataset.msmair);el.innerHTML=k>=0&&airH[k]?`<div class="msmairh"><b style="font-size:13px">予報 MSM</b> <span class="tag t-mute">気象庁メソモデル・${MSM.at?fmtZ(MSM.at)+'取得':''}</span></div>`+airH[k]:''})};
   // along the route, by phase
   const PH={SID:'離陸・上昇',TRN:'離陸・上昇',VFR:'離陸・上昇',ENR:'航空路',STAR:'到着・進入',APP:'到着・進入'};const groups={};
-  pl.rp.forEach((r,k)=>{const Jx=J[nA+k];if(!Jx)return;const i=msmIdx(Jx,+r.t);if(i<0)return;const H=Jx.hourly;const up=D.lv?msmAt(Jx,i,r.ft):null;
+  (DF?DF.plan.rp:[]).forEach((r,k)=>{const Jx=DF.j[nA+k];if(!Jx)return;const i=msmIdx(Jx,+r.t);if(i<0)return;const H=Jx.hourly;const up=DF.lv?msmAt(Jx,i,r.ft):null;
     const nx=pl.rp[k+1]||pl.rp[k-1];const trk=nx?((k+1<pl.rp.length?brgOf(r.p,nx.p):brgOf(nx.p,r.p))):null;const hw=up&&up.ws!=null&&trk!=null?up.ws*Math.cos((up.wd-trk)*RAD):null;
     const m=wmoToM(H.weather_code[i],H.cloud_cover[i],+H.time[i].slice(11,13));const ice=up?icingTxt(up.t,up.rh):'';const cloudIn=up&&up.rh!=null&&up.rh>=95;
     (groups[PH[r.k]||'航空路']=groups[PH[r.k]||'航空路']||[]).push(`<tr><td class="code">${fmtZ(r.t)}</td><td>${esc(nearFix(r.p))}<br><small>出発から${Math.round(r.d)}NM</small></td><td class="code">${Math.round(r.ft/100)*100>14000?'FL'+Math.round(r.ft/100):(Math.round(r.ft/100)*100).toLocaleString()+'ft'}</td>
@@ -1643,7 +1649,8 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   const order=['離陸・上昇','航空路','到着・進入'];const col={'離陸・上昇':'#2E8B57','航空路':'#A3195B','到着・進入':'#C0392B'};
   const rt=order.filter(g=>groups[g]).map(g=>`<h4 style="margin:10px 0 4px;border-left:4px solid ${col[g]};padding-left:6px">${g}</h4><div style="overflow-x:auto"><table class="msmt msmr"><tr><th>時刻</th><th>位置</th><th>計画高度</th><th>天気（地上）</th><th>高度の風</th><th>高度の気温</th><th></th></tr>${groups[g].join('')}</table></div>`).join('');
   airFill();
-  box.innerHTML=`<div class="box">${head}<p class="note" style="margin:0">各空港の時間ごとの予報は、上の空港の欄（METAR・TAFの下）に入れています。${pl.shift?'計画のETDが過去なので、今出発した場合の時刻で表示しています。':''}</p></div>${(()=>{try{return msmVisual(pl,D)}catch(e){return ''}})()}${rt?`<div class="box"><b>飛行フェーズごとの天気（経路・計画高度・通過時刻のMSM）</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから計算。高度の風・気温は${D.lv?'気圧面の値を計画高度に内挿':'取得できなかったため表示なし'}。着氷は気温+2〜−20℃かつ湿度85%以上で表示する目安です。</p>${rt}</div>`:''}`;bindMsm()}
+  const rbtn=pl.rp.length>1?`<div class="box"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b>経路の気象（断面図・俯瞰図・地点ごと）</b><p class="note" style="margin:2px 0 0">${DF?`${fmtZ(MSM.at)}に読み込んだ予報です。経路を変えたら読み込み直してください。`:'Open-Meteoの通信制限のため、自動では読み込みません。'}</p></div><button type="button" class="${DF?'sub':'act'}" id="msmRte" ${MSM.busy?'disabled':''}>${MSM.busy==='full'?'読み込み中…':DF?'読み込み直す':'経路の気象を読み込む'}</button></div></div>`:'';
+  box.innerHTML=`<div class="box">${head}<p class="note" style="margin:0">各空港の時間ごとの予報は、上の空港の欄（METAR・TAFの下）に入れています。${pl.shift?'計画のETDが過去なので、今出発した場合の時刻で表示しています。':''}</p></div>${rbtn}${DF?(()=>{try{return msmVisual(DF.plan,DF)}catch(e){return ''}})():''}${rt&&DF?`<div class="box"><b>飛行フェーズごとの天気（経路・計画高度・通過時刻のMSM）</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから計算。高度の風・気温は${D.lv?'気圧面の値を計画高度に内挿':'取得できなかったため表示なし'}。着氷は気温+2〜−20℃かつ湿度85%以上で表示する目安です。</p>${rt}</div>`:''}`;bindMsm()}
 
 // ---------- visual weather along the chosen SID / airways / STAR / approach: vertical cross-section and plan view ----------
 function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;if(rp.length<2||!pl.T)return '';const T=pl.T;const tot=T.tot;
@@ -1692,7 +1699,7 @@ function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;
   const leg=`<div class="plegend" style="margin:4px 0 0"><span><i style="background:rgba(110,120,132,.62)"></i>雲中（湿度98%以上）</span><span><i style="background:rgba(150,160,170,.3)"></i>雲の可能性（90〜98%）</span><span><i style="background:repeating-linear-gradient(45deg,#52C7E8 0 2px,transparent 2px 5px)"></i>着氷の目安（+2〜−20℃・湿度85%以上）</span><span><i style="border-top:2px dashed #2F7CF6;height:0;width:14px"></i>0℃高度</span><span><i style="border-top:2px dashed #7FA8C9;height:0;width:14px"></i>−10℃・−20℃</span><span>矢印＝計画高度の風の進行方向成分（→追い風・←向かい風、数字kt、赤＝向かい風10kt超）</span></div>`;
   return `<div class="box"><b>経路の気象（断面図）</b><p class="note" style="margin:2px 0 4px">横軸＝出発からの距離（下に通過時刻）、縦軸＝高度。選んだSID・航空路・STAR・進入の計画高度（色の線）に、通過時刻のMSMの雲・着氷・気温・風を重ねています。</p>${D.lv?'':'<div class="msg cau">高度ごとのデータが取得できなかったため、雲・気温・風の断面は出せません。</div>'}${sec}${leg}</div>
    <div class="box"><b>経路の気象（俯瞰図）</b><p class="note" style="margin:2px 0 4px">各地点の地上の天気マーク、計画高度の風（矢印は風が吹いていく向き）と気温、着氷の目安。地点の丸の大きさ＝下層雲の量、青いほど降水あり。</p>${plan}</div>`}
-function bindMsm(){const b=$('msmGo');if(b)b.onclick=()=>msmFetch(true);document.querySelectorAll('.msmscroll').forEach(el=>{const c=+el.dataset.c;const cells=el.querySelectorAll('tr:first-child td');if(c>0&&cells[c]){el.scrollLeft=Math.max(0,cells[c].offsetLeft-el.clientWidth*0.35)}})}
+function bindMsm(){const b=$('msmGo');if(b)b.onclick=()=>msmFetch(true,false);const rb=$('msmRte');if(rb)rb.onclick=()=>msmFetch(true,true);document.querySelectorAll('.msmscroll').forEach(el=>{const c=+el.dataset.c;const cells=el.querySelectorAll('tr:first-child td');if(c>0&&cells[c]){el.scrollLeft=Math.max(0,cells[c].offsetLeft-el.clientWidth*0.35)}})}
 function renderWx(){try{setTimeout(renderMsm,0)}catch(e){}
   try{$('wxNeed').innerHTML=wxAirports().map(i=>{const w=S.wx[i]||{};const ok=w.metar&&w.taf;const s=w.src||{},a=k=>s[k]==='auto'?'(参考)':'';return `<span class="chip ${ok?'ok':'ng'}">${i} ${w.metar?'✓METAR'+a('metar'):'－METAR'} ${w.taf?'✓TAF'+a('taf'):'－TAF'}</span>`}).join('')}catch(e){}
   const all=[...new Set([...route().map(x=>x[1]),S.route.alt].filter(Boolean))];
@@ -3776,7 +3783,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261108134845';
+window.APPV='20261108135529';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
