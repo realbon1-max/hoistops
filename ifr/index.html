@@ -1118,28 +1118,30 @@ html[data-theme="ace"] .leg.add.need{border:1px solid rgba(242,193,78,.55);borde
 
 <!-- 2 weather -->
 <section class="pane" id="p-wx">
-  <h2>気象を取り込む</h2>
+  <h2>気象</h2>
+  <div id="wxCards"></div>
+  <div id="msmBox"></div>
+  <h3 class="bh" style="margin-top:22px">報の取り込み</h3>
   <div class="box" id="autoBox">
-    <div class="row" style="justify-content:space-between"><b>自動取得（参考）</b><span class="tag t-cau">公式ではありません</span></div>
-    <p class="note" style="margin-top:4px">ルートの空港のMETAR/TAF（第一優先は国際気象海洋 IMOC のページ。IMOCに報が無い飛行場だけ、米国気象局 aviationweather.gov が中継した気象庁の報で補います）を、GitHubで10分ごとに自動巡回したデータから取ります。運航判断はMetAirの報で確認してください。MetAirで貼り付けた報が同じ時刻以上なら、そちらを優先して残します。</p>
-    <div class="row" style="margin-top:6px"><button class="act" id="wxAuto" type="button">今すぐ取得</button><label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wxPoll"> 開いている間、10分ごとに自動で巡回</label></div>
+    <div class="row" style="justify-content:space-between"><b>自動取得</b><span class="tag t-cau">参考・非公式</span></div>
+    <p class="note" style="margin-top:4px">IMOC・aviationweather.gov の報を取得。判断はMetAirの報で。</p>
+    <div class="row" style="margin-top:6px"><button class="act" id="wxAuto" type="button">今すぐ取得</button><label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wxPoll"> 10分ごとに取得</label></div>
     <div id="wxAutoSt" class="note" style="margin-top:6px"></div>
   </div>
   <div class="box">
-    <ol class="steps3">
-      <li><b>MetAirを開く</b><span>ログインして、ルートの空港のMETAR/TAFを表示します。</span>
+    <b>MetAirから貼り付け</b>
+    <ol class="steps3" style="margin-top:8px">
+      <li><b>MetAirを開く</b>
         <div class="row" style="margin-top:6px"><a class="act lnk" href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener noreferrer" data-metair="1">MetAirを開く ↗</a><button class="sub" id="copyIcao" type="button">空港コードをコピー</button></div>
-        <p class="note" style="margin:6px 0 0">「MetAirを開く」はChromeアプリで開きます（Chromeが無ければSafari）。うまく開かないときは、このリンクを<b>長押し</b>して開いてください：<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener" style="color:var(--sky);word-break:break-all">www3.metair.go.jp/metair/view/login/index.html</a></p>
+        <p class="note" style="margin:6px 0 0">開かないときは<a href="https://www3.metair.go.jp/metair/view/login/index.html" target="_blank" rel="noopener" style="color:var(--sky)">このリンク</a>を長押し。</p>
         <div class="need" id="wxNeed"></div></li>
-      <li><b>画面を全選択してコピー</b><span>パソコンは Ctrl+A（Macは ⌘+A）、スマホは長押しで「全選択」→「コピー」。余計な文字が入っていても大丈夫です。</span></li>
-      <li><b>ここに貼り付ける</b><span>METAR・SPECI・TAFだけを拾って空港ごとに振り分け、同じ空港は新しい報を残します。</span>
-        <textarea id="wxIn" placeholder="ここにMetAirの画面をまるごと貼り付け"></textarea>
+      <li><b>全選択してコピー</b></li>
+      <li><b>貼り付けて取り込む</b>
+        <textarea id="wxIn" placeholder="MetAirの画面をまるごと貼り付け"></textarea>
         <div class="row" style="margin-top:8px"><button class="act" id="wxParse" type="button">取り込む</button><button class="sub" id="wxClear" type="button">気象をすべて消去</button></div>
         <div id="wxResult"></div></li>
     </ol>
   </div>
-  <div id="wxCards"></div>
-  <div id="msmBox"></div>
 </section>
 
 <!-- 3 departure -->
@@ -1620,8 +1622,8 @@ function nearFix(p){let best=null,bd=1e9;for(const [k,v] of Object.entries(NAV.F
 function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   if(!pl.pts.length){box.innerHTML='';return}
   const akey=msmK(pl.air.map(a=>a.p)),fkey=msmK(pl.pts);if(MSM.akey!==akey&&!MSM.busy&&!(MSM.failKey===akey&&Date.now()-(MSM.failAt||0)<120e3)){clearTimeout(MSM._t);MSM._t=setTimeout(()=>msmFetch(false,false),400)}
-  const D=MSM.data&&MSM.akey===akey?MSM.data:null;const DF=D&&MSM.full&&MSM.key===fkey?D:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM 予報（気象庁メソモデル）</b><button class="sub" type="button" id="msmGo">${MSM.busy==='air'?'取得中…':'更新'}</button></div>
-   <p class="note" style="margin:2px 0 6px">気象庁の数値予報モデルMSM（約5km）の格子値です（Open-Meteo経由、${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。空港の予報は自動で、経路の気象（断面図・俯瞰図・地点ごと）は下のボタンで読み込みます。モデルの予報なので、運航判断はTAF・飛行場予報・SIGWXなど公式の予報で確認してください。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
+  const D=MSM.data&&MSM.akey===akey?MSM.data:null;const DF=D&&MSM.full&&MSM.key===fkey?D:null;const head=`<div class="row" style="justify-content:space-between;align-items:center"><b>MSM予報</b><button class="sub" type="button" id="msmGo">${MSM.busy==='air'?'取得中…':'更新'}</button></div>
+   <p class="note" style="margin:2px 0 6px">気象庁MSM（Open-Meteo経由・${D&&MSM.at?fmtZ(MSM.at)+'取得':'未取得'}）。参考値です。</p>${MSM.err?`<div class="msg cau">${esc(omErrText(MSM.err))}。</div>`:''}`;
   if(!D){box.innerHTML=`<div class="box">${head}${MSM.busy?'<p class="note">取得しています…</p>':''}</div>`;document.querySelectorAll('[data-msmair]').forEach(el=>el.innerHTML=`<div class="msmairh"><b style="font-size:13px">予報 MSM</b> <span class="tag t-mute">${MSM.busy?'取得中…':MSM.err?'取得できませんでした（下の「MSM 予報」を参照）':'未取得'}</span></div>`);bindMsm();return}
   const J=D.j;const nA=pl.air.length;
   // airports: hours around the planned time
@@ -1649,8 +1651,8 @@ function renderMsm(){const box=$('msmBox');if(!box)return;const pl=msmPlan();
   const order=['離陸・上昇','航空路','到着・進入'];const col={'離陸・上昇':'#2E8B57','航空路':'#A3195B','到着・進入':'#C0392B'};
   const rt=order.filter(g=>groups[g]).map(g=>`<h4 style="margin:10px 0 4px;border-left:4px solid ${col[g]};padding-left:6px">${g}</h4><div style="overflow-x:auto"><table class="msmt msmr"><tr><th>時刻</th><th>位置</th><th>計画高度</th><th>天気（地上）</th><th>高度の風</th><th>高度の気温</th><th></th></tr>${groups[g].join('')}</table></div>`).join('');
   airFill();
-  const rbtn=pl.rp.length>1?`<div class="box"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b>経路の気象（断面図・俯瞰図・地点ごと）</b><p class="note" style="margin:2px 0 0">${DF?`${fmtZ(MSM.at)}に読み込んだ予報です。経路を変えたら読み込み直してください。`:'Open-Meteoの通信制限のため、自動では読み込みません。'}</p></div><button type="button" class="${DF?'sub':'act'}" id="msmRte" ${MSM.busy?'disabled':''}>${MSM.busy==='full'?'読み込み中…':DF?'読み込み直す':'経路の気象を読み込む'}</button></div></div>`:'';
-  box.innerHTML=`<div class="box">${head}<p class="note" style="margin:0">各空港の時間ごとの予報は、上の空港の欄（METAR・TAFの下）に入れています。${pl.shift?'計画のETDが過去なので、今出発した場合の時刻で表示しています。':''}</p></div>${rbtn}${DF?(()=>{try{return msmVisual(DF.plan,DF)}catch(e){return ''}})():''}${rt&&DF?`<div class="box"><b>飛行フェーズごとの天気（経路・計画高度・通過時刻のMSM）</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから計算。高度の風・気温は${D.lv?'気圧面の値を計画高度に内挿':'取得できなかったため表示なし'}。着氷は気温+2〜−20℃かつ湿度85%以上で表示する目安です。</p>${rt}</div>`:''}`;bindMsm()}
+  const rbtn=pl.rp.length>1?`<div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><div><b>経路の気象</b><span class="note" style="margin:0 0 0 6px">断面図・俯瞰図・地点ごと${DF?'・'+fmtZ(MSM.at):'（押したときだけ読み込み）'}</span></div><button type="button" class="${DF?'sub':'act'}" id="msmRte" ${MSM.busy?'disabled':''}>${MSM.busy==='full'?'読み込み中…':DF?'読み込み直す':'読み込む'}</button></div>`:'';
+  box.innerHTML=`<div class="box">${head}${rbtn}</div>${DF?(()=>{try{return msmVisual(DF.plan,DF)}catch(e){return ''}})():''}${rt&&DF?`<div class="box"><b>地点ごとの天気</b><p class="note" style="margin:2px 0 4px">通過時刻はETDとTASから。着氷は+2〜−20℃・湿度85%以上の目安。</p>${rt}</div>`:''}`;bindMsm()}
 
 // ---------- visual weather along the chosen SID / airways / STAR / approach: vertical cross-section and plan view ----------
 function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;if(rp.length<2||!pl.T)return '';const T=pl.T;const tot=T.tot;
@@ -1696,9 +1698,9 @@ function msmVisual(pl,D){const J=D.J||D.j;const nA=pl.air.length;const rp=pl.rp;
     if(ice)v+=`<text x="${x+10}" y="${y+26}" font-size="10" font-weight="700" fill="#1B6F8A" paint-order="stroke" stroke="var(--card)" stroke-width="3">❄${esc(ice)}</text>`});
   [S.route.dep,S.route.dst].forEach(i=>{const A=ap(i);if(A&&A.p)v+=`<rect x="${px(A.p)-5}" y="${py(A.p)-5}" width="10" height="10" fill="var(--ink)"/><text x="${px(A.p)+8}" y="${py(A.p)+4}" font-size="12" font-weight="700" fill="var(--ink)" paint-order="stroke" stroke="var(--card)" stroke-width="3">${esc(dispIcao(i))}</text>`});
   const plan=`<svg viewBox="0 0 ${PW} ${PH}" role="img" aria-label="経路の気象俯瞰図" style="width:100%;height:auto;background:var(--sea);border-radius:8px">${v}</svg>`;
-  const leg=`<div class="plegend" style="margin:4px 0 0"><span><i style="background:rgba(110,120,132,.62)"></i>雲中（湿度98%以上）</span><span><i style="background:rgba(150,160,170,.3)"></i>雲の可能性（90〜98%）</span><span><i style="background:repeating-linear-gradient(45deg,#52C7E8 0 2px,transparent 2px 5px)"></i>着氷の目安（+2〜−20℃・湿度85%以上）</span><span><i style="border-top:2px dashed #2F7CF6;height:0;width:14px"></i>0℃高度</span><span><i style="border-top:2px dashed #7FA8C9;height:0;width:14px"></i>−10℃・−20℃</span><span>矢印＝計画高度の風の進行方向成分（→追い風・←向かい風、数字kt、赤＝向かい風10kt超）</span></div>`;
-  return `<div class="box"><b>経路の気象（断面図）</b><p class="note" style="margin:2px 0 4px">横軸＝出発からの距離（下に通過時刻）、縦軸＝高度。選んだSID・航空路・STAR・進入の計画高度（色の線）に、通過時刻のMSMの雲・着氷・気温・風を重ねています。</p>${D.lv?'':'<div class="msg cau">高度ごとのデータが取得できなかったため、雲・気温・風の断面は出せません。</div>'}${sec}${leg}</div>
-   <div class="box"><b>経路の気象（俯瞰図）</b><p class="note" style="margin:2px 0 4px">各地点の地上の天気マーク、計画高度の風（矢印は風が吹いていく向き）と気温、着氷の目安。地点の丸の大きさ＝下層雲の量、青いほど降水あり。</p>${plan}</div>`}
+  const leg=`<div class="plegend" style="margin:4px 0 0"><span><i style="background:rgba(110,120,132,.62)"></i>雲中（湿度98%以上）</span><span><i style="background:rgba(150,160,170,.3)"></i>雲の可能性（90〜98%）</span><span><i style="background:repeating-linear-gradient(45deg,#52C7E8 0 2px,transparent 2px 5px)"></i>着氷の目安（+2〜−20℃・湿度85%以上）</span><span><i style="border-top:2px dashed #2F7CF6;height:0;width:14px"></i>0℃高度</span><span><i style="border-top:2px dashed #7FA8C9;height:0;width:14px"></i>−10℃・−20℃</span><span>→追い風・←向かい風（kt）</span></div>`;
+  return `<div class="box"><b>経路の気象（断面図）</b><p class="note" style="margin:2px 0 4px">横＝距離・通過時刻、縦＝高度。</p>${D.lv?'':'<div class="msg cau">高度ごとのデータが取得できなかったため、雲・気温・風の断面は出せません。</div>'}${sec}${leg}</div>
+   <div class="box"><b>経路の気象（俯瞰図）</b><p class="note" style="margin:2px 0 4px">矢印＝計画高度の風の行く向き。丸の大きさ＝下層雲、青＝降水。</p>${plan}</div>`}
 function bindMsm(){const b=$('msmGo');if(b)b.onclick=()=>msmFetch(true,false);const rb=$('msmRte');if(rb)rb.onclick=()=>msmFetch(true,true);document.querySelectorAll('.msmscroll').forEach(el=>{const c=+el.dataset.c;const cells=el.querySelectorAll('tr:first-child td');if(c>0&&cells[c]){el.scrollLeft=Math.max(0,cells[c].offsetLeft-el.clientWidth*0.35)}})}
 function renderWx(){try{setTimeout(renderMsm,0)}catch(e){}
   try{$('wxNeed').innerHTML=wxAirports().map(i=>{const w=S.wx[i]||{};const ok=w.metar&&w.taf;const s=w.src||{},a=k=>s[k]==='auto'?'(参考)':'';return `<span class="chip ${ok?'ok':'ng'}">${i} ${w.metar?'✓METAR'+a('metar'):'－METAR'} ${w.taf?'✓TAF'+a('taf'):'－TAF'}</span>`}).join('')}catch(e){}
@@ -3783,7 +3785,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261108135529';
+window.APPV='20261108140327';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
