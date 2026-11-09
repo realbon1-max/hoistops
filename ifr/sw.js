@@ -1,6 +1,6 @@
 // IFRブリーフィング service worker: keeps the app available offline.
 // Weather (wx.json on raw.githubusercontent.com) and external links are not cached here.
-const VERSION = 'ifr-20261109192701';
+const VERSION = 'ifr-20261110003232';
 const SCOPE = new URL(self.registration.scope).pathname;
 const APP = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './jp.js', './lakes.js'];
 self.addEventListener('install', e => {

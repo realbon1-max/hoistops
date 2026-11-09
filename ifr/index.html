@@ -2204,7 +2204,7 @@ function trueHdg(icao,mag){const A=ap(icao);const mv=A&&A.mv!=null?A.mv:-8;retur
 function plane(o){const k=Math.cos(o[0]*RAD);return {to:p=>({x:(p[1]-o[1])*60*k,y:(p[0]-o[0])*60}),from:q=>[o[0]+q.y/60,o[1]+q.x/60/k]}}
 function simulate(start,hdg,targets,tas,firstTurn,turns,fos){ // start {x,y}; targets [{x,y}]; turns: per-target forced turn L/R; fos: per-target fly-over flags
   const v=tas/3600, rate=3, R=tas/(60*Math.PI); let x=start.x,y=start.y,h=hdg,dist=0; const tr=[{x,y}]; const at=[];
-  for(let ti=0;ti<targets.length;ti++){const t=targets[ti];let ft=(turns&&turns[ti])||(ti===0?firstTurn:null); let guard=0;
+  for(let ti=0;ti<targets.length;ti++){const t=targets[ti];let ft=(turns&&turns[ti])||(ti===0?firstTurn:null); let guard=0,turned=0;
     const nx=targets[ti+1];const fo=fos&&fos[ti];
     while(guard++<20000){ const dx=t.x-x,dy=t.y-y,d=Math.hypot(dx,dy);
       const brg=(Math.atan2(dx,dy)/RAD+360)%360;
@@ -2212,7 +2212,7 @@ function simulate(start,hdg,targets,tas,firstTurn,turns,fos){ // start {x,y}; ta
       if(nx&&!fo&&!ft){const bn=(Math.atan2(nx.x-t.x,nx.y-t.y)/RAD+360)%360;const th=Math.abs(((bn-brg+540)%360)-180);if(th>2&&th<150)lead=Math.max(lead,Math.min(R*Math.tan(th/2*RAD),3*R))}
       if(d<lead){ if(lead<=v*1.5){x=t.x;y=t.y;dist+=d} break}
       let e=((brg-h+540)%360)-180;
-      if(Math.abs(e)>1.5){ let dir=Math.sign(e); if(ft){dir=ft==='L'?-1:1} h=(h+dir*Math.min(rate,Math.abs(e))+360)%360 } else {h=brg;ft=null}
+      if(Math.abs(e)>1.5){ let dir=Math.sign(e); if(ft){dir=ft==='L'?-1:1} const st=Math.min(rate,Math.abs(e));h=(h+dir*st+360)%360;turned+=st;if(turned>420){x=t.x;y=t.y;dist+=d;tr.push({x,y});break} } else {h=brg;ft=null;turned=0}
       x+=v*Math.sin(h*RAD);y+=v*Math.cos(h*RAD);dist+=v; if(guard%10===0)tr.push({x,y}) }
     tr.push({x,y}); at.push(dist) }
   return {dist,track:tr,hdg:h,end:{x,y},at};
@@ -3852,7 +3852,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261109192701';
+window.APPV='20261110003232';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
