@@ -1008,7 +1008,7 @@ html[data-theme="ace"] .leg.add.need{border:1px solid rgba(242,193,78,.55);borde
 <header class="top">
   <div>
     <h1>IFRブリーフィング</h1>
-    <div class="airac">航空路誌データ <b>AIRAC 2026-10-01</b>（全国127飛行場・航空路374・fix 3,001）</div>
+    <div class="airac">航空路誌データ <b id="airacHdr">AIRAC 2026-10-29</b>（全国127飛行場・航空路374・fix 3,001）</div>
   </div>
   <span class="row" style="gap:6px;flex-wrap:nowrap"><button class="sub" id="resetBtn" type="button" title="飛行場・出発・経路・到着・進入を消します">リセット</button><button class="sub" id="themeBtn" type="button">表示切替</button></span>
 </header>
@@ -3805,7 +3805,8 @@ function bind(){
   $('sens').querySelectorAll('input').forEach(c=>c.onchange=()=>{S.prof.sens[c.dataset.s]=c.checked?1:0;save();renderFpl()});
   $('caps').innerHTML=CAPS.map(([k,l])=>`<label><input type="checkbox" data-c="${k}" ${S.prof.caps[k]?'checked':''}>${l}</label>`).join('');
   $('caps').querySelectorAll('input').forEach(c=>c.onchange=()=>{S.prof.caps[c.dataset.c]=c.checked?1:0;save();renderAll()});
-  try{zSync()}catch(e){}for(const k of ['dep','dst','alt','talt']){const el=$(k);el.value=dispIcao(S.route[k]);$(k+'_s').value=DB[S.route[k]]&&!isZ(S.route[k])?S.route[k]:'';el.onchange=()=>{let v=norm(el.value);if(v==='ZZZZ'&&ZK[k])v=ZK[k];S.route[k]=v;if(k==='dst'&&isZ(v)&&S.route.arrRule!=='vfr'){S.route.arrRule='vfr';if($('arrRule')){$('arrRule').value='vfr';$('arrRule').onchange&&$('arrRule').onchange()}}el.value=dispIcao(v);$(k+'_s').value=DB[v]&&!isZ(v)?v:'';zSync();save();renderAll()}}
+  try{zSync()}catch(e){}for(const k of ['dep','dst','alt','talt']){const el=$(k);el.value=dispIcao(S.route[k]);$(k+'_s').value=DB[S.route[k]]&&!isZ(S.route[k])?S.route[k]:'';el.onchange=()=>{let v=norm(el.value);if(v==='ZZZZ'&&ZK[k])v=ZK[k];const old=S.route[k];S.route[k]=v;
+    if((k==='dep'||k==='dst')&&old&&old!==v&&(S.route.rte||'').trim()){S.route.rte='';S._aw=null;S._selAw=null;if(typeof SUG!=='undefined')SUG=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';if($('rteIn'))$('rteIn').value='';setTimeout(()=>toast((k==='dep'?'出発地':'目的地')+'を変えたので、前の経路を消しました'),50)}if(k==='dst'&&isZ(v)&&S.route.arrRule!=='vfr'){S.route.arrRule='vfr';if($('arrRule')){$('arrRule').value='vfr';$('arrRule').onchange&&$('arrRule').onchange()}}el.value=dispIcao(v);$(k+'_s').value=DB[v]&&!isZ(v)?v:'';zSync();save();renderAll()}}
   for(const k of ['etd','eta']){const el=$(k);el.value=S.route[k];el.onchange=()=>{S.route[k]=el.value;save();renderAll()}}
   $('altOff').value=S.route.altOff;$('altOff').onchange=()=>{S.route.altOff=+$('altOff').value||0;save();renderAll()};
   $('cat').value=S.prof.cat;$('cat').onchange=()=>{S.prof.cat=$('cat').value;save();renderAll()};
@@ -3851,7 +3852,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261109172300';
+window.APPV='20261109192701';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
