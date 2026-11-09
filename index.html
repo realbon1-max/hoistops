@@ -381,7 +381,7 @@ button.armed{background:var(--warn)!important;color:#fff!important;border-color:
 .xsctl select,.xsctl button{font:inherit;font-size:13px;padding:4px 8px}
 .xcard{border:1px solid var(--rule);border-radius:8px;padding:6px;margin:8px 0;background:var(--panel);min-width:0}
 .xct{font-weight:700;font-size:13.5px;margin:2px 4px 4px}
-.xsvg{width:100%;height:auto;display:block}
+.xsvg{width:100%;height:auto;display:block} .xzwrap{position:relative;line-height:0}.xzwrap canvas{position:absolute;left:0;top:0;pointer-events:none} .xzhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.xzhead>span:first-child{flex:1 1 200px}.xzhead small{font-weight:500;color:var(--muted);margin-left:4px} .xzseg{display:inline-flex;border:1.5px solid var(--rule);border-radius:9px;overflow:hidden} .xzseg button,.xzplay{font:inherit;font-size:13px;font-weight:800;min-height:40px;padding:0 14px;border:0;background:transparent;color:var(--ink);cursor:pointer;touch-action:manipulation} .xzseg button[aria-pressed=true]{background:var(--uiOn,#3aa7e0);color:#06202e} .xzplay{border:1.5px solid var(--rule);border-radius:9px} .xzline{stroke:#16314f;opacity:.5} :root[data-theme=dark] .xzline{stroke:#fff;opacity:.6} 
 .xstat{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;margin:4px 4px 0}
 .xwarn{margin:4px 0 2px;padding-left:18px;font-size:12px;color:var(--ink)}
 .xsum{font-size:13px;padding:8px 10px;border-left:5px solid var(--ok);background:var(--panel);border-radius:4px}
@@ -5112,6 +5112,157 @@ function vtGlyph(c,x,y,h,w,op){ const C=VTC[c]||VTC.un, col=C[1], f=n=>n.toFixed
   else if(c==='ws'){ g=[-.3,0,.3].map(k=>`<path d="M${f(x+k*w-2.5)} ${f(y-1.2)} h5" stroke="#4fa3d1" stroke-width="1.2"/><path d="M${f(x+k*w)} ${f(y-1.5)} l-1 -4 M${f(x+k*w)} ${f(y-1.5)} l1 -4" stroke="#7cb342" stroke-width=".9"/>`).join(''); }
   return op!=null&&op<1?`<g opacity="${op}">${g}</g>`:g; }
 function vtIcon(c){ if(c==='wa') return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true"><rect x="0" y="14" width="24" height="10" fill="#4fa3d1"/><path d="M3 18q3-3 6 0t6 0t6 0" fill="none" stroke="#fff" stroke-width="1.3"/></svg>`; const g=vtGlyph(c,12,20,c==='bl'||c==='un'||c==='or'||c==='nl'||c==='pa'||c==='bb'?16:7,14); return `<svg viewBox="0 0 24 24" class="vti" aria-hidden="true">${g}</svg>`; }
+// ==== 吹き下ろしの流れ場（断面内の速度ベクトル）====
+// 後流：運動量理論＋渦円筒の軸上速度 w(ζ)=vi(1+ζ/√(ζ²+R²))（ローター面で vi、約1R下で ~1.7vi、遠方で 2vi）。連続の式から後流半径 r=R√(vi/w)（0.707R まで収縮）。
+// 翼幅方向の分布：付け根は弱く、0.75〜0.85R で最大。3D より下は Airbus SPN 3684-P-00 の減衰（wakeF）。
+// 地表：よどみ点のまわりで外向きに向きを変え、壁面噴流（ウォールジェット）になる。高さ方向の分布は Glauert の壁面噴流：
+//   最大速度の高さ zm より下は 1/7 乗則、上は sech²。半値高さ z½ は距離とともに厚くなる（広がり率 約0.085）。大きさは xsFlow（Preston モデル＋谷の収縮）と同じ。
+// 風：地表付近は 1/7 乗の境界層。風上側で吹き出しが風に負ける所に地面渦（ランキン渦）。樹冠の中は減速。
+// いずれも概算（CFD ではない）。
+function xsFine(pr,ZR){ const N=XN, R=XS.range, ds=[...Array(N)].map((_,i)=>-ZR+2*ZR*i/(N-1));
+  const at=(A,s)=>{ const k=(s+R)/(2*R)*(pr.ds.length-1), a=Math.max(0,Math.min(pr.ds.length-2,Math.floor(k))), t=Math.max(0,Math.min(1,k-a)), x=A[a], y=A[a+1]; return isNaN(x)?y:isNaN(y)?x:x*(1-t)+y*t; };
+  const near=(A,s)=>A?A[Math.max(0,Math.min(pr.ds.length-1,Math.round((s+R)/(2*R)*(pr.ds.length-1))))]:null;
+  return {ds,z:ds.map(s=>at(pr.z,s)),w:ds.map(s=>at(pr.w,s)),cat:pr.cat?ds.map(s=>near(pr.cat,s)):null}; }
+function xsField(pf,hAGL,vi,U,FL,canF){ const D=ROTOR_D, R=D/2, N=pf.ds.length, s0=pf.ds[0], dS=pf.ds[1]-pf.ds[0], ZR=-s0;
+  const idx=s=>Math.max(0,Math.min(N-1.001,(s-s0)/dS));
+  const gz=s=>{ const k=idx(s), a=Math.floor(k), t=k-a, x=pf.z[a], y=pf.z[a+1]; return isNaN(x)?y:isNaN(y)?x:x*(1-t)+y*t; };
+  const slope=s=>(gz(s+1.5)-gz(s-1.5))/3;
+  const fl=s=>{ const k=idx(s), a=Math.floor(k), t=k-a, A=FL.flow[a], B=FL.flow[a+1]||A; return A.v0*(1-t)+B.v0*t; };
+  const zr=gz(0)+hAGL, wpot=z=>vi*(1+z/Math.hypot(z,R)), wax=z=>wpot(z)*wakeF(z/D), rw=z=>R*Math.sqrt(vi/wpot(z))*(z>3*D?1+0.12*(z/D-3):1);
+  // drift of the wake centreline by the wind (ends at FL.s0 on the ground)
+  const M=40, tt=[0]; for(let k=1;k<=M;k++){ const z=(k-0.5)/M*hAGL; tt.push(tt[k-1]+(hAGL/M)/Math.max(1,wax(z))); }
+  const sC=z=>{ const k=Math.max(0,Math.min(M,z/hAGL*M)), a=Math.min(M-1,Math.floor(k)), t=k-a; return FL.s0*((tt[a]*(1-t)+tt[a+1]*t)/tt[M]); };
+  const frad=x=>x<0.18?0.25:x<0.8?0.25+1.15*(x-0.18)/0.62:x<1?1.4-0.5*(x-0.8)/0.2:0.9*Math.exp(-(x-1)/0.10);
+  const sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }, sech2=x=>{ const c=Math.cosh(Math.min(20,x)); return 1/(c*c); };
+  const ht=0.8*R, Vg=FL.Vg, gv=FL.gv?{s:FL.gv.s,sg:Math.sign(FL.gv.s-FL.s0)||1,r:Math.abs(FL.gv.s-FL.s0),hc:Math.max(1.6,0.4*R),rc:0.32*R,Vc:Math.max(Math.abs(U),0.45*fl(FL.gv.s))}:null;
+  if(gv) gv.zc=gz(gv.s)+gv.hc;
+  const vel=(s,z)=>{ const g=gz(s); if(isNaN(g)) return [0,0,0]; const hg=z-g; if(hg<0) return [0,0,0];
+    const sl=slope(s), th=Math.atan(sl);
+    // ambient wind
+    const wp=U*Math.min(1,Math.pow(Math.max(hg,0.3)/10,1/7)); let us=wp, uz=wp*sl*Math.exp(-hg/15);
+    // rotor wake
+    const zt=zr-z; let wk=0;
+    if(zt>=0){ const sc=sC(zt), x=Math.abs(s-sc)/rw(zt); wk=wax(zt)*frad(x); }
+    else if(zt>-1.2*R){ wk=vi*frad(Math.abs(s)/(R*(1+0.35*(-zt/R))))*Math.exp(zt/(0.55*R)); us+=-Math.sign(s)*0.35*vi*Math.exp(zt/(0.6*R))*Math.min(1,Math.abs(s)/R)*Math.exp(-Math.max(0,Math.abs(s)-1.3*R)/(0.4*R)); }
+    if(wk>0){ const k=1-0.85*Math.min(1,wk/(2*vi)); us*=k; }
+    uz-=wk*sm(hg/ht);
+    // wall jet along the ground, away from the impact point
+    const dr=s-FL.s0, r=Math.abs(dr), dir=Math.sign(dr)||1; let um=fl(s);
+    if(gv&&dir===gv.sg&&r>gv.r) um*=Math.exp(-(r-gv.r)/(0.35*R));
+    const zh=Math.max(0.9,0.10*R+0.085*Math.max(0,r-0.5*D)), zm=0.28*zh;
+    let p=hg<zm?Math.pow(Math.max(hg,0.04)/zm,1/7):sech2(0.8814*(hg-zm)/(zh-zm));
+    if(r<1.3*D){ const q=(1-sm(hg/ht))*(1-r/(1.3*D)); if(q>p) p=q; }
+    us+=dir*um*p*Math.cos(th); uz+=dir*um*p*Math.sin(th);
+    // ground vortex on the upwind side
+    if(gv){ const a=s-gv.s, b=z-gv.zc, rho=Math.hypot(a,b)||1e-3, vt=rho<gv.rc?gv.Vc*rho/gv.rc:gv.Vc*(gv.rc/rho)*Math.exp(-(rho-gv.rc)/(2.2*gv.rc)); us+=-gv.sg*(b/rho)*vt; uz+=gv.sg*(a/rho)*vt; if(z-gz(s)<0.4&&uz<0) uz=0; }
+    // inside the canopy the flow is slowed
+    const ch=canF?canF(s):0; if(ch>0&&hg<ch){ const k=0.45+0.55*sm((hg-0.8*ch)/(0.2*ch)); us*=k; uz*=k; }
+    if(hg<0.6&&uz<0) uz*=hg/0.6;
+    return [us,uz,Math.hypot(us,uz)]; };
+  return {vel,gz,zr,sC,rw,wax,gv,ZR,ht}; }
+// streamlines from seeds on the rotor disc (and in the wind, upwind of the wake), as SVG polylines coloured by speed band
+function xsStream(F,seeds,X,Y,lim,dl){ let out=''; const col=v=>{ const b=dwBand(v); return b<0?'#8fbfe6':DWB[b][1]; };
+  seeds.forEach(([s,z])=>{ let pts=[[s,z]], seg=[], cur=null, len=0, nextA=dl*14; const flush=()=>{ if(seg.length>1) out+=`<polyline points="${seg.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" class="xzline" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`; };
+    for(let k=0;k<520;k++){ const v=F.vel(s,z); if(v[2]<1.2) break; const c=col(v[2]);
+      // midpoint step
+      const s1=s+v[0]/v[2]*dl/2, z1=z+v[1]/v[2]*dl/2, v2=F.vel(s1,z1); if(v2[2]<0.8) break; s+=v2[0]/v2[2]*dl; z+=v2[1]/v2[2]*dl; len+=dl;
+      if(Math.abs(s)>lim.s||z>lim.zt||z<lim.zb) break; const g=F.gz(s); if(z<g+0.15) z=g+0.15;
+      const P=[X(s),Y(z)]; seg.push(P); cur=c;
+      if(len>=nextA){ nextA+=dl*26; const a=Math.atan2(-(v2[1])*lim.ay,v2[0])*180/Math.PI; out+=`<path d="M-4,-3 L2,0 L-4,3" transform="translate(${P[0].toFixed(1)},${P[1].toFixed(1)}) rotate(${a.toFixed(0)})" fill="none" class="xzline" stroke-width="1.6" stroke-linecap="round"/>`; } }
+    flush(); });
+  return out; }
+// zoomed, true-scale view around the aircraft: speed shading, streamlines, people for scale; a canvas on top animates particles in the same field
+function xsZoom(pr,which,opt){ const {hAGL,vi,obs,hft,hdg,U}=opt, D=ROTOR_D, R=D/2; const c=(XN-1)/2; if(isNaN(pr.z[c])) return null;
+  const W=XS.w||760, L=44, Rm=40, T=24, B=40, pw=W-L-Rm, phMax=W<600?430:470;
+  // pick the scale so that the rotor and the ground both fit, with the same scale in both directions
+  let ZR=3.2*D, pf, zlo, zhi, ppm;
+  for(let it=0;it<3;it++){ pf=xsFine(pr,ZR); const zz=pf.z.filter(v=>!isNaN(v)); const g0=pf.z[(XN-1)/2]; zlo=Math.max(Math.min(...zz),g0-0.5*ZR)-2.5; zhi=g0+hAGL+0.75*R+3; ppm=Math.min(pw/(2*ZR),phMax/(zhi-zlo)); const need=pw/(2*ppm); if(Math.abs(need-ZR)<0.5) break; ZR=need; }
+  const ph=Math.round((zhi-zlo)*ppm), Hh=T+ph+B, X=s=>L+(s+ZR)*ppm, Y=z=>T+(zhi-z)*ppm, fm=n=>Math.round(n).toLocaleString();
+  const FL=xsFlow(pf,hAGL,vi,U);
+  const tall=['bl','nl','bb','pa','or','un'], canF=s=>{ const i=Math.max(0,Math.min(XN-1,Math.round((s+ZR)/(2*ZR)*(XN-1)))), ct=pf.cat?pf.cat[i]:(obs>0?'un':null); if(!ct||ct==='wa') return 0; return tall.includes(ct)?(obs>0?obs:VTC[ct][2]):0; };
+  const F=xsField(pf,hAGL,vi,U,FL,canF), lab=which==='fa'?['後方','前方（機首）']:['左','右'], id='xz_'+which;
+  let h=`<defs><clipPath id="${id}c"><rect x="${L}" y="${T}" width="${pw}" height="${ph}"/></clipPath><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcebf8"/><stop offset="1" stop-color="#f4f8fb"/></linearGradient></defs>`;
+  h+=`<rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="url(#${id}s)" class="xsky"/><g clip-path="url(#${id}c)">`;
+  // speed shading: continuous colour map rendered on an offscreen canvas and embedded as an image (so it is kept in exports)
+  { const q=3, nx=Math.max(8,Math.round(pw/q)), ny=Math.max(8,Math.round(ph/q)); let url='';
+    try{ const cv=document.createElement('canvas'); cv.width=nx; cv.height=ny; const cx=cv.getContext('2d'), im=cx.createImageData(nx,ny), d=im.data;
+      const v0s=Math.max(3,Math.abs(U)*1.15+1.2), stops=[[v0s,[143,191,230],0],[Math.max(5,v0s+1.5),[159,199,232],120]].concat(DWB.map((b,i)=>{ const hx=b[1], c=[parseInt(hx.slice(1,3),16),parseInt(hx.slice(3,5),16),parseInt(hx.slice(5,7),16)]; return [i===0?7.5:i<DWB.length-1?(DWB[i-1][0]+b[0])/2:42,c,i===0?150:205]; }).filter(x=>x[0]>Math.max(5,v0s+1.5)+0.5));
+      for(let j=0;j<ny;j++){ const z=zhi-(j+0.5)*q/ppm; for(let i=0;i<nx;i++){ const s=-ZR+(i+0.5)*q/ppm, k=(j*nx+i)*4; if(z<F.gz(s)){ d[k+3]=0; continue; } const v=F.vel(s,z)[2]; if(v<=v0s){ d[k+3]=0; continue; }
+          let a=stops[0], b=stops[stops.length-1]; for(let m=0;m<stops.length-1;m++){ if(v>=stops[m][0]&&v<stops[m+1][0]){ a=stops[m]; b=stops[m+1]; break; } } if(v>=b[0]) a=b;
+          const t=a===b?0:(v-a[0])/(b[0]-a[0]); d[k]=a[1][0]+(b[1][0]-a[1][0])*t; d[k+1]=a[1][1]+(b[1][1]-a[1][1])*t; d[k+2]=a[1][2]+(b[1][2]-a[1][2])*t; d[k+3]=a[2]+(b[2]-a[2])*t; } }
+      cx.putImageData(im,0,0); url=cv.toDataURL('image/png'); }catch(e){}
+    if(url) h+=`<image href="${url}" x="${L}" y="${T}" width="${pw}" height="${ph}" preserveAspectRatio="none" style="image-rendering:auto"/>`; }
+  // slipstream edge
+  { let l='', r=''; const n=30; for(let k=0;k<=n;k++){ const zt=k/n*Math.max(0,hAGL-F.ht*0.6), sc=F.sC(zt), rr=F.rw(zt); l+=`${k?'L':'M'}${X(sc-rr).toFixed(1)} ${Y(F.zr-zt).toFixed(1)} `; r+=`${k?'L':'M'}${X(sc+rr).toFixed(1)} ${Y(F.zr-zt).toFixed(1)} `; }
+    h+=`<path d="${l}" fill="none" stroke="#2f6fb0" stroke-width="1.2" stroke-dasharray="5 4" opacity=".7"/><path d="${r}" fill="none" stroke="#2f6fb0" stroke-width="1.2" stroke-dasharray="5 4" opacity=".7"/>`; }
+  // streamlines
+  const seeds=[]; for(const k of [-0.86,-0.7,-0.52,-0.34,0.34,0.52,0.7,0.86]) seeds.push([k*R,F.zr+0.25*R]);
+  if(Math.abs(U)>1){ const up=-Math.sign(U)*(ZR-1); for(const hh of [1.2,4,9,16,26]) seeds.push([up,F.gz(up)+hh]); }
+  h+=xsStream(F,seeds,X,Y,{s:ZR,zt:zhi,zb:zlo,ay:1},0.6);
+  // ground + vegetation
+  { let d=''; pf.ds.forEach((s,i)=>{ d+=`${i?'L':'M'}${X(s).toFixed(1)} ${Y(isNaN(pf.z[i])?zlo:pf.z[i]).toFixed(1)} `; });
+    h+=`<path d="${d}L${X(ZR)} ${T+ph} L${X(-ZR)} ${T+ph}Z" fill="#b49a76" stroke="#6e5a3e" stroke-width="2" stroke-linejoin="round" class="xground"/>`;
+    let px=X(-ZR)+4, guard=0; while(px<X(ZR)-3&&guard++<400){ const s=(px-L)/ppm-ZR, i=Math.max(0,Math.min(XN-1,Math.round((s+ZR)/(2*ZR)*(XN-1)))), ct=pf.cat?pf.cat[i]:(obs>0?'un':null);
+      if(!ct||ct==='wa'||(ct==='un'&&obs<=0)){ px+=8; continue; } const C=VTC[ct], tl=tall.includes(ct), hm=tl?(obs>0?obs:C[2]):C[2], hp=Math.max(tl?8:3,hm*ppm), wp=tl?Math.max(8,Math.min(hp*0.7,(ct==='nl'?0.42:0.6)*hp)):12;
+      const zg=F.gz(s); if(!isNaN(zg)) h+=vtGlyph(ct,px,Y(zg),hp,wp,tl?0.8:1); px+=wp*0.85+1; } }
+  // ground vortex
+  if(F.gv){ const gx=X(F.gv.s), gy=Y(F.gv.zc), rr=Math.max(8,F.gv.hc*ppm*0.85), sg=F.gv.sg; h+=`<g><circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="${rr.toFixed(1)}" fill="none" stroke="#7a3fd0" stroke-width="2.4" stroke-dasharray="6 4"/><path d="M${(gx+sg*rr).toFixed(1)},${(gy-1).toFixed(1)} l-5,${sg>0?7:-7} h10z" fill="#7a3fd0" transform="rotate(${sg>0?0:180} ${(gx+sg*rr).toFixed(1)} ${(gy-1).toFixed(1)})"/><text x="${gx.toFixed(1)}" y="${(gy-rr-26).toFixed(1)}" font-size="12" font-weight="800" fill="#7a3fd0" text-anchor="middle" paint-order="stroke" stroke="var(--panel)" stroke-width="3.5">地面渦</text></g>`; }
+  // people for scale (1.7 m): speed at chest height, leaning with the wind
+  { const used=[]; for(const k of [0.75,1.5,2.5,-0.75,-1.5,-2.5]){ const s=FL.s0+k*D; if(Math.abs(s)>ZR-3) continue; const g=F.gz(s); if(isNaN(g)||Math.abs((F.gz(s+1)-F.gz(s-1))/2)>0.7) continue; const ct=pf.cat?pf.cat[Math.round((s+ZR)/(2*ZR)*(XN-1))]:null; if(ct==='wa') continue;
+      const v=F.vel(s,g+1.2), b=dwBand(v[2]), cc=b<0?'#5f8fb5':DWB[b][1], hpx=1.7*ppm, x=X(s), y=Y(g), lean=Math.max(-28,Math.min(28,Math.sign(v[0])*Math.min(28,v[2]*1.3)));
+      h+=`<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${lean.toFixed(0)})"><circle cx="0" cy="${(-hpx*0.9).toFixed(1)}" r="${(hpx*0.1).toFixed(1)}" fill="#1d2b3a"/><path d="M0 ${(-hpx*0.8).toFixed(1)} V${(-hpx*0.38).toFixed(1)} M0 ${(-hpx*0.38).toFixed(1)} l${(-hpx*0.13).toFixed(1)} ${(hpx*0.38).toFixed(1)} M0 ${(-hpx*0.38).toFixed(1)} l${(hpx*0.13).toFixed(1)} ${(hpx*0.38).toFixed(1)} M${(-hpx*0.17).toFixed(1)} ${(-hpx*0.62).toFixed(1)} H${(hpx*0.17).toFixed(1)}" stroke="#1d2b3a" stroke-width="${Math.max(1.6,hpx*0.09).toFixed(1)}" stroke-linecap="round" fill="none"/></g>`;
+      const ly=Math.max(T+12,y-hpx-8); if(!used.some(q=>Math.abs(q-x)<46)){ used.push(x); h+=`<g transform="translate(${x.toFixed(1)},${ly.toFixed(1)})"><rect x="-23" y="-12" width="46" height="17" rx="8.5" fill="${cc}" stroke="#fff" stroke-width="1.4"/><text y="1.5" font-size="11" font-weight="800" fill="#1a1a1a" text-anchor="middle">${v[2].toFixed(0)} m/s</text></g>`; } } }
+  h+=`</g>`;
+  // helicopter (true size) and cable
+  const realW=(which==='fa'?16.2:D)*ppm, yr=Y(F.zr), g0=F.gz(0);
+  h+=`<line x1="${X(0)}" y1="${yr+5}" x2="${X(0)}" y2="${Y(g0)}" stroke="#d4361e" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+  h+=`<g transform="translate(${X(0)},${yr})">${which==='fa'?heliSideImg(realW,true):`<line x1="${-realW/2}" y1="0" x2="${realW/2}" y2="0" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><rect x="-2" y="0" width="4" height="${realW*0.07}" fill="var(--ink)"/><path d="M${-realW*0.11},${realW*0.07} Q${-realW*0.14},${realW*0.2} ${-realW*0.08},${realW*0.24} L${realW*0.08},${realW*0.24} Q${realW*0.14},${realW*0.2} ${realW*0.11},${realW*0.07} Z" fill="#1d4d9a"/><line x1="${-realW*0.1}" y1="${realW*0.3}" x2="${realW*0.1}" y2="${realW*0.3}" stroke="var(--ink)" stroke-width="2"/>`}</g>`;
+  // axes: distance ticks every 10 m, height above the spot
+  { let g=''; const st=ZR>70?20:10; for(let s=Math.ceil(-ZR/st)*st;s<=ZR;s+=st) g+=`<line x1="${X(s)}" y1="${T+ph}" x2="${X(s)}" y2="${T+ph+4}" stroke="var(--muted)"/><text x="${X(s)}" y="${T+ph+16}" font-size="10.5" text-anchor="middle" fill="var(--muted)">${s===0?'0':Math.abs(s)+' m'}</text>`;
+    const hs=(zhi-zlo)>70?20:10; for(let a=0;g0+a<zhi;a+=hs) g+=`<line x1="${L-4}" y1="${Y(g0+a)}" x2="${L}" y2="${Y(g0+a)}" stroke="var(--muted)"/><text x="${L-6}" y="${Y(g0+a)+4}" font-size="10.5" text-anchor="end" fill="var(--muted)">${a}</text>`;
+    g+=`<text x="${L-6}" y="${T-8}" font-size="10.5" text-anchor="end" fill="var(--muted)">m</text>`; h+=g; }
+  h+=`<text x="${L+6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)">${lab[0]}</text><text x="${L+pw-6}" y="${T+16}" font-size="13" font-weight="800" fill="var(--ink)" text-anchor="end">${lab[1]}</text>`;
+  if(Math.abs(U)>0.5){ const wx=U>0?L+70:L+pw-70, dir=Math.sign(U); h+=`<g><line x1="${wx-dir*26}" y1="${T+40}" x2="${wx+dir*26}" y2="${T+40}" stroke="#2f6fb0" stroke-width="3.5"/><path d="M${wx+dir*26},${T+40} l${-dir*8},-5 v10z" fill="#2f6fb0"/><text x="${wx}" y="${T+33}" font-size="11.5" font-weight="700" fill="#2f6fb0" text-anchor="middle" paint-order="stroke" stroke="var(--panel)" stroke-width="3">風 ${(Math.abs(U)*1.94384).toFixed(0)} kt</text></g>`; }
+  h+=`<text x="${L+pw/2}" y="${Hh-6}" font-size="10.5" fill="var(--muted)" text-anchor="middle">縦横同じ縮尺・ローター直径 ${D} m・人は身長 1.7 m・数字は胸の高さ（1.2 m）の風速</text>`;
+  // surface under the wake: what gets blown up
+  const sf=new Set(); if(pf.cat) pf.ds.forEach((s,i)=>{ if(Math.abs(s-FL.s0)<1.5*D&&pf.cat[i]) sf.add(pf.cat[i]); });
+  const blow=[]; if(FL.Vg>=8){ if(sf.has('sn')) blow.push('雪が舞い上がり視界を失う（ホワイトアウト）'); if(sf.has('gr')||sf.has('wl')||sf.has('fd')) blow.push('砂・土ぼこりが舞い上がる（ブラウンアウト）'); if(sf.has('wa')) blow.push('水しぶきが上がる'); if(sf.has('bl')||sf.has('nl')||sf.has('bb')) blow.push('枯れ枝・葉が落ちる、飛ぶ'); }
+  XS.fld=XS.fld||{}; XS.fld[which]={F,W,Hh,L,T,pw,ph,ZR,zlo,zhi,ppm,U,vi,hAGL,R};
+  return {svg:`<svg viewBox="0 0 ${W} ${Hh}" class="xsvg xzsvg" role="img" aria-label="${which==='fa'?'機首方向':'左右方向'}の吹き下ろしの拡大図">${h}</svg>`,blow,Vg:FL.Vg,s0:FL.s0,gv:FL.gv,ZR}; }
+// particles advected through the field, drawn on a canvas laid over the zoom SVG
+const XZA={raf:0,on:true,io:null,vis:false,t:0};
+function xsZoomAnim(){ cancelAnimationFrame(XZA.raf); XZA.raf=0; const wrap=document.getElementById('xzWrap'); if(!wrap) return; const svg=wrap.querySelector('svg.xzsvg'), cv=wrap.querySelector('canvas'); const fd=XS.fld&&XS.fld[XS.zw||'fa']; if(!svg||!cv||!fd) return;
+  const red=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; if(red||!XZA.on){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }
+  const dpr=Math.min(2,window.devicePixelRatio||1), fit=()=>{ const w=svg.clientWidth, hh=svg.clientHeight; if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(hh*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(hh*dpr); cv.style.width=w+'px'; cv.style.height=hh+'px'; } return w/fd.W; };
+  const ctx=cv.getContext('2d'), F=fd.F, R=fd.R, NP=Math.round(Math.min(520,Math.max(220,fd.pw*0.55))), P=[];
+  const spawn=p=>{ const windy=Math.abs(fd.U)>1&&Math.random()<0.22; if(windy){ p.s=-Math.sign(fd.U)*(fd.ZR-0.5); p.z=F.gz(p.s)+0.3+Math.pow(Math.random(),1.6)*Math.min(40,fd.zhi-F.gz(p.s)-1); } else { const a=(Math.random()*2-1); p.s=a*R*1.02; p.z=F.zr+R*(0.15+0.5*Math.random()); } p.age=0; p.life=4+Math.random()*5; };
+  for(let i=0;i<NP;i++){ const p={}; spawn(p); p.age=Math.random()*p.life; P.push(p); }
+  let last=0; const dark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches), col=()=>dark?'rgba(255,255,255,.92)':'rgba(20,45,75,.85)';
+  const step=ts=>{ XZA.raf=requestAnimationFrame(step); if(!XZA.vis||document.hidden){ last=ts; return; } const dt=Math.min(0.05,(ts-last)/1000||0.016); last=ts; const k=fit()*dpr;
+    ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.fillRect(0,0,cv.width,cv.height); ctx.globalCompositeOperation='source-over'; ctx.lineCap='round';
+    const X=s=>(fd.L+(s+fd.ZR)*fd.ppm)*k, Y=z=>(fd.T+(fd.zhi-z)*fd.ppm)*k, x0=fd.L*k, x1=(fd.L+fd.pw)*k, y0=fd.T*k, y1=(fd.T+fd.ph)*k;
+    for(const p of P){ const v=F.vel(p.s,p.z); p.age+=dt; if(v[2]<0.6||p.age>p.life){ spawn(p); continue; }
+      const ax=X(p.s), ay=Y(p.z); p.s+=v[0]*dt; p.z+=v[1]*dt; const g=F.gz(p.s); if(p.z<g+0.12) p.z=g+0.12; const bx=X(p.s), by=Y(p.z);
+      if(bx<x0||bx>x1||by<y0||by>y1){ spawn(p); continue; }
+      ctx.strokeStyle=col(v[2]); ctx.globalAlpha=Math.min(1,p.age*3)*Math.min(1,(p.life-p.age)*2); ctx.lineWidth=(v[2]>17?2.3:1.6)*dpr; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke(); }
+    ctx.globalAlpha=1; };
+  if(XZA.io) XZA.io.disconnect(); XZA.vis=true; try{ XZA.io=new IntersectionObserver(es=>{ XZA.vis=es.some(e=>e.isIntersecting); },{threshold:0.05}); XZA.io.observe(wrap); }catch(e){}
+  XZA.raf=requestAnimationFrame(step); }
+function xsZoomCard(Z){ const w=XS.zw==='lr'?'lr':'fa', o=Z[w]; if(!o) return '';
+  return `<div class="xcard xzcard"><div class="xct xzhead"><span>吹き下ろしの拡大図<small>（機体のまわり ±${Math.round(o.ZR)} m・実際の形）</small></span>
+    <span class="xzseg" role="group" aria-label="断面の向き"><button type="button" data-xzw="fa" aria-pressed="${w==='fa'}">前後</button><button type="button" data-xzw="lr" aria-pressed="${w==='lr'}">左右</button></span>
+    <button type="button" class="xzplay" id="xzPlay" aria-pressed="${XZA.on}" title="流れの動きを止める・動かす">${XZA.on?'⏸ 動きを止める':'▶ 動かす'}</button></div>
+    <div class="xzwrap" id="xzWrap">${o.svg}<canvas aria-hidden="true"></canvas></div>
+    ${o.blow.length?`<div class="xchips">${o.blow.map(t=>`<span>⚠ ${t}</span>`).join('')}</div>`:''}
+    <div class="hint note">色は風速（下の凡例と同じ）。線と動く粒は空気の流れ：ローターを通った空気は約0.7倍の太さまで絞られながら速くなり（ローター面の約2倍）、地表で外向きに曲がって、地面に沿った薄く速い流れ（地表から1〜3 mが最も強い）になります。${o.gv?'風上側では吹き出しが風に押し戻されて巻き上がり、地面渦になります。':''}${Math.abs(o.s0)>=3?`風で着地点が約${Math.abs(Math.round(o.s0))} mずれています。`:''}運動量理論と壁面噴流の式による概算で、実測や詳細な流体計算ではありません。</div></div>`; }
+// contracted, wind-drifted slipstream for the wide section (replaces the straight trapezoid)
+function xsWakeShape(X,Y,zr,hAGL,vi,s0,yg){ const D=ROTOR_D, R=D/2, wpot=z=>vi*(1+z/Math.hypot(z,R)), wax=z=>wpot(z)*wakeF(z/D), rw=z=>R*Math.sqrt(vi/wpot(z))*(z>3*D?1+0.12*(z/D-3):1);
+  const M=24, tt=[0]; for(let k=1;k<=M;k++){ const z=(k-0.5)/M*hAGL; tt.push(tt[k-1]+(hAGL/M)/Math.max(1,wax(z))); }
+  const P=[]; for(let k=0;k<=M;k++){ const z=k/M*hAGL, sc=s0*tt[k]/tt[M], fl=k/M>0.82?1+1.6*((k/M-0.82)/0.18)**2:1; P.push([sc,rw(z)*fl,zr-z]); }
+  const yy=p=>Math.min(yg,Y(p[2])); let d='M'+P.map(p=>`${X(p[0]-p[1]).toFixed(1)},${yy(p).toFixed(1)}`).join(' L')+' L'+P.slice().reverse().map(p=>`${X(p[0]+p[1]).toFixed(1)},${yy(p).toFixed(1)}`).join(' L')+'Z';
+  const lines=[-0.6,0,0.6].map(o=>'M'+P.filter((_,k)=>k>0&&k<M).map(p=>`${X(p[0]+o*p[1]).toFixed(1)},${yy(p).toFixed(1)}`).join(' L'));
+  return {d,lines}; }
+
 function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760,Hh=W<600?382:352, L=56, Rm=54, T=26, B=62, pw=W-L-Rm, ph=Hh-T-B;
   const c=(XN-1)/2, zg=pr.z[c], zr=zg+hAGL; const zs=pr.z.filter(x=>!isNaN(x));
   if(zs.length<XN*0.6) return `<svg viewBox="0 0 ${W} 120"><text x="20" y="60" font-size="14" fill="var(--warn)">この地点の標高データを読めません（内蔵データの範囲外で、ネットにもつながっていません）</text></svg>`;
@@ -5183,8 +5334,7 @@ function xsSvg(pr,which,opt){ const {hAGL,vi,obs,hft,hdg}=opt; const W=XS.w||760
   // downwash column (drifted downwind by the wind)
   const D=ROTOR_D, s0=FL.s0, zAt=v=>{ const k=(v+range)/(2*range)*(XN-1), a=Math.max(0,Math.min(XN-2,Math.floor(k))), t=k-a; return pr.z[a]*(1-t)+pr.z[a+1]*t; };
   const yr=Y(zr), yg=Y(zAt(s0));
-  h+=`<path d="M${X(-D/2)},${yr} L${X(D/2)},${yr} L${X(s0+D*0.36)},${yg} L${X(s0-D*0.36)},${yg} Z" fill="#4f8fd8" opacity=".22"/>`;
-  for(const o of [-.25,0,.25]) h+=`<line x1="${X(o*D)}" y1="${yr+4}" x2="${X(s0+o*D*0.8)}" y2="${yg-4}" stroke="#2f6fb0" stroke-width="3" class="xflow" marker-end="url(#xa_${which})"/>`;
+  { const ws=xsWakeShape(X,Y,zr,hAGL,vi,s0,yg); h+=`<path d="${ws.d}" fill="#4f8fd8" opacity=".24"/>`; ws.lines.forEach(d=>{ h+=`<path d="${d}" fill="none" stroke="#2f6fb0" stroke-width="${sx*D>60?2.6:1.8}" class="xflow" marker-end="url(#xa_${which})"/>`; }); }
   // flow along the ground: colour/width by speed, white dashes and chevrons show the direction (outwash + wind)
   const wd=v=>Math.max(3,Math.min(18,v*0.7)), py=i=>Y(pr.z[i])-wd(flow[i].v)/2-1.5;
   for(let i=1;i<XN;i++){ const j=i-1, f=flow[i], g2=flow[j]; if(isNaN(pr.z[i])||isNaN(pr.z[j])||f.under||g2.under) continue; const v=(f.v+g2.v)/2, bd=dwBand(v); if(v<2) continue;
@@ -5512,6 +5662,8 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const pth=E?{fa:[[E.cl0,'#2c7a4b','クラシック（正面）'],[E.oei0,'#c0392b','片発離脱（正面）']],lr:[[E.vu,'#2f6fb0','ヴィチャード']]}:{fa:[],lr:[]};
   const fa=xsSvg(pv('fa'),'fa',{hAGL,vi:d.vi,obs,hft,hdg,U:Ufa,paths:pth.fa}), lr=xsSvg(pv('lr'),'lr',{hAGL,vi:d.vi,obs,hft,hdg,U:Ulr,paths:pth.lr});
   if(typeof fa==='string'){ box.innerHTML=fa; return; }
+  if(!XS.zw){ let z=null; try{ z=localStorage.getItem('hoXsZw'); }catch(e){} XS.zw=z==='fa'||z==='lr'?z:(Math.abs(Ulr)>Math.abs(Ufa)+0.5?'lr':'fa'); }
+  let XZ={}; try{ XZ={fa:xsZoom(pv('fa'),'fa',{hAGL,vi:d.vi,obs,hft,hdg,U:Ufa}),lr:xsZoom(pv('lr'),'lr',{hAGL,vi:d.vi,obs,hft,hdg,U:Ulr})}; }catch(e){ console.warn('xsZoom',e); }
   setTimeout(()=>{ document.querySelectorAll('#xsBody [data-obs0]').forEach(b=>b.onclick=()=>{ const o=$('mObs'); o.value=0; o.dispatchEvent(new Event('input',{bubbles:true})); o.dispatchEvent(new Event('change',{bubbles:true})); }); },0);
   const hd=hAGL/ROTOR_D, Vg=2*d.vi*wakeF(hd), drift=Math.hypot(Ufa,Ulr)*hAGL/Math.max(1,(2*d.vi+Vg)/2);
   const rng=(r,lb)=>{ const a=Math.abs(Math.round(r[0])), b2=Math.round(r[1]); return a===0&&b2===0?'なし':`${lb[0]} ${a?a+' m':'なし'}・${lb[1]} ${b2?b2+' m':'なし'}`+'（中心から）'; };
@@ -5523,10 +5675,13 @@ function drawXsec(H,T,W){ const box=$('xsBody'); if(!box) return; XS.H=H; XS.T=T
   const xI=d=>`<svg class="xico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   box.innerHTML=`<div class="xsum ${Vg>=17||anyV?'xbad':''}"><div class="xsc"><span title="地点">${xI('<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>')}${fmtLL(p.lat,p.lon)}</span><span title="地表の標高">${xI('<path d="M2 20l7-12 4 6 2-3 7 9z"/>')}<b>${Math.round(pv('fa').z[(XN-1)/2])}</b> m</span><span title="ローター面〜地表">${xI('<path d="M2 5h20M12 5v3M5 12c0-2 2-4 7-4s6 2 6 4-1 3-6 3H8c-2 0-3-1-3-3z"/><path d="M12 16v6"/>')}ローター面 <b>${Math.round(hAGL)}</b> m</span><span class="${Vg>=17?'bad':Vg>=10?'cau':''}" title="真下の吹き下ろし">${xI('<path d="M12 3v14M7 12l5 5 5-5M4 21h16"/>')}吹き下ろし <b>${Vg.toFixed(0)}</b> m/s <small>${(Vg*3.6).toFixed(0)} km/h</small></span>${drift>=3?`<span title="吹き下ろしが風下へずれる距離">${xI('<path d="M4 8h11a3 3 0 1 0-3-3M4 13h14M14 17l4-4-4-4"/>')}風下へ <b>${Math.round(drift)}</b> m</span>`:''}${anyV?`<span class="bad">⚠ 地形で強まる所あり</span>`:''}</div>
   <div class="hint note">ローター面の高さ＝障害物 ${obs} m＋ホバリング ${hft} ft。ローター直径の${hd.toFixed(1)}倍の高さ${hd<=3?'：3倍以内なので2Viのまま届く':hd<10?'：3倍を超え、弱まりながら届く':'：10倍以上でほぼ届かない'}。風 ${wc.ws} kt（向かい風${wc.head>=0?'':'−'}${Math.abs(wc.head).toFixed(0)}・横風 ${Math.abs(wc.cross).toFixed(0)} kt）${drift>=3?`：吹き下ろしは風下へ約${Math.round(drift)} m流されて地表に当たる。風上側は吹き出しが押し戻されて地面渦ができ、風下側は風が加わって遠くまで強い`:'：風の影響は小さい'}。</div></div>
-  ${card('機首方向（前後）の断面',fa,['後方','前方'])}${card('左右方向の断面',lr,['左','右'])}
+  ${xsZoomCard(XZ)}${card('機首方向（前後）の断面',fa,['後方','前方'])}${card('左右方向の断面',lr,['左','右'])}
   <div class="xleg note">${DWB.map((b,i)=>`<span><i style="background:${b[1]}"></i>${i===0?'5 m/s未満':b[0]<999?DWB[i-1][0]+'〜'+b[0]+' m/s':DWB[i-1][0]+' m/s以上'}：${b[2]}</span>`).join('')}</div>
   <div class="xleg note"><span><i style="background:#2c7a4b"></i>クラシック法の経路</span><span><i style="background:#2f6fb0"></i>ヴィチャード法の経路</span><span><i style="background:#c0392b"></i>片発離脱の経路</span><span>降下地点の傾斜：緑 15°未満（緩い）・黄 15〜30°（急）・橙 30〜45°（とても急）・赤 45°以上（崖）</span></div>
   ${E?escHTML(E,hft):''}`;
+  box.querySelectorAll('[data-xzw]').forEach(b=>b.onclick=()=>{ XS.zw=b.dataset.xzw; try{ localStorage.setItem('hoXsZw',XS.zw); }catch(e){} keepView(()=>drawXsec(XS.H,XS.T,XS.W)); });
+  { const xp=$('xzPlay'); if(xp) xp.onclick=()=>{ XZA.on=!XZA.on; xp.setAttribute('aria-pressed',XZA.on); xp.textContent=XZA.on?'⏸ 動きを止める':'▶ 動かす'; xsZoomAnim(); }; }
+  try{ xsZoomAnim(); }catch(e){}
   if(E&&p) roseTerrain(p.lat,p.lon,E.hdg,()=>keepView(()=>drawXsec(XS.H,XS.T,XS.W)));
   { const ht=$('hlTerr'); if(ht){ if(E&&E.hMinO!=null&&!isNaN(E.oLoss)){ const flat=Math.ceil((E.oLoss*FT+RC.mg)/5)*5, ok=hft>=E.hMinO;
       ht.hidden=false; ht.className='hlterr '+(ok?'ok':'bad');
