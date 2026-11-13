@@ -839,6 +839,10 @@ tr.lead.tt.sum td{font-size:13.5px}
 .taxg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .taxs{border:1px solid var(--line);border-radius:8px;padding:10px}
 .taxh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.rnphead{margin:10px 0 6px;padding:8px 10px;border-left:3px solid var(--mag);background:color-mix(in srgb,var(--mag) 7%,transparent);border-radius:4px}
+.rnphead small{display:block;color:var(--muted);margin-top:2px}
+.rnpul{margin:6px 0 0;padding-left:20px}.rnpul li{margin:3px 0;line-height:1.55}
+.fsh .atcn{width:auto!important;min-width:24px;padding:0 6px;border-radius:12px!important}
 /* summary END */
 /* === ACE THEME（ファイター・パイロット風／オリジナル） === */
 :root[data-theme="ace"]{
@@ -1869,6 +1873,56 @@ function fmsVia(){const tk=(rteEff()||'').toUpperCase().trim().split(/\s+/).filt
   return out}
 function mcdu(title,page,rows,foot){return `<div class="mcdu"><div class="mt"><span>${esc(title)}</span><span>${esc(page||'')}</span></div>${rows.map(r=>`<div class="mr"><div class="ml"><small>${esc(r[0]||'')}</small><b class="${r[2]?'in':''}">${esc(r[1]||'')}</b></div><div class="mrr"><small>${esc(r[3]||'')}</small><b class="${r[5]?'in':''}">${esc(r[4]||'')}</b></div></div>`).join('')}${foot?`<div class="mf">${esc(foot)}</div>`:''}</div>`}
 function keyList(items){return `<ol class="keys">${items.map(x=>`<li><span class="sp code">${esc(x.e||'')}</span><span class="lsk code">${esc(x.k||'')}</span>${x.n?`<small>${esc(x.n)}</small>`:''}</li>`).join('')}</ol>`}
+
+/* ---------- RNAV/RNP 進入（AW139 Primus EPIC：Supplement 80・FMSガイドの要点） ---------- */
+function rnpSteps(n0,step){const r=S.route,P=procSel();const A=ap(r.dst);if(!A||!P.app)return '';const x=(A.iac||[]).find(q=>q.n===P.app);if(!x)return '';
+  if(!/RNP|RNAV|GNSS|GPS/i.test(x.n))return '';const ar=x.ar||/\(AR\)|\bAR\b/.test(x.n);
+  const cat=S.prof.cat||'A';const M=(x.m||[]).filter(m=>m.l!=='CIRCLING');const mins=M.map(m=>`${m.l} ${m.hf} ${(m.c[cat]||m.c.A||[])[0]||'—'}`);
+  const R=x.r||{};const faf=(R.FAF||R.FAP||[])[0]||'FAF';const iaf=(R.IAF||[])[0]||'';const mahf=(R.MAHF||x.ma||[])[0]||'';
+  let mat='';try{const e=(PLD[r.dst]||[]).find(z=>z[0]==='APP'&&z[1]===x.n);mat=e&&e[5]||''}catch(e){}
+  const maalt=x.maalt?x.maalt.toLocaleString()+'ft':'（チャートの進入復行高度）';const lowest=M.map(m=>parseInt((m.c[cat]||m.c.A||[''])[0])).filter(v=>v>0);
+  const ul=L=>`<ul class="rnpul">${L.map(t=>`<li>${t}</li>`).join('')}</ul>`;let k=0;const S2=(t,w,b)=>step(`${n0}-${++k}`,t,w,b);let o='';
+  o+=`<div class="rnphead"><b>${esc(x.n)}</b> は${ar?'RNP AR':'RNP（RNAV）'}進入です。ARRIVAL のあと、下の手順で確認・設定します。<small>出典：AW139 RFM Supplement 80「RNP OPERATIONS」・Primus EPIC FMS パイロットガイド（ユーザー提供の要約）。機体の構成・ソフトの版で違う所は飛行規程を優先。</small></div>`;
+  o+=S2('事前確認','出発前・進入準備',ul([
+    `<b>NAV IDENT</b>：航法データベースが有効期間内（このアプリは AIRAC ${AIRAC_EFF}）`,
+    `<b>予測RAIM</b>：GPS STATUS → PREDICTIVE RAIM で ${esc(r.dst)}・ETA が <b>YES</b>`,
+    `<b>NOTAM NAVAIDS</b>：停止中の無線施設があれば除外`,
+    `<b>PFDの航法ソース</b>：FMS1 または FMS2`]));
+  o+=S2('進入方式とミニマの選択：ARRIVAL','NAV/FPL → 6R ARRIVAL（目的地200NM以内）',mcdu('ARRIVAL',r.dst,[['SURFACE','RW'+(x.rw||''),1,'RNAV MIN',(M[0]||{}).l||'',1],['APPROACH',x.n,1,'','',0],['APP TRANS',iaf||'VECTORS',!!iaf,'','',0],['','',0,'','',0],['','',0,'','',0],['REVIEW','',0,'','ACTIVATE',1]])+
+    keyList([{e:'RW'+(x.rw||''),k:'1L  SURFACE',n:'滑走路'},{e:x.n,k:'2L  APPROACH',n:'RNP進入を選ぶ'},{e:iaf||'VECTORS',k:'APP TRANS',n:'IAF または VECTORS'},{e:(M[0]||{}).l||'（ミニマ）',k:'2R  RNAV MIN',n:'最も低いミニマが既定値。変えるときは 2R → APPROACH MINIMA TYPE で選び（SEL）、1R RETURN'},{e:'（押すだけ）',k:'6L  REVIEW',n:'チャートと照合：ウェイポイントの順序・コース・各フィックスの高度と速度制限'},{e:'（押すだけ）',k:'6R  ACTIVATE',n:'照合してから飛行計画に入れる'}])+
+    (mins.length?`<p class="note">この方式のミニマ（CAT ${cat}）：${mins.map(esc).join('／')}</p>`:'')+
+    `<div class="msg cau">禁止：進入経路のウェイポイントの削除・追加・順序変更（管制指示によるFAF手前への直行を除く）／RNP 0.3 運用中のパラレル・オフセット。</div>`);
+  o+=S2('RNP値の確認：PROGRESS','PROG → 1/3（確認）・NEXT → 2/3 → 6L RNP（手動設定）',mcdu('PROGRESS','1/3',[['','',0,'','',0],['','',0,'','',0],['','',0,'','',0],['','',0,'','',0],['RNP',ar?'0.30以下':'0.30',1,'EPU','<RNP',1],['','',0,'','',0]])+
+    keyList([{e:'（確認）',k:'PROGRESS 1/3  5L/5R',n:'航法モード・RNP・EPU。EPU が RNP より小さいこと'},{e:'0.3',k:'RNP SETTINGS  1L MANUAL',n:'通常はデータベース値で自動。手動入力はデータベース値より緩いと CONFIRM ENTRY → 6R YES。0.30未満は INVALID ENTRY'},{e:'*DELETE*',k:'1L',n:'手動値を消して既定値に戻す'}])+
+    `<p class="note">RNPの優先順位：手動 → データベース → 既定（出発 1.0／航空路 2.0／到着 1.0／進入 0.3／進入復行 1.0 NM）。</p>`);
+  o+=S2('計器の設定','進入前',ul([
+    `<b>DA/MDA</b>：チャートのミニマをセット${lowest.length?`（${esc(mins[0]||'')}）`:''}。RNP AR・LNAV/VNAV・LNAV の最低 DA(H) は <b>250ft</b>`,
+    `<b>QNH</b>：目的地の最新値。機長・副操縦士・スタンバイの高度計が <b>±100ft 以内</b>。不一致なら Baro-VNAV が保証されないので進入しない`,
+    `<b>EGPWS</b>：MK XXII 作動・地形表示（TERR/TAWS）で監視`,
+    `<b>自動減速（任意）</b>：INITIAL SPEED・FINAL SPEED・MAP までの距離`]));
+  o+=S2('アーム：ガイダンス・コントローラー','進入許可のあと',ul([
+    `LNAV がアクティブ（緑）`,
+    `<b>APP</b>（自動減速を使うときは <b>DCL</b>）を押す → PFD に白の <b>VGP</b>（VGP DCL）`,
+    `アームの条件：航法ソース FMS・データベースの非精密進入がアクティブ・DR でない・目的地30NM以内・パス角や高度制限を手で変えていない・${esc(faf)} に高度制限があれば ALT 保持で接近・MAPへの垂直直行をしていない`,
+    `条件を満たさないと MCDU に <b>VGP UNAVAILABLE</b>`,
+    `${esc(faf)} の約2NM手前で緑の <b>APP</b>、VDIに <b>P</b>`,
+    `RFレグ・7.5°超の降下角を含むときは FD カップル（自動操縦）必須。カップルが外れたら進入中止`]));
+  o+=S2('最終進入中','FAF〜MAP',ul([
+    `<b>VGP キャプチャ</b>：パスに会合すると白→緑の VGP。条件は LNAV アクティブ・インバウンドに定着（XTE 0.5NM未満・トラック誤差10°未満）・FAF がアクティブまたは5NM未満・速度 50KIAS〜Vne−5（Phase 7 以降）`,
+    `<b>ASEL</b>：VGP が緑になった直後に進入復行高度 <b>${esc(maalt)}</b> へ。VGP 中は ASEL を無視して降下し、高度アラートも抑制される`,
+    `<b>横偏差</b>：CDI 2ドット＝1×RNP。<b>2ドット以内</b>`,
+    `<b>垂直偏差</b>：VDI 2ドット＝150ft。<b>1ドット（75ft）以内</b>`,
+    `<b>DGR</b>（アンバー）・<b>UNABLE RNP</b>：VGP/DCL がチャイムとともに解除。滑走路が見えていなければ直ちに進入復行`,
+    `${ar?'<b>RNP AR</b>：ADI下の拡張横偏差スケール。ウイングレット幅＝EPU。限界を超えるとアンバー点滅と「RNP RNP」<br>':''}<b>VTA</b>（アンバー）：MAP高度の手前（Phase 5〜7：100ft未満、Phase 8 以降：200ft未満）でパス終了を予告`,
+    `<b>MAP</b>：150ft AGL 以上ならMAPで VGP 解除（チャイム）。150ft AGL 未満なら 150ft で ALVL、50ft AGL でホバリング姿勢`,
+    `<b class="code" style="color:var(--no)">自動操縦はDA/MDAで止まらない</b>。目視物標がなければパイロットが進入復行を始める`]));
+  o+=S2('進入復行','DA/MDA・MAP で目視物標なし、または上の中止条件',ul([
+    `コレクティブの <b>GA</b> ボタンで進入復行を開始`,
+    mat?`<b>チャートの進入復行</b>：<span class="code">${esc(mat)}</span>`:`チャートの進入復行の経路に従う`,
+    `ASEL は ${esc(maalt)} になっていることを確認${mahf?`。待機は <b>${esc(mahf)}</b>`:''}`,
+    `FMS は進入復行の経路を順に飛ぶ（ACTIVE FLT PLAN の MISSED APRCH）。RNP の既定値は <b>1.0NM</b>`,
+    `GA 中の AFCS の上昇率・速度は機体の飛行規程で確認`]));
+  return o}
 function renderFms(){const F=fmsSet(),r=S.route,P=procSel(),C=routeCalc();const dep=ap(r.dep),dst=ap(r.dst);
   if(!dep||!dst){$('fmsOut').innerHTML='<div class="empty">ルートタブで出発・目的飛行場を選ぶと、FMSに入れる内容を作ります。</div>';return}
   const etd=utc(r.etd);const etdS=etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):'';
@@ -1913,6 +1967,7 @@ function renderFms(){const F=fmsSet(),r=S.route,P=procSel(),C=routeCalc();const 
   h+=step(n0+4,'離陸データ：TAKEOFF','PERF INDEX → TAKEOFF',mcdu('TAKEOFF','1/2',[['RWY',P.drw?`${r.dep}.${P.drw}`:'',0,'LENGTH','',0],['TEMP',tmp(w),!!tmp(w),'SFC WIND',wstr(w)||'---/--',!!wstr(w)],['BARO',qnh(w),!!qnh(w),'ELEV',dep.e!=null?String(Math.round(dep.e)):'',0],['','',0,'','',0],['','',0,'','',0],['','',0,'','NEXT PAGE',0]])+keyList([{e:wstr(w)||'（風）',k:'2R  SFC WIND',n:'地上風は必須の入力（METARから）'},...(qnh(w)?[{e:qnh(w),k:'3L  BARO',n:'QNH（hPa）'}]:[])])+`<p class="note">離陸位置で ACTIVE FLT PLAN の 6R「RW POS」を押すと、滑走路端の位置で更新できます（GPSがあれば不要）。</p>`);
   h+=step(n0+5,'到着・進入：ARRIVAL','目的地まで200NM以内で ACTIVE FLT PLAN の 6R ARRIVAL（または NAV INDEX）',mcdu('ARRIVAL',r.dst,[['APPROACH',P.app||'--',!!P.app,'',r.dst,0],['APP TRANS','（管制の指示）',0,'','',0],['STAR',(procFull('star')||{}).full||P.star||'NONE',!!P.star,'','',0],['STAR TRANS',starTr?starTr[0]:'NONE',!!starTr,'','',0],['','',0,'','',0],['','',0,'','ACTIVATE',1]])+
     keyList([{e:P.app||'（進入方式）',k:'APPROACH',n:'進入方式を選ぶと滑走路と進入復行も一緒に入る'},{e:'（IAFなど）',k:'APPROACH TRANS',n:'レーダー誘導なら VECTORS。1L に最終進入コースの既定値'},{e:(procFull('star')||{}).full||'（STARなし）',k:'STAR',n:'FMSでは短い略称で表示される。チャートの名称と照合する'},...(starTr?[{e:starTr[0],k:'STAR TRANS',n:'STARの入口'}]:[]),{e:'（押すだけ）',k:'6R  ACTIVATE',n:'飛行計画に入る'}]));
+  try{h+=rnpSteps(n0+5,step)}catch(e){}
   h+=step(n0+6,'着陸データ：LANDING','PERF INDEX → 2R LANDING',mcdu('LANDING','1/2',[['RWY',P.app&&(dst.iac.find(q=>q.n===P.app)||{}).rw?`${r.dst}.${dst.iac.find(q=>q.n===P.app).rw}`:'',0,'LENGTH','',0],['TEMP',tmp(wa),!!tmp(wa),'SFC WIND',wstr(wa)||'---/--',!!wstr(wa)],['BARO',qnh(wa),!!qnh(wa),'ELEV',dst.e!=null?String(Math.round(dst.e)):'',0],['','',0,'','',0],['','',0,'','',0],['','',0,'','NEXT PAGE',0]])+keyList([{e:tmp(wa)||'（気温）',k:'2L  TEMP',n:'着陸では気温と風が必須'},{e:wstr(wa)||'（風）',k:'2R  SFC WIND',n:'目的地のATIS・METARで更新する'}])+`<p class="note">進入復行の経路は MISSED APRCH のページで確認できます（ACTIVE FLT PLAN の後ろに続く）。</p>`);
   h+=`<p class="note">参考：Honeywell「Flight Management System for the Agusta AW139/AB139 Helicopter, Software NZ 7.3 Pilot's Guide」（2012年11月）の運用例（Section 4）と入力形式（Section 12）。表示や手順は機体の構成で違うことがあるので、機体の飛行規程とガイドを優先してください。重量・速度の既定値（ACDB）は機体ごとの値です。</p>`;
   $('fmsOut').innerHTML=h;
@@ -3852,7 +3907,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261110003232';
+window.APPV='20261113134451';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
