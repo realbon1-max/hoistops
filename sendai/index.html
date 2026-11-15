@@ -6972,7 +6972,7 @@ document.addEventListener('click',e=>{ if(e.target.closest('nav.jump a')){ close
 .rtfnum small{color:var(--muted);font-size:11.5px}.rtfnum b{font-size:16px;font-variant-numeric:tabular-nums}.rtfnum b.warn{color:var(--warn)}
 .rtfst{flex-wrap:wrap}.rtfst .xst small:last-child{font-size:11px}.rtfsrc{margin-top:8px;font-size:12.5px}.rtfsrc summary{cursor:pointer;font-weight:700}.rtfsrc li{margin:3px 0}
 .rtfdim summary{cursor:pointer;font-weight:700;font-size:13px}
-.rtfcst{font-size:12.5px;margin:2px 2px 6px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rtfcst.ok{color:#2c7a4b}.rtfcst.bad{color:var(--warn)}.rtfbar{display:inline-block;width:120px;height:6px;border-radius:3px;background:var(--rule);overflow:hidden}.rtfbar i{display:block;height:100%;background:#2f6fb0}
+.rtfcst{font-size:12.5px;margin:2px 2px 6px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rtfcst.ok{color:#2c7a4b}.rtfcst.bad{color:var(--warn)}.rtfhint{color:var(--muted);font-size:12px}.rtfbar{display:inline-block;width:120px;height:6px;border-radius:3px;background:var(--rule);overflow:hidden}.rtfbar i{display:block;height:100%;background:#2f6fb0}
 </style>
 <script>
 // D2Q9 格子ボルツマン法（BGK＋スマゴリンスキーのLES）。周囲1セルはゴースト（境界条件）。
@@ -7028,7 +7028,7 @@ function rtfCfdSetup(Fd){ const G=Fd.G, F=Fd.F, d=G.d, sA=G.sw-2.5, sB=Math.max(
 const RTFC_WSRC=LBM.toString()+`;onmessage=e=>{ const d=e.data; let s=LBM(d); const tot=d.warm+d.avg; let done=0; const ch=300;
   while(done<tot){ const n=Math.min(ch,tot-done), av=done>=d.warm; s.step(n,av); done+=n; postMessage({p:done/tot}); }
   const m=s.mean(); postMessage({done:1,U:m.U,W:m.W,I:m.I},[m.U.buffer,m.W.buffer,m.I.buffer]); };`;
-function rtfCfdKey(Fd,vi,hR,U){ const d=Fd.G.d; return [RTF.h,d.fl,d.hr,d.dv,d.e,d.ht,d.wf,hR,RTF.off,RTF.U,RTF.rail,vi.toFixed(1)].join('|'); }
+function rtfCfdKey(Fd,vi,hR,U){ const d=Fd.G.d; return [RTF.h,d.fl,d.hr,d.dv,d.e,d.ht,d.wf,hR,RTF.off,RTF.U,RTF.rail,RTF.hd||'side',vi.toFixed(1)].join('|'); }
 function rtfCfdWrap(S,R){ const {sA,dx,nx,nz,type,conv}=S, U=R.U, W=R.W, I=R.I;
   const at=(s,z)=>{ const x=(s-sA)/dx+0.5, y=z/dx+0.5; if(x<1||x>nx-2||y<1||y>nz-2) return null; const i=Math.floor(x), j=Math.floor(y), tx=x-i, ty=y-j; let su=0,sw=0,si=0,ws=0;
       for(const [a,b,wt] of [[i,j,(1-tx)*(1-ty)],[i+1,j,tx*(1-ty)],[i,j+1,(1-tx)*ty],[i+1,j+1,tx*ty]]){ const k=b*nx+a; if(type[k]===1||type[k]===3||wt<=0) continue; su+=U[k]*wt; sw+=W[k]*wt; si+=I[k]*wt; ws+=wt; }
@@ -7069,10 +7069,11 @@ let RTF; try{ RTF=Object.assign({},RTF0,JSON.parse(localStorage.getItem('hoRtf')
 try{ if(!JSON.parse(localStorage.getItem('hoRtf')||'{}').v2) RTF.rail='grid'; }catch(e){} if(RTF.dim==='std') RTF.dim='dwg'; if(RTF.wd==null) RTF.wd=0.7; if(RTF.my) delete RTF.my.wf;
 const rtfSave=()=>{ try{ localStorage.setItem('hoRtf',JSON.stringify(RTF)); }catch(e){} };
 const RTFA={raf:0,fd:null,vis:true,io:null};
-const RTF_HOFF=1.7, RTF_BOOM=2.0, RTF_BELLY=3.6; // 目安：ホイストの吊り点は機体中心線から右へ約1.7 m、ローター面から約2.0 m下。機体下面はローター面の約3.6 m下
+const RTF_HOFF=1.7, RTF_BOOM=2.0, RTF_BELLY=3.6, RTF_TR={x:8.4,dz:0.1,r:1.35}; // テールローター：中心はローター軸の約8.4 m後ろ、半径1.35 m（全長16.66 m・直径2.7 mから）
+const rtfHd=()=>RTF.hd==='nose'||RTF.hd==='tail'?RTF.hd:'side'; // 目安：ホイストの吊り点は機体中心線から右へ約1.7 m、ローター面から約2.0 m下。機体下面はローター面の約3.6 m下
 function rtfDim(){ const p=RTF.dim==='my'&&RTF.my?RTF.my:RTFP[RTF.dim]||RTFP.dwg; const fl=RTF.fl!=null&&RTF.dim==='my'?RTF.fl:RTFH[RTF.h].fl0-RTF.wd; return Object.assign({dep:7.28},p,{fl}); }
 // 断面の座標：s＝ローター軸からの水平距離（左＝家の側が負）、z＝水面からの高さ
-function rtfGeo(){ const d=rtfDim(), H=RTFH[RTF.h], sp=-RTF_HOFF, se=sp-RTF.off, sw=se-d.e, sr=sw+d.dv, sb=sw-d.dep, sc=sw-d.dep/2, f=d.fl, zt=f+d.ht, ridge=f+3.0+H.rise, pitch=(ridge-zt-0.12)/(se-sc);
+function rtfGeo(){ const d=rtfDim(), H=RTFH[RTF.h], sp=rtfHd()==='side'?-RTF_HOFF:0, se=sp-RTF.off, sw=se-d.e, sr=sw+d.dv, sb=sw-d.dep, sc=sw-d.dep/2, f=d.fl, zt=f+d.ht, ridge=f+3.0+H.rise, pitch=(ridge-zt-0.12)/(se-sc);
   const roof=s=>s<sb-d.e||s>se?NaN:zt+0.12+pitch*Math.max(0,Math.min(se-s,s-(sb-d.e))); // 切妻（棟は家の中央）
   const wd=RTF.wd, bh=x=>{ const B=H.bot; if(x<=0) return 0; for(let k=0;k<B.length-1;k++){ const a=B[k], b=B[k+1]; if(x>=a[0]&&x<=b[0]) return b[0]===a[0]?b[1]:a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]); } return B[B.length-1][1]; };
   const bz=s=>bh(s-sw)-wd; let ex=0; for(let x=1;x<60;x+=0.05){ if(bh(x)>=wd){ ex=x; break; } }
@@ -7119,10 +7120,11 @@ function rtfCalc(Fd,vi,hR){ const G=Fd.G, d=G.d, zb=hR-RTF_BOOM, zh=G.f+1.4; // 
   const clr=sh=>{ const zt=G.zt; if(zt<=zh) return sh-G.se; const sl=sh+(G.sp-sh)*(zt-zh)/(zb-zh); return sl-G.se; };
   const dx=G.sp-sOut, th=Math.atan2(dx,L), Fp=RTF.kg*Math.tan(Math.abs(th)), Tp=2*Math.PI*Math.sqrt(L/9.81), vs=Math.abs(dx)*Math.sqrt(9.81/L);
   const gap=G.zt-(G.f+d.hr), tip=-ROTOR_D/2; const rz=G.roof(tip); const rclr=isNaN(rz)?null:hR-rz;
+  let trclr=null; if(rtfHd()==='tail'){ let m=-1e9; for(let s=-RTF_TR.x-RTF_TR.r;s<=-RTF_TR.x+RTF_TR.r;s+=0.1){ const z=G.roof(s); if(!isNaN(z)&&z>m) m=z; } if(m>-1e8) trclr=hR-RTF_TR.dz-RTF_TR.r-m; }
   const v=(s,z)=>Fd.vel(s,z), vr=v(sOut+0.1,G.f+1.2), vv=v(G.sw+0.35,G.f+0.8), ve=v(G.se+0.05,G.zt+0.3), vw=(()=>{ let m=[0,0,0]; for(let s=G.sr+0.2;s<=G.edge;s+=0.25){ const q=v(s,0.6); if(q[2]>m[2]) m=q; } return m; })(), vp=v(G.sp,G.zt+0.5);
-  return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
+  return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,trclr,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
 function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=22, B=34, pw=W-L-Rm;
-  const zlo=Math.min(G.f-G.H.fl0-0.8,-1.6), zhi=hR+3.2, phMax=W<600?420:470; let ppm=phMax/(zhi-zlo); const sMin=G.sb-G.d.e-2.2; let sMax=sMin+pw/ppm; if(sMax<ROTOR_D/2+3){ sMax=ROTOR_D/2+3; ppm=pw/(sMax-sMin); }
+  const zlo=Math.min(G.f-G.H.fl0-0.8,-1.6), zhi=hR+(rtfHd()==='side'?3.2:4.2), phMax=W<600?420:470; let ppm=phMax/(zhi-zlo); const sMin=G.sb-G.d.e-2.2; let sMax=sMin+pw/ppm; { const need=rtfHd()==='nose'?RTF_TR.x+RTF_TR.r+1.5:ROTOR_D/2+3; if(sMax<need){ sMax=need; ppm=pw/(sMax-sMin); } }
   const ph=Math.round((zhi-zlo)*ppm), Hh=T+ph+B, X=s=>L+(s-sMin)*ppm, Y=z=>T+(zhi-z)*ppm, f=n=>n.toFixed(1), id='rtfz';
   let h=`<defs><clipPath id="${id}c"><rect x="${L}" y="${T}" width="${pw}" height="${ph}"/></clipPath><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcebf8"/><stop offset="1" stop-color="#f4f8fb"/></linearGradient></defs>`;
   h+=`<rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="url(#${id}s)" class="xsky"/><g clip-path="url(#${id}c)">`;
@@ -7139,7 +7141,10 @@ function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Mat
   const hp=1.7*ppm; h+=rtfPerson(X(G.sw+0.4),Y(G.f),hp,0,'crouch','#7a1f1f');
   h+=`</g>`;
   // ヘリ（正面から見た姿：画面の左が機体の右＝ホイスト側）
-  const realW=ROTOR_D*ppm, yr=Y(hR); h+=`<g transform="translate(${f(X(0))},${f(yr)})"><line x1="${f(-realW/2)}" y1="0" x2="${f(realW/2)}" y2="0" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><rect x="-2" y="0" width="4" height="${f(0.5*ppm)}" fill="var(--ink)"/><path d="M${f(-1.15*ppm)},${f(0.5*ppm)} Q${f(-1.35*ppm)},${f(2.2*ppm)} ${f(-0.9*ppm)},${f(2.9*ppm)} L${f(0.9*ppm)},${f(2.9*ppm)} Q${f(1.35*ppm)},${f(2.2*ppm)} ${f(1.15*ppm)},${f(0.5*ppm)} Z" fill="#1d4d9a"/><line x1="${f(-1*ppm)}" y1="${f(RTF_BELLY*ppm)}" x2="${f(1*ppm)}" y2="${f(RTF_BELLY*ppm)}" stroke="var(--ink)" stroke-width="2"/><path d="M${f(-1.1*ppm)} ${f(RTF_BOOM*ppm)} H${f(-RTF_HOFF*ppm)}" stroke="var(--ink)" stroke-width="2.4"/></g>`;
+  const realW=ROTOR_D*ppm, yr=Y(hR), HD=rtfHd();
+  if(HD==='side') h+=`<g transform="translate(${f(X(0))},${f(yr)})"><line x1="${f(-realW/2)}" y1="0" x2="${f(realW/2)}" y2="0" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><rect x="-2" y="0" width="4" height="${f(0.5*ppm)}" fill="var(--ink)"/><path d="M${f(-1.15*ppm)},${f(0.5*ppm)} Q${f(-1.35*ppm)},${f(2.2*ppm)} ${f(-0.9*ppm)},${f(2.9*ppm)} L${f(0.9*ppm)},${f(2.9*ppm)} Q${f(1.35*ppm)},${f(2.2*ppm)} ${f(1.15*ppm)},${f(0.5*ppm)} Z" fill="#1d4d9a"/><line x1="${f(-1*ppm)}" y1="${f(RTF_BELLY*ppm)}" x2="${f(1*ppm)}" y2="${f(RTF_BELLY*ppm)}" stroke="var(--ink)" stroke-width="2"/><path d="M${f(-1.1*ppm)} ${f(RTF_BOOM*ppm)} H${f(-RTF_HOFF*ppm)}" stroke="var(--ink)" stroke-width="2.4"/></g>`;
+  else { const flip=HD==='tail', tx=(HD==='tail'?-1:1)*RTF_TR.x; h+=`<g transform="translate(${f(X(0))},${f(yr)})">${heliSideImg(16.2*ppm,flip)}<line x1="${f(-realW/2)}" y1="0" x2="${f(realW/2)}" y2="0" stroke="var(--ink)" stroke-width="1" stroke-dasharray="6 4" opacity=".55"/></g>`;
+    h+=`<circle cx="${f(X(tx))}" cy="${f(Y(hR-RTF_TR.dz))}" r="${f(RTF_TR.r*ppm)}" fill="none" stroke="#d4361e" stroke-width="1.4" stroke-dasharray="4 3"/>`; }
   // ワイヤー（鉛直）と吊り点
   h+=`<line x1="${f(X(G.sp))}" y1="${f(Y(hR-RTF_BOOM))}" x2="${f(X(G.sp))}" y2="${f(Y(G.f+1.4))}" stroke="#d4361e" stroke-width="1.8"/>`;
   h+=rtfPerson(X(G.sp),Y(G.f-0.3),hp,0,'','#d4361e');
@@ -7148,7 +7153,7 @@ function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Mat
     const hs=(zhi-zlo)>40?10:5; for(let a=0;a<zhi;a+=hs) g+=`<line x1="${L-4}" y1="${f(Y(a))}" x2="${L}" y2="${f(Y(a))}" stroke="var(--muted)"/><text x="${L-6}" y="${f(Y(a)+4)}" font-size="10" text-anchor="end" fill="var(--muted)">${a}</text>`;
     g+=`<text x="${L-6}" y="${T-8}" font-size="10" text-anchor="end" fill="var(--muted)">水面から m</text>`; h+=g; }
   if(Math.abs(U)>0.5){ const wx=L+pw-70, dir=Math.sign(U); h+=`<g><line x1="${wx-dir*24}" y1="${T+40}" x2="${wx+dir*24}" y2="${T+40}" stroke="#2f6fb0" stroke-width="3.5"/><path d="M${wx+dir*24},${T+40} l${-dir*8},-5 v10z" fill="#2f6fb0"/><text x="${wx}" y="${T+32}" font-size="11.5" font-weight="700" fill="#2f6fb0" text-anchor="middle" paint-order="stroke" stroke="var(--panel)" stroke-width="3">風 ${(Math.abs(U)*1.94384).toFixed(0)} kt</text></g>`; }
-  h+=`<text x="${L+6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)">家（機体の右・ホイスト側）</text><text x="${L+pw-6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)" text-anchor="end">機体の左</text>`;
+  h+=`<text x="${L+6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)">${HD==='side'?'家（機体の右・ホイスト側）':HD==='nose'?'家（機首の前）':'家（機体の後ろ・テールローター側）'}</text><text x="${L+pw-6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)" text-anchor="end">${HD==='side'?'機体の左':HD==='nose'?'機体の後ろ':'機首'}</text>`;
   h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">縦横同じ縮尺・機体は正面から見た形（ローター直径 ${ROTOR_D} m）・人は身長 1.7 m</text>`;
   RTFA.fd={vel:Fd.vel,F,W,Hh,L,T,pw,ph:Math.round(Y(0)-T),sMin,zhi,ppm,U,R:ROTOR_D/2,solid:Fd.solid};
   return `<svg viewBox="0 0 ${W} ${Hh}" class="xsvg xzsvg" role="img" aria-label="水没家屋とヘリの断面（吹き下ろしの流れ）">${h}</svg>`; }
@@ -7213,6 +7218,9 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
   if(C.cOut<0.3) W2.push(['取り付いた時点でワイヤーが軒先に近い',`手すりの外で取り付いても、ワイヤーと軒先の間は ${C.cOut.toFixed(2)} m。軒先からワイヤーまでをもう少し離す。`]);
   if(RTF.off<1.5) W2.push(['ホバリングのぶれで軒に触れる','水面上のホバリングは±1〜2 m動く。軒先からワイヤーまで 1.5〜2 m は空けたい。']);
   if(C.gap<1.3) W2.push(['開口が狭い',`手すりの上から軒先の下まで ${C.gap.toFixed(2)} m。担架は水平のまま通らない。ハーネス・サバイバースリングで吊る。`]);
+  if(rtfHd()==='tail'){ W2.push(['尾部が家の側',`機首を水面へ向けると、家は機体の後ろ右になり、パイロットからは見えません。位置はホイストオペレーターの誘導だけが頼り。テールローターは家の上（中心はローター軸の約 ${RTF_TR.x} m 後ろ）${C.trclr!=null?`で、屋根との間は約 ${C.trclr.toFixed(1)} m`:''}。`]); }
+  if(rtfHd()==='nose') W2.push(['ローターの前側が屋根の上','機首を家へ向けると家は正面に見えますが、ローター軸がワイヤーの真上に来るぶん（横向きより約1.7 m）家に近く、ローターの前側と吹き下ろしの芯が屋根にかかります。']);
+  if(rtfHd()!=='side') W2.push(['断面はホイストの線','前後向きでは吊り点は機体の右へ約1.7 m ずれ、この断面はローター軸から約1.7 m 横の面です。吹き下ろしはローター軸の面として計算しています（わずかに強め）。']);
   if(C.rclr!=null&&C.rclr<6) W2.push(['ローターの先端が屋根に近い',`ローターの先端は屋根の上にあり、屋根との間は約 ${C.rclr.toFixed(1)} m。`]);
   if(G.d.e>=G.d.dv-0.05) W2.push(['軒先が手すりの真上〜外にある','吊り上げは「外へ振り出して軒をかわしてから巻き上げ」。真上へ巻くと頭・肩が軒先に当たる。']);
   if(C.vr[2]>=17) W2.push(['隊員の位置が強風',`手すりの外（胸の高さ）で ${C.vr[2].toFixed(0)} m/s。ローターの真下に近いため。もう少し高く、または離して。`]);
@@ -7226,6 +7234,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
     <label class="rtfsl">ローター面の高さ（水面から）<b>${hR} m</b><small>（約 ${Math.round(hR*FT)} ft・機体下面 約 ${Math.round((hR-RTF_BELLY)*FT)} ft・ワイヤー約 ${C.L.toFixed(0)} m）</small><input type="range" min="10" max="60" step="1" value="${hR}" data-rtfk="hR"></label>
     <label class="rtfsl">軒先からワイヤーまで（水平）<b>${RTF.off.toFixed(2)} m</b><input type="range" min="0" max="6" step="0.25" value="${RTF.off}" data-rtfk="off"></label>
     <label class="rtfsl">断面方向の風 <b>${Math.abs(RTF.U)} kt ${RTF.U>0?'（家 → 水面へ）':RTF.U<0?'（水面 → 家へ）':''}</b><input type="range" min="-25" max="25" step="1" value="${RTF.U}" data-rtfk="U"></label>
+    <div class="rtfrow"><span class="rtflb">機体の向き</span><span class="xzseg" role="group" aria-label="機体の向き"><button type="button" data-rtfhd="side" aria-pressed="${rtfHd()==='side'}">横向き（家が右）</button><button type="button" data-rtfhd="nose" aria-pressed="${rtfHd()==='nose'}">機首を家へ</button><button type="button" data-rtfhd="tail" aria-pressed="${rtfHd()==='tail'}">機首を水面へ</button></span>${Math.abs(RTF.U)>=5?`<small class="rtfhint">この風（${RTF.U>0?'家の側から':'水面の側から'}）で正対風にするなら「${RTF.U>0?'機首を家へ':'機首を水面へ'}」${(RTF.U>0?'nose':'tail')===rtfHd()?'（今の設定）':''}</small>`:''}</div>
     <details class="rtfdim"><summary>寸法を変える（m）</summary><div class="rcgrid">${[['fl','水面からベランダの床',G.f],['hr','手すりの高さ',d.hr],['dv','ベランダの奥行',d.dv],['e','軒の出（壁から軒先）',d.e],['ht','床から軒先の下端',d.ht]].map(([k,l,v])=>`<label>${l}<span><input type="number" step="0.05" value="${(+v).toFixed(2)}" data-rtfm="${k}"></span></label>`).join('')}<label>吊り荷（隊員＋装備）<span><input type="number" step="5" value="${RTF.kg}" data-rtfm="kg"> kg</span></label></div></details>
     <div class="rtfrow"><button type="button" id="rtfGo">📍 地図でこのベランダの前を現場にする</button><button type="button" class="xzplay" id="rtfPlay" aria-pressed="${XZA.on}">${XZA.on?'⏸ 動きを止める':'▶ 動かす'}</button></div></div>
   <div class="xcard"><div class="xct">全体（水没住宅${RTF.h}・吹き下ろしの流れ）</div><div class="xzwrap" id="rtfWrap">${rtfBig(Fd,vi,hR,U)}<canvas aria-hidden="true"></canvas></div></div>
@@ -7237,7 +7246,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
       <div><small>手すりまで引き寄せ</small><b>${tilt.toFixed(1)}°・${C.Fp.toFixed(0)} kgf</b><small>真下から ${Math.abs(C.dx).toFixed(2)} m・${RTF.kg} kg</small></div>
       <div><small>離した時の振れ</small><b>${C.Tp.toFixed(1)} 秒・${C.vs.toFixed(1)} m/s</b><small>1往復の時間・最大の速さ</small></div>
       <div><small>手すりの上〜軒先の下</small><b class="${C.gap<1.3?'warn':''}">${C.gap.toFixed(2)} m</b><small>人がくぐる開口</small></div>
-      <div><small>機体下面〜棟</small><b>${C.belly.toFixed(1)} m</b><small>${C.rclr!=null?`ローター先端〜屋根 ${C.rclr.toFixed(1)} m`:'ローター先端は家の外'}</small></div></div>
+      <div><small>機体下面〜棟</small><b>${C.belly.toFixed(1)} m</b><small>${C.rclr!=null?`ローター先端〜屋根 ${C.rclr.toFixed(1)} m`:'ローター先端は家の外'}${C.trclr!=null?`・テールローター〜屋根 ${C.trclr.toFixed(1)} m`:''}</small></div></div>
     ${W2.length?`<div class="xchips">${W2.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${W2.map(n=>`<li>${n[1]}</li>`).join('')}</ul>`:''}
     <div class="hint note">ベランダまわり（壁の内側2.5 m〜機体側、水面〜軒の上4 m の枠）は、家・軒・雨どい・ベランダ床・手すりの形を入れた<b>流体の数値計算</b>（2次元の格子ボルツマン法＋LES、数秒分を計算して時間平均）です。軒先でのはく離、ベランダ奥の渦、手すりの上からの吹き込みが出ます。枠の外側の流れと枠の境界の流れは、運動量理論と壁面噴流の式による概算です。2次元なので家は奥行き方向に無限に長いとみなしており、実際は家の横へ逃げる流れがある分、ベランダへの吹き込みは計算より弱めになりやすいと考えてください。格子を 7 cm から 4.5 cm に細かくしても値の違いは1割程度、計算法はキャビティ流れの標準問題（Ghia ほか）で2%以内に合うことを確認済み。「ゆらぎ」は渦がはがれて流れが脈打つ強さで、瞬間の強さはおおよそ平均＋1.4×ゆらぎ。2次元の計算は渦の脈動を大きめに出しやすい点に注意。ローターの回転・機体の揺れ・人の体は入れていません。吊り点は機体中心線から右へ約${RTF_HOFF} m・ローター面の約${RTF_BOOM} m下、機体下面はローター面の約${RTF_BELLY} m下として計算（目安）。吹き下ろしの強さは「ホバリング性能」の全備重量・気温・標高の値（ローター面 ${vi.toFixed(1)} m/s）から出しています。</div></div>
   <details class="rtfsrc"><summary>この場所と寸法の根拠（竣工図）</summary><ul>
@@ -7250,6 +7259,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
   rtfCfdSt();
   const re=()=>{ rtfSave(); keepView(()=>rtfDraw()); };
   box.querySelectorAll('[data-rtfv]').forEach(b=>b.onclick=()=>{ RTF.vm=b.dataset.rtfv; re(); });
+  box.querySelectorAll('[data-rtfhd]').forEach(b=>b.onclick=()=>{ RTF.hd=b.dataset.rtfhd; re(); });
   box.querySelectorAll('[data-rtfr]').forEach(b=>b.onclick=()=>{ RTF.rail=b.dataset.rtfr; re(); });
   box.querySelectorAll('[data-rtfh]').forEach(b=>b.onclick=()=>{ RTF.h=b.dataset.rtfh; if(RTF.dim==='my') RTF.fl=null; re(); });
   box.querySelectorAll('[data-rtfd]').forEach(b=>b.onclick=()=>{ RTF.dim=b.dataset.rtfd; re(); });
