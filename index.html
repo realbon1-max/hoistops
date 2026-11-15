@@ -7258,8 +7258,8 @@ function rtfAnim(){ cancelAnimationFrame(RTFA.raf); RTFA.raf=0; const wrap=$('rt
   if(RTFA.io) RTFA.io.disconnect(); RTFA.vis=true; try{ RTFA.io=new IntersectionObserver(es=>{ RTFA.vis=es.some(e=>e.isIntersecting); },{threshold:0.05}); RTFA.io.observe(wrap); }catch(e){}
   RTFA.raf=requestAnimationFrame(step); }
 // 地図で水没市街地フィールドを現場に選んだ時だけ、この欄を出す
-function rtfNear(){ const p=typeof MAP!=='undefined'&&MAP.pick; if(!p||p.lat==null) return false; const k=111320, c=Math.cos(RTFG.pool[0]*Math.PI/180); return Math.hypot((p.lat-RTFG.pool[0])*k,(p.lon-RTFG.pool[1])*k*c)<=150; }
-function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const sec=$('rtfsec'), near=rtfNear(); if(sec){ if(sec.hidden===near){ sec.hidden=!near; if(near){ const d=$('rtfDet'); if(d&&!d.open){ d.open=true; return; } } } } if(!near){ cancelAnimationFrame(RTFA.raf); return; }
+function rtfAtSite(){ const p=typeof MAP!=='undefined'&&MAP.pick; if(!p||p.lat==null) return false; const k=111320, c=Math.cos(RTFG.pool[0]*Math.PI/180); return Math.hypot((p.lat-RTFG.pool[0])*k,(p.lon-RTFG.pool[1])*k*c)<=150; }
+function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const sec=$('rtfsec'), near=rtfAtSite(); if(sec){ if(sec.hidden===near){ sec.hidden=!near; if(near){ const d=$('rtfDet'); if(d&&!d.open){ d.open=true; return; } } } } if(!near){ cancelAnimationFrame(RTFA.raf); return; }
   const det=$('rtfDet'); if(det&&!det.open){ cancelAnimationFrame(RTFA.raf); return; }
   if(H==null){ H=XS.H; T=XS.T; W=XS.W; } const dd=downwash(H||0,T==null?15:T,W||6000), vi=dd.vi, hR=RTF.hR, U=RTF.U*0.514444;
   const Fd=rtfField(vi,hR,U); const CF=rtfCfd(Fd,vi,hR,U,()=>{ if($('rtfDet')&&$('rtfDet').open) keepView(()=>rtfDraw()); }); if(CF){ const v0=Fd.vel; Fd.vel=(s,z)=>CF.at(s,z)||v0(s,z); Fd.cfd=CF; }
@@ -7320,7 +7320,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const sec=$('r
   const go=$('rtfGo'); if(go) go.onclick=()=>{ const [la,lo]=RTFH[RTF.h].ll, fn=()=>{ mapSetView(la,lo,18); mapPick(la,lo); try{ document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }; if(window.uiFlyGuard&&uiFlyGuard(la,lo,fn)) return; fn(); };
   const pl=$('rtfPlay'); if(pl) pl.onclick=()=>{ XZA.on=!XZA.on; pl.setAttribute('aria-pressed',XZA.on); pl.textContent=XZA.on?'⏸ 動きを止める':'▶ 動かす'; rtfAnim(); try{ xsZoomAnim(); }catch(e){} };
   try{ rtfAnim(); }catch(e){} }
-(function(){ const det=$('rtfDet'); if(!det) return; det.open=true; const sec=$('rtfsec'); if(sec) sec.hidden=!rtfNear(); det.addEventListener('toggle',()=>{ RTF.open=det.open; rtfSave(); if(det.open) rtfDraw(); else cancelAnimationFrame(RTFA.raf); }); if(det.open) setTimeout(()=>{ try{ rtfDraw(); }catch(e){ console.warn('rtf',e); } },0); })();
+(function(){ const det=$('rtfDet'); if(!det) return; det.open=true; const sec=$('rtfsec'); if(sec) sec.hidden=!rtfAtSite(); det.addEventListener('toggle',()=>{ RTF.open=det.open; rtfSave(); if(det.open) rtfDraw(); else cancelAnimationFrame(RTFA.raf); }); if(det.open) setTimeout(()=>{ try{ rtfDraw(); }catch(e){ console.warn('rtf',e); } },0); })();
 
 // 地図のアイコン（水没市街地フィールド）とタップ判定
 function rtfSvg(z,x0,y0,W,H){ if(z<9) return ''; const [la,lo]=RTFG.pool, x=lon2x(lo,z)-x0, y=lat2y(la,z)-y0; if(x<-60||y<-60||x>W+60||y>H+60) return ''; const s=z>=14?1:0.8;
