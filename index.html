@@ -7102,10 +7102,10 @@ function rtfCfdSt(){ const el=document.getElementById('rtfCfdSt'); if(!el) retur
 const RTFG={pool:[37.63322,141.01285]};
 const RTFH={A:{fl0:3.164,dir:'北',rise:1.70,ll:[37.633342,141.012789],bot:[[0,0],[5.36,0],[7.36,1.0],[60,1.0]],nm:'A（西の棟・ベランダは北）'},
   B:{fl0:1.464,dir:'東',rise:1.69,ll:[37.63328,141.012996],bot:[[0,0],[13.11,0],[13.11,-4.3],[23.11,-4.3],[23.11,0],[25.11,0],[27.11,1.0],[60,1.0]],nm:'B（東の棟・ベランダは東）'}};
-const RTFP={dwg:{hr:1.0,dv:1.0,e:0.9,ht:2.5,dep:7.28},sk:{hr:0.95,dv:1.0,e:1.0,ht:2.0,dep:7.28}};
+const RTFP={dwg:{hr:1.0,dv:1.0,e:0.9,ht:2.5,dep:7.28}};
 const RTF0={open:false,h:'B',dim:'dwg',my:null,hR:30,off:2,U:0,kg:100,fl:null,rail:'grid',wd:0.7,v2:1};
 let RTF; try{ RTF=Object.assign({},RTF0,JSON.parse(localStorage.getItem('hoRtf')||'{}')); }catch(e){ RTF=Object.assign({},RTF0); }
-try{ if(!JSON.parse(localStorage.getItem('hoRtf')||'{}').v2) RTF.rail='grid'; }catch(e){} if(RTF.dim==='std') RTF.dim='dwg'; if(RTF.wd==null) RTF.wd=0.7; if(RTF.my) delete RTF.my.wf;
+try{ if(!JSON.parse(localStorage.getItem('hoRtf')||'{}').v2) RTF.rail='grid'; }catch(e){} if(RTF.dim==='std'||RTF.dim==='sk') RTF.dim='dwg'; if(RTF.wd==null) RTF.wd=0.7; if(RTF.my) delete RTF.my.wf;
 const rtfSave=()=>{ try{ localStorage.setItem('hoRtf',JSON.stringify(RTF)); }catch(e){} };
 const RTFA={raf:0,fd:null,vis:true,io:null};
 const RTF_HOFF=1.7, RTF_BOOM=2.0, RTF_BELLY=3.6, RTF_TR={x:8.4,dz:0.1,r:1.35}; // テールローター：中心はローター軸の約8.4 m後ろ、半径1.35 m（全長16.66 m・直径2.7 mから）
@@ -7275,7 +7275,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
   box.innerHTML=`<div class="rtfctl">
     <div class="rtfrow"><span class="rtflb">家屋</span><span class="xzseg" role="group" aria-label="家屋"><button type="button" data-rtfh="A" aria-pressed="${RTF.h==='A'}">A 西の棟（北ベランダ）</button><button type="button" data-rtfh="B" aria-pressed="${RTF.h==='B'}">B 東の棟（東ベランダ）</button></span></div>
     <div class="rtfrow"><span class="rtflb">手すり</span><span class="xzseg" role="group" aria-label="手すり"><button type="button" data-rtfr="grid" aria-pressed="${RTF.rail==='grid'}">縦格子（図面）</button><button type="button" data-rtfr="wall" aria-pressed="${RTF.rail!=='grid'}">ふさがっている（シートなど）</button></span></div>
-    <div class="rtfrow"><span class="rtflb">寸法</span><span class="xzseg" role="group" aria-label="寸法"><button type="button" data-rtfd="dwg" aria-pressed="${RTF.dim==='dwg'}">竣工図の値</button><button type="button" data-rtfd="sk" aria-pressed="${RTF.dim==='sk'}">スケッチの値</button>${RTF.my?`<button type="button" data-rtfd="my" aria-pressed="${RTF.dim==='my'}">自分の値</button>`:''}</span></div>
+    <div class="rtfrow"><span class="rtflb">寸法</span><span class="xzseg" role="group" aria-label="寸法"><button type="button" data-rtfd="dwg" aria-pressed="${RTF.dim==='dwg'}">竣工図の値</button>${RTF.my?`<button type="button" data-rtfd="my" aria-pressed="${RTF.dim==='my'}">自分の値</button>`:''}</span></div>
     <label class="rtfsl">水位（水槽の底から）<b>${RTF.wd.toFixed(2)} m</b><small>（最高 0.70 m・ベランダの床は水面から ${G.f.toFixed(2)} m）</small><input type="range" min="0" max="0.7" step="0.05" value="${RTF.wd}" data-rtfk="wd"></label>
     <label class="rtfsl">ローター面の高さ（水面から）<b>${hR} m</b><small>（約 ${Math.round(hR*FT)} ft・機体下面 約 ${Math.round((hR-RTF_BELLY)*FT)} ft・ワイヤー約 ${C.L.toFixed(0)} m）</small><input type="range" min="10" max="60" step="1" value="${hR}" data-rtfk="hR"></label>
     <label class="rtfsl">軒先からワイヤーまで（水平）<b>${RTF.off.toFixed(2)} m</b><input type="range" min="0" max="6" step="0.25" value="${RTF.off}" data-rtfk="off"></label>
