@@ -7122,7 +7122,10 @@ function rtfCalc(Fd,vi,hR){ const G=Fd.G, d=G.d, zb=hR-RTF_BOOM, zh=G.f+1.4; // 
   const gap=G.zt-(G.f+d.hr), tip=-ROTOR_D/2; const rz=G.roof(tip); const rclr=isNaN(rz)?null:hR-rz;
   let trclr=null; if(rtfHd()==='tail'){ let m=-1e9; for(let s=-RTF_TR.x-RTF_TR.r;s<=-RTF_TR.x+RTF_TR.r;s+=0.1){ const z=G.roof(s); if(!isNaN(z)&&z>m) m=z; } if(m>-1e8) trclr=hR-RTF_TR.dz-RTF_TR.r-m; }
   const v=(s,z)=>Fd.vel(s,z), vr=v(sOut+0.1,G.f+1.2), vv=v(G.sw+0.35,G.f+0.8), ve=v(G.se+0.05,G.zt+0.3), vw=(()=>{ let m=[0,0,0]; for(let s=G.sr+0.2;s<=G.edge;s+=0.25){ const q=v(s,0.6); if(q[2]>m[2]) m=q; } return m; })(), vp=v(G.sp,G.zt+0.5);
-  return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,trclr,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
+  // ① 手が軒先に届く高さ（手＝軒先の下端、頭はその0.45 m下、足は2.1 m下）と ② 頭を下げる高さ（手すりの外0.3 mで瞬間の強さ＝平均＋1.4×ゆらぎが15 m/s以下になる所）
+  const so=G.sr+0.3, v1=v(so,G.zt), v1h=v(so,G.zt-0.45); let z2=null; const pk=q=>q[3]!=null?q[2]+1.4*q[3]:q[2]*1.8; for(let z=G.zt;z>=G.f+0.9;z-=0.05){ if(pk(v(so,z))<=15&&pk(v(so,z-0.15))<=15){ z2=z; break; } } const calm=z2!=null; if(!calm) z2=G.f+0.9;
+  const v2=v(so,z2), low=Math.max(0,(G.zt-0.45)-z2), feet1=G.zt-2.1-G.f;
+  return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,trclr,v1,v1h,z2,calm,v2,low,feet1,so,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
 function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=22, B=34, pw=W-L-Rm;
   const zlo=Math.min(G.f-G.H.fl0-0.8,-1.6), zhi=hR+(rtfHd()==='side'?3.2:4.2), phMax=W<600?420:470; let ppm=phMax/(zhi-zlo); const sMin=G.sb-G.d.e-2.2; let sMax=sMin+pw/ppm; { const need=rtfHd()==='nose'?RTF_TR.x+RTF_TR.r+1.5:ROTOR_D/2+3; if(sMax<need){ sMax=need; ppm=pw/(sMax-sMin); } }
   const ph=Math.round((zhi-zlo)*ppm), Hh=T+ph+B, X=s=>L+(s-sMin)*ppm, Y=z=>T+(zhi-z)*ppm, f=n=>n.toFixed(1), id='rtfz';
@@ -7188,8 +7191,12 @@ function rtfNear(Fd,C,hR){ const G=Fd.G, d=G.d, W=Math.round(Math.max(460,Math.m
   h+=dim(X(G.sw),Y(G.f)+14,xr,Y(G.f)+14,`奥行 ${d.dv.toFixed(2)} m`);
   h+=dim(xe,Y(G.zt+0.12)-14,X(G.sp),Y(G.zt+0.12)-14,`軒先→ワイヤー ${RTF.off.toFixed(2)} m`);
   h+=dim(X(G.sw)-10,Y(0),X(G.sw)-10,Y(G.f),`${G.f.toFixed(1)} m`,-1);
+  { const xa=X(G.sr)+2, xb=ox+pwU-2, y1=Y(G.zt), y2=Y(C.z2), lab=(y,t,c,dn)=>`<text x="${f(xb-2)}" y="${f(dn?y+14:y-5)}" font-size="11.5" font-weight="800" fill="${c}" text-anchor="end" paint-order="stroke" stroke="var(--panel)" stroke-width="3.5">${t}</text>`;
+    h+=`<line x1="${f(xa)}" y1="${f(y1)}" x2="${f(xb)}" y2="${f(y1)}" stroke="#e8590c" stroke-width="2" stroke-dasharray="7 4"/>`+lab(y1,`① 手が軒先に届く高さ　手 ${C.v1[2].toFixed(0)}・頭 ${C.v1h[2].toFixed(0)} m/s`,'#e8590c');
+    h+=`<line x1="${f(xa)}" y1="${f(y2)}" x2="${f(xb)}" y2="${f(y2)}" stroke="#2b8a3e" stroke-width="2" stroke-dasharray="7 4"/>`+lab(y2,`② 頭をこの線より下へ　${C.v2[2].toFixed(0)} m/s${C.calm?'':'（静かな層なし）'}`,'#2b8a3e',1);
+    if(C.low>0.05){ const xm=xb-14, ya=Y(G.zt-0.45); h+=`<path d="M${f(xm)} ${f(ya)} V${f(y2-3)}" stroke="#2b8a3e" stroke-width="2" marker-end="url(#rtfar)"/>`; } }
   h+=`<text x="${f(ox+6)}" y="${T+14}" font-size="12" font-weight="800" fill="var(--ink)">ベランダの拡大</text>`;
-  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">矢印＝その点の平均の風向き・実線＝手すりの外で取り付いた時のワイヤー・赤い点線＝手すりの内側（0.35 m）へ入った時</text>`;
+  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">矢印＝平均の風向き・①②＝手すりの外0.3 mの風（②は瞬間でも15 m/s以下）・実線＝取り付いた時のワイヤー・赤点線＝手すりの内側へ入った時</text>`;
   return `<svg viewBox="0 0 ${W} ${Hh}" class="xsvg" role="img" aria-label="ベランダ付近の拡大断面">${h}</svg>`; }
 function rtfAnim(){ cancelAnimationFrame(RTFA.raf); RTFA.raf=0; const wrap=$('rtfWrap'), fd=RTFA.fd; if(!wrap||!fd) return; const svg=wrap.querySelector('svg'), cv=wrap.querySelector('canvas'); if(!svg||!cv) return;
   const red=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; if(red||!XZA.on){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }
@@ -7239,7 +7246,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
     <div class="rtfrow"><button type="button" id="rtfGo">📍 地図でこのベランダの前を現場にする</button><button type="button" class="xzplay" id="rtfPlay" aria-pressed="${XZA.on}">${XZA.on?'⏸ 動きを止める':'▶ 動かす'}</button></div></div>
   <div class="xcard"><div class="xct">全体（水没住宅${RTF.h}・吹き下ろしの流れ）</div><div class="xzwrap" id="rtfWrap">${rtfBig(Fd,vi,hR,U)}<canvas aria-hidden="true"></canvas></div></div>
   <div class="xcard"><div id="rtfCfdSt" class="rtfcst"></div>${Fd.cfd?`<div class="rtfrow" style="margin:0 2px 6px"><span class="rtflb">色</span><span class="xzseg" role="group" aria-label="色の意味"><button type="button" data-rtfv="mean" aria-pressed="${RTF.vm!=='peak'}">平均の風速</button><button type="button" data-rtfv="peak" aria-pressed="${RTF.vm==='peak'}">瞬間の強さ（平均＋ゆらぎ）</button></span></div>`:''}${rtfNear(Fd,C,hR)}
-    <div class="xrow rtfst">${stv('隊員（手すりの外・胸）',C.vr)}${stv('要救助者（ベランダの壁際・高さ0.8 m）',C.vv,Fd.cfd?'':'軒の下は真上の風がさえぎられる（概算）')}${stv('軒先・雨どいのすぐ上',C.ve,'')}${stv('家の前の水面（最大）',C.vw,'しぶき')}</div>
+    <div class="xrow rtfst">${stv('① 手が軒先の高さ（手すりの外）',C.v1,`頭の位置 ${C.v1h[2].toFixed(0)} m/s・足は床から ${C.feet1.toFixed(1)} m`)}${stv('② 頭を下げた所',C.v2,C.low>0.05?`①から約 ${C.low.toFixed(1)} m 降ろす`:'①のままで静か')}${stv('隊員（手すりの外・胸）',C.vr)}${stv('要救助者（ベランダの壁際・高さ0.8 m）',C.vv,Fd.cfd?'':'軒の下は真上の風がさえぎられる（概算）')}${stv('軒先・雨どいのすぐ上',C.ve,'')}${stv('家の前の水面（最大）',C.vw,'しぶき')}</div>
     <div class="rtfnum">
       <div><small>ワイヤーと軒先の間</small><b class="${C.cOut<0.3?'warn':''}">${C.cOut.toFixed(2)} m</b><small>手すりの外で取り付いた時</small></div>
       <div><small>手すりの内側へ入ると</small><b class="${C.cIn<0.3?'warn':''}">${C.cIn.toFixed(2)} m</b><small>${C.cIn<0?'軒先に食い込む':C.cIn<0.3?'ほぼ接触':'余裕あり'}</small></div>
