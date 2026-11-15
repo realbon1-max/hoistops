@@ -1319,6 +1319,8 @@ a{color:#7cc4ff}
     <div class="grph" id="g_fuel">⑥ 重量・燃料</div>
     <section class="box" aria-label="全備重量の内訳">
       <h2>重量・燃料</h2>
+      <div class="cgmode"><span>重量の入れ方</span><span class="xzseg" role="group" aria-label="重量の入れ方"><button type="button" data-cgm="0" aria-pressed="true">簡易（重量だけ）</button><button type="button" data-cgm="1" aria-pressed="false">重量・重心（JA139M 計算表）</button></span></div>
+      <div id="cgBox" hidden></div>
       <div class="wtop">
         <div class="cabwrap"><svg id="cabin" viewBox="0 0 900 318" role="img" aria-label="機内の配置と重量（上から見た図・機首が左）"></svg><div class="cabnote">上から見た図（機首が左）。座席は飛行規程 第6-1図の位置（STA・BL）で、80 kg＝1名として人数を表示。図の人や燃料を押すと、その重量の入力欄へ移ります。</div></div>
         <svg id="stack" viewBox="0 0 900 96" role="img" aria-label="全備重量の内訳"></svg>
@@ -2266,11 +2268,11 @@ F.forEach(k=>{$('w_'+k).value=CFG[k]; $('w_'+k).addEventListener('input',()=>{CF
 $('w_fuelR').value=CFG.fuel; $('w_fuelR').addEventListener('input',()=>{CFG.fuel=+$('w_fuelR').value;$('w_fuel').value=CFG.fuel;save();update();});
 function fuelFill(){ const r=$('w_fuelR'); if(r) r.style.setProperty('--fp',(Math.max(0,Math.min(1,(+r.value)/(+r.max||1300)))*100).toFixed(1)+'%'); }
 // usable fuel capacity per RFM 8.7: basic 1,300 kg (2,820 lb); auxiliary fuel tank kit (RFM supplement 15) +400 kg (880 lb)
-const fuelMax=()=>CFG.aux?1700:1300;
+const fuelMax=()=>window.CGM&&CGM.on?cgA().fuelMax:(CFG.aux?1700:1300);
 function fuelLim(){ const M=fuelMax(), r=$('w_fuelR'); r.max=M; $('w_fuel').max=M; $('w_fuel').min=0; $('w_aux').checked=!!CFG.aux;
   if(CFG.fuel>M){ CFG.fuel=M; save(); } if(CFG.fuel<0) CFG.fuel=0; $('w_fuel').value=CFG.fuel; r.value=CFG.fuel;
   $('fuelTicks').innerHTML=[0,.25,.5,.75,1].map(f=>`<span>${Math.round(M*f).toLocaleString()}${f===1?' kg':''}</span>`).join('');
-  $('fuelCap').innerHTML=`満タン ${M.toLocaleString()} kg（${CFG.aux?'基本 1,300＋補助 400':'基本形態'}・飛行規程 8.7）${CFG.fuel>=M?' — <b>満タン</b>':''}`; fuelFill(); }
+  $('fuelCap').innerHTML=`満タン ${M.toLocaleString()} kg（${window.CGM&&CGM.on?cgA().nm+' 燃料積載表（補助タンクあり）':CFG.aux?'基本 1,300＋補助 400':'基本形態'}${window.CGM&&CGM.on?'':'・飛行規程 8.7'}）${CFG.fuel>=M?' — <b>満タン</b>':''}`; fuelFill(); }
 $('w_aux').addEventListener('change',e=>{ CFG.aux=e.target.checked; save(); fuelLim(); update(); });
 $('w_fuel').addEventListener('change',()=>{ fuelLim(); update(); });
 $('w_fuelR').addEventListener('input',()=>fuelLim());
@@ -2297,8 +2299,9 @@ function eqSum(){return CFG.eq.filter(e=>e.on).reduce((s,e)=>s+(+e.w||0),0)}
 function totalGW(){return (+CFG.empty||0)+(+CFG.crew||0)+(+CFG.pax||0)+eqSum()+(+CFG.load||0)+(+CFG.fuel||0)}
 (function(){ const sel=document.getElementById('w_mtow'); if(!sel) return; sel.value=String(MTOW()); sel.onchange=()=>{ CFG.mtow=+sel.value; save(); update(); }; })();
 function drawStack(GW){
+  if(window.cgDraw) try{ cgDraw(); }catch(e){ console.warn('cg',e); }
   const s=$('stack'); const L=10,Rr=890,y=34,hgt=26, MAX=Math.max(6800,MTOW()+400); const X=v=>L+v/MAX*(Rr-L);
-  const parts=[['空虚重量',+CFG.empty||0,'var(--c-empty)'],['乗員',+CFG.crew||0,'var(--c-crew)'],['搭乗者',+CFG.pax||0,'var(--c-pax)'],['装備品',eqSum(),'var(--c-eq)'],['吊荷',+CFG.load||0,'var(--c-load)'],['燃料',+CFG.fuel||0,'var(--c-fuel)']];
+  const parts=[['空虚重量',+CFG.empty||0,'var(--c-empty)'],['乗員',+CFG.crew||0,'var(--c-crew)'],[window.CGM&&CGM.on?'搭乗者・荷物':'搭乗者',+CFG.pax||0,'var(--c-pax)'],['装備品',eqSum(),'var(--c-eq)'],['吊荷',+CFG.load||0,'var(--c-load)'],['燃料',+CFG.fuel||0,'var(--c-fuel)']];
   let h='',x=0;
   parts.forEach(([n,w,c])=>{if(w<=0)return; const x0=X(x),x1=X(x+w); h+=`<rect x="${x0}" y="${y}" width="${Math.max(0,x1-x0)}" height="${hgt}" fill="${c}"/>`; if(x1-x0>40)h+=`<text x="${(x0+x1)/2}" y="${y+18}" font-size="12.5" text-anchor="middle" fill="#fff" font-weight="700">${x1-x0>90?n+' ':''}${Math.round(w)}</text>`; x+=w;});
   for(let v=0;v<=MAX;v+=500){h+=`<line x1="${X(v)}" y1="${y+hgt}" x2="${X(v)}" y2="${y+hgt+5}" stroke="var(--muted)"/>`; if(v%1000===0)h+=`<text x="${X(v)}" y="${y+hgt+18}" font-size="11" text-anchor="middle" fill="var(--muted)">${v}</text>`;}
@@ -7315,5 +7318,138 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
   const pl=$('rtfPlay'); if(pl) pl.onclick=()=>{ XZA.on=!XZA.on; pl.setAttribute('aria-pressed',XZA.on); pl.textContent=XZA.on?'⏸ 動きを止める':'▶ 動かす'; rtfAnim(); try{ xsZoomAnim(); }catch(e){} };
   try{ rtfAnim(); }catch(e){} }
 (function(){ const det=$('rtfDet'); if(!det) return; det.open=!!RTF.open; det.addEventListener('toggle',()=>{ RTF.open=det.open; rtfSave(); if(det.open) rtfDraw(); else cancelAnimationFrame(RTFA.raf); }); if(det.open) setTimeout(()=>{ try{ rtfDraw(); }catch(e){ console.warn('rtf',e); } },0); })();
+
+</script>
+<style id="cgCss">
+.cgmode{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 10px}.cgmode>span:first-child{font-weight:700}
+#cgBox{display:grid;gap:12px;margin:0 0 12px}.cghead{font-size:13px;color:var(--muted)}.cghead b{color:var(--ink)}
+.cgsec{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:grid;gap:8px}.cgst{font-weight:800}.cgst small{font-weight:500;color:var(--muted);margin-left:8px;font-size:12px}
+.cgrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.cglb{font-weight:700;min-width:4.5em}.cgrow .xzseg small{display:block;font-size:10.5px;opacity:.8}
+.cgt{border:1px solid var(--rule);border-radius:999px;padding:6px 12px;background:var(--paper);color:var(--ink);font-weight:700}.cgt[aria-pressed="true"]{background:#1c6fb8;border-color:#1c6fb8;color:#fff}.cgt:disabled{opacity:.4}
+.cghw{display:inline-flex;align-items:center;gap:4px;font-size:13px}.cghw input{width:5.5em}.cghw small{color:var(--muted)}
+.cgnote{font-size:12px;color:var(--muted)}.cgnote.bad,.bad{color:var(--warn)}
+.cgmap{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:6px;align-items:stretch;overflow-x:auto;padding-bottom:2px}
+.cgnose{writing-mode:vertical-rl;font-size:12px;color:var(--muted);align-self:center;border-left:3px solid var(--rule);border-radius:40px 0 0 40px;padding:20px 4px}
+.cgcol{display:grid;grid-template-rows:auto repeat(4,1fr);gap:5px;min-width:64px}@media(max-width:600px){.cgmap{gap:4px}.cgch2 small{font-size:9.5px}.cgs input{font-size:15px}}.cgch2{font-size:12px;font-weight:700;text-align:center}.cgch2 small{display:block;font-weight:500;color:var(--muted);font-size:10.5px}
+.cgs{display:flex;flex-direction:column;align-items:center;border:1.5px solid var(--rule);border-radius:8px;padding:4px;background:var(--paper)}.cgs.on{border-color:var(--c-pax);background:color-mix(in srgb,var(--c-pax) 14%,var(--paper))}.cgck .cgs.on{border-color:var(--c-crew);background:color-mix(in srgb,var(--c-crew) 14%,var(--paper))}
+.cgs.dis{opacity:.35}.cgk{font-weight:800;font-size:13px}.cgs input{width:100%;max-width:70px;text-align:center;font-size:16px;font-variant-numeric:tabular-nums}.cgs small{font-size:10px;color:var(--muted)}.cggap{display:block}
+.cgbag{grid-template-rows:auto 1fr}.cgsum{font-size:13px;color:var(--muted)}.cgsum b{color:var(--ink)}
+.cgfu label{display:flex;flex-direction:column;font-size:12.5px;color:var(--muted)}.cgfu input{width:6em}
+.cgok{font-size:12.5px;border-radius:999px;padding:2px 10px;margin-left:8px}.cgok.ok{background:#2e9a5a;color:#fff}.cgok.ng{background:#d4361e;color:#fff}
+.cgres{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}.cgp{border:1px solid var(--rule);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column}.cgp small{color:var(--muted);font-size:11.5px}.cgp small i{font-style:normal;margin-left:6px}.cgp b{font-size:17px;font-variant-numeric:tabular-nums}.cgp span{font-size:12px;font-variant-numeric:tabular-nums}.cgp.ng{border-color:#d4361e}.cgp.ng b{color:#d4361e}.cgp.na{opacity:.5}
+.cgcharts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}.cgch{width:100%;height:auto}
+.cgtab summary{cursor:pointer;font-weight:700;font-size:13px}.cgtab table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;margin-top:6px}.cgtab th,.cgtab td{border-bottom:1px solid var(--rule);padding:3px 5px;text-align:right}.cgtab td:first-child,.cgtab th:first-child{text-align:left}.cgtab tr.tot td{font-weight:800}
+section.cgon .cabwrap,section.cgon .eqbox,section.cgon .fuelaux,section.cgon .wgrid label.wt[for="w_empty"],section.cgon .wgrid label.wt[for="w_crew"],section.cgon .wgrid label.wt[for="w_pax"],section.cgon .wgrid label.wt[for="w_load"]{display:none!important}
+</style>
+<script>
+// ==== 重量・重心（機体ごとの重量重心計算表）====
+// JA139M のデータは「CG139M ver.2.62（2020-08-31）」（条件設定・CG計算表・キャビン計算・任意装備品等・燃料積載表）から。
+// 計算の流れも計算表と同じ：形態（ヘリテレ・送信装置・ナイトサン・座席・ホイスト）→ 乗員・座席ごとの体重・荷物室 → 搭載燃料・燃料消費・飛行時間 → 各時点の重量と重心 → 重心範囲の判定。
+const CGA={JA139M:{nm:'JA139M',src:'CG139M ver.2.62（2020-08-31）',mtow:6400,
+  tv:{u2:{nm:'ULTRA＋MX10',sub:'可視＋赤外',w:4710.78,mx:24682.878,my:10.465},u1:{nm:'ULTRAのみ',sub:'可視',w:4686.78,mx:24646.11,my:-18.495},no:{nm:'ヘリテレなし',sub:'',w:4533.78,mx:24095.37,my:87.39}},
+  fix:[['OIL',16,6.878,0],['飛行規程等',5,4.789,0]],
+  crew:{PI:['操縦士（右席）',2.82,0.55],CO:['副操縦士（左席）',2.82,-0.55]},
+  seats:{A:[3.415,0.737],B:[3.415,0.254],C:[3.415,-0.254],D:[3.415,-0.737],E:[4.789,0.737],F:[4.789,0.254],G:[4.789,-0.254],H:[4.789,-0.737],I:[5.6,0.737],L:[5.6,0.254],M:[5.6,-0.254],N:[5.6,-0.737]},
+  rows:[['A','B','C','D'],['E','F','G','H'],['I','L','M','N']], rack:['B','C','D'],
+  bag:[7.7,0,300],
+  opt:{nsOff:['ナイトサン取外',-39.475,-142.82055,56.13345],s9Off:['９座席取り外し',-128.7,-643.0853,-10.5391],s12:['ラック部座席（12席）',42.9,150.9077,-10.5391],tx:['TV送信装置',5.95,5.95*6.957,5.95*0.22],ant:['TV送信アンテナ',12.1,12.1*7.748,12.1*-0.111]},
+  hoist:[4.25,1.5], fuelMax:1670, start:100,
+  fuel:[[25,6.208],[50,6.209],[75,6.21],[100,6.21],[125,6.21],[150,6.21],[175,6.21],[200,6.21],[225,6.21],[250,6.21],[275,6.21],[300,6.21],[325,6.21],[350,6.211],[375,6.211],[400,6.211],[425,6.211],[450,6.211],[475,6.211],[500,6.212],[525,6.212],[550,6.212],[575,6.212],[600,6.213],[625,6.213],[650,6.214],[675,6.214],[700,6.214],[725,6.215],[750,6.215],[775,6.216],[800,6.217],[825,6.219],[850,6.22],[875,6.222],[900,6.221],[925,6.221],[950,6.222],[975,6.223],[1000,6.223],[1025,6.224],[1050,6.225],[1075,6.225],[1100,6.226],[1125,6.227],[1150,6.227],[1175,6.227],[1200,6.228],[1225,6.228],[1250,6.229],[1275,6.229],[1300,6.229],[1325,6.23],[1350,6.231],[1375,6.231],[1400,6.231],[1425,6.232],[1450,6.232],[1475,6.232],[1500,6.232],[1525,6.233],[1550,6.233],[1575,6.233],[1600,6.234],[1625,6.234],[1650,6.234],[1670,6.234]],
+  env:{lon:[[5.0,4660],[5.0,5170],[5.18,6400],[5.504,6400],[5.595,4850],[5.536,4400],[5.071,4400],[5.0,4660]],lat:[[-0.088,4400],[0.12,4400],[0.09,6400],[-0.07,6400],[-0.088,4400]],latH:[[0.12,4400],[0.185,4900],[0.145,6400],[0.09,6400]]}}};
+const CGK='aw139cg', CG0={on:false,ac:'JA139M',tv:'u2',tx:false,ant:false,ns:false,seat:'9',p:{PI:65,CO:65,E:75,H:70},bag:0,hw:160,ff:400,ft:2,st:100,simple:null};
+let CGM; try{ CGM=Object.assign({},CG0,JSON.parse(localStorage.getItem(CGK)||'{}')); }catch(e){ CGM=Object.assign({},CG0); } window.CGM=CGM;
+const cgSave=()=>{ try{ localStorage.setItem(CGK,JSON.stringify(CGM)); }catch(e){} };
+const cgA=()=>CGA[CGM.ac]||CGA.JA139M;
+function cgFuelArm(w){ const T=cgA().fuel; if(w<=T[0][0]) return T[0][1]; for(let i=1;i<T.length;i++){ if(w<=T[i][0]){ const a=T[i-1], b=T[i]; return a[1]+(b[1]-a[1])*(w-a[0])/(b[0]-a[0]); } } return T[T.length-1][1]; }
+function cgPip(p,P){ let c=false; for(let i=0,j=P.length-1;i<P.length;j=i++){ const a=P[i], b=P[j]; if(((a[1]>p[1])!==(b[1]>p[1]))&&(p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])) c=!c; } return c; }
+function cgLatOK(x,w,hoist){ const E=cgA().env; if(cgPip([x,w],E.lat)) return true; if(hoist){ const U=[E.lat[0]].concat(E.latH.slice(0,3),[E.lat[3]]); return cgPip([x,w],U); } return false; } // ホイスト時は右の限界が広がる
+// 計算表と同じ並びの行（項目・重量・前後モーメント・横モーメント）
+function cgRows(){ const A=cgA(), M=CGM, R=[]; const tv=A.tv[M.tv]||A.tv.u2; const ultra=M.tv!=='no';
+  R.push(['空虚重量（'+tv.nm+(tv.sub?'・'+tv.sub:'')+'）',tv.w,tv.mx,tv.my,'ac']);
+  A.fix.forEach(f=>R.push([f[0],f[1],f[1]*f[2],f[1]*f[3],'ac']));
+  ['PI','CO'].forEach(k=>{ const c=A.crew[k], w=+M.p[k]||0; R.push([c[0],w,w*c[1],w*c[2],'crew']); });
+  A.rows.forEach((row,i)=>{ let w=0,mx=0,my=0; row.forEach(k=>{ if(ultra&&A.rack.includes(k)) return; const v=+M.p[k]||0, s=A.seats[k]; w+=v; mx+=v*s[0]; my+=v*s[1]; }); R.push(['客室第'+(i+1)+'列',w,mx,my,'pax']); });
+  const bw=Math.max(0,+M.bag||0); R.push(['荷物室',bw,bw*A.bag[0],0,'pax']);
+  if(!M.ns) R.push(A.opt.nsOff.slice(0,4).concat('ac'));
+  if(!ultra&&M.tx) R.push(A.opt.tx.concat('ac')); if(!ultra&&M.ant) R.push(A.opt.ant.concat('ac'));
+  if(M.seat==='0') R.push(A.opt.s9Off.concat('ac')); else if(M.seat==='12'&&!ultra) R.push(A.opt.s12.concat('ac'));
+  const hw=Math.max(0,+CFG.load||0); if(hw>0) R.push(['ホイスト吊り上げ（吊荷）',hw,hw*A.hoist[0],hw*A.hoist[1],'load']);
+  return R; }
+function cgCalc(){ const A=cgA(), M=CGM, R=cgRows(); let W=0,MX=0,MY=0; R.forEach(r=>{ W+=r[1]; MX+=r[2]; MY+=r[3]; });
+  const fuel=Math.max(0,+CFG.fuel||0), st=+M.st||0, ff=+M.ff||0, ft=+M.ft||0, hoist=(+CFG.load||0)>0;
+  const pt=(nm,f)=>{ if(f<0) return {nm,f,ng:true}; const fm=f*cgFuelArm(f), w=W+f, x=(MX+fm)/w, y=MY/w; const lonOK=cgPip([x,w],A.env.lon), latOK=cgLatOK(y,w,hoist), wOK=w<=A.mtow+0.01; return {nm,f,w,x,y,fm,ok:lonOK&&latOK&&wOK,lonOK,latOK,wOK}; };
+  const P=[pt('全備',fuel),pt('離陸時',fuel-st)]; for(let h=1;h<=3;h++) P.push(pt(h+'時間後',fuel-st-ff*h)); P.push(pt('着陸時',fuel-st-ff*ft));
+  const fuelCan=Math.max(0,Math.min(A.mtow-W,A.fuelMax));
+  return {R,W,MX,MY,bx:MX/W,by:MY/W,P,fuelCan,margin:A.mtow-(W+fuel),hoist}; }
+// 計算結果を性能計算の重量（空虚重量・乗員・搭乗者・吊荷・燃料）へ渡す。装備品の一覧は使わない（形態に含まれる）
+function cgApply(){ if(!CGM.on) return; const C=cgCalc(); let ac=0,crew=0,pax=0; C.R.forEach(r=>{ if(r[4]==='ac') ac+=r[1]; else if(r[4]==='crew') crew+=r[1]; else if(r[4]==='pax') pax+=r[1]; });
+  CFG.empty=Math.round(ac*10)/10; CFG.crew=crew; CFG.pax=pax; CFG.eq.forEach(e=>e.on=false); save();
+  ['empty','crew','pax','load'].forEach(k=>{ const el=$('w_'+k); if(el) el.value=CFG[k]; }); }
+function cgMode(on){ if(on===!!CGM.on) return; if(on){ CGM.simple={empty:CFG.empty,crew:CFG.crew,pax:CFG.pax,load:CFG.load,aux:CFG.aux,eq:CFG.eq.map(e=>!!e.on)}; CGM.on=true; if(!(+CFG.load>0)&&CGM.hoistOn) CFG.load=CGM.hw; cgApply(); }
+  else { const s=CGM.simple; CGM.on=false; if(s){ CFG.empty=s.empty; CFG.crew=s.crew; CFG.pax=s.pax; CFG.load=s.load; CFG.aux=s.aux; (s.eq||[]).forEach((o,i)=>{ if(CFG.eq[i]) CFG.eq[i].on=o; }); } save(); ['empty','crew','pax','load'].forEach(k=>{ const el=$('w_'+k); if(el) el.value=CFG[k]; }); }
+  cgSave(); try{ fuelLim(); }catch(e){} try{ drawEq(); }catch(e){} update(); }
+function cgChart(C,kind){ const A=cgA(), lon=kind==='lon', W0=440, H0=300, L=48, R=12, T=14, B=36, pw=W0-L-R, ph=H0-T-B;
+  const xr=lon?[4.9,5.7]:[-0.12,0.22], yr=[4200,6500], X=v=>L+(v-xr[0])/(xr[1]-xr[0])*pw, Y=v=>T+(yr[1]-v)/(yr[1]-yr[0])*ph, f=n=>n.toFixed(1);
+  let h=`<rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="var(--paper)" stroke="var(--rule)"/>`;
+  const xs=lon?[4.9,5.0,5.1,5.2,5.3,5.4,5.5,5.6,5.7]:[-0.1,-0.05,0,0.05,0.1,0.15,0.2];
+  xs.forEach(v=>{ h+=`<line x1="${f(X(v))}" y1="${T}" x2="${f(X(v))}" y2="${T+ph}" stroke="var(--rule)" stroke-width=".6"/><text x="${f(X(v))}" y="${T+ph+14}" font-size="10.5" text-anchor="middle" fill="var(--muted)">${lon?v.toFixed(1):v.toFixed(2)}</text>`; });
+  for(let v=4400;v<=6400;v+=400) h+=`<line x1="${L}" y1="${f(Y(v))}" x2="${L+pw}" y2="${f(Y(v))}" stroke="var(--rule)" stroke-width=".6"/><text x="${L-5}" y="${f(Y(v)+4)}" font-size="10.5" text-anchor="end" fill="var(--muted)">${v}</text>`;
+  const poly=(P,st)=>`<path d="${P.map((p,i)=>(i?'L':'M')+f(X(p[0]))+' '+f(Y(p[1]))).join(' ')}" ${st}/>`;
+  if(lon) h+=poly(A.env.lon,'fill="rgba(46,160,90,.12)" stroke="#2e9a5a" stroke-width="2"');
+  else { h+=poly(A.env.lat,'fill="rgba(46,160,90,.12)" stroke="#2e9a5a" stroke-width="2"'); h+=poly(A.env.latH,`fill="none" stroke="#e8590c" stroke-width="${C.hoist?2:1.3}" stroke-dasharray="6 4" opacity="${C.hoist?1:.6}"`); h+=`<text x="${f(X(0.165))}" y="${f(Y(5300))}" font-size="10.5" fill="#e8590c" text-anchor="middle">ホイスト時</text>`; }
+  const pts=C.P.filter(p=>!p.ng), key=p=>lon?p.x:p.y; if(pts.length>1) h+=`<path d="${pts.map((p,i)=>(i?'L':'M')+f(X(key(p)))+' '+f(Y(p.w))).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  pts.forEach((p,i)=>{ if(i>1&&i<pts.length-1&&Math.abs(p.f-pts[pts.length-1].f)<1) return; const ok=lon?p.lonOK&&p.wOK:p.latOK&&p.wOK, c=ok?(i===0?'var(--ink)':'#1c6fb8'):'#d4361e'; h+=`<circle cx="${f(X(key(p)))}" cy="${f(Y(p.w))}" r="${i<2?5.5:4.5}" fill="${c}" stroke="var(--panel)" stroke-width="1.5"/>`;
+    if(i<2||i===pts.length-1) h+=`<text x="${f(X(key(p))+8)}" y="${f(Y(p.w)+(i===1?12:-4))}" font-size="11" font-weight="700" fill="${c}" paint-order="stroke" stroke="var(--panel)" stroke-width="3">${p.nm}</text>`; });
+  h+=`<text x="${L+pw/2}" y="${H0-4}" font-size="11" text-anchor="middle" fill="var(--muted)">${lon?'前後の重心 STA（m）':'左右の重心 BL（m）　＋＝右'}</text><text x="12" y="${T+ph/2}" font-size="11" fill="var(--muted)" transform="rotate(-90 12 ${T+ph/2})" text-anchor="middle">重量 kg</text>`;
+  return `<svg viewBox="0 0 ${W0} ${H0}" class="cgch" role="img" aria-label="${lon?'前後':'左右'}の重心範囲">${h}</svg>`; }
+function cgSeatCell(k,label,v,dis,sub){ return `<label class="cgs${dis?' dis':''}${+v>0?' on':''}"><span class="cgk">${label}</span><input type="number" inputmode="numeric" min="0" step="5" value="${+v>0?v:''}" placeholder="${dis?'—':'0'}" data-cgp="${k}" ${dis?'disabled':''} aria-label="${label}の体重 kg">${sub?`<small>${sub}</small>`:''}</label>`; }
+function cgDraw(){ const box=$('cgBox'), sec=box&&box.closest('section'); if(!box) return; const on=!!CGM.on; sec.classList.toggle('cgon',on);
+  document.querySelectorAll('[data-cgm]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.cgm==='1')===on)));
+  if(!on){ box.hidden=true; return; } box.hidden=false; const A=cgA(), M=CGM, C=cgCalc(), ultra=M.tv!=='no', fm=n=>Math.round(n).toLocaleString(), ok=C.P.filter(p=>!p.ng).every(p=>p.ok);
+  const seg=(k,opts)=>`<span class="xzseg" role="group">${opts.map(([v,t,dis])=>`<button type="button" data-cgo="${k}" data-v="${v}" aria-pressed="${String(M[k])===v}" ${dis?'disabled':''}>${t}</button>`).join('')}</span>`;
+  const tog=(k,t,dis)=>`<button type="button" class="cgt" data-cgb="${k}" aria-pressed="${!!M[k]}" ${dis?'disabled':''}>${t}</button>`;
+  const hoistOn=(+CFG.load||0)>0;
+  let h=`<div class="cghead"><b>${A.nm}</b> の重量重心計算表（${A.src}）のデータで計算します。最大全備重量 ${fm(A.mtow)} kg。</div>`;
+  h+=`<div class="cgsec"><div class="cgst">① 機体の形態</div>
+    <div class="cgrow"><span class="cglb">ヘリテレ</span>${seg('tv',Object.entries(A.tv).map(([k,v])=>[k,v.nm+(v.sub?`<small>${v.sub}</small>`:'')]))}</div>
+    <div class="cgrow"><span class="cglb">座席</span>${seg('seat',[['9','９席（標準）'],['12','１２席（ラック部座席）',ultra],['0','座席なし']])}</div>
+    <div class="cgrow"><span class="cglb">装備</span>${tog('ns','ナイトサン')}${tog('tx','TV送信装置',ultra)}${tog('ant','TV送信アンテナ',ultra)}<button type="button" class="cgt" id="cgHoist" aria-pressed="${hoistOn}">ホイスト運用</button>${hoistOn?`<label class="cghw">吊り上げ <input type="number" min="0" step="10" value="${+CFG.load}" id="cgHw"> kg<small>（2名＝160）</small></label>`:''}</div>
+    ${ultra?'<div class="cgnote">ULTRA搭載時は、TV送信装置・アンテナは空虚重量に含まれ、第１列の B・C・D 席（ラック部）は使えません。</div>':''}</div>`;
+  // ② 座席図（機首が左・上が機体の右）
+  const col=(i)=>A.rows[i].map(k=>cgSeatCell(k,k,M.p[k],ultra&&A.rack.includes(k)||false)).join('');
+  h+=`<div class="cgsec"><div class="cgst">② 乗員・搭乗者の体重（kg）<small>上から見た図・機首が左・上が機体の右（ホイスト側）</small></div>
+    <div class="cgmap"><div class="cgnose">機首</div>
+      <div class="cgcol cgck"><span class="cgch2">操縦室</span>${cgSeatCell('PI','操縦士',M.p.PI,false,'右席')}<span class="cggap"></span><span class="cggap"></span>${cgSeatCell('CO','副操縦士',M.p.CO,false,'左席')}</div>
+      ${A.rows.map((r,i)=>`<div class="cgcol"><span class="cgch2">第${i+1}列<small>STA ${A.seats[r[0]][0]}</small></span>${r.map(k=>cgSeatCell(k,k,M.p[k],ultra&&A.rack.includes(k),!ultra&&M.seat!=='12'&&A.rack.includes(k)?'ラック部':'')).join('')}</div>`).join('')}
+      <div class="cgcol cgbag"><span class="cgch2">荷物室<small>最大 ${A.bag[2]}</small></span><label class="cgs${+M.bag>0?' on':''}"><span class="cgk">荷物</span><input type="number" min="0" max="${A.bag[2]}" step="5" value="${+M.bag>0?M.bag:''}" placeholder="0" data-cgbag="1" aria-label="荷物室 kg"></label></div></div>
+    <div class="cgrow"><button type="button" class="small" id="cgClr">体重をすべて消す</button><span class="cgsum">乗員 ${fm((+M.p.PI||0)+(+M.p.CO||0))} kg・客室 ${fm(C.R.filter(r=>/^客室/.test(r[0])).reduce((s,r)=>s+r[1],0))} kg・荷物 ${fm(+M.bag||0)} kg</span></div>
+    ${(+M.bag||0)>A.bag[2]?`<div class="cgnote bad">荷物室は最大 ${A.bag[2]} kg です。</div>`:''}</div>`;
+  // ③ 燃料
+  h+=`<div class="cgsec"><div class="cgst">③ 燃料<small>搭載燃料は上の「搭載燃料」と共通（最大 ${fm(A.fuelMax)} kg）</small></div>
+    <div class="cgrow cgfu"><label>燃料消費<span><input type="number" min="0" step="10" value="${M.ff}" data-cgn="ff"> kg/h</span></label><label>飛行時間<span><input type="number" min="0" step="0.1" value="${M.ft}" data-cgn="ft"> 時間</span></label><label>始動時の消費<span><input type="number" min="0" step="10" value="${M.st}" data-cgn="st"> kg</span></label></div>
+    <div class="cgsum">搭載できる燃料 <b>${fm(C.fuelCan)} kg</b>（最大全備重量まで・タンク最大 ${fm(A.fuelMax)} kg）・重量の余裕 <b class="${C.margin<0?'bad':''}">${fm(C.margin)} kg</b></div></div>`;
+  // ④ 結果
+  const P0=C.P[0];
+  h+=`<div class="cgsec"><div class="cgst">④ 重量と重心 <span class="cgok ${ok?'ok':'ng'}">${ok?'全時点で範囲内':'範囲外があります'}</span></div>
+    <div class="cgres">${C.P.map(p=>p.ng?`<div class="cgp na"><small>${p.nm}</small><b>燃料なし</b></div>`:`<div class="cgp ${p.ok?'':'ng'}"><small>${p.nm}<i>燃料 ${fm(p.f)} kg</i></small><b>${fm(p.w)} kg</b><span>前後 ${p.x.toFixed(3)} m${p.lonOK?'':' ⚠'}・左右 ${p.y>=0?'+':''}${p.y.toFixed(3)} m${p.latOK?'':' ⚠'}${p.wOK?'':'・重量超過'}</span></div>`).join('')}</div>
+    <div class="cgcharts">${cgChart(C,'lon')}${cgChart(C,'lat')}</div>
+    <details class="cgtab"><summary>計算表（重量・アーム・モーメント）</summary><table><thead><tr><th>項目</th><th>重量 kg</th><th>前後アーム m</th><th>前後モーメント</th><th>左右アーム m</th><th>左右モーメント</th></tr></thead><tbody>
+      ${C.R.map(r=>`<tr><td>${r[0]}</td><td>${r[1].toFixed(1)}</td><td>${r[1]?(r[2]/r[1]).toFixed(3):'—'}</td><td>${r[2].toFixed(1)}</td><td>${r[1]?(r[3]/r[1]).toFixed(3):'—'}</td><td>${r[3].toFixed(1)}</td></tr>`).join('')}
+      <tr class="tot"><td>基本運用重量</td><td>${C.W.toFixed(1)}</td><td>${C.bx.toFixed(3)}</td><td>${C.MX.toFixed(1)}</td><td>${C.by.toFixed(4)}</td><td>${C.MY.toFixed(1)}</td></tr>
+      ${C.P.filter(p=>!p.ng).map(p=>`<tr><td>${p.nm}の燃料</td><td>${p.f.toFixed(0)}</td><td>${cgFuelArm(p.f).toFixed(3)}</td><td>${p.fm.toFixed(1)}</td><td>0</td><td>0</td></tr><tr class="tot"><td>${p.nm}の全備重量</td><td>${p.w.toFixed(1)}</td><td>${p.x.toFixed(4)}</td><td>${(C.MX+p.fm).toFixed(1)}</td><td>${p.y.toFixed(4)}</td><td>${C.MY.toFixed(1)}</td></tr>`).join('')}
+    </tbody></table><p class="cgnote">燃料のアームは燃料積載表（補助タンクあり）から直線補間。客室第１列 A 席の左右モーメントは、元の表では「重量×アーム÷1000」になっていたため、ここでは「重量×アーム」で計算しています。</p></details></div>`;
+  box.innerHTML=h;
+  const re=()=>{ cgSave(); cgApply(); update(); };
+  box.querySelectorAll('[data-cgo]').forEach(b=>b.onclick=()=>{ M[b.dataset.cgo]=b.dataset.v; if(M.tv!=='no'){ if(M.seat==='12') M.seat='9'; A.rack.forEach(k=>{ delete M.p[k]; }); } re(); });
+  box.querySelectorAll('[data-cgb]').forEach(b=>b.onclick=()=>{ M[b.dataset.cgb]=!M[b.dataset.cgb]; re(); });
+  box.querySelectorAll('[data-cgp]').forEach(i=>i.onchange=()=>{ const v=+i.value; if(v>0) M.p[i.dataset.cgp]=v; else delete M.p[i.dataset.cgp]; re(); });
+  box.querySelectorAll('[data-cgn]').forEach(i=>i.onchange=()=>{ M[i.dataset.cgn]=Math.max(0,+i.value||0); re(); });
+  const bg=box.querySelector('[data-cgbag]'); if(bg) bg.onchange=()=>{ M.bag=Math.max(0,+bg.value||0); re(); };
+  const hb=$('cgHoist'); if(hb) hb.onclick=()=>{ if((+CFG.load||0)>0){ M.hw=+CFG.load; CFG.load=0; M.hoistOn=false; } else { CFG.load=+M.hw||160; M.hoistOn=true; } const w=$('w_load'); if(w) w.value=CFG.load; save(); re(); };
+  const hw=$('cgHw'); if(hw) hw.onchange=()=>{ CFG.load=Math.max(0,+hw.value||0); M.hw=CFG.load||M.hw; M.hoistOn=CFG.load>0; const w=$('w_load'); if(w) w.value=CFG.load; save(); re(); };
+  const cl=$('cgClr'); if(cl) cl.onclick=()=>{ M.p={}; M.bag=0; re(); }; }
+(function(){ const sec=document.querySelector('section[aria-label="全備重量の内訳"]'); if(!sec) return;
+  sec.querySelectorAll('[data-cgm]').forEach(b=>b.onclick=()=>{ cgMode(b.dataset.cgm==='1'); });
+  if(CGM.on){ cgApply(); try{ fuelLim(); }catch(e){} try{ drawEq(); }catch(e){} update(); } else cgDraw(); })();
 
 </script>
