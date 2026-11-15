@@ -6972,8 +6972,88 @@ document.addEventListener('click',e=>{ if(e.target.closest('nav.jump a')){ close
 .rtfnum small{color:var(--muted);font-size:11.5px}.rtfnum b{font-size:16px;font-variant-numeric:tabular-nums}.rtfnum b.warn{color:var(--warn)}
 .rtfst{flex-wrap:wrap}.rtfst .xst small:last-child{font-size:11px}.rtfsrc{margin-top:8px;font-size:12.5px}.rtfsrc summary{cursor:pointer;font-weight:700}.rtfsrc li{margin:3px 0}
 .rtfdim summary{cursor:pointer;font-weight:700;font-size:13px}
+.rtfcst{font-size:12.5px;margin:2px 2px 6px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}.rtfcst.ok{color:#2c7a4b}.rtfcst.bad{color:var(--warn)}.rtfbar{display:inline-block;width:120px;height:6px;border-radius:3px;background:var(--rule);overflow:hidden}.rtfbar i{display:block;height:100%;background:#2f6fb0}
 </style>
 <script>
+// D2Q9 格子ボルツマン法（BGK＋スマゴリンスキーのLES）。周囲1セルはゴースト（境界条件）。
+// 入力：nx,nz（ゴースト込み）、type[]（0流体 1固体 2多孔質 3ゴースト）、gu[],gw[]（ゴーストの速度・格子単位）、tau0、cs、porK
+// 返り値：step(n)、平均場 mean()
+function LBM(o){ const nx=o.nx, nz=o.nz, N=nx*nz, T=o.type, gu=o.gu, gw=o.gw, tau0=o.tau0, Cs2=o.cs*o.cs, pk=o.porK||0.3, thr=o.thr||0;
+  const ex=[0,1,0,-1,0,1,-1,-1,1], ez=[0,0,1,0,-1,1,1,-1,-1], W=[4/9,1/9,1/9,1/9,1/9,1/36,1/36,1/36,1/36], OP=[0,3,4,1,2,7,8,5,6];
+  let f=new Float32Array(9*N), g=new Float32Array(9*N); const su=new Float64Array(N), sw=new Float64Array(N), s2=new Float64Array(N); let ns=0;
+  const feq=(q,r,u,w)=>{ const eu=ex[q]*u+ez[q]*w, uu=u*u+w*w; return W[q]*r*(1+3*eu+4.5*eu*eu-1.5*uu); };
+  for(let i=0;i<N;i++){ const u=T[i]===3?gu[i]:0, w=T[i]===3?gw[i]:0; for(let q=0;q<9;q++) f[q*N+i]=feq(q,1,u,w); }
+  // ゴースト：内側の隣（法線方向）
+  const inn=new Int32Array(N).fill(-1); for(let j=0;j<nz;j++) for(let i=0;i<nx;i++){ const k=j*nx+i; if(T[k]!==3) continue; const ii=Math.min(nx-2,Math.max(1,i)), jj=Math.min(nz-2,Math.max(1,j)); inn[k]=jj*nx+ii; }
+  const ghosts=[]; for(let k=0;k<N;k++) if(T[k]===3) ghosts.push(k);
+  function step(n,avg){ for(let it=0;it<n;it++){
+      // ゴースト：流入なら平衡分布（速度は与えた値、密度は内側）、流出なら内側をコピー
+      for(const k of ghosts){ const m=inn[k]; let r=0; for(let q=0;q<9;q++) r+=f[q*N+m]; const i=k%nx, j=(k/nx)|0; const nxn=i===0?1:i===nx-1?-1:0, nzn=j===0?1:j===nz-1?-1:0; const un=gu[k]*nxn+gw[k]*nzn;
+        if(un>thr||T[m]!==0){ for(let q=0;q<9;q++) f[q*N+k]=feq(q,r,gu[k],gw[k]); } else { let u=0,w=0; for(let q=0;q<9;q++){ const v=f[q*N+m]; u+=ex[q]*v; w+=ez[q]*v; } u/=r; w/=r; const um=u*nxn+w*nzn; if(um>0){ u-=um*nxn; w-=um*nzn; } for(let q=0;q<9;q++) f[q*N+k]=feq(q,1,u,w); } }
+      for(let j=1;j<nz-1;j++){ for(let i=1;i<nx-1;i++){ const k=j*nx+i, t=T[k]; if(t===1) continue;
+          const f0=f[k], f1=T[k-1]===1?f[3*N+k]:f[N+k-1], f2=T[k-nx]===1?f[4*N+k]:f[2*N+k-nx], f3=T[k+1]===1?f[N+k]:f[3*N+k+1], f4=T[k+nx]===1?f[2*N+k]:f[4*N+k+nx],
+            f5=T[k-1-nx]===1?f[7*N+k]:f[5*N+k-1-nx], f6=T[k+1-nx]===1?f[8*N+k]:f[6*N+k+1-nx], f7=T[k+1+nx]===1?f[5*N+k]:f[7*N+k+1+nx], f8=T[k-1+nx]===1?f[6*N+k]:f[8*N+k-1+nx];
+          const r=f0+f1+f2+f3+f4+f5+f6+f7+f8; let u=(f1-f3+f5-f6-f7+f8)/r, w=(f2-f4+f5+f6-f7-f8)/r; if(t===2){ u*=1-pk; w*=1-pk; }
+          const uu=1.5*(u*u+w*w), a=4/9*r, b=r/9, c=r/36;
+          const e0=a*(1-uu), e1=b*(1+3*u+4.5*u*u-uu), e3=b*(1-3*u+4.5*u*u-uu), e2=b*(1+3*w+4.5*w*w-uu), e4=b*(1-3*w+4.5*w*w-uu);
+          const p5=u+w, p6=-u+w; const e5=c*(1+3*p5+4.5*p5*p5-uu), e7=c*(1-3*p5+4.5*p5*p5-uu), e6=c*(1+3*p6+4.5*p6*p6-uu), e8=c*(1-3*p6+4.5*p6*p6-uu);
+          const d1=f1-e1,d2=f2-e2,d3=f3-e3,d4=f4-e4,d5=f5-e5,d6=f6-e6,d7=f7-e7,d8=f8-e8;
+          const pxx=d1+d3+d5+d6+d7+d8, pzz=d2+d4+d5+d6+d7+d8, pxz=d5-d6+d7-d8;
+          const Q=Math.sqrt(2*(pxx*pxx+pzz*pzz+2*pxz*pxz)), tau=0.5*(tau0+Math.sqrt(tau0*tau0+18*Cs2*Q/r)), om=1/tau;
+          g[k]=f0-om*(f0-e0); g[N+k]=f1-om*d1; g[2*N+k]=f2-om*d2; g[3*N+k]=f3-om*d3; g[4*N+k]=f4-om*d4; g[5*N+k]=f5-om*d5; g[6*N+k]=f6-om*d6; g[7*N+k]=f7-om*d7; g[8*N+k]=f8-om*d8;
+          if(avg){ su[k]+=u; sw[k]+=w; s2[k]+=u*u+w*w; } } }
+      for(const k of ghosts) for(let q=0;q<9;q++) g[q*N+k]=f[q*N+k];
+      const t=f; f=g; g=t; if(avg) ns++; } }
+  function mean(){ const U=new Float32Array(N), Wm=new Float32Array(N), I=new Float32Array(N); for(let k=0;k<N;k++){ if(!ns) break; const u=su[k]/ns, w=sw[k]/ns; U[k]=u; Wm[k]=w; I[k]=Math.sqrt(Math.max(0,s2[k]/ns-u*u-w*w)); } return {U,W:Wm,I,ns}; }
+  function now(){ const U=new Float32Array(N), Wm=new Float32Array(N); for(let k=0;k<N;k++){ if(T[k]===1) continue; let r=0,u=0,w=0; for(let q=0;q<9;q++){ const v=f[q*N+k]; r+=v; u+=ex[q]*v; w+=ez[q]*v; } U[k]=u/r; Wm[k]=w/r; } return {U,W:Wm}; }
+  return {step,mean,now}; }
+
+
+// ==== ベランダまわりの流れの数値計算（2次元・格子ボルツマン法＋LES）====
+// 家のまわり（壁の内側2 m〜機体側、水面〜軒の上3 m）だけを細かい格子で解く。外側の境界には、家が無い時の吹き下ろしの式（xsField）の流れを与える。
+// 検証：キャビティ流れ Re=100（Ghia ほか 1982）で中心線の速度が ±2% 以内。
+const RTFC={cache:new Map(),key:'',job:null,prog:0,err:''};
+function rtfCfdSetup(Fd){ const G=Fd.G, F=Fd.F, d=G.d, sA=G.sw-2.5, sB=Math.max(G.sr+3.0,G.sp+2.2), zB=G.zt+4.0, area=(sB-sA)*zB, dx=Math.max(0.05,Math.sqrt(area/(RTFC.cells||9000)));
+  const nx=Math.ceil((sB-sA)/dx)+2, nz=Math.ceil(zB/dx)+2, N=nx*nz, type=new Uint8Array(N), gu=new Float32Array(N), gw=new Float32Array(N);
+  const ir=Math.round((G.sr-sA)/dx+0.5); let Umax=3;
+  for(let j=0;j<nz;j++) for(let i=0;i<nx;i++){ const k=j*nx+i, s=sA+(i-0.5)*dx, z=(j-0.5)*dx;
+    if(j===0){ type[k]=1; continue; }
+    if(i===0||i===nx-1||j===nz-1){ type[k]=3; const v=F.vel(s,z); gu[k]=v[0]; gw[k]=v[1]; if(v[2]>Umax) Umax=v[2]; continue; }
+    if(Fd.solid(s,z)){ type[k]=1; continue; }
+    if(i===ir&&z>=G.f&&z<=G.f+d.hr) type[k]=RTF.rail==='grid'?2:1; }
+  for(let j=1;j<nz-1;j+=3) for(let i=1;i<nx-1;i+=3){ const v=F.vel(sA+(i-0.5)*dx,(j-0.5)*dx); if(v[2]>Umax) Umax=v[2]; }
+  const ul=0.08, dt=dx*ul/Umax, conv=dt/dx; for(let k=0;k<N;k++){ gu[k]*=conv; gw[k]*=conv; }
+  const Tft=(sB-sA+zB)/Math.max(2,0.35*Umax), per=Tft/dt; let warm=Math.round(3*per), avg=Math.round(2*per); const cap=20000; if(warm+avg>cap){ const k=cap/(warm+avg); warm=Math.round(warm*k); avg=Math.round(avg*k); }
+  return {sA,sB,zB,dx,nx,nz,type,gu,gw,conv,dt,Umax,warm,avg,tau0:0.505,cs:0.17,porK:0.35,thr:0.7*conv}; }
+const RTFC_WSRC=LBM.toString()+`;onmessage=e=>{ const d=e.data; let s=LBM(d); const tot=d.warm+d.avg; let done=0; const ch=300;
+  while(done<tot){ const n=Math.min(ch,tot-done), av=done>=d.warm; s.step(n,av); done+=n; postMessage({p:done/tot}); }
+  const m=s.mean(); postMessage({done:1,U:m.U,W:m.W,I:m.I},[m.U.buffer,m.W.buffer,m.I.buffer]); };`;
+function rtfCfdKey(Fd,vi,hR,U){ const d=Fd.G.d; return [RTF.h,d.fl,d.hr,d.dv,d.e,d.ht,d.wf,hR,RTF.off,RTF.U,RTF.rail,vi.toFixed(1)].join('|'); }
+function rtfCfdWrap(S,R){ const {sA,dx,nx,nz,type,conv}=S, U=R.U, W=R.W, I=R.I;
+  const at=(s,z)=>{ const x=(s-sA)/dx+0.5, y=z/dx+0.5; if(x<1||x>nx-2||y<1||y>nz-2) return null; const i=Math.floor(x), j=Math.floor(y), tx=x-i, ty=y-j; let su=0,sw=0,si=0,ws=0;
+      for(const [a,b,wt] of [[i,j,(1-tx)*(1-ty)],[i+1,j,tx*(1-ty)],[i,j+1,(1-tx)*ty],[i+1,j+1,tx*ty]]){ const k=b*nx+a; if(type[k]===1||type[k]===3||wt<=0) continue; su+=U[k]*wt; sw+=W[k]*wt; si+=I[k]*wt; ws+=wt; }
+      if(ws<0.05) return [0,0,0,0]; const u=su/ws/conv, w=sw/ws/conv; return [u,w,Math.hypot(u,w),si/ws/conv]; };
+  return {at,S}; }
+function rtfCfd(Fd,vi,hR,U,redraw){ const key=rtfCfdKey(Fd,vi,hR,U); const hit=RTFC.cache.get(key); if(hit) return hit;
+  if(RTFC.key===key&&RTFC.job) return null; // 計算中
+  if(RTFC.job){ try{ RTFC.job.stop(); }catch(e){} RTFC.job=null; }
+  RTFC.key=key; RTFC.prog=0; RTFC.err=''; clearTimeout(RTFC.t);
+  RTFC.t=setTimeout(()=>{ if(RTFC.key!==key) return; let S; try{ S=rtfCfdSetup(Fd); }catch(e){ RTFC.err='準備に失敗'; return; }
+    const fin=R=>{ RTFC.job=null; let bad=false; for(let k=0;k<R.U.length;k+=7) if(!isFinite(R.U[k])){ bad=true; break; }
+        if(bad){ if(S.tau0<0.52){ S.tau0=0.53; S.cs=0.2; RTFC.job=run(S); return; } RTFC.err='計算が発散しました（式の流れを表示）'; rtfCfdSt(); return; }
+        if(RTFC.cache.size>12) RTFC.cache.delete(RTFC.cache.keys().next().value); RTFC.cache.set(key,rtfCfdWrap(S,R)); if(RTFC.key===key) redraw(); };
+    const run=S2=>{ let stop=false; const msg={nx:S2.nx,nz:S2.nz,type:S2.type,gu:S2.gu,gw:S2.gw,tau0:S2.tau0,cs:S2.cs,porK:S2.porK,thr:S2.thr,warm:S2.warm,avg:S2.avg};
+      try{ const url=URL.createObjectURL(new Blob([RTFC_WSRC],{type:'text/javascript'})), wk=new Worker(url);
+        wk.onmessage=e=>{ if(stop) return; if(e.data.done){ wk.terminate(); URL.revokeObjectURL(url); fin(e.data); } else { RTFC.prog=e.data.p; rtfCfdSt(); } };
+        wk.onerror=()=>{ wk.terminate(); if(!stop){ RTFC.job=runMain(S2); } };
+        wk.postMessage(msg); return {stop(){ stop=true; wk.terminate(); }}; }catch(e){ return runMain(S2); } };
+    const runMain=S2=>{ let stop=false; const s=LBM(S2), tot=S2.warm+S2.avg; let done=0; const tick=()=>{ if(stop) return; const t0=performance.now(); while(done<tot&&performance.now()-t0<25){ const n=Math.min(100,tot-done); s.step(n,done>=S2.warm); done+=n; } RTFC.prog=done/tot; rtfCfdSt(); if(done<tot) setTimeout(tick,0); else { const m=s.mean(); fin({U:m.U,W:m.W,I:m.I}); } }; setTimeout(tick,0); return {stop(){ stop=true; }}; };
+    RTFC.job=run(S); rtfCfdSt(); },350);
+  return null; }
+function rtfCfdSt(){ const el=document.getElementById('rtfCfdSt'); if(!el) return; if(RTFC.err){ el.textContent='⚠ '+RTFC.err; el.className='rtfcst bad'; return; } const hit=RTFC.cache.get(RTFC.key);
+  if(hit){ const S=hit.S; el.textContent=`✓ 数値計算済み（格子 ${(S.dx*100).toFixed(0)} cm・${S.nx-2}×${S.nz-2}・${Math.round((S.warm+S.avg)/1000)}千ステップ・${((S.warm+S.avg)*S.dt).toFixed(1)} 秒分）`; el.className='rtfcst ok'; }
+  else { el.innerHTML=`<span class="rtfbar"><i style="width:${Math.round(RTFC.prog*100)}%"></i></span> ベランダまわりを数値計算中… ${Math.round(RTFC.prog*100)}%（それまでは式の流れを表示）`; el.className='rtfcst'; } }
+
 // ==== 水没家屋への隊員投入（福島ロボットテストフィールド・水没市街地フィールド）====
 // 公表値：屋外水槽 50 m×19 m・水深0.7 m（うち10 m×10 mは深さ5 m）、水没住宅A・Bとも建築面積53 m²（A：1階の一部が冠水、B：1階が全部冠水）、電柱・電線あり
 //   （福島イノベーション・コースト構想推進機構「福島ロボットテストフィールド」パンフレット、ロボットテストフィールド「水中・水上ロボットエリア」）
@@ -6984,7 +7064,7 @@ document.addEventListener('click',e=>{ if(e.target.closest('nav.jump a')){ close
 const RTFG={pool:[37.63322,141.01285],west:[37.633275,141.012791],east:[37.633277,141.01292]};
 const RTFP={std:{hr:1.1,dv:0.91,e:0.6,ht:2.3,dep:7.28,wf:4.7},sk:{hr:0.95,dv:1.0,e:1.0,ht:2.0,dep:7.28,wf:4.7}};
 const RTFFL={A:1.9,B:0.5};
-const RTF0={open:false,h:'B',dim:'std',my:null,hR:30,off:2,U:0,kg:100,fl:null};
+const RTF0={open:false,h:'B',dim:'std',my:null,hR:30,off:2,U:0,kg:100,fl:null,rail:'wall'};
 let RTF; try{ RTF=Object.assign({},RTF0,JSON.parse(localStorage.getItem('hoRtf')||'{}')); }catch(e){ RTF=Object.assign({},RTF0); }
 const rtfSave=()=>{ try{ localStorage.setItem('hoRtf',JSON.stringify(RTF)); }catch(e){} };
 const RTFA={raf:0,fd:null,vis:true,io:null};
@@ -7026,8 +7106,9 @@ function rtfHouse(G,X,Y,k,detail){ const f=n=>n.toFixed(1), d=G.d, P=(pts)=>pts.
   h+=`<rect x="${f(X(se)-1.5*k)}" y="${f(Y(G.zt+0.1))}" width="${f(X(se+0.12)-X(se)+1.5*k)}" height="${f(Math.max(2*k,Y(G.zt-0.02)-Y(G.zt+0.1)))}" fill="#8a949c" stroke="#2c3238" stroke-width="${0.6*k}"/>`;
   // ベランダ（床・手すり）
   h+=`<path d="${P([[sw,G.f-0.25],[G.sr,G.f-0.25],[G.sr,G.f],[sw,G.f]])}" fill="#b9ad9a" stroke="#5b4a35" stroke-width="${1*k}"/>`;
-  const rt=G.f+d.hr; h+=`<path d="M${f(X(G.sr))} ${f(Y(G.f))} V${f(Y(rt))} M${f(X(G.sr)-4*k)} ${f(Y(rt))} H${f(X(G.sr)+1*k)}" stroke="#3a3f44" stroke-width="${2*k}" fill="none" stroke-linecap="round"/>`;
-  if(detail) for(let z=G.f+0.11;z<rt-0.05;z+=0.11) h+=`<line x1="${f(X(G.sr)-1.5*k)}" y1="${f(Y(z))}" x2="${f(X(G.sr)+0.5*k)}" y2="${f(Y(z))}" stroke="#3a3f44" stroke-width="${0.6*k}"/>`;
+  const rt=G.f+d.hr; if(RTF.rail!=='grid') h+=`<rect x="${f(X(G.sr-0.04))}" y="${f(Y(rt))}" width="${f(Math.max(2*k,X(G.sr+0.04)-X(G.sr-0.04)))}" height="${f(Y(G.f)-Y(rt))}" fill="#b9ad9a" stroke="#5b4a35" stroke-width="${0.8*k}"/>`;
+  h+=`<path d="M${f(X(G.sr))} ${f(Y(G.f))} V${f(Y(rt))} M${f(X(G.sr)-4*k)} ${f(Y(rt))} H${f(X(G.sr)+1*k)}" stroke="#3a3f44" stroke-width="${2*k}" fill="none" stroke-linecap="round"/>`;
+  if(detail&&RTF.rail==='grid') for(let z=G.f+0.11;z<rt-0.05;z+=0.11) h+=`<line x1="${f(X(G.sr)-1.5*k)}" y1="${f(Y(z))}" x2="${f(X(G.sr)+0.5*k)}" y2="${f(Y(z))}" stroke="#3a3f44" stroke-width="${0.6*k}"/>`;
   return h; }
 function rtfPerson(x,y,hpx,lean,pose,col){ const f=n=>n.toFixed(1); col=col||'#1d2b3a';
   if(pose==='crouch'){ return `<g transform="translate(${f(x)},${f(y)})"><circle cx="0" cy="${f(-hpx*0.6)}" r="${f(hpx*0.1)}" fill="${col}"/><path d="M0 ${f(-hpx*0.5)} L${f(hpx*0.12)} ${f(-hpx*0.22)} L${f(-hpx*0.08)} ${f(-hpx*0.1)} L${f(hpx*0.1)} 0 M${f(hpx*0.02)} ${f(-hpx*0.42)} l${f(hpx*0.2)} ${f(hpx*0.08)}" stroke="${col}" stroke-width="${f(Math.max(1.4,hpx*0.08))}" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
@@ -7037,7 +7118,7 @@ function rtfCalc(Fd,vi,hR){ const G=Fd.G, d=G.d, zb=hR-RTF_BOOM, zh=G.f+1.4; // 
   const clr=sh=>{ const zt=G.zt; if(zt<=zh) return sh-G.se; const sl=sh+(G.sp-sh)*(zt-zh)/(zb-zh); return sl-G.se; };
   const dx=G.sp-sOut, th=Math.atan2(dx,L), Fp=RTF.kg*Math.tan(Math.abs(th)), Tp=2*Math.PI*Math.sqrt(L/9.81), vs=Math.abs(dx)*Math.sqrt(9.81/L);
   const gap=G.zt-(G.f+d.hr), tip=-ROTOR_D/2; const rz=G.roof(tip); const rclr=isNaN(rz)?null:hR-rz;
-  const v=(s,z)=>Fd.vel(s,z), vr=v(sOut+0.1,G.f+1.2), vv=v(G.sw+0.35,G.f+0.8), ve=Fd.F.vel(G.se+0.05,G.zt+0.3), vw=(()=>{ let m=[0,0,0]; for(let s=G.sr+0.2;s<=G.edge;s+=0.25){ const q=v(s,0.6); if(q[2]>m[2]) m=q; } return m; })(), vp=v(G.sp,G.zt+0.5);
+  const v=(s,z)=>Fd.vel(s,z), vr=v(sOut+0.1,G.f+1.2), vv=v(G.sw+0.35,G.f+0.8), ve=v(G.se+0.05,G.zt+0.3), vw=(()=>{ let m=[0,0,0]; for(let s=G.sr+0.2;s<=G.edge;s+=0.25){ const q=v(s,0.6); if(q[2]>m[2]) m=q; } return m; })(), vp=v(G.sp,G.zt+0.5);
   return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
 function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=22, B=34, pw=W-L-Rm;
   const zlo=Math.min(G.fl1-1.2,-1.6), zhi=hR+3.2, phMax=W<600?420:470; let ppm=phMax/(zhi-zlo); const sMin=G.sb-G.d.e-2.2; let sMax=sMin+pw/ppm; if(sMax<ROTOR_D/2+3){ sMax=ROTOR_D/2+3; ppm=pw/(sMax-sMin); }
@@ -7071,12 +7152,14 @@ function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Mat
 function rtfNear(Fd,C,hR){ const G=Fd.G, d=G.d, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=18, B=30, pw=W-L-Rm;
   const s0=G.sw-1.4, s1=Math.max(G.sp+1.6,G.sr+2.2), z0=G.f-1.1, z1=G.zt+1.5; let ppm=Math.min(pw/(s1-s0),(W<600?340:380)/(z1-z0)); const pwU=(s1-s0)*ppm, ph=Math.round((z1-z0)*ppm), Hh=T+ph+B, ox=L+(pw-pwU)/2;
   const X=s=>ox+(s-s0)*ppm, Y=z=>T+(z1-z)*ppm, f=n=>n.toFixed(1); let h=`<defs><clipPath id="rtfnc"><rect x="${f(ox)}" y="${T}" width="${f(pwU)}" height="${ph}"/></clipPath></defs><rect x="${f(ox)}" y="${T}" width="${f(pwU)}" height="${ph}" fill="#eef4f9" class="xsky"/><g clip-path="url(#rtfnc)">`;
-  h+=rtfShade(Fd.vel,()=>0,ox,T,pwU,Math.round(Y(0)-T),s0,z1,ppm,RTF.U*0.514444);
+  h+=rtfShade(Fd.cfd&&RTF.vm==='peak'?((s,z)=>{ const v=Fd.vel(s,z); return [v[0],v[1],v[2]+1.4*(v[3]||0)]; }):Fd.vel,()=>0,ox,T,pwU,Math.round(Y(0)-T),s0,z1,ppm,RTF.U*0.514444);
   if(Y(0)<T+ph) h+=`<rect x="${f(ox)}" y="${f(Y(0))}" width="${f(pwU)}" height="${f(T+ph-Y(0))}" fill="#7fb6d9" opacity=".9"/>`;
   h+=rtfHouse(G,X,Y,1.6,true);
   // 風の矢印（格子）
-  const st=0.5, col=v=>{ const b=dwBand(v); return b<0?'#5f8fb5':DWB[b][1]; };
-  for(let s=s0+0.25;s<s1;s+=st) for(let z=Math.max(0.15,z0+0.25);z<z1;z+=st){ if(Fd.solid(s,z)) continue; const v=Fd.vel(s,z); if(v[2]<1) continue; const k=Math.min(0.42,0.08+v[2]/60)*ppm, ux=v[0]/v[2], uz=v[1]/v[2], x=X(s), y=Y(z), x2=x+ux*k, y2=y-uz*k;
+  if(Fd.cfd){ const S=Fd.cfd.S, sd=[]; for(let z=G.f+0.3;z<S.zB-0.2;z+=0.45) sd.push([S.sA+S.nx*S.dx-0.3,z]); for(let s=S.sA+0.3;s<S.sA+S.nx*S.dx;s+=0.45) sd.push([s,S.zB-0.3]); for(let z=G.f+0.25;z<G.zt;z+=0.35) sd.push([G.sw+0.15,z]);
+    h+=`<g opacity=".55">${xsStream({vel:Fd.vel,gz:()=>0},sd,X,Y,{s:99,zt:z1,zb:0,ay:1},0.04)}</g>`; }
+  const st=Fd.cfd?0.3:0.5, col=v=>{ const b=dwBand(v); return b<0?'#5f8fb5':DWB[b][1]; };
+  for(let s=s0+0.25;s<s1;s+=st) for(let z=Math.max(0.15,z0+0.25);z<z1;z+=st){ if(Fd.solid(s,z)) continue; const v=Fd.vel(s,z); if(v[2]<1) continue; const k=Math.min(Fd.cfd?0.26:0.42,0.06+v[2]/(Fd.cfd?90:60))*ppm, ux=v[0]/v[2], uz=v[1]/v[2], x=X(s), y=Y(z), x2=x+ux*k, y2=y-uz*k;
     h+=`<line x1="${f(x-ux*k*0.2)}" y1="${f(y+uz*k*0.2)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${col(v[2])}" stroke-width="2.2" stroke-linecap="round"/><path d="M-4,-3 L1,0 L-4,3" transform="translate(${f(x2)},${f(y2)}) rotate(${(Math.atan2(-uz,ux)*180/Math.PI).toFixed(0)})" fill="none" stroke="${col(v[2])}" stroke-width="1.8" stroke-linecap="round"/>`; }
   // 要救助者（壁際でしゃがむ）
   const hp=1.7*ppm; h+=rtfPerson(X(G.sw+0.38),Y(G.f),hp,0,'crouch','#7a1f1f');
@@ -7098,7 +7181,7 @@ function rtfNear(Fd,C,hR){ const G=Fd.G, d=G.d, W=Math.round(Math.max(460,Math.m
   h+=dim(xe,Y(G.zt+0.12)-14,X(G.sp),Y(G.zt+0.12)-14,`軒先→ワイヤー ${RTF.off.toFixed(2)} m`);
   h+=dim(X(G.sw)-10,Y(0),X(G.sw)-10,Y(G.f),`${G.f.toFixed(1)} m`,-1);
   h+=`<text x="${f(ox+6)}" y="${T+14}" font-size="12" font-weight="800" fill="var(--ink)">ベランダの拡大</text>`;
-  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">矢印＝その点の風の向き（色は風速）・実線＝手すりの外で取り付いた時のワイヤー・赤い点線＝手すりの内側（0.35 m）へ入った時</text>`;
+  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">矢印＝その点の平均の風向き・実線＝手すりの外で取り付いた時のワイヤー・赤い点線＝手すりの内側（0.35 m）へ入った時</text>`;
   return `<svg viewBox="0 0 ${W} ${Hh}" class="xsvg" role="img" aria-label="ベランダ付近の拡大断面">${h}</svg>`; }
 function rtfAnim(){ cancelAnimationFrame(RTFA.raf); RTFA.raf=0; const wrap=$('rtfWrap'), fd=RTFA.fd; if(!wrap||!fd) return; const svg=wrap.querySelector('svg'), cv=wrap.querySelector('canvas'); if(!svg||!cv) return;
   const red=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; if(red||!XZA.on){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }
@@ -7119,8 +7202,9 @@ function rtfAnim(){ cancelAnimationFrame(RTFA.raf); RTFA.raf=0; const wrap=$('rt
   RTFA.raf=requestAnimationFrame(step); }
 function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('rtfDet'); if(det&&!det.open){ cancelAnimationFrame(RTFA.raf); return; }
   if(H==null){ H=XS.H; T=XS.T; W=XS.W; } const dd=downwash(H||0,T==null?15:T,W||6000), vi=dd.vi, hR=RTF.hR, U=RTF.U*0.514444;
-  const Fd=rtfField(vi,hR,U), G=Fd.G, C=rtfCalc(Fd,vi,hR), d=G.d, kt=v=>(v*1.94384).toFixed(0), bc=v=>{ const b=dwBand(v); return b<0?'var(--muted)':DWB[b][1]; };
-  const stv=(t,v,sub)=>`<div class="xst"><small>${t}</small><b style="color:${bc(v)}">${v.toFixed(0)}<i> m/s</i></b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const Fd=rtfField(vi,hR,U); const CF=rtfCfd(Fd,vi,hR,U,()=>{ if($('rtfDet')&&$('rtfDet').open) keepView(()=>rtfDraw()); }); if(CF){ const v0=Fd.vel; Fd.vel=(s,z)=>CF.at(s,z)||v0(s,z); Fd.cfd=CF; }
+  const G=Fd.G, C=rtfCalc(Fd,vi,hR), d=G.d, kt=v=>(v*1.94384).toFixed(0), bc=v=>{ const b=dwBand(v); return b<0?'var(--muted)':DWB[b][1]; };
+  const stv=(t,vv,sub)=>{ const v=vv[2], g=vv[3]; return `<div class="xst"><small>${t}</small><b style="color:${bc(v)}">${v.toFixed(0)}<i> m/s</i></b>${g!=null&&g>0.3?`<small>ゆらぎ ±${g.toFixed(0)} m/s・瞬間 約${(v+1.4*g).toFixed(0)}</small>`:''}${sub?`<small>${sub}</small>`:''}</div>`; };
   const W2=[]; // 注意
   if(C.cIn<0.3) W2.push(['手すりの内側でワイヤーが軒先に当たる',`隊員が手すりの内側へ入るとワイヤーは軒先から ${C.cIn.toFixed(2)} m（${C.cIn<0?'食い込む':'ほぼ接触'}）。手すりの線で緩みをもらって外すこと。`]);
   if(C.cOut<0.3) W2.push(['取り付いた時点でワイヤーが軒先に近い',`手すりの外で取り付いても、ワイヤーと軒先の間は ${C.cOut.toFixed(2)} m。軒先からワイヤーまでをもう少し離す。`]);
@@ -7133,6 +7217,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
   const tilt=Math.abs(C.th*180/Math.PI);
   box.innerHTML=`<div class="rtfctl">
     <div class="rtfrow"><span class="rtflb">家屋</span><span class="xzseg" role="group" aria-label="家屋"><button type="button" data-rtfh="A" aria-pressed="${RTF.h==='A'}">A 1階一部冠水</button><button type="button" data-rtfh="B" aria-pressed="${RTF.h==='B'}">B 1階全部冠水</button></span></div>
+    <div class="rtfrow"><span class="rtflb">手すり</span><span class="xzseg" role="group" aria-label="手すり"><button type="button" data-rtfr="wall" aria-pressed="${RTF.rail!=='grid'}">腰壁（ふさがっている）</button><button type="button" data-rtfr="grid" aria-pressed="${RTF.rail==='grid'}">格子（すき間あり）</button></span></div>
     <div class="rtfrow"><span class="rtflb">寸法</span><span class="xzseg" role="group" aria-label="寸法"><button type="button" data-rtfd="std" aria-pressed="${RTF.dim==='std'}">公的基準・一般的な木造</button><button type="button" data-rtfd="sk" aria-pressed="${RTF.dim==='sk'}">スケッチの値</button>${RTF.my?`<button type="button" data-rtfd="my" aria-pressed="${RTF.dim==='my'}">自分の値</button>`:''}</span></div>
     <label class="rtfsl">ローター面の高さ（水面から）<b>${hR} m</b><small>（約 ${Math.round(hR*FT)} ft・機体下面 約 ${Math.round((hR-RTF_BELLY)*FT)} ft・ワイヤー約 ${C.L.toFixed(0)} m）</small><input type="range" min="10" max="60" step="1" value="${hR}" data-rtfk="hR"></label>
     <label class="rtfsl">軒先からワイヤーまで（水平）<b>${RTF.off.toFixed(2)} m</b><input type="range" min="0" max="6" step="0.25" value="${RTF.off}" data-rtfk="off"></label>
@@ -7140,8 +7225,8 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
     <details class="rtfdim"><summary>寸法を変える（m）</summary><div class="rcgrid">${[['fl','水面からベランダの床',G.f],['hr','手すりの高さ',d.hr],['dv','ベランダの奥行',d.dv],['e','軒の出（壁から軒先）',d.e],['ht','床から軒先の下端',d.ht],['wf','壁から水槽の縁まで',d.wf]].map(([k,l,v])=>`<label>${l}<span><input type="number" step="0.05" value="${(+v).toFixed(2)}" data-rtfm="${k}"></span></label>`).join('')}<label>吊り荷（隊員＋装備）<span><input type="number" step="5" value="${RTF.kg}" data-rtfm="kg"> kg</span></label></div></details>
     <div class="rtfrow"><button type="button" id="rtfGo">📍 地図でこの水槽を現場にする</button><button type="button" class="xzplay" id="rtfPlay" aria-pressed="${XZA.on}">${XZA.on?'⏸ 動きを止める':'▶ 動かす'}</button></div></div>
   <div class="xcard"><div class="xct">全体（水没住宅${RTF.h}・吹き下ろしの流れ）</div><div class="xzwrap" id="rtfWrap">${rtfBig(Fd,vi,hR,U)}<canvas aria-hidden="true"></canvas></div></div>
-  <div class="xcard">${rtfNear(Fd,C,hR)}
-    <div class="xrow rtfst">${stv('隊員（手すりの外・胸）',C.vr[2])}${stv('要救助者（ベランダの壁際）',C.vv[2],'軒の下は真上の風がさえぎられる')}${stv('軒先・雨どいへ',C.ve[2],'下向き')}${stv('家の前の水面（最大）',C.vw[2],'しぶき')}</div>
+  <div class="xcard"><div id="rtfCfdSt" class="rtfcst"></div>${Fd.cfd?`<div class="rtfrow" style="margin:0 2px 6px"><span class="rtflb">色</span><span class="xzseg" role="group" aria-label="色の意味"><button type="button" data-rtfv="mean" aria-pressed="${RTF.vm!=='peak'}">平均の風速</button><button type="button" data-rtfv="peak" aria-pressed="${RTF.vm==='peak'}">瞬間の強さ（平均＋ゆらぎ）</button></span></div>`:''}${rtfNear(Fd,C,hR)}
+    <div class="xrow rtfst">${stv('隊員（手すりの外・胸）',C.vr)}${stv('要救助者（ベランダの壁際・高さ0.8 m）',C.vv,Fd.cfd?'':'軒の下は真上の風がさえぎられる（概算）')}${stv('軒先・雨どいのすぐ上',C.ve,'')}${stv('家の前の水面（最大）',C.vw,'しぶき')}</div>
     <div class="rtfnum">
       <div><small>ワイヤーと軒先の間</small><b class="${C.cOut<0.3?'warn':''}">${C.cOut.toFixed(2)} m</b><small>手すりの外で取り付いた時</small></div>
       <div><small>手すりの内側へ入ると</small><b class="${C.cIn<0.3?'warn':''}">${C.cIn.toFixed(2)} m</b><small>${C.cIn<0?'軒先に食い込む':C.cIn<0.3?'ほぼ接触':'余裕あり'}</small></div>
@@ -7150,14 +7235,17 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
       <div><small>手すりの上〜軒先の下</small><b class="${C.gap<1.3?'warn':''}">${C.gap.toFixed(2)} m</b><small>人がくぐる開口</small></div>
       <div><small>機体下面〜棟</small><b>${C.belly.toFixed(1)} m</b><small>${C.rclr!=null?`ローター先端〜屋根 ${C.rclr.toFixed(1)} m`:'ローター先端は家の外'}</small></div></div>
     ${W2.length?`<div class="xchips">${W2.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${W2.map(n=>`<li>${n[1]}</li>`).join('')}</ul>`:''}
-    <div class="hint note">吹き下ろしは運動量理論と壁面噴流の式による概算で、家のまわりのはく離や巻き込みは計算していません（家が無い時の流れから、家の中を除き、軒の下は真上からの流れを弱めて表示）。吊り点は機体中心線から右へ約${RTF_HOFF} m・ローター面の約${RTF_BOOM} m下、機体下面はローター面の約${RTF_BELLY} m下として計算（目安）。吹き下ろしの強さは「ホバリング性能」の全備重量・気温・標高の値（ローター面 ${vi.toFixed(1)} m/s）から出しています。</div></div>
+    <div class="hint note">ベランダまわり（壁の内側2.5 m〜機体側、水面〜軒の上4 m の枠）は、家・軒・雨どい・ベランダ床・手すりの形を入れた<b>流体の数値計算</b>（2次元の格子ボルツマン法＋LES、数秒分を計算して時間平均）です。軒先でのはく離、ベランダ奥の渦、手すりの上からの吹き込みが出ます。枠の外側の流れと枠の境界の流れは、運動量理論と壁面噴流の式による概算です。2次元なので家は奥行き方向に無限に長いとみなしており、実際は家の横へ逃げる流れがある分、ベランダへの吹き込みは計算より弱めになりやすいと考えてください。格子を 7 cm から 4.5 cm に細かくしても値の違いは1割程度、計算法はキャビティ流れの標準問題（Ghia ほか）で2%以内に合うことを確認済み。「ゆらぎ」は渦がはがれて流れが脈打つ強さで、瞬間の強さはおおよそ平均＋1.4×ゆらぎ。2次元の計算は渦の脈動を大きめに出しやすい点に注意。ローターの回転・機体の揺れ・人の体は入れていません。吊り点は機体中心線から右へ約${RTF_HOFF} m・ローター面の約${RTF_BOOM} m下、機体下面はローター面の約${RTF_BELLY} m下として計算（目安）。吹き下ろしの強さは「ホバリング性能」の全備重量・気温・標高の値（ローター面 ${vi.toFixed(1)} m/s）から出しています。</div></div>
   <details class="rtfsrc"><summary>この場所と寸法の根拠</summary><ul>
     <li><b>場所：</b>福島ロボットテストフィールド（南相馬市原町区萱浜）の水没市街地フィールド。屋外水槽は N37°37.99′ E141°00.77′ 付近、東西に長く、西寄りに水没住宅が2棟（東の端に深い部分）。位置は国土地理院の建物外形・航空写真から読んだもの。</li>
     <li><b>公表値：</b>屋外水槽 50 m×19 m・水深 0.7 m（うち 10 m×10 m は深さ 5 m）。水没住宅A・Bとも建築面積 53 m²（A は1階の一部、B は1階が全部冠水）。電柱・電線あり（位置は現地で確認）。</li>
     <li><b>建物の大きさ：</b>53 m² は 4間×4間（7.28 m 角）にあたり、国土地理院の建物外形（軒を含む 8.8 m 角前後）とも合う。2棟の外形の間は約 2.6 m。</li>
     <li><b>公的基準の値：</b>手すり 1.1 m（建築基準法施行令 第126条・2階以上のバルコニー）、1階の床高 0.45 m 以上（同 第22条）。階高 2.9 m・ベランダ奥行 0.91 m・軒の出 0.6 m・4寸勾配・軒先の下端（床から）2.3 m は一般的な木造2階建ての値。</li>
     <li><b>確かめていないこと：</b>施設の図面（PDF）はこの環境から読めず、ベランダの向き・寸法、A・Bがどちらの棟か、水位の設定は未確認です。「寸法を変える」で実際の値に直せます。水面からベランダ床の初期値は、A 1.9 m（1階に約1 m浸水）、B 0.5 m（スケッチどおり）。壁から水槽の縁まで約 4.7 m は航空写真から（南側と仮定）。</li></ul></details>`;
+  rtfCfdSt();
   const re=()=>{ rtfSave(); keepView(()=>rtfDraw()); };
+  box.querySelectorAll('[data-rtfv]').forEach(b=>b.onclick=()=>{ RTF.vm=b.dataset.rtfv; re(); });
+  box.querySelectorAll('[data-rtfr]').forEach(b=>b.onclick=()=>{ RTF.rail=b.dataset.rtfr; re(); });
   box.querySelectorAll('[data-rtfh]').forEach(b=>b.onclick=()=>{ RTF.h=b.dataset.rtfh; if(RTF.dim==='my') RTF.fl=null; re(); });
   box.querySelectorAll('[data-rtfd]').forEach(b=>b.onclick=()=>{ RTF.dim=b.dataset.rtfd; re(); });
   box.querySelectorAll('[data-rtfk]').forEach(i=>{ i.oninput=()=>{ RTF[i.dataset.rtfk]=+i.value; clearTimeout(RTFA.t); RTFA.t=setTimeout(re,60); }; });
