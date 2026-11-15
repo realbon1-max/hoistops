@@ -7283,7 +7283,7 @@ function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('r
 </script>
 <style id="cgCss">
 .cgmode{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 10px}.cgmode>span:first-child{font-weight:700}
-#cgBox{display:grid;gap:12px;margin:0 0 12px}.cghead{font-size:13px;color:var(--muted)}.cghead b{color:var(--ink)}
+#cgBox[hidden]{display:none!important}#cgBox{display:grid;gap:12px;margin:0 0 12px}.cghead{font-size:13px;color:var(--muted)}.cghead b{color:var(--ink)}
 .cgsec{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:grid;gap:8px}.cgst{font-weight:800}.cgst small{font-weight:500;color:var(--muted);margin-left:8px;font-size:12px}
 .cgrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.cglb{font-weight:700;min-width:4.5em}.cgrow .xzseg small{display:block;font-size:10.5px;opacity:.8}
 .cgt{border:1px solid var(--rule);border-radius:999px;padding:6px 12px;background:var(--paper);color:var(--ink);font-weight:700}.cgt[aria-pressed="true"]{background:#1c6fb8;border-color:#1c6fb8;color:#fff}.cgt:disabled{opacity:.4}
@@ -7396,17 +7396,24 @@ function cgItems(){ const A=cgA(), M=CGM, ultra=M.tv!=='no', it={};
 const CG_ORDER=['PI','CO','A','B','C','D','E','F','G','H','I','L','M','N','bag','hw','fuel'];
 function cgMap(C,portrait){ const A=cgA(), M=CGM, ultra=M.tv!=='no', fm=n=>Math.round(n).toLocaleString(), f=n=>n.toFixed(1);
   // 座標：STA・BL（mm）→ 画面。横長は機首が左・上が機体の右、縦長は機首が上・右が機体の右
-  const VW=portrait?400:920, VH=portrait?720:470, P=portrait?((sta,bl)=>[200+bl*0.17,40+(sta-1300)*0.095]):((sta,bl)=>[30+(sta+150)*0.098,235-bl*0.2]);
+  const VW=portrait?460:960, VH=portrait?735:500, P=portrait?((sta,bl)=>[230+bl*0.15,34+(sta+300)*0.072]):((sta,bl)=>[34+(sta+300)*0.09,250-bl*0.16]);
   const pt=(sta,bl)=>P(sta,bl).map(f).join(' ');
-  const out=[[-150,0],[60,420],[450,760],[1200,1000],[2400,1080],[7300,1080],[8200,1000],[8800,560],[9300,280],[9800,170]];
-  const path='M'+out.map(p=>pt(p[0],p[1])).join(' L')+' L'+out.slice().reverse().map(p=>pt(p[0],-p[1])).join(' L')+'Z';
-  let h=`<defs><clipPath id="cgclip"><rect x="0" y="0" width="${VW}" height="${VH}"/></clipPath></defs><g clip-path="url(#cgclip)"><path d="${path}" fill="var(--paper)" stroke="var(--muted)" stroke-width="2.2"/>`;
+  // 機体の外形（AW139を上から見た形を単純化：丸い機首・風防・ほぼ平行なキャビン・後部の絞り・テールブーム）。単位 m
+  const q=(a,b)=>pt(a*1000,b*1000), half=sg=>`C${q(-0.25,0.62*sg)} ${q(0.4,1.0*sg)} ${q(1.4,1.04*sg)}`;
+  const hull=`M${q(-0.25,0)} C${q(-0.25,0.64)} ${q(0.42,1.0)} ${q(1.45,1.04)} L${q(2.7,1.08)} L${q(7.15,1.08)} C${q(7.95,1.08)} ${q(8.45,0.8)} ${q(8.95,0.5)} L${q(11,0.3)} L${q(11,-0.3)} L${q(8.95,-0.5)} C${q(8.45,-0.8)} ${q(7.95,-1.08)} ${q(7.15,-1.08)} L${q(2.7,-1.08)} L${q(1.45,-1.04)} C${q(0.42,-1.0)} ${q(-0.25,-0.64)} ${q(-0.25,0)} Z`;
+  const glass=`M${q(0.22,-0.66)} C${q(0.55,-0.9)} ${q(1.1,-0.98)} ${q(1.8,-0.98)} L${q(1.8,0.98)} C${q(1.1,0.98)} ${q(0.55,0.9)} ${q(0.22,0.66)} C${q(0.05,0.3)} ${q(0.05,-0.3)} ${q(0.22,-0.66)} Z`;
+  const spon=sg=>{ const a=P(4950,1080*sg), b=P(6950,1430*sg); return `<rect x="${f(Math.min(a[0],b[0]))}" y="${f(Math.min(a[1],b[1]))}" width="${f(Math.abs(b[0]-a[0]))}" height="${f(Math.abs(b[1]-a[1]))}" rx="${portrait?14:16}" fill="var(--paper)" stroke="var(--muted)" stroke-width="1.8"/>`; };
+  let h=`<defs><clipPath id="cgclip"><rect x="0" y="0" width="${VW}" height="${VH}"/></clipPath><linearGradient id="cgfus" x1="0" y1="0" x2="${portrait?1:0}" y2="${portrait?0:1}"><stop offset="0" stop-color="var(--paper)"/><stop offset=".5" stop-color="color-mix(in srgb,var(--paper) 88%,var(--ink))"/><stop offset="1" stop-color="var(--paper)"/></linearGradient></defs><g clip-path="url(#cgclip)">`;
+  h+=spon(1)+spon(-1)+`<path d="${hull}" fill="url(#cgfus)" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  h+=`<path d="${glass}" fill="#7fb3e6" fill-opacity=".22" stroke="#4a7fb5" stroke-width="1.4"/><path d="M${q(0.12,0)} L${q(1.8,0)}" stroke="#4a7fb5" stroke-width="1.6"/>`;
+  { const a=P(1950,-900), b=P(1950,900); h+=`<path d="M${f(a[0])} ${f(a[1])} L${f(b[0])} ${f(b[1])}" stroke="var(--muted)" stroke-width="4" stroke-linecap="round" opacity=".6"/>`; }
+  { const w=`M${q(2.75,-1.0)} L${q(7.1,-1.0)} C${q(7.85,-1.0)} ${q(8.3,-0.76)} ${q(8.6,-0.55)} L${q(8.6,0.55)} C${q(8.3,0.76)} ${q(7.85,1.0)} ${q(7.1,1.0)} L${q(2.75,1.0)} Z`; h+=`<path d="${w}" fill="none" stroke="var(--rule)" stroke-width="1.2"/>`; }
   const rect=(s0,s1,b0,b1)=>{ const a=P(s0,b0), b=P(s1,b1); return {x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),w:Math.abs(b[0]-a[0]),h:Math.abs(b[1]-a[1])}; };
   const R=(r,attr)=>`<rect x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}" ${attr}/>`;
   // ドア・スポンソン
   [[1080],[-1080]].forEach(([bl])=>{ const a=P(3700,bl), b=P(5200,bl); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="#2f80ed" stroke-width="5" stroke-linecap="round"/>`; });
-  { const a=P(4450,1080); h+=`<text x="${f(a[0]+(portrait?10:0))}" y="${f(a[1]+(portrait?4:-8))}" font-size="11" fill="#2f80ed" text-anchor="${portrait?'start':'middle'}" ${portrait?`transform="rotate(90 ${f(a[0]+10)} ${f(a[1]+4)})"`:''}>右ドア（ホイスト側）</text>`; }
-  { const a=P(3100,1020), b=P(3100,-1020); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 4"/>`; const n=portrait?P(1450,0):P(250,0); h+=`<text x="${f(n[0])}" y="${f(n[1]+4)}" font-size="13" fill="var(--muted)" text-anchor="middle" font-weight="700">${portrait?'▲ 機首':'機首'}</text>`; }
+  { const a=P(4450,1080); h+=`<text x="${f(a[0]+(portrait?10:0))}" y="${f(a[1]+(portrait?4:17))}" font-size="11" fill="#2f80ed" text-anchor="${portrait?'start':'middle'}" ${portrait?`transform="rotate(90 ${f(a[0]+10)} ${f(a[1]+4)})"`:''}>右ドア（ホイスト側）</text>`; }
+  { const a=P(3100,1020), b=P(3100,-1020); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 4"/>`; const n=portrait?P(-700,0):P(250,0); h+=`<text x="${f(n[0])}" y="${f(n[1]+4)}" font-size="13" fill="var(--muted)" text-anchor="middle" font-weight="700">${portrait?'▲ 機首':'機首'}</text>`; }
   // 燃料タンク（床下）
   { const r=rect(5950,6950,-560,560), fr=Math.max(0,Math.min(1,(+CFG.fuel||0)/A.fuelMax)), sel=CGU.sel==='fuel';
     const fill=portrait?{x:r.x+2,y:r.y+2+(r.h-4)*(1-fr),w:r.w-4,h:(r.h-4)*fr}:{x:r.x+2,y:r.y+2+(r.h-4)*(1-fr),w:r.w-4,h:(r.h-4)*fr};
@@ -7416,10 +7423,10 @@ function cgMap(C,portrait){ const A=cgA(), M=CGM, ultra=M.tv!=='no', fm=n=>Math.
   // ULTRA ラック
   if(ultra){ const r=rect(3200,3650,-920,420); h+=R(r,'rx="6" fill="color-mix(in srgb,var(--muted) 18%,var(--paper))" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3"')+`<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+4)}" font-size="10.5" text-anchor="middle" fill="var(--muted)" font-weight="700">ULTRA</text>`; }
   // 座席
-  const seat=(k,sta,bl,crew)=>{ const c=P(sta,bl), v=k==='PI'||k==='CO'?(+M.p[k]||0):(+M.p[k]||0), sel=CGU.sel===k, on=v>0, col=crew?'var(--c-crew)':'var(--c-pax)', S=portrait?40:44;
-    const s=Math.min(1.5,0.95+v/250);
-    return `<g class="cgtap cgseat" data-cgi="${k}" role="button" tabindex="0" aria-label="${k==='PI'?'操縦士':k==='CO'?'副操縦士':k+'席'} ${on?v+' kg':'空席'}">
-      <rect x="${f(c[0]-S/2)}" y="${f(c[1]-S/2)}" width="${S}" height="${S}" rx="8" fill="${on?col:'var(--paper)'}" fill-opacity="${on?.92:1}" stroke="${sel?'#1c6fb8':on?col:'var(--rule)'}" stroke-width="${sel?4:1.6}"/>
+  const seat=(k,sta,bl,crew)=>{ const c=P(sta,bl), v=+M.p[k]||0, sel=CGU.sel===k, on=v>0, col=crew?'var(--c-crew)':'var(--c-pax)', S=portrait?36:40, bk=portrait?7:8;
+    const s=Math.min(1.5,0.95+v/250), back=portrait?`<rect x="${f(c[0]-S/2+2)}" y="${f(c[1]+S/2-bk+3)}" width="${S-4}" height="${bk}" rx="4" fill="${on?col:'var(--rule)'}" opacity="${on?1:.8}"/>`:`<rect x="${f(c[0]+S/2-bk+3)}" y="${f(c[1]-S/2+2)}" width="${bk}" height="${S-4}" rx="4" fill="${on?col:'var(--rule)'}" opacity="${on?1:.8}"/>`;
+    return `<g class="cgtap cgseat" data-cgi="${k}" role="button" tabindex="0" aria-label="${k==='PI'?'操縦士':k==='CO'?'副操縦士':k+'席'} ${on?v+' kg':'空席'}">${back}
+      <rect x="${f(c[0]-S/2)}" y="${f(c[1]-S/2)}" width="${S}" height="${S}" rx="10" fill="${on?col:'var(--panel)'}" fill-opacity="${on?.92:1}" stroke="${sel?'#1c6fb8':on?col:'var(--muted)'}" stroke-width="${sel?4:1.4}"/>
       ${on?`<g transform="translate(${f(c[0])},${f(c[1]-5)}) scale(${s.toFixed(2)})"><circle cx="0" cy="-6" r="4.6" fill="#fff"/><path d="M-8,7 Q-8,0 0,0 Q8,0 8,7 Z" fill="#fff"/></g><text x="${f(c[0])}" y="${f(c[1]+S/2-4)}" font-size="12.5" text-anchor="middle" fill="#fff" font-weight="800">${v}</text>`:`<text x="${f(c[0])}" y="${f(c[1]+5)}" font-size="14" text-anchor="middle" fill="var(--muted)" font-weight="800">${k==='PI'?'機長':k==='CO'?'副':k}</text>`}
       ${on?`<text x="${f(c[0]+S/2-4)}" y="${f(c[1]-S/2+11)}" font-size="9" text-anchor="end" fill="#fff" opacity=".85">${k==='PI'?'機':k==='CO'?'副':k}</text>`:''}</g>`; };
   h+=seat('PI',2820,550,true)+seat('CO',2820,-550,true);
