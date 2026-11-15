@@ -7349,7 +7349,7 @@ try{ hpDraw(); }catch(e){}
 .cgres{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}.cgp{border:1px solid var(--rule);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column}.cgp small{color:var(--muted);font-size:11.5px}.cgp small i{font-style:normal;margin-left:6px}.cgp b{font-size:17px;font-variant-numeric:tabular-nums}.cgp span{font-size:12px;font-variant-numeric:tabular-nums}.cgp.ng{border-color:#d4361e}.cgp.ng b{color:#d4361e}.cgp.na{opacity:.5}
 .cgcharts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}.cgch{width:100%;height:auto}
 .cgtab summary{cursor:pointer;font-weight:700;font-size:13px}.cgtab table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;margin-top:6px}.cgtab th,.cgtab td{border-bottom:1px solid var(--rule);padding:3px 5px;text-align:right}.cgtab td:first-child,.cgtab th:first-child{text-align:left}.cgtab tr.tot td{font-weight:800}
-.cgmapsvg{width:100%;height:auto;display:block;touch-action:manipulation;-webkit-user-select:none;user-select:none}.cgmapsvg.pt{max-width:520px;margin:0 auto}.cgtap{cursor:pointer}.cgtap:focus{outline:none}.cgtap:focus-visible rect{stroke:#1c6fb8;stroke-width:4}
+.cgmapsvg{width:100%;height:auto;display:block;touch-action:manipulation;-webkit-user-select:none;user-select:none}.cgmapsvg.pt{max-width:560px;margin:0 auto}.cgtap{cursor:pointer}.cgtap:focus{outline:none}.cgtap:focus-visible rect{stroke:#1c6fb8;stroke-width:4}
 #cgDial{margin-top:4px}.cgdhint{font-size:12.5px;color:var(--muted);text-align:center;padding:6px}
 .cgdial{border:2px solid #1c6fb8;border-radius:14px;padding:10px;display:grid;gap:8px;background:color-mix(in srgb,#1c6fb8 6%,var(--paper))}.cgdl{display:flex;align-items:baseline;gap:10px}.cgdl b{font-size:18px}.cgdl small{color:var(--muted)}
 .cgdwrap{display:flex;align-items:center;justify-content:center;gap:6px}.cgknob{width:min(230px,58vw);height:auto;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}.cgknob.dr{cursor:grabbing}.cgknob:focus{outline:none}.cgknob:focus-visible .kb{stroke:#1c6fb8;stroke-width:3}
@@ -7407,9 +7407,9 @@ function cgCalc(){ const A=cgA(), M=CGM, R=cgRows(); let W=0,MX=0,MY=0; R.forEac
   return {R,W,MX,MY,bx:MX/W,by:MY/W,P,fuelCan,margin:A.mtow-(W+fuel),hoist}; }
 // 計算結果を性能計算の重量（空虚重量・乗員・搭乗者・吊荷・燃料）へ渡す。装備品の一覧は使わない（形態に含まれる）
 function cgApply(){ if(!CGM.on) return; const C=cgCalc(); let ac=0,crew=0,pax=0; C.R.forEach(r=>{ if(r[4]==='ac') ac+=r[1]; else if(r[4]==='crew') crew+=r[1]; else if(r[4]==='pax') pax+=r[1]; });
-  CFG.empty=Math.round(ac*10)/10; CFG.crew=crew; CFG.pax=pax; CFG.eq.forEach(e=>e.on=false); save();
+  CFG.empty=Math.round(ac*10)/10; CFG.crew=crew; CFG.pax=pax; (CFG.eq||[]).forEach(e=>e.on=false); save();
   ['empty','crew','pax','load'].forEach(k=>{ const el=$('w_'+k); if(el) el.value=CFG[k]; }); }
-function cgMode(on){ if(on===!!CGM.on) return; if(on){ CGM.simple={empty:CFG.empty,crew:CFG.crew,pax:CFG.pax,load:CFG.load,aux:CFG.aux,eq:CFG.eq.map(e=>!!e.on)}; CGM.on=true; if(!(+CFG.load>0)&&CGM.hoistOn) CFG.load=CGM.hw; cgApply(); }
+function cgMode(on){ if(on===!!CGM.on) return; if(on){ CGM.simple={empty:CFG.empty,crew:CFG.crew,pax:CFG.pax,load:CFG.load,aux:CFG.aux,eq:(CFG.eq||[]).map(e=>!!e.on)}; CGM.on=true; if(!(+CFG.load>0)&&CGM.hoistOn) CFG.load=CGM.hw; cgApply(); }
   else { const s=CGM.simple; CGM.on=false; if(s){ CFG.empty=s.empty; CFG.crew=s.crew; CFG.pax=s.pax; CFG.load=s.load; CFG.aux=s.aux; (s.eq||[]).forEach((o,i)=>{ if(CFG.eq[i]) CFG.eq[i].on=o; }); } save(); ['empty','crew','pax','load'].forEach(k=>{ const el=$('w_'+k); if(el) el.value=CFG[k]; }); }
   cgSave(); try{ fuelLim(); }catch(e){} try{ drawEq(); }catch(e){} update(); }
 function cgChart(C,kind){ const A=cgA(), lon=kind==='lon', W0=440, H0=300, L=48, R=12, T=14, B=36, pw=W0-L-R, ph=H0-T-B;
@@ -7443,51 +7443,58 @@ function cgItems(){ const A=cgA(), M=CGM, ultra=M.tv!=='no', it={};
   const hoistOn=(+CFG.load||0)>0; if(hoistOn) it.hw={k:'hw',lb:'ホイスト吊り上げ',sub:'隊員＋要救助者',unit:'kg',min:0,max:300,step:5,perRev:100,get:()=>+CFG.load||0,set:v=>{ CFG.load=Math.max(0,v); if(v>0) M.hw=v; const w=$('w_load'); if(w) w.value=CFG.load; save(); },pre:[[80,'1名'],[160,'2名'],[200,'200'],[250,'250']]};
   return it; }
 const CG_ORDER=['PI','CO','A','B','C','D','E','F','G','H','I','L','M','N','bag','hw','fuel'];
-function cgMap(C,portrait){ const A=cgA(), M=CGM, ultra=M.tv!=='no', fm=n=>Math.round(n).toLocaleString(), f=n=>n.toFixed(1);
-  // 座標：STA・BL（mm）→ 画面。横長は機首が左・上が機体の右、縦長は機首が上・右が機体の右
-  const VW=portrait?460:960, VH=portrait?735:500, P=portrait?((sta,bl)=>[230+bl*0.15,34+(sta+300)*0.072]):((sta,bl)=>[34+(sta+300)*0.09,250-bl*0.16]);
-  const pt=(sta,bl)=>P(sta,bl).map(f).join(' ');
-  // 機体の外形：飛行規程 第6-1図（座席位置図）の線画にならう。楕円の機首・まっすぐなキャビン・スポンソン（破線）・後部の絞り・テールブーム・中心線
+function cgMap(C,portrait){ const A=cgA(), M=CGM, ultra=M.tv!=='no', mx10=M.tv==='u2', fm=n=>Math.round(n).toLocaleString(), f=n=>n.toFixed(1);
+  // 座標：STA・BL（mm）→ 画面。横長は機首が左・上が機体の右、縦長は機首が上・右が機体の右。指で押しやすいよう、横方向（BL）は前後より大きく描く
+  const VW=portrait?480:1020, VH=portrait?1060:820, P=portrait?((sta,bl)=>[240+bl*0.22,24+(sta-800)*0.12]):((sta,bl)=>[30+(sta+300)*0.092,410-bl*0.27]);
+  const pt=(sta,bl)=>P(sta,bl).map(f).join(' '), FS=portrait?1:1.05;
+  // 機体の外形：飛行規程 第6-1図（座席位置図）の線画にならう
   const q=(a,b)=>pt(a*1000,b*1000), k=0.5523, nx=2.8, nt=-0.3, hw=1.0;
   const hull=`M${q(nx,hw)} L${q(7.13,hw)} L${q(8.9,0.42)} L${q(11.5,0.36)} L${q(11.5,-0.36)} L${q(8.9,-0.42)} L${q(7.13,-hw)} L${q(nx,-hw)} C${q(nx-(nx-nt)*k,-hw)} ${q(nt,-hw*k)} ${q(nt,0)} C${q(nt,hw*k)} ${q(nx-(nx-nt)*k,hw)} ${q(nx,hw)} Z`;
   let h=`<defs><clipPath id="cgclip"><rect x="0" y="0" width="${VW}" height="${VH}"/></clipPath></defs><g clip-path="url(#cgclip)" class="cgline">`;
   const rect=(s0,s1,b0,b1)=>{ const a=P(s0,b0), b=P(s1,b1); return {x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),w:Math.abs(b[0]-a[0]),h:Math.abs(b[1]-a[1])}; };
-  const R=(r,attr)=>`<rect x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}" ${attr}/>`;
-  { const a=P(5810,1430), b=P(7080,-1430), x=Math.min(a[0],b[0]), y=Math.min(a[1],b[1]), w=Math.abs(b[0]-a[0]), hh=Math.abs(b[1]-a[1]); h+=`<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(hh)}" rx="14" fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-dasharray="7 5"/>`; }
-  h+=`<path d="${hull}" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/>`;
-  [[5920,1.43],[6660,1.0],[7000,1.43]].forEach(([s,b])=>{ const a=P(s,b*1000), c=P(s,-b*1000); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(c[0])}" y2="${f(c[1])}" stroke="var(--ink)" stroke-width=".9" opacity=".55"/>`; });
-  [[1.2,1.0],[-1.2,-1.0]].forEach(([b0,b1])=>{ const a=P(5920,b0*1000), c=P(7000,b0*1000); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(c[0])}" y2="${f(c[1])}" stroke="var(--ink)" stroke-width=".9" opacity=".55"/>`; });
-  [7700,8400].forEach(s=>{ const w=hw-(hw-0.42)*(s-7130)/(8900-7130), a=P(s,w*1000), c=P(s,-w*1000); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(c[0])}" y2="${f(c[1])}" stroke="var(--ink)" stroke-width=".9" opacity=".55"/>`; });
-  { const a=P(-500,0), c=P(11500,0); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(c[0])}" y2="${f(c[1])}" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="22 5 4 5" opacity=".75"/>`; }
+  const R=(r,attr)=>`<rect x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}" ${attr}/>`, L=(a,c,attr)=>`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(c[0])}" y2="${f(c[1])}" ${attr}/>`;
+  h+=R(rect(5810,7080,1430,-1430),'rx="18" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="8 6"');
+  h+=`<path d="${hull}" fill="var(--panel)" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  [[5920,1.43],[6660,1.0],[7000,1.43]].forEach(([s,b])=>{ h+=L(P(s,b*1000),P(s,-b*1000),'stroke="var(--ink)" stroke-width="1" opacity=".5"'); });
+  [1.2,-1.2].forEach(b=>{ h+=L(P(5920,b*1000),P(7000,b*1000),'stroke="var(--ink)" stroke-width="1" opacity=".5"'); });
+  [7700,8400].forEach(s=>{ const w=hw-(hw-0.42)*(s-7130)/(8900-7130); h+=L(P(s,w*1000),P(s,-w*1000),'stroke="var(--ink)" stroke-width="1" opacity=".5"'); });
+  h+=L(P(-500,0),P(11500,0),'stroke="var(--ink)" stroke-width="1.3" stroke-dasharray="26 6 5 6" opacity=".7"');
   // 右ドア（ホイスト側）
-  { const a=P(3700,hw*1000), b=P(5200,hw*1000); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="#2f80ed" stroke-width="4" stroke-linecap="round"/>`; const t=P(4450,hw*1000); h+=`<text x="${f(t[0]+(portrait?9:0))}" y="${f(t[1]+(portrait?4:-7))}" font-size="11" fill="#2f80ed" text-anchor="${portrait?'start':'middle'}" ${portrait?`transform="rotate(90 ${f(t[0]+9)} ${f(t[1]+4)})"`:''}>右ドア（ホイスト側）</text>`; }
-  { const n=portrait?P(-650,0):P(500,0); h+=`<text x="${f(n[0])}" y="${f(n[1]+(portrait?0:-8))}" font-size="12.5" fill="var(--muted)" text-anchor="middle" font-weight="700">${portrait?'▲ 機首':'◀ 機首'}</text>`; }
+  { h+=L(P(3700,hw*1000),P(5200,hw*1000),'stroke="#2f80ed" stroke-width="6" stroke-linecap="round"'); const t=P(portrait?4950:4450,hw*1000); h+=portrait?`<text x="${f(t[0]-8)}" y="${f(t[1])}" font-size="15" fill="#2f80ed" text-anchor="middle" transform="rotate(90 ${f(t[0]-8)} ${f(t[1])})">右ドア</text>`:`<text x="${f(t[0])}" y="${f(t[1]+22)}" font-size="16" fill="#2f80ed" text-anchor="middle">右ドア（ホイスト側）</text>`; }
+  { const n=portrait?P(900,0):P(400,0); h+=`<text x="${f(n[0]+(portrait?40:0))}" y="${f(n[1]+(portrait?18:-12))}" font-size="18" fill="var(--muted)" text-anchor="middle" font-weight="700">${portrait?'▲ 機首':'◀ 機首'}</text>`; }
+  // ヘリテレのカメラ（機外）：ULTRA（可視）は左、MX10（赤外）は右
+  const cam=(bl,nm,sub,lens)=>{ const c=P(2250,bl), r=portrait?17:20, up=bl>0; let t;
+    if(portrait){ t=`<text x="${f(c[0]+(bl>0?-24:24))}" y="${f(c[1]+5)}" font-size="15" font-weight="800" fill="var(--ink)" text-anchor="${bl>0?'end':'start'}">${nm}<tspan font-weight="500" fill="var(--muted)" font-size="13"> ${sub}</tspan></text>`; }
+    else t=`<text x="${f(c[0])}" y="${f(c[1]+(up?-28:40))}" font-size="16" font-weight="800" fill="var(--ink)" text-anchor="middle">${nm}<tspan font-weight="500" fill="var(--muted)" font-size="14"> ${sub}</tspan></text>`;
+    return `<g><circle cx="${f(c[0])}" cy="${f(c[1])}" r="${r}" fill="#3b4148" stroke="var(--ink)" stroke-width="1.6"/><circle cx="${f(c[0])}" cy="${f(c[1])}" r="${r*0.45}" fill="${lens}" stroke="#111" stroke-width="1"/><circle cx="${f(c[0]-r*0.15)}" cy="${f(c[1]-r*0.15)}" r="${r*0.12}" fill="#fff" opacity=".8"/>${t}</g>`; };
+  if(ultra) h+=cam(portrait?-1000:-1180,'ULTRA','可視','#8fd0ff');
+  if(mx10) h+=cam(portrait?1000:1180,'MX10','赤外','#ff8a65');
   // 燃料タンク（床下）
-  { const r=rect(5950,6950,-560,560), fr=Math.max(0,Math.min(1,(+CFG.fuel||0)/A.fuelMax)), sel=CGU.sel==='fuel';
-    const fill=portrait?{x:r.x+2,y:r.y+2+(r.h-4)*(1-fr),w:r.w-4,h:(r.h-4)*fr}:{x:r.x+2,y:r.y+2+(r.h-4)*(1-fr),w:r.w-4,h:(r.h-4)*fr};
-    h+=`<g class="cgtap" data-cgi="fuel" role="button" tabindex="0" aria-label="搭載燃料 ${fm(+CFG.fuel||0)} kg">${R(r,`rx="8" fill="transparent" stroke="var(--c-fuel)" stroke-width="${sel?3.5:2}" stroke-dasharray="${sel?'':'6 3'}"`)}${R(fill,'rx="5" fill="var(--c-fuel)" opacity=".35"')}<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2-4)}" font-size="11" text-anchor="middle" fill="var(--c-fuel)" font-weight="800">燃料</text><text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+14)}" font-size="16" text-anchor="middle" fill="var(--ink)" font-weight="800">${fm(+CFG.fuel||0)}</text></g>`; }
+  { const r=rect(portrait?6100:5950,6950,-560,560), fr=Math.max(0,Math.min(1,(+CFG.fuel||0)/A.fuelMax)), sel=CGU.sel==='fuel', fill={x:r.x+3,y:r.y+3+(r.h-6)*(1-fr),w:r.w-6,h:(r.h-6)*fr};
+    h+=`<g class="cgtap" data-cgi="fuel" role="button" tabindex="0" aria-label="搭載燃料 ${fm(+CFG.fuel||0)} kg">${R(r,`rx="10" fill="var(--panel)" stroke="var(--c-fuel)" stroke-width="${sel?5:2.5}" stroke-dasharray="${sel?'':'8 4'}"`)}${R(fill,'rx="7" fill="var(--c-fuel)" opacity=".38"')}<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2-6)}" font-size="16" text-anchor="middle" fill="var(--c-fuel)" font-weight="800">燃料</text><text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+20)}" font-size="24" text-anchor="middle" fill="var(--ink)" font-weight="800">${fm(+CFG.fuel||0)}</text></g>`; }
   // 荷物室
-  { const r=rect(7300,8300,-500,500), sel=CGU.sel==='bag', v=+M.bag||0; h+=`<g class="cgtap" data-cgi="bag" role="button" tabindex="0" aria-label="荷物室 ${v} kg">${R(r,`rx="7" fill="${v>0?'color-mix(in srgb,var(--c-pax) 22%,transparent)':'transparent'}" stroke="${sel?'#1c6fb8':'var(--ink)'}" stroke-width="${sel?3.5:1.2}" stroke-dasharray="${sel?'':'5 3'}"`)}<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2-4)}" font-size="11" text-anchor="middle" fill="var(--muted)" font-weight="700">荷物室</text><text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+13)}" font-size="15" text-anchor="middle" fill="var(--ink)" font-weight="800">${v?v+' kg':'—'}</text></g>`; }
-  // ULTRA ラック
-  if(ultra){ const r=rect(3200,3650,-920,420); h+=R(r,'rx="6" fill="color-mix(in srgb,var(--muted) 18%,var(--paper))" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3"')+`<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+4)}" font-size="10.5" text-anchor="middle" fill="var(--muted)" font-weight="700">ULTRA</text>`; }
-  // 座席
-  const seat=(k,sta,bl,crew)=>{ const c=P(sta,bl), v=+M.p[k]||0, sel=CGU.sel===k, on=v>0, col=crew?'var(--c-crew)':'var(--c-pax)', S=portrait?34:38, lb=k==='PI'?'機長':k==='CO'?'副':k;
+  { const r=rect(7300,8300,-500,500), sel=CGU.sel==='bag', v=+M.bag||0; h+=`<g class="cgtap" data-cgi="bag" role="button" tabindex="0" aria-label="荷物室 ${v} kg">${R(r,`rx="9" fill="${v>0?'color-mix(in srgb,var(--c-pax) 22%,var(--panel))':'var(--panel)'}" stroke="${sel?'#1c6fb8':'var(--ink)'}" stroke-width="${sel?5:1.6}" stroke-dasharray="${sel?'':'7 4'}"`)}<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2-6)}" font-size="16" text-anchor="middle" fill="var(--muted)" font-weight="700">荷物室</text><text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+20)}" font-size="22" text-anchor="middle" fill="var(--ink)" font-weight="800">${v?v+' kg':'—'}</text></g>`; }
+  // ヘリテレのラック（機内）
+  if(ultra){ const r=rect(3150,3680,-920,420); h+=R(r,'rx="8" fill="color-mix(in srgb,var(--muted) 18%,var(--panel))" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"')+`<text x="${f(r.x+r.w/2)}" y="${f(r.y+r.h/2+6)}" font-size="15" text-anchor="middle" fill="var(--muted)" font-weight="700">ラック</text>`; }
+  // 座席（押しやすい大きさ）
+  const S=portrait?66:62;
+  const seat=(k,sta,bl,crew)=>{ const c=P(sta,bl), v=+M.p[k]||0, sel=CGU.sel===k, on=v>0, col=crew?'var(--c-crew)':'var(--c-pax)', lb=k==='PI'?'機長':k==='CO'?'副操':k;
     return `<g class="cgtap cgseat" data-cgi="${k}" role="button" tabindex="0" aria-label="${k==='PI'?'操縦士':k==='CO'?'副操縦士':k+'席'} ${on?v+' kg':'空席'}">
-      <rect x="${f(c[0]-S/2-4)}" y="${f(c[1]-S/2-4)}" width="${S+8}" height="${S+8}" fill="transparent"/>
-      <rect x="${f(c[0]-S/2)}" y="${f(c[1]-S/2)}" width="${S}" height="${S}" rx="2" fill="${on?col:'var(--panel)'}" stroke="${sel?'#1c6fb8':'var(--ink)'}" stroke-width="${sel?4:1.5}"/>
-      ${on?`<text x="${f(c[0])}" y="${f(c[1]-3)}" font-size="${lb.length>1?10:12}" text-anchor="middle" fill="#fff" font-weight="800" opacity=".9">${lb}</text><text x="${f(c[0])}" y="${f(c[1]+12)}" font-size="13" text-anchor="middle" fill="#fff" font-weight="800">${v}</text>`:`<text x="${f(c[0])}" y="${f(c[1]+(lb.length>1?4:6))}" font-size="${lb.length>1?11:17}" text-anchor="middle" fill="var(--ink)" font-weight="${lb.length>1?700:500}">${lb}</text>`}</g>`; };
-  h+=seat('PI',2820,550,true)+seat('CO',2820,-550,true);
+      <rect x="${f(c[0]-S/2-5)}" y="${f(c[1]-S/2-5)}" width="${S+10}" height="${S+10}" fill="transparent"/>
+      <rect x="${f(c[0]-S/2)}" y="${f(c[1]-S/2)}" width="${S}" height="${S}" rx="5" fill="${on?col:'var(--panel)'}" stroke="${sel?'#1c6fb8':'var(--ink)'}" stroke-width="${sel?5:2}"/>
+      ${on?`<text x="${f(c[0])}" y="${f(c[1]-7)}" font-size="${lb.length>1?14:16}" text-anchor="middle" fill="#fff" font-weight="800" opacity=".9">${lb}</text><text x="${f(c[0])}" y="${f(c[1]+20)}" font-size="24" text-anchor="middle" fill="#fff" font-weight="800">${v}</text>`:`<text x="${f(c[0])}" y="${f(c[1]+(lb.length>1?6:9))}" font-size="${lb.length>1?17:26}" text-anchor="middle" fill="var(--ink)" font-weight="${lb.length>1?700:500}">${lb}</text>`}</g>`; };
+  const pSta=portrait?2820:2600; h+=seat('PI',pSta,550,true)+seat('CO',pSta,-550,true);
   A.rows.flat().forEach(k=>{ if(ultra&&A.rack.includes(k)) return; const s=A.seats[k]; h+=seat(k,s[0]*1000,s[1]*1000,false); });
-  if(!portrait){ [[737,'I'],[254,'L'],[-254,'M'],[-737,'N']].forEach(([b,k],i)=>{ const s=A.seats[k], c=P(s[0]*1000+22,b), y=b>0?(i?120:40):(i===2?380:460), t=[880,y]; h+=`<path d="M${f(c[0]+18)} ${f(c[1])} L${f(t[0]-6)} ${f(t[1]+(b>0?8:-12))}" stroke="var(--ink)" stroke-width=".9" opacity=".6" fill="none"/><text x="${f(t[0])}" y="${f(t[1])}" font-size="13" fill="var(--ink)" text-anchor="middle">BL</text><text x="${f(t[0])}" y="${f(t[1]+15)}" font-size="13" fill="var(--ink)" text-anchor="middle">${b.toFixed(1)}</text>`; }); }
+  if(!portrait){ const ly={737:56,254:176,'-254':644,'-737':764}; [[737,'I'],[254,'L'],[-254,'M'],[-737,'N']].forEach(([b,k])=>{ const s=A.seats[k], c=P(s[0]*1000,b), t=[VW-46,ly[b]]; h+=`<path d="M${f(c[0]+S/2)} ${f(c[1])} L${f(t[0]-10)} ${f(t[1]+(b>0?12:-18))}" stroke="var(--ink)" stroke-width="1" opacity=".55" fill="none"/><text x="${f(t[0])}" y="${f(t[1])}" font-size="16" fill="var(--ink)" text-anchor="middle">BL</text><text x="${f(t[0])}" y="${f(t[1]+18)}" font-size="16" fill="var(--ink)" text-anchor="middle">${b.toFixed(1)}</text>`; }); }
   // ホイスト（右ドア）
-  if((+CFG.load||0)>0){ const a=P(4250,1080), b=portrait?P(4250,880):P(4250,1500), sel=CGU.sel==='hw'; h+=`<g class="cgtap" data-cgi="hw" role="button" tabindex="0" aria-label="ホイスト吊り上げ ${fm(+CFG.load)} kg"><line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="var(--c-load)" stroke-width="5" stroke-linecap="round"/><circle cx="${f(b[0])}" cy="${f(b[1])}" r="${sel?15:13}" fill="var(--c-load)" stroke="${sel?'#1c6fb8':'none'}" stroke-width="3"/><text x="${f(b[0])}" y="${f(b[1]+4)}" font-size="10.5" text-anchor="middle" fill="#fff" font-weight="800">${fm(+CFG.load)}</text></g><text x="${f(b[0]+(portrait?0:18))}" y="${f(b[1]+(portrait?-19:4))}" font-size="11" fill="var(--c-load)" font-weight="700" text-anchor="${portrait?'middle':'start'}">ホイスト</text>`; }
+  if((+CFG.load||0)>0){ const a=P(4250,1000), b=portrait?P(4150,780):P(4250,1330), sel=CGU.sel==='hw', r=portrait?28:30; h+=`<g class="cgtap" data-cgi="hw" role="button" tabindex="0" aria-label="ホイスト吊り上げ ${fm(+CFG.load)} kg">${L(a,b,'stroke="var(--c-load)" stroke-width="7" stroke-linecap="round"')}<circle cx="${f(b[0])}" cy="${f(b[1])}" r="${r+6}" fill="transparent"/><circle cx="${f(b[0])}" cy="${f(b[1])}" r="${r}" fill="var(--c-load)" stroke="${sel?'#1c6fb8':'var(--panel)'}" stroke-width="${sel?5:2.5}"/><text x="${f(b[0])}" y="${f(b[1]-5)}" font-size="12" text-anchor="middle" fill="#fff" font-weight="700">ホイスト</text><text x="${f(b[0])}" y="${f(b[1]+15)}" font-size="19" text-anchor="middle" fill="#fff" font-weight="800">${fm(+CFG.load)}</text></g>`; }
   // 重心：この重量での許容範囲（破線）と全備・着陸時の重心
   const p0=C.P[0], pl=C.P.filter(p=>!p.ng).slice(-1)[0];
   if(p0&&!p0.ng){ const lr=cgRange(A.env.lon,p0.w), br=cgRange(cgLatPoly(C.hoist),p0.w);
-    if(lr&&br){ const r=rect(lr[0]*1000,lr[1]*1000,br[0]*1000,br[1]*1000); h+=R(r,`fill="rgba(46,160,90,.13)" stroke="#2e9a5a" stroke-width="1.6" stroke-dasharray="5 3"`); }
-    const cross=(p,c,r)=>{ const q=P(p.x*1000,p.y*1000); return `<g><circle cx="${f(q[0])}" cy="${f(q[1])}" r="${r}" fill="none" stroke="${c}" stroke-width="2.5"/><path d="M${f(q[0]-r-5)} ${f(q[1])} H${f(q[0]+r+5)} M${f(q[0])} ${f(q[1]-r-5)} V${f(q[1]+r+5)}" stroke="${c}" stroke-width="1.6"/></g>`; };
-    if(pl&&pl!==p0){ const a=P(p0.x*1000,p0.y*1000), b=P(pl.x*1000,pl.y*1000); h+=`<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="3 3"/>`+cross(pl,pl.ok?'#1c6fb8':'#d4361e',5); }
-    h+=cross(p0,p0.ok?'var(--ink)':'#d4361e',8); }
+    if(lr&&br) h+=R(rect(lr[0]*1000,lr[1]*1000,br[0]*1000,br[1]*1000),`fill="rgba(46,160,90,.15)" stroke="#2e9a5a" stroke-width="2" stroke-dasharray="6 4" pointer-events="none"`);
+    const cross=(p,c,r)=>{ const qq=P(p.x*1000,p.y*1000); return `<g pointer-events="none"><circle cx="${f(qq[0])}" cy="${f(qq[1])}" r="${r}" fill="none" stroke="${c}" stroke-width="3"/><path d="M${f(qq[0]-r-7)} ${f(qq[1])} H${f(qq[0]+r+7)} M${f(qq[0])} ${f(qq[1]-r-7)} V${f(qq[1]+r+7)}" stroke="${c}" stroke-width="2"/></g>`; };
+    if(pl&&pl!==p0){ h+=L(P(p0.x*1000,p0.y*1000),P(pl.x*1000,pl.y*1000),'stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 4" pointer-events="none"')+cross(pl,pl.ok?'#1c6fb8':'#d4361e',7); }
+    h+=cross(p0,p0.ok?'var(--ink)':'#d4361e',11); }
   h+=`</g>`;
   return `<svg viewBox="0 0 ${VW} ${VH}" class="cgmapsvg${portrait?' pt':''}" role="img" aria-label="機内の見取り図（席をタップして体重を入れる）">${h}</svg>`; }
 // ダイヤル
