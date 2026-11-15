@@ -1298,6 +1298,10 @@ a{color:#7cc4ff}
       <div id="xsPrev" class="xsprev" hidden></div>
       <p class="legend">地図で選んだ地点を中心に、機首方位（風の欄の「機首方位」）の線と、それに直角な左右の線で地形を切った断面です。ローター面の高さは「樹木・障害物の高さ」＋「ホバリング高度」で、ヘリは真上から見た位置どおり断面の中心にいます。地形は、ネットにつながれば地理院の標高タイル（約10 m間隔）、つながらなければ内蔵データ（約50 m四方の最高点をなめらかにつないだもの、実際より高め）を使います。青の柱はローターからの吹き下ろしで、Airbus SPN 3684-P-00（Noise & downwash considerations for ground operators）に従い、誘導速度の2倍（2Vi）がローター直径の3倍までほぼそのまま届き、それより高いと弱まって10直径でほぼ静止するとしています。地表に沿った色の帯は、地表で向きを変えて広がる吹き出し（同SPNのPrestonモデル：0.5〜1直径で最大、その先は距離に反比例）に、風の欄で選んだ風のこの断面方向の成分を足した強さと向きです（白い線と矢印が流れる向き）。風があると吹き下ろしは風下へ流されて地表に当たり、風上側では吹き出しが風に押し戻されて地面渦ができます。色はSPNの目安（60 km/hで小石、80〜90 km/hで石・瓦、100 km/hで歩けない、130 km/hで立っていられない）で分けています。開けた所では四方に広がって急に弱まりますが、谷や沢では両側の斜面に挟まれて一方向にしか逃げられないため、遠くまで強いまま流れます（断面の各点で、横方向に10 m以上高くなる斜面までの幅から判定）。急な斜面に当たると跳ね返って巻き上がり、ローターに戻ることがあります。数値は単純化した模型による目安で、実際の風・地形の細部・樹木で大きく変わります。地上の隊員・要救助者・荷物・テント・ツェルト・ヘルメットの固定と、谷の下流側にいる人への注意に使ってください。</p>
     </section>
+    <section class="box" id="rtfsec" aria-label="水没家屋への隊員投入">
+      <details id="rtfDet"><summary><h2>水没家屋への投入 <small>福島ロボットテストフィールド・水没市街地</small></h2><p class="rtfintro">ベランダへ隊員を入れる時の、軒・手すり・ワイヤー・吹き下ろしを実寸の断面で見ます（タップで開く）</p></summary>
+      <div id="rtfBody"></div></details>
+    </section>
     <section class="box" aria-label="離脱中の高度低下">
       <h2>片発故障時の高度低下 <small>第4-43図</small></h2>
       <div class="hl">
@@ -2183,7 +2187,7 @@ function update(){ try{ fuelFill(); hhFill(); }catch(e){} try{ mkHeli(); }catch(
     (tp.ref?box.querySelector('.reffold'):box).appendChild(el);
     if(tp.ref&&!r.err){ const sm=box.querySelector('.rfsum'); const mm=r.W-W; sm.innerHTML+=`<small>${/OEI/.test(tp.name)?'OEI':/連続/.test(tp.name)?'連続':'離陸'}</small><b style="color:${colorFor(mm)}">${Math.round(r.W).toLocaleString()}</b>`; }
   });
-  drawStack(W); drawBurn(W); updateWind(H,T,W); drawRel(H,T); drawCeil(H,T,W,wind); if(typeof xsRedraw==='function'){ XS.H=H; XS.T=T; XS.W=W; xsRedraw(); }
+  drawStack(W); drawBurn(W); updateWind(H,T,W); drawRel(H,T); drawCeil(H,T,W,wind); if(typeof xsRedraw==='function'){ XS.H=H; XS.T=T; XS.W=W; xsRedraw(); } if(typeof rtfDraw==='function'){ try{ rtfDraw(H,T,W); }catch(e){ console.warn('rtf',e); } }
   // height loss
   const hl=hlCalc(H,T,W,wind); state.hl=hl;
   if(hl.err){$('hlv').textContent='–';$('hlmsg').innerHTML=`<span class="caution">${hl.err}</span>`;drawHL(null,hh);}
@@ -6957,4 +6961,210 @@ document.addEventListener('change',e=>{ const i=e.target; if(!(i&&i.type==='file
 // ---------- quick toggles get readable state for screen readers ----------
 document.addEventListener('click',e=>{ if(e.target.closest('nav.jump a')){ closePops(); const tp=$$('#trPop'); if(tp) tp.hidden=true; } },true);
 })();
+</script>
+<style id="rtfCss">
+#rtfsec>details>summary{cursor:pointer;list-style:none}#rtfsec>details>summary::-webkit-details-marker{display:none}
+#rtfsec>details>summary h2{display:inline-flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0}#rtfsec>details>summary h2::before{content:'▸';font-size:.8em;color:var(--muted)}#rtfsec>details[open]>summary h2::before{content:'▾'}
+#rtfsec>details>summary small{font-weight:500;color:var(--muted)}.rtfintro{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.rtfctl{display:grid;gap:10px;margin:8px 0}.rtfrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.rtflb{font-weight:700;min-width:3em}
+.rtfsl{display:block;font-size:13.5px}.rtfsl b{margin-left:6px}.rtfsl small{color:var(--muted);margin-left:4px}.rtfsl input{width:100%;margin-top:4px}
+.rtfnum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:8px 0}.rtfnum>div{border:1px solid var(--rule);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:1px}
+.rtfnum small{color:var(--muted);font-size:11.5px}.rtfnum b{font-size:16px;font-variant-numeric:tabular-nums}.rtfnum b.warn{color:var(--warn)}
+.rtfst{flex-wrap:wrap}.rtfst .xst small:last-child{font-size:11px}.rtfsrc{margin-top:8px;font-size:12.5px}.rtfsrc summary{cursor:pointer;font-weight:700}.rtfsrc li{margin:3px 0}
+.rtfdim summary{cursor:pointer;font-weight:700;font-size:13px}
+</style>
+<script>
+// ==== 水没家屋への隊員投入（福島ロボットテストフィールド・水没市街地フィールド）====
+// 公表値：屋外水槽 50 m×19 m・水深0.7 m（うち10 m×10 mは深さ5 m）、水没住宅A・Bとも建築面積53 m²（A：1階の一部が冠水、B：1階が全部冠水）、電柱・電線あり
+//   （福島イノベーション・コースト構想推進機構「福島ロボットテストフィールド」パンフレット、ロボットテストフィールド「水中・水上ロボットエリア」）
+// 53 m² ≒ 4間×4間（7.28 m×7.28 m）。国土地理院の建物外形（軒を含む）は 8.8 m 角前後で、軒の出 約0.6〜0.75 m と合う。
+// 位置は国土地理院の建物外形と航空写真から。屋外水槽は東西に長く、西寄りに2棟、東端に深い部分。
+// 寸法の「公的基準」：手すり 1.1 m（建築基準法施行令126条：2階以上のバルコニー）、1階の床高 0.45 m 以上（同22条）。
+//   階高 2.9 m・ベランダ奥行 0.91 m（半間）・軒の出 0.6 m・屋根 4寸勾配は一般的な木造2階建ての値（図面は未確認）。
+const RTFG={pool:[37.63322,141.01285],west:[37.633275,141.012791],east:[37.633277,141.01292]};
+const RTFP={std:{hr:1.1,dv:0.91,e:0.6,ht:2.3,dep:7.28,wf:4.7},sk:{hr:0.95,dv:1.0,e:1.0,ht:2.0,dep:7.28,wf:4.7}};
+const RTFFL={A:1.9,B:0.5};
+const RTF0={open:false,h:'B',dim:'std',my:null,hR:30,off:2,U:0,kg:100,fl:null};
+let RTF; try{ RTF=Object.assign({},RTF0,JSON.parse(localStorage.getItem('hoRtf')||'{}')); }catch(e){ RTF=Object.assign({},RTF0); }
+const rtfSave=()=>{ try{ localStorage.setItem('hoRtf',JSON.stringify(RTF)); }catch(e){} };
+const RTFA={raf:0,fd:null,vis:true,io:null};
+const RTF_HOFF=1.7, RTF_BOOM=2.0, RTF_BELLY=3.6; // 目安：ホイストの吊り点は機体中心線から右へ約1.7 m、ローター面から約2.0 m下。機体下面はローター面の約3.6 m下
+function rtfDim(){ const p=RTF.dim==='my'&&RTF.my?RTF.my:RTFP[RTF.dim]||RTFP.std; const fl=RTF.fl!=null&&RTF.dim==='my'?RTF.fl:RTFFL[RTF.h]; return Object.assign({},p,{fl}); }
+// 断面の座標：s＝ローター軸からの水平距離（左＝家の側が負）、z＝水面からの高さ
+function rtfGeo(){ const d=rtfDim(), sp=-RTF_HOFF, se=sp-RTF.off, sw=se-d.e, sr=sw+d.dv, sb=sw-d.dep, sc=sw-d.dep/2, f=d.fl, zt=f+d.ht, pitch=0.4;
+  const roof=s=>s<sb-d.e||s>se?NaN:zt+0.12+pitch*Math.max(0,Math.min(se-s,s-(sb-d.e))); // 寄棟でなく切妻（棟は家の中央）
+  return {d,sp,se,sw,sr,sb,sc,f,zt,pitch,roof,ridge:zt+0.12+pitch*(d.dep/2+d.e),fl1:f-2.9,edge:sw+d.wf}; }
+function rtfField(vi,hR,U){ const G=rtfGeo(), ZR=Math.max(40,hR*1.6), N=XN, ds=[...Array(N)].map((_,i)=>-ZR+2*ZR*i/(N-1));
+  const pf={ds,z:ds.map(()=>0),w:ds.map(()=>999),zr:ds.map(()=>0),cat:null}; const FL=xsFlow(pf,hR,vi,U), F=xsField(pf,hR,vi,U,FL,null);
+  // 家の中は流れなし。軒の下（ベランダ）は真上からの流れを軒がさえぎる（横からの吹き込みは残す）
+  const solid=(s,z)=>{ if(s>=G.sb&&s<=G.sw&&z<=G.roof(s)) return true; if(s>=G.sb-G.d.e&&s<=G.se&&z>=G.zt&&z<=G.roof(s)) return true; if(s>=G.sw&&s<=G.sr&&z<=G.f&&z>=G.f-0.25) return true; return false; };
+  const vel=(s,z)=>{ if(solid(s,z)) return [0,0,0]; let v=F.vel(s,z); if(s>G.sw&&s<G.se&&z<G.zt&&z>G.f){ const k=Math.min(1,(G.se-s)/0.6); let uz=v[1]; if(uz<0) uz*=1-0.8*k; const us=v[0]*(s<G.sw+0.3?0.6:1); v=[us,uz,Math.hypot(us,uz)]; } return v; };
+  return {F,FL,G,vel,ZR,solid}; }
+function rtfShade(vel,gz,X0,Y0,pw,ph,s0,z1,ppm,U){ const q=3, nx=Math.max(8,Math.round(pw/q)), ny=Math.max(8,Math.round(ph/q)); let url='';
+  try{ const cv=document.createElement('canvas'); cv.width=nx; cv.height=ny; const cx=cv.getContext('2d'), im=cx.createImageData(nx,ny), d=im.data;
+    const v0s=Math.max(3,Math.abs(U)*1.15+1.2), stops=[[v0s,[143,191,230],0],[Math.max(5,v0s+1.5),[159,199,232],120]].concat(DWB.map((b,i)=>{ const hx=b[1], c=[parseInt(hx.slice(1,3),16),parseInt(hx.slice(3,5),16),parseInt(hx.slice(5,7),16)]; return [i===0?7.5:i<DWB.length-1?(DWB[i-1][0]+b[0])/2:42,c,i===0?150:205]; }).filter(x=>x[0]>Math.max(5,v0s+1.5)+0.5));
+    for(let j=0;j<ny;j++){ const z=z1-(j+0.5)*q/ppm; for(let i=0;i<nx;i++){ const s=s0+(i+0.5)*q/ppm, k=(j*nx+i)*4; if(z<gz(s)){ d[k+3]=0; continue; } const v=vel(s,z)[2]; if(v<=v0s){ d[k+3]=0; continue; }
+        let a=stops[0], b=stops[stops.length-1]; for(let m=0;m<stops.length-1;m++){ if(v>=stops[m][0]&&v<stops[m+1][0]){ a=stops[m]; b=stops[m+1]; break; } } if(v>=b[0]) a=b;
+        const t=a===b?0:(v-a[0])/(b[0]-a[0]); d[k]=a[1][0]+(b[1][0]-a[1][0])*t; d[k+1]=a[1][1]+(b[1][1]-a[1][1])*t; d[k+2]=a[1][2]+(b[1][2]-a[1][2])*t; d[k+3]=a[2]+(b[2]-a[2])*t; } }
+    cx.putImageData(im,0,0); url=cv.toDataURL('image/png'); }catch(e){}
+  return url?`<image href="${url}" x="${X0}" y="${Y0}" width="${pw}" height="${ph}" preserveAspectRatio="none"/>`:''; }
+// 家の断面（共通）：X,Y は座標変換、k は線の太さの倍率
+function rtfHouse(G,X,Y,k,detail){ const f=n=>n.toFixed(1), d=G.d, P=(pts)=>pts.map((p,i)=>(i?'L':'M')+f(X(p[0]))+' '+f(Y(p[1]))).join(' ')+'Z';
+  let h=''; const zr=G.ridge, sb=G.sb, sw=G.sw, se=G.se, ee=d.e;
+  // 1階（水中）と2階の壁
+  h+=`<path d="${P([[sb,G.fl1-0.45],[sw,G.fl1-0.45],[sw,G.zt],[sb,G.zt]])}" fill="#d9cdb8" stroke="#5b4a35" stroke-width="${1.4*k}"/>`;
+  // 床（2階・1階）
+  h+=`<path d="${P([[sb,G.f-0.25],[sw,G.f-0.25],[sw,G.f],[sb,G.f]])}" fill="#a58d6c"/>`;
+  h+=`<path d="${P([[sb,G.fl1-0.2],[sw,G.fl1-0.2],[sw,G.fl1],[sb,G.fl1]])}" fill="#a58d6c"/>`;
+  // 掃き出し窓（2階）・1階の窓
+  const ww=Math.min(1.7,d.dep*0.35); h+=`<rect x="${f(X(sw)-3*k)}" y="${f(Y(G.f+2.0))}" width="${f(6*k)}" height="${f(Y(G.f)-Y(G.f+2.0))}" fill="#9cc6e0" stroke="#3d5a73" stroke-width="${0.8*k}"/>`;
+  h+=`<rect x="${f(X(sw)-3*k)}" y="${f(Y(G.fl1+1.9))}" width="${f(6*k)}" height="${f(Y(G.fl1+0.9)-Y(G.fl1+1.9))}" fill="#9cc6e0" stroke="#3d5a73" stroke-width="${0.8*k}"/>`;
+  // 屋根（切妻・棟は中央）
+  h+=`<path d="${P([[sb-ee,G.zt],[G.sc,zr-0.12],[se,G.zt],[se,G.zt+0.12],[G.sc,zr],[sb-ee,G.zt+0.12]])}" fill="#5d6670" stroke="#2c3238" stroke-width="${1*k}"/>`;
+  h+=`<path d="M${f(X(se))} ${f(Y(G.zt))} L${f(X(G.sc))} ${f(Y(zr-0.12))} L${f(X(sb-ee))} ${f(Y(G.zt))}" fill="#e8e2d6" opacity=".55"/>`;
+  // 雨どい
+  h+=`<rect x="${f(X(se)-1.5*k)}" y="${f(Y(G.zt+0.1))}" width="${f(X(se+0.12)-X(se)+1.5*k)}" height="${f(Math.max(2*k,Y(G.zt-0.02)-Y(G.zt+0.1)))}" fill="#8a949c" stroke="#2c3238" stroke-width="${0.6*k}"/>`;
+  // ベランダ（床・手すり）
+  h+=`<path d="${P([[sw,G.f-0.25],[G.sr,G.f-0.25],[G.sr,G.f],[sw,G.f]])}" fill="#b9ad9a" stroke="#5b4a35" stroke-width="${1*k}"/>`;
+  const rt=G.f+d.hr; h+=`<path d="M${f(X(G.sr))} ${f(Y(G.f))} V${f(Y(rt))} M${f(X(G.sr)-4*k)} ${f(Y(rt))} H${f(X(G.sr)+1*k)}" stroke="#3a3f44" stroke-width="${2*k}" fill="none" stroke-linecap="round"/>`;
+  if(detail) for(let z=G.f+0.11;z<rt-0.05;z+=0.11) h+=`<line x1="${f(X(G.sr)-1.5*k)}" y1="${f(Y(z))}" x2="${f(X(G.sr)+0.5*k)}" y2="${f(Y(z))}" stroke="#3a3f44" stroke-width="${0.6*k}"/>`;
+  return h; }
+function rtfPerson(x,y,hpx,lean,pose,col){ const f=n=>n.toFixed(1); col=col||'#1d2b3a';
+  if(pose==='crouch'){ return `<g transform="translate(${f(x)},${f(y)})"><circle cx="0" cy="${f(-hpx*0.6)}" r="${f(hpx*0.1)}" fill="${col}"/><path d="M0 ${f(-hpx*0.5)} L${f(hpx*0.12)} ${f(-hpx*0.22)} L${f(-hpx*0.08)} ${f(-hpx*0.1)} L${f(hpx*0.1)} 0 M${f(hpx*0.02)} ${f(-hpx*0.42)} l${f(hpx*0.2)} ${f(hpx*0.08)}" stroke="${col}" stroke-width="${f(Math.max(1.4,hpx*0.08))}" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
+  return `<g transform="translate(${f(x)},${f(y)}) rotate(${(lean||0).toFixed(0)})"><circle cx="0" cy="${f(-hpx*0.9)}" r="${f(hpx*0.1)}" fill="${col}"/><path d="M0 ${f(-hpx*0.8)} V${f(-hpx*0.38)} M0 ${f(-hpx*0.38)} l${f(-hpx*0.13)} ${f(hpx*0.38)} M0 ${f(-hpx*0.38)} l${f(hpx*0.13)} ${f(hpx*0.38)} M${f(-hpx*0.17)} ${f(-hpx*0.62)} H${f(hpx*0.17)}" stroke="${col}" stroke-width="${f(Math.max(1.6,hpx*0.09))}" stroke-linecap="round" fill="none"/></g>`; }
+function rtfCalc(Fd,vi,hR){ const G=Fd.G, d=G.d, zb=hR-RTF_BOOM, zh=G.f+1.4; // フック：隊員の胸（足元＝ベランダ床の高さ）
+  const sOut=G.sr+0.25, sIn=G.sr-0.35; const L=Math.max(1,zb-zh);
+  const clr=sh=>{ const zt=G.zt; if(zt<=zh) return sh-G.se; const sl=sh+(G.sp-sh)*(zt-zh)/(zb-zh); return sl-G.se; };
+  const dx=G.sp-sOut, th=Math.atan2(dx,L), Fp=RTF.kg*Math.tan(Math.abs(th)), Tp=2*Math.PI*Math.sqrt(L/9.81), vs=Math.abs(dx)*Math.sqrt(9.81/L);
+  const gap=G.zt-(G.f+d.hr), tip=-ROTOR_D/2; const rz=G.roof(tip); const rclr=isNaN(rz)?null:hR-rz;
+  const v=(s,z)=>Fd.vel(s,z), vr=v(sOut+0.1,G.f+1.2), vv=v(G.sw+0.35,G.f+0.8), ve=Fd.F.vel(G.se+0.05,G.zt+0.3), vw=(()=>{ let m=[0,0,0]; for(let s=G.sr+0.2;s<=G.edge;s+=0.25){ const q=v(s,0.6); if(q[2]>m[2]) m=q; } return m; })(), vp=v(G.sp,G.zt+0.5);
+  return {zb,zh,L,dx,th,Fp,Tp,vs,cOut:clr(sOut),cIn:clr(sIn),gap,rclr,belly:hR-RTF_BELLY-G.ridge,vr,vv,ve,vw,vp,sOut,sIn}; }
+function rtfBig(Fd,vi,hR,U){ const G=Fd.G, F=Fd.F, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=22, B=34, pw=W-L-Rm;
+  const zlo=Math.min(G.fl1-1.2,-1.6), zhi=hR+3.2, phMax=W<600?420:470; let ppm=phMax/(zhi-zlo); const sMin=G.sb-G.d.e-2.2; let sMax=sMin+pw/ppm; if(sMax<ROTOR_D/2+3){ sMax=ROTOR_D/2+3; ppm=pw/(sMax-sMin); }
+  const ph=Math.round((zhi-zlo)*ppm), Hh=T+ph+B, X=s=>L+(s-sMin)*ppm, Y=z=>T+(zhi-z)*ppm, f=n=>n.toFixed(1), id='rtfz';
+  let h=`<defs><clipPath id="${id}c"><rect x="${L}" y="${T}" width="${pw}" height="${ph}"/></clipPath><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcebf8"/><stop offset="1" stop-color="#f4f8fb"/></linearGradient></defs>`;
+  h+=`<rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="url(#${id}s)" class="xsky"/><g clip-path="url(#${id}c)">`;
+  h+=rtfShade(Fd.vel,()=>0,L,T,pw,Math.round(Y(0)-T),sMin,zhi,ppm,U);
+  const seeds=[]; for(const k of [-0.86,-0.7,-0.52,-0.34,0.34,0.52,0.7,0.86]) seeds.push([k*ROTOR_D/2,F.zr+0.25*ROTOR_D/2]);
+  h+=xsStream({vel:Fd.vel,gz:()=>0},seeds,X,Y,{s:Math.max(-sMin,sMax),zt:zhi,zb:zlo,ay:1},0.4);
+  // 水（家の前）とプールの縁
+  const wy=Y(0); h+=`<rect x="${L}" y="${f(wy)}" width="${pw}" height="${f(T+ph-wy)}" fill="#7fb6d9" opacity=".85"/><path d="M${L} ${f(wy)} H${L+pw}" stroke="#2f6fb0" stroke-width="1.5"/>`;
+  const ex=X(G.edge); h+=`<rect x="${f(ex)}" y="${f(Y(0.35))}" width="${f(L+pw-ex)}" height="${f(T+ph-Y(0.35))}" fill="#c9c2b4" stroke="#6e6658" stroke-width="1.2"/><text x="${f(Math.min(L+pw-4,ex+6))}" y="${f(Math.min(T+ph-6,Y(0.35)+14))}" font-size="11" fill="#4b4438" text-anchor="${ex+120>L+pw?'end':'start'}">水槽の縁（家の壁から約${G.d.wf} m）</text>`;
+  h+=rtfHouse(G,X,Y,1,false);
+  // 人：隊員（手すりの外）・要救助者（ベランダ）
+  const hp=1.7*ppm; h+=rtfPerson(X(G.sw+0.4),Y(G.f),hp,0,'crouch','#7a1f1f');
+  h+=`</g>`;
+  // ヘリ（正面から見た姿：画面の左が機体の右＝ホイスト側）
+  const realW=ROTOR_D*ppm, yr=Y(hR); h+=`<g transform="translate(${f(X(0))},${f(yr)})"><line x1="${f(-realW/2)}" y1="0" x2="${f(realW/2)}" y2="0" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/><rect x="-2" y="0" width="4" height="${f(0.5*ppm)}" fill="var(--ink)"/><path d="M${f(-1.15*ppm)},${f(0.5*ppm)} Q${f(-1.35*ppm)},${f(2.2*ppm)} ${f(-0.9*ppm)},${f(2.9*ppm)} L${f(0.9*ppm)},${f(2.9*ppm)} Q${f(1.35*ppm)},${f(2.2*ppm)} ${f(1.15*ppm)},${f(0.5*ppm)} Z" fill="#1d4d9a"/><line x1="${f(-1*ppm)}" y1="${f(RTF_BELLY*ppm)}" x2="${f(1*ppm)}" y2="${f(RTF_BELLY*ppm)}" stroke="var(--ink)" stroke-width="2"/><path d="M${f(-1.1*ppm)} ${f(RTF_BOOM*ppm)} H${f(-RTF_HOFF*ppm)}" stroke="var(--ink)" stroke-width="2.4"/></g>`;
+  // ワイヤー（鉛直）と吊り点
+  h+=`<line x1="${f(X(G.sp))}" y1="${f(Y(hR-RTF_BOOM))}" x2="${f(X(G.sp))}" y2="${f(Y(G.f+1.4))}" stroke="#d4361e" stroke-width="1.8"/>`;
+  h+=rtfPerson(X(G.sp),Y(G.f-0.3),hp,0,'','#d4361e');
+  // 目盛り
+  { let g=''; const st=(sMax-sMin)>60?10:5; for(let s=Math.ceil(sMin/st)*st;s<=sMax;s+=st) g+=`<line x1="${f(X(s))}" y1="${T+ph}" x2="${f(X(s))}" y2="${T+ph+4}" stroke="var(--muted)"/><text x="${f(X(s))}" y="${T+ph+15}" font-size="10" text-anchor="middle" fill="var(--muted)">${s===0?'機体':Math.abs(s)+' m'}</text>`;
+    const hs=(zhi-zlo)>40?10:5; for(let a=0;a<zhi;a+=hs) g+=`<line x1="${L-4}" y1="${f(Y(a))}" x2="${L}" y2="${f(Y(a))}" stroke="var(--muted)"/><text x="${L-6}" y="${f(Y(a)+4)}" font-size="10" text-anchor="end" fill="var(--muted)">${a}</text>`;
+    g+=`<text x="${L-6}" y="${T-8}" font-size="10" text-anchor="end" fill="var(--muted)">水面から m</text>`; h+=g; }
+  if(Math.abs(U)>0.5){ const wx=L+pw-70, dir=Math.sign(U); h+=`<g><line x1="${wx-dir*24}" y1="${T+40}" x2="${wx+dir*24}" y2="${T+40}" stroke="#2f6fb0" stroke-width="3.5"/><path d="M${wx+dir*24},${T+40} l${-dir*8},-5 v10z" fill="#2f6fb0"/><text x="${wx}" y="${T+32}" font-size="11.5" font-weight="700" fill="#2f6fb0" text-anchor="middle" paint-order="stroke" stroke="var(--panel)" stroke-width="3">風 ${(Math.abs(U)*1.94384).toFixed(0)} kt</text></g>`; }
+  h+=`<text x="${L+6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)">家（機体の右・ホイスト側）</text><text x="${L+pw-6}" y="${T+15}" font-size="12.5" font-weight="800" fill="var(--ink)" text-anchor="end">機体の左</text>`;
+  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">縦横同じ縮尺・機体は正面から見た形（ローター直径 ${ROTOR_D} m）・人は身長 1.7 m</text>`;
+  RTFA.fd={vel:Fd.vel,F,W,Hh,L,T,pw,ph:Math.round(Y(0)-T),sMin,zhi,ppm,U,R:ROTOR_D/2,solid:Fd.solid};
+  return `<svg viewBox="0 0 ${W} ${Hh}" class="xsvg xzsvg" role="img" aria-label="水没家屋とヘリの断面（吹き下ろしの流れ）">${h}</svg>`; }
+function rtfNear(Fd,C,hR){ const G=Fd.G, d=G.d, W=Math.round(Math.max(460,Math.min(760,(($('rtfBody')||{}).clientWidth||760)*1.3))), L=40, Rm=16, T=18, B=30, pw=W-L-Rm;
+  const s0=G.sw-1.4, s1=Math.max(G.sp+1.6,G.sr+2.2), z0=G.f-1.1, z1=G.zt+1.5; let ppm=Math.min(pw/(s1-s0),(W<600?340:380)/(z1-z0)); const pwU=(s1-s0)*ppm, ph=Math.round((z1-z0)*ppm), Hh=T+ph+B, ox=L+(pw-pwU)/2;
+  const X=s=>ox+(s-s0)*ppm, Y=z=>T+(z1-z)*ppm, f=n=>n.toFixed(1); let h=`<defs><clipPath id="rtfnc"><rect x="${f(ox)}" y="${T}" width="${f(pwU)}" height="${ph}"/></clipPath></defs><rect x="${f(ox)}" y="${T}" width="${f(pwU)}" height="${ph}" fill="#eef4f9" class="xsky"/><g clip-path="url(#rtfnc)">`;
+  h+=rtfShade(Fd.vel,()=>0,ox,T,pwU,Math.round(Y(0)-T),s0,z1,ppm,RTF.U*0.514444);
+  if(Y(0)<T+ph) h+=`<rect x="${f(ox)}" y="${f(Y(0))}" width="${f(pwU)}" height="${f(T+ph-Y(0))}" fill="#7fb6d9" opacity=".9"/>`;
+  h+=rtfHouse(G,X,Y,1.6,true);
+  // 風の矢印（格子）
+  const st=0.5, col=v=>{ const b=dwBand(v); return b<0?'#5f8fb5':DWB[b][1]; };
+  for(let s=s0+0.25;s<s1;s+=st) for(let z=Math.max(0.15,z0+0.25);z<z1;z+=st){ if(Fd.solid(s,z)) continue; const v=Fd.vel(s,z); if(v[2]<1) continue; const k=Math.min(0.42,0.08+v[2]/60)*ppm, ux=v[0]/v[2], uz=v[1]/v[2], x=X(s), y=Y(z), x2=x+ux*k, y2=y-uz*k;
+    h+=`<line x1="${f(x-ux*k*0.2)}" y1="${f(y+uz*k*0.2)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${col(v[2])}" stroke-width="2.2" stroke-linecap="round"/><path d="M-4,-3 L1,0 L-4,3" transform="translate(${f(x2)},${f(y2)}) rotate(${(Math.atan2(-uz,ux)*180/Math.PI).toFixed(0)})" fill="none" stroke="${col(v[2])}" stroke-width="1.8" stroke-linecap="round"/>`; }
+  // 要救助者（壁際でしゃがむ）
+  const hp=1.7*ppm; h+=rtfPerson(X(G.sw+0.38),Y(G.f),hp,0,'crouch','#7a1f1f');
+  // 隊員：手すりの外で取り付いた位置（ワイヤーは吊り点へ一直線）
+  const xb=X(G.sp), yb=Y(C.zb), xh=X(C.sOut), yh=Y(C.zh); const kx=(xb-xh)/(yb-yh); const yTop=T; const xTop=xh+kx*(yTop-yh);
+  h+=`<line x1="${f(X(G.sp))}" y1="${T}" x2="${f(X(G.sp))}" y2="${f(T+ph)}" stroke="#d4361e" stroke-width="1.2" stroke-dasharray="5 4" opacity=".75"/>`;
+  h+=`<line x1="${f(xTop)}" y1="${f(yTop)}" x2="${f(xh)}" y2="${f(yh)}" stroke="#d4361e" stroke-width="2"/>`;
+  h+=rtfPerson(X(C.sOut+0.08),Y(G.f-0.05),hp,-4,'','#1d2b3a');
+  // 手すりの内側へ入った場合のワイヤー（軒先に触れるか）
+  const xi=X(C.sIn), kx2=(xb-xi)/(yb-yh), xTop2=xi+kx2*(yTop-yh); h+=`<line x1="${f(xTop2)}" y1="${f(yTop)}" x2="${f(xi)}" y2="${f(yh)}" stroke="#c0392b" stroke-width="1.6" stroke-dasharray="3 3"/>`;
+  h+=`</g>`;
+  // 寸法線
+  const dim=(xa,ya,xb2,yb2,t,side)=>{ const vert=Math.abs(xa-xb2)<1; const tx=vert?xa+(side||1)*6:(xa+xb2)/2, ty=vert?(ya+yb2)/2+4:ya-5; return `<path d="M${f(xa)} ${f(ya)} L${f(xb2)} ${f(yb2)}" stroke="#444" stroke-width="1" marker-start="url(#rtfar)" marker-end="url(#rtfar)"/><text x="${f(tx)}" y="${f(ty)}" font-size="11.5" font-weight="700" fill="var(--ink)" text-anchor="${vert?(side<0?'end':'start'):'middle'}" paint-order="stroke" stroke="var(--panel)" stroke-width="3">${t}</text>`; };
+  h+=`<defs><marker id="rtfar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1L5 5L1 9" fill="none" stroke="#444" stroke-width="1.6"/></marker></defs>`;
+  const xr=X(G.sr), xe=X(G.se);
+  h+=dim(Math.max(xr,xe)+16,Y(G.f+d.hr),Math.max(xr,xe)+16,Y(G.zt),`開口 ${C.gap.toFixed(2)} m`,1);
+  h+=dim(xr+8,Y(G.f),xr+8,Y(G.f+d.hr),`手すり ${d.hr.toFixed(2)} m`,1);
+  h+=dim(X(G.sw),Y(G.f)+14,xr,Y(G.f)+14,`奥行 ${d.dv.toFixed(2)} m`);
+  h+=dim(xe,Y(G.zt+0.12)-14,X(G.sp),Y(G.zt+0.12)-14,`軒先→ワイヤー ${RTF.off.toFixed(2)} m`);
+  h+=dim(X(G.sw)-10,Y(0),X(G.sw)-10,Y(G.f),`${G.f.toFixed(1)} m`,-1);
+  h+=`<text x="${f(ox+6)}" y="${T+14}" font-size="12" font-weight="800" fill="var(--ink)">ベランダの拡大</text>`;
+  h+=`<text x="${L+pw/2}" y="${Hh-5}" font-size="10" fill="var(--muted)" text-anchor="middle">矢印＝その点の風の向き（色は風速）・実線＝手すりの外で取り付いた時のワイヤー・赤い点線＝手すりの内側（0.35 m）へ入った時</text>`;
+  return `<svg viewBox="0 0 ${W} ${Hh}" class="xsvg" role="img" aria-label="ベランダ付近の拡大断面">${h}</svg>`; }
+function rtfAnim(){ cancelAnimationFrame(RTFA.raf); RTFA.raf=0; const wrap=$('rtfWrap'), fd=RTFA.fd; if(!wrap||!fd) return; const svg=wrap.querySelector('svg'), cv=wrap.querySelector('canvas'); if(!svg||!cv) return;
+  const red=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches; if(red||!XZA.on){ cv.getContext('2d').clearRect(0,0,cv.width,cv.height); return; }
+  const dpr=Math.min(2,window.devicePixelRatio||1), fit=()=>{ const w=svg.clientWidth, hh=svg.clientHeight; if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(hh*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(hh*dpr); cv.style.width=w+'px'; cv.style.height=hh+'px'; } return w/fd.W; };
+  const ctx=cv.getContext('2d'), F=fd.F, R=fd.R, NP=Math.round(Math.min(480,Math.max(200,fd.pw*0.5))), P=[];
+  const spawn=p=>{ p.s=(Math.random()*2-1)*R*1.02; p.z=F.zr+R*(0.15+0.5*Math.random()); p.age=0; p.life=4+Math.random()*5; };
+  for(let i=0;i<NP;i++){ const p={}; spawn(p); p.age=Math.random()*p.life; P.push(p); }
+  let last=0; const dark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches), col=dark?'rgba(255,255,255,.92)':'rgba(20,45,75,.85)';
+  const step=ts=>{ RTFA.raf=requestAnimationFrame(step); if(!RTFA.vis||document.hidden){ last=ts; return; } const dt=Math.min(0.05,(ts-last)/1000||0.016); last=ts; const k=fit()*dpr;
+    ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.fillRect(0,0,cv.width,cv.height); ctx.globalCompositeOperation='source-over'; ctx.lineCap='round'; ctx.strokeStyle=col;
+    const X=s=>(fd.L+(s-fd.sMin)*fd.ppm)*k, Y=z=>(fd.T+(fd.zhi-z)*fd.ppm)*k, x0=fd.L*k, x1=(fd.L+fd.pw)*k, y0=fd.T*k, y1=(fd.T+fd.ph)*k;
+    for(const p of P){ const v=fd.vel(p.s,p.z); p.age+=dt; if(v[2]<0.6||p.age>p.life){ spawn(p); continue; }
+      const ax=X(p.s), ay=Y(p.z); p.s+=v[0]*dt; p.z+=v[1]*dt; if(p.z<0.12) p.z=0.12; if(fd.solid(p.s,p.z)){ spawn(p); continue; } const bx=X(p.s), by=Y(p.z);
+      if(bx<x0||bx>x1||by<y0||by>y1){ spawn(p); continue; }
+      ctx.globalAlpha=Math.min(1,p.age*3)*Math.min(1,(p.life-p.age)*2); ctx.lineWidth=(v[2]>17?2.3:1.6)*dpr; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke(); }
+    ctx.globalAlpha=1; };
+  if(RTFA.io) RTFA.io.disconnect(); RTFA.vis=true; try{ RTFA.io=new IntersectionObserver(es=>{ RTFA.vis=es.some(e=>e.isIntersecting); },{threshold:0.05}); RTFA.io.observe(wrap); }catch(e){}
+  RTFA.raf=requestAnimationFrame(step); }
+function rtfDraw(H,T,W){ const box=$('rtfBody'); if(!box) return; const det=$('rtfDet'); if(det&&!det.open){ cancelAnimationFrame(RTFA.raf); return; }
+  if(H==null){ H=XS.H; T=XS.T; W=XS.W; } const dd=downwash(H||0,T==null?15:T,W||6000), vi=dd.vi, hR=RTF.hR, U=RTF.U*0.514444;
+  const Fd=rtfField(vi,hR,U), G=Fd.G, C=rtfCalc(Fd,vi,hR), d=G.d, kt=v=>(v*1.94384).toFixed(0), bc=v=>{ const b=dwBand(v); return b<0?'var(--muted)':DWB[b][1]; };
+  const stv=(t,v,sub)=>`<div class="xst"><small>${t}</small><b style="color:${bc(v)}">${v.toFixed(0)}<i> m/s</i></b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const W2=[]; // 注意
+  if(C.cIn<0.3) W2.push(['手すりの内側でワイヤーが軒先に当たる',`隊員が手すりの内側へ入るとワイヤーは軒先から ${C.cIn.toFixed(2)} m（${C.cIn<0?'食い込む':'ほぼ接触'}）。手すりの線で緩みをもらって外すこと。`]);
+  if(C.cOut<0.3) W2.push(['取り付いた時点でワイヤーが軒先に近い',`手すりの外で取り付いても、ワイヤーと軒先の間は ${C.cOut.toFixed(2)} m。軒先からワイヤーまでをもう少し離す。`]);
+  if(RTF.off<1.5) W2.push(['ホバリングのぶれで軒に触れる','水面上のホバリングは±1〜2 m動く。軒先からワイヤーまで 1.5〜2 m は空けたい。']);
+  if(C.gap<1.3) W2.push(['開口が狭い',`手すりの上から軒先の下まで ${C.gap.toFixed(2)} m。担架は水平のまま通らない。ハーネス・サバイバースリングで吊る。`]);
+  if(C.rclr!=null&&C.rclr<6) W2.push(['ローターの先端が屋根に近い',`ローターの先端は屋根の上にあり、屋根との間は約 ${C.rclr.toFixed(1)} m。`]);
+  if(G.d.e>=G.d.dv-0.05) W2.push(['軒先が手すりの真上〜外にある','吊り上げは「外へ振り出して軒をかわしてから巻き上げ」。真上へ巻くと頭・肩が軒先に当たる。']);
+  if(C.vr[2]>=17) W2.push(['隊員の位置が強風',`手すりの外（胸の高さ）で ${C.vr[2].toFixed(0)} m/s。ローターの真下に近いため。もう少し高く、または離して。`]);
+  if(C.vw[2]>=10) W2.push(['しぶき','家の前の水面で吹き下ろしが水をたたき、しぶきが上がる。ゴーグル。']);
+  const tilt=Math.abs(C.th*180/Math.PI);
+  box.innerHTML=`<div class="rtfctl">
+    <div class="rtfrow"><span class="rtflb">家屋</span><span class="xzseg" role="group" aria-label="家屋"><button type="button" data-rtfh="A" aria-pressed="${RTF.h==='A'}">A 1階一部冠水</button><button type="button" data-rtfh="B" aria-pressed="${RTF.h==='B'}">B 1階全部冠水</button></span></div>
+    <div class="rtfrow"><span class="rtflb">寸法</span><span class="xzseg" role="group" aria-label="寸法"><button type="button" data-rtfd="std" aria-pressed="${RTF.dim==='std'}">公的基準・一般的な木造</button><button type="button" data-rtfd="sk" aria-pressed="${RTF.dim==='sk'}">スケッチの値</button>${RTF.my?`<button type="button" data-rtfd="my" aria-pressed="${RTF.dim==='my'}">自分の値</button>`:''}</span></div>
+    <label class="rtfsl">ローター面の高さ（水面から）<b>${hR} m</b><small>（約 ${Math.round(hR*FT)} ft・機体下面 約 ${Math.round((hR-RTF_BELLY)*FT)} ft・ワイヤー約 ${C.L.toFixed(0)} m）</small><input type="range" min="10" max="60" step="1" value="${hR}" data-rtfk="hR"></label>
+    <label class="rtfsl">軒先からワイヤーまで（水平）<b>${RTF.off.toFixed(2)} m</b><input type="range" min="0" max="6" step="0.25" value="${RTF.off}" data-rtfk="off"></label>
+    <label class="rtfsl">断面方向の風 <b>${Math.abs(RTF.U)} kt ${RTF.U>0?'（家 → 水面へ）':RTF.U<0?'（水面 → 家へ）':''}</b><input type="range" min="-25" max="25" step="1" value="${RTF.U}" data-rtfk="U"></label>
+    <details class="rtfdim"><summary>寸法を変える（m）</summary><div class="rcgrid">${[['fl','水面からベランダの床',G.f],['hr','手すりの高さ',d.hr],['dv','ベランダの奥行',d.dv],['e','軒の出（壁から軒先）',d.e],['ht','床から軒先の下端',d.ht],['wf','壁から水槽の縁まで',d.wf]].map(([k,l,v])=>`<label>${l}<span><input type="number" step="0.05" value="${(+v).toFixed(2)}" data-rtfm="${k}"></span></label>`).join('')}<label>吊り荷（隊員＋装備）<span><input type="number" step="5" value="${RTF.kg}" data-rtfm="kg"> kg</span></label></div></details>
+    <div class="rtfrow"><button type="button" id="rtfGo">📍 地図でこの水槽を現場にする</button><button type="button" class="xzplay" id="rtfPlay" aria-pressed="${XZA.on}">${XZA.on?'⏸ 動きを止める':'▶ 動かす'}</button></div></div>
+  <div class="xcard"><div class="xct">全体（水没住宅${RTF.h}・吹き下ろしの流れ）</div><div class="xzwrap" id="rtfWrap">${rtfBig(Fd,vi,hR,U)}<canvas aria-hidden="true"></canvas></div></div>
+  <div class="xcard">${rtfNear(Fd,C,hR)}
+    <div class="xrow rtfst">${stv('隊員（手すりの外・胸）',C.vr[2])}${stv('要救助者（ベランダの壁際）',C.vv[2],'軒の下は真上の風がさえぎられる')}${stv('軒先・雨どいへ',C.ve[2],'下向き')}${stv('家の前の水面（最大）',C.vw[2],'しぶき')}</div>
+    <div class="rtfnum">
+      <div><small>ワイヤーと軒先の間</small><b class="${C.cOut<0.3?'warn':''}">${C.cOut.toFixed(2)} m</b><small>手すりの外で取り付いた時</small></div>
+      <div><small>手すりの内側へ入ると</small><b class="${C.cIn<0.3?'warn':''}">${C.cIn.toFixed(2)} m</b><small>${C.cIn<0?'軒先に食い込む':C.cIn<0.3?'ほぼ接触':'余裕あり'}</small></div>
+      <div><small>手すりまで引き寄せ</small><b>${tilt.toFixed(1)}°・${C.Fp.toFixed(0)} kgf</b><small>真下から ${Math.abs(C.dx).toFixed(2)} m・${RTF.kg} kg</small></div>
+      <div><small>離した時の振れ</small><b>${C.Tp.toFixed(1)} 秒・${C.vs.toFixed(1)} m/s</b><small>1往復の時間・最大の速さ</small></div>
+      <div><small>手すりの上〜軒先の下</small><b class="${C.gap<1.3?'warn':''}">${C.gap.toFixed(2)} m</b><small>人がくぐる開口</small></div>
+      <div><small>機体下面〜棟</small><b>${C.belly.toFixed(1)} m</b><small>${C.rclr!=null?`ローター先端〜屋根 ${C.rclr.toFixed(1)} m`:'ローター先端は家の外'}</small></div></div>
+    ${W2.length?`<div class="xchips">${W2.map(n=>`<span>⚠ ${n[0]}</span>`).join('')}</div><ul class="xwarn note">${W2.map(n=>`<li>${n[1]}</li>`).join('')}</ul>`:''}
+    <div class="hint note">吹き下ろしは運動量理論と壁面噴流の式による概算で、家のまわりのはく離や巻き込みは計算していません（家が無い時の流れから、家の中を除き、軒の下は真上からの流れを弱めて表示）。吊り点は機体中心線から右へ約${RTF_HOFF} m・ローター面の約${RTF_BOOM} m下、機体下面はローター面の約${RTF_BELLY} m下として計算（目安）。吹き下ろしの強さは「ホバリング性能」の全備重量・気温・標高の値（ローター面 ${vi.toFixed(1)} m/s）から出しています。</div></div>
+  <details class="rtfsrc"><summary>この場所と寸法の根拠</summary><ul>
+    <li><b>場所：</b>福島ロボットテストフィールド（南相馬市原町区萱浜）の水没市街地フィールド。屋外水槽は N37°37.99′ E141°00.77′ 付近、東西に長く、西寄りに水没住宅が2棟（東の端に深い部分）。位置は国土地理院の建物外形・航空写真から読んだもの。</li>
+    <li><b>公表値：</b>屋外水槽 50 m×19 m・水深 0.7 m（うち 10 m×10 m は深さ 5 m）。水没住宅A・Bとも建築面積 53 m²（A は1階の一部、B は1階が全部冠水）。電柱・電線あり（位置は現地で確認）。</li>
+    <li><b>建物の大きさ：</b>53 m² は 4間×4間（7.28 m 角）にあたり、国土地理院の建物外形（軒を含む 8.8 m 角前後）とも合う。2棟の外形の間は約 2.6 m。</li>
+    <li><b>公的基準の値：</b>手すり 1.1 m（建築基準法施行令 第126条・2階以上のバルコニー）、1階の床高 0.45 m 以上（同 第22条）。階高 2.9 m・ベランダ奥行 0.91 m・軒の出 0.6 m・4寸勾配・軒先の下端（床から）2.3 m は一般的な木造2階建ての値。</li>
+    <li><b>確かめていないこと：</b>施設の図面（PDF）はこの環境から読めず、ベランダの向き・寸法、A・Bがどちらの棟か、水位の設定は未確認です。「寸法を変える」で実際の値に直せます。水面からベランダ床の初期値は、A 1.9 m（1階に約1 m浸水）、B 0.5 m（スケッチどおり）。壁から水槽の縁まで約 4.7 m は航空写真から（南側と仮定）。</li></ul></details>`;
+  const re=()=>{ rtfSave(); keepView(()=>rtfDraw()); };
+  box.querySelectorAll('[data-rtfh]').forEach(b=>b.onclick=()=>{ RTF.h=b.dataset.rtfh; if(RTF.dim==='my') RTF.fl=null; re(); });
+  box.querySelectorAll('[data-rtfd]').forEach(b=>b.onclick=()=>{ RTF.dim=b.dataset.rtfd; re(); });
+  box.querySelectorAll('[data-rtfk]').forEach(i=>{ i.oninput=()=>{ RTF[i.dataset.rtfk]=+i.value; clearTimeout(RTFA.t); RTFA.t=setTimeout(re,60); }; });
+  box.querySelectorAll('[data-rtfm]').forEach(i=>i.onchange=()=>{ const v=+i.value, k=i.dataset.rtfm; if(isNaN(v)) return; if(k==='kg'){ RTF.kg=Math.max(0,v); re(); return; } const cur=rtfDim(); RTF.my=RTF.my&&RTF.dim==='my'?RTF.my:{hr:cur.hr,dv:cur.dv,e:cur.e,ht:cur.ht,dep:cur.dep,wf:cur.wf}; if(RTF.dim!=='my') RTF.fl=cur.fl; RTF.dim='my'; if(k==='fl') RTF.fl=Math.max(-2,Math.min(6,v)); else RTF.my[k]=Math.max(0,v); const det2=box.querySelector('.rtfdim'); re(); const d3=$('rtfBody').querySelector('.rtfdim'); if(d3) d3.open=true; });
+  const go=$('rtfGo'); if(go) go.onclick=()=>{ const [la,lo]=RTFG.pool, fn=()=>{ mapSetView(la,lo,18); mapPick(la,lo); try{ document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }; if(window.uiFlyGuard&&uiFlyGuard(la,lo,fn)) return; fn(); };
+  const pl=$('rtfPlay'); if(pl) pl.onclick=()=>{ XZA.on=!XZA.on; pl.setAttribute('aria-pressed',XZA.on); pl.textContent=XZA.on?'⏸ 動きを止める':'▶ 動かす'; rtfAnim(); try{ xsZoomAnim(); }catch(e){} };
+  try{ rtfAnim(); }catch(e){} }
+(function(){ const det=$('rtfDet'); if(!det) return; det.open=!!RTF.open; det.addEventListener('toggle',()=>{ RTF.open=det.open; rtfSave(); if(det.open) rtfDraw(); else cancelAnimationFrame(RTFA.raf); }); if(det.open) setTimeout(()=>{ try{ rtfDraw(); }catch(e){ console.warn('rtf',e); } },0); })();
+
 </script>
