@@ -2847,20 +2847,20 @@ function aipNvName(g){ const t=g.t; if(g.ils) return t.map(x=>x.replace(/^ILS-/,
 function aipNvFreq(g){ const v=g.r.find(x=>x[0]==='VOR'||/LOC/.test(x[0])), c=g.r.find(x=>x[4]); return [v?v[3]:g.f[0]||'', c?c[4]:''].filter(Boolean).join(' '); }
 function aipSvg(z,x0,y0,W,H){ if(!AIPL.on||z<6||!AIPD.ad) return ''; let h=''; const inV=(px,py,m)=>px>-m&&py>-m&&px<W+m&&py<H+m;
   const mpp=40075016*Math.cos(MAP_LAT_()*Math.PI/180)/(256*2**z);
-  if(z>=10) AIP_RW.forEach(r=>{ const a=[lon2x(r.p1[1],z)-x0,lat2y(r.p1[0],z)-y0], b=[lon2x(r.p2[1],z)-x0,lat2y(r.p2[0],z)-y0]; if(!inV(a[0],a[1],600)&&!inV(b[0],b[1],600)) return;
+  if(z>=10&&AIPL.ad!==false) AIP_RW.forEach(r=>{ const a=[lon2x(r.p1[1],z)-x0,lat2y(r.p1[0],z)-y0], b=[lon2x(r.p2[1],z)-x0,lat2y(r.p2[0],z)-y0]; if(!inV(a[0],a[1],600)&&!inV(b[0],b[1],600)) return;
     const w=Math.max(3,Math.min(40,r.w/mpp)); h+=`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#fff" stroke-width="${(w+3).toFixed(1)}" stroke-opacity=".9"/><line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${r.ap?'#78909c':'#37474f'}" stroke-width="${w.toFixed(1)}"${r.ap?' stroke-dasharray="10 5"':''}/>`;
     if(z>=13){ const ang=Math.atan2(b[1]-a[1],b[0]-a[0]), ux=Math.cos(ang), uy=Math.sin(ang), o=w/2+14;
       h+=`<text x="${(a[0]-ux*o).toFixed(1)}" y="${(a[1]-uy*o+4).toFixed(1)}" font-size="12" font-weight="900" fill="#263238" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(r.a)}</text>`;
       if(r.b) h+=`<text x="${(b[0]+ux*o).toFixed(1)}" y="${(b[1]+uy*o+4).toFixed(1)}" font-size="12" font-weight="900" fill="#263238" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(r.b)}</text>`; } });
-  if(z>=8) AIP_NV.forEach(g=>{ if(g.ils&&z<13) return; const px=lon2x(g.lo,z)-x0, py=lat2y(g.la,z)-y0; if(!inV(px,py,30)) return; const c='#0d47a1', P=`${px.toFixed(1)},${py.toFixed(1)}`;
+  if(z>=8&&AIPL.nv!==false) AIP_NV.forEach(g=>{ if(g.ils&&z<13) return; const px=lon2x(g.lo,z)-x0, py=lat2y(g.la,z)-y0; if(!inV(px,py,30)) return; const c='#0d47a1', P=`${px.toFixed(1)},${py.toFixed(1)}`;
     if(g.ils){ h+=`<g transform="translate(${P})"><path d="M0 -5 L5 0 L0 5 L-5 0Z" fill="#fff" stroke="#00695c" stroke-width="1.8"/></g><text x="${(px+8).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="10.5" font-weight="800" fill="#00695c" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(aipNvName(g))}${g.rwy?' '+esc(g.rwy):''}${g.id?' '+esc(g.id):''}</text>`; return; }
     const n=aipNvName(g), hex='M-7 0 L-3.5 -6 L3.5 -6 L7 0 L3.5 6 L-3.5 6Z';
     h+=`<g transform="translate(${P})">${/DME|TAC/.test(n)?'<rect x="-9" y="-8" width="18" height="16" fill="#fff" stroke="'+c+'" stroke-width="1.6"/>':''}${/VOR/.test(n)?`<path d="${hex}" fill="#fff" stroke="${c}" stroke-width="1.8"/>`:''}<circle r="1.8" fill="${c}"/></g>`;
     if(z>=9) h+=`<text x="${(px+12).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="11.5" font-weight="900" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(g.id)} ${esc(n)}${z>=10?' '+esc(aipNvFreq(g)):''}</text>`; });
-  if(z>=5) (AIPD.rs||[]).forEach(q=>{ const px=lon2x(q[5],z)-x0, py=lat2y(q[4],z)-y0; if(!inV(px,py,60)) return; const c=q[2]==='ORSR'?'#00838f':'#bf360c';
+  if(z>=5&&AIPL.rs!==false) (AIPD.rs||[]).forEach(q=>{ const px=lon2x(q[5],z)-x0, py=lat2y(q[4],z)-y0; if(!inV(px,py,60)) return; const c=q[2]==='ORSR'?'#00838f':'#bf360c';
     h+=`<g transform="translate(${px.toFixed(1)},${py.toFixed(1)})"><rect x="-10" y="-10" width="20" height="20" rx="4" fill="#fff" stroke="${c}" stroke-width="2"/><path d="M-5 6 L5 -4 M-6 -2 A7.5 7.5 0 0 0 2 7 M-2 -7 A7.5 7.5 0 0 1 7 2" fill="none" stroke="${c}" stroke-width="1.9" stroke-linecap="round"/><circle cx="5" cy="-4" r="1.8" fill="${c}"/></g>`;
     if(z>=7) h+=`<text x="${(px+14).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12" font-weight="900" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(q[0])}${q[3]?' '+esc(q[3]):''}</text>`; });
-  (AIPD.ad||[]).forEach(a=>{ const px=lon2x(a[5],z)-x0, py=lat2y(a[4],z)-y0; if(!inV(px,py,40)) return; const c='#6a1b9a', r=z>=9?9:7, P=`${px.toFixed(1)},${py.toFixed(1)}`;
+  if(AIPL.ad!==false) (AIPD.ad||[]).forEach(a=>{ const px=lon2x(a[5],z)-x0, py=lat2y(a[4],z)-y0; if(!inV(px,py,40)) return; const c='#6a1b9a', r=z>=9?9:7, P=`${px.toFixed(1)},${py.toFixed(1)}`;
     if(z>=12&&a[3]==='A'&&AIP_RW.some(x=>x.ic===a[0])){ h+=`<text x="${px.toFixed(1)}" y="${(py-14).toFixed(1)}" font-size="13" font-weight="900" fill="${c}" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="3.5">${esc(a[2]||a[1])} ${a[0]}</text>`; return; }
     h+=`<g transform="translate(${P})"><circle r="${r}" fill="#fff" stroke="${c}" stroke-width="2.2"/>${a[3]==='H'?`<text y="${(r*0.42).toFixed(1)}" font-size="${(r*1.25).toFixed(1)}" font-weight="900" fill="${c}" text-anchor="middle">H</text>`:`<path d="M0 ${-r+2} L${(r*0.32).toFixed(1)} -1 L${r-2} 1.5 L${r-2} 3 L${(r*0.3).toFixed(1)} 1.5 L1.2 ${r-4} L${(r*0.38).toFixed(1)} ${r-2} L${-(r*0.38).toFixed(1)} ${r-2} L-1.2 ${r-4} L${-(r*0.3).toFixed(1)} 1.5 L${-(r-2)} 3 L${-(r-2)} 1.5 L${-(r*0.32).toFixed(1)} -1Z" fill="${c}"/>`}</g>`;
     if(z>=8) h+=`<text x="${(px+r+4).toFixed(1)}" y="${(py+4).toFixed(1)}" font-size="12" font-weight="900" fill="${c}" paint-order="stroke" stroke="#fff" stroke-width="3.5">${z>=10?esc(a[2]||a[1])+' ':''}${a[0]}</text>`; });
@@ -2869,9 +2869,9 @@ function MAP_LAT_(){ try{ const el=$('map'); return y2lat(MAP.cy,MAP.z); }catch(
 function aipHit(px,py){ { const r=window.rtfHit&&rtfHit(px,py); if(r) return r; } { const n=nsHit(px,py); if(n) return n; } { const a0=aipHit0(px,py); if(a0) return a0; } return obHit(px,py)||pwHit(px,py); }
 function aipHit0(px,py){ if(!AIPL.on||!AIPD.ad||MAP.z<6) return null; const el=$('map'), z=MAP.z, x0=MAP.cx-el.clientWidth/2, y0=MAP.cy-el.clientHeight/2; let b=null;
   const tst=(la,lo,o,R)=>{ const d=Math.hypot(lon2x(lo,z)-x0-px,lat2y(la,z)-y0-py); if(d<=R&&(!b||d<b.d)) b={o,d}; };
-  AIPD.ad.forEach(a=>tst(a[4],a[5],{ad:a},z>=12?22:14)); if(z>=5) (AIPD.rs||[]).forEach(q=>tst(q[4],q[5],{rs:q},16));
-  if(z>=8) AIP_NV.forEach(g=>{ if(g.ils&&z<13) return; tst(g.la,g.lo,{nv:g},12); });
-  if(!b&&z>=10) AIP_RW.forEach(r=>{ const a=[lon2x(r.p1[1],z)-x0,lat2y(r.p1[0],z)-y0], c=[lon2x(r.p2[1],z)-x0,lat2y(r.p2[0],z)-y0], vx=c[0]-a[0], vy=c[1]-a[1], L2=vx*vx+vy*vy||1, t=Math.max(0,Math.min(1,((px-a[0])*vx+(py-a[1])*vy)/L2)), d=Math.hypot(a[0]+t*vx-px,a[1]+t*vy-py);
+  if(AIPL.ad!==false) AIPD.ad.forEach(a=>tst(a[4],a[5],{ad:a},z>=12?22:14)); if(z>=5&&AIPL.rs!==false) (AIPD.rs||[]).forEach(q=>tst(q[4],q[5],{rs:q},16));
+  if(z>=8&&AIPL.nv!==false) AIP_NV.forEach(g=>{ if(g.ils&&z<13) return; tst(g.la,g.lo,{nv:g},12); });
+  if(!b&&z>=10&&AIPL.ad!==false) AIP_RW.forEach(r=>{ const a=[lon2x(r.p1[1],z)-x0,lat2y(r.p1[0],z)-y0], c=[lon2x(r.p2[1],z)-x0,lat2y(r.p2[0],z)-y0], vx=c[0]-a[0], vy=c[1]-a[1], L2=vx*vx+vy*vy||1, t=Math.max(0,Math.min(1,((px-a[0])*vx+(py-a[1])*vy)/L2)), d=Math.hypot(a[0]+t*vx-px,a[1]+t*vy-py);
     if(d<=12&&(!b||d<b.d)){ const ad=AIP_AD.get(r.ic); if(ad) b={o:{ad},d}; } });
   if(!b) return null; const o=b.o; const y=o.rs?[o.rs[0],o.rs[4],o.rs[5],'レーダーサイト']:o.ad?[o.ad[2]||o.ad[1],o.ad[4],o.ad[5],'飛行場']:[o.nv.id+' '+aipNvName(o.nv),o.nv.la,o.nv.lo,'航法援助施設']; y.aip=o; y.d=b.d; return y; }
 const aipFt=v=>v==null||!isFinite(v)?'—':`${Math.round(v).toLocaleString()} ft（${Math.round(v*0.3048).toLocaleString()} m）`;
@@ -4846,7 +4846,7 @@ const QKI={ad:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c.9 0
   tr:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.2" cy="3.6" r="2" fill="currentColor" stroke="none"/><rect x="7.3" y="7" width="3.4" height="5.6" rx="1.1" fill="currentColor" stroke="none" transform="rotate(16 9 9.8)"/><path d="M12.6 7.2l-1.9 6.2 3 2.9.9 5.2M10.7 13.4l-2.4 3.6-1.1 4.5M12.6 7.6l2.7 3.6 2.6.6M19 8.6v12.9"/></svg>',
   set:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M18 7h2M4 17h3M12 17h8"/><circle cx="15.5" cy="7" r="2.3"/><circle cx="9.5" cy="17" r="2.3"/></svg>'};
 function qkUI(){ const box=$('mQk'); if(!box) return; const trOn=TRV.on||(BTRK.poi.length&&BT.on);
-  const B=[['hp',HP.on,`ヘリポート・場外離着陸場（${HELIP.length}）を地図に表示`,HELIP.length],['ad',AIPL.on,`飛行場・滑走路・航法援助施設・レーダーサイト（AIP）を地図に表示`,0],['tr',!!trOn,'登山道・山の目印を表示（登山地図・OSM・地理院・読み込んだGPX）',0]];
+  const B=[['hp',HP.on,`ヘリポート・場外離着陸場（${HELIP.length}）を地図に表示`,HELIP.length],['tr',!!trOn,'登山道・山の目印を表示（登山地図・OSM・地理院・読み込んだGPX）',0]];
   box.innerHTML=B.map(([k,on,t,n])=>`<button type="button" class="mqk" data-qk="${k}" aria-pressed="${on}" title="${t}" aria-label="${t}">${QKI[k]}<span class="qkl">${{hp:'ヘリポート',ad:'航空',tr:'登山'}[k]||''}</span>${n?`<small>${n}</small>`:''}</button>`).join('')+`<button type="button" class="mqk mqs" id="qTrS" title="登山道の設定（OSM・地理院・GPX 読み込み・オフライン保存）" aria-label="登山道の設定">${QKI.set}<span class="qkl">登山の設定</span></button>`;
   box.querySelectorAll('[data-qk]').forEach(b=>b.onclick=()=>{ const k=b.dataset.qk;
     if(k==='hp'){ HP.on=!HP.on; try{ localStorage.setItem('sd139hp',HP.on?'1':'0'); }catch(e){} hpDraw(); }
@@ -6857,7 +6857,7 @@ i.kon,#vrsTag{color:#1a1000!important}
 .bname b{text-shadow:none!important}
 .hhticks>span{color:#8fb8e0!important}
 /* ===== flight mode ===== */
-body.fly .mtabs [data-mt=gov],body.fly .mtabs [data-mt=disp],body.fly .mtabs [data-mt=ifr],body.fly .mtabs #uiDrawT,body.fly .mtabs .uisep.d{display:none!important}
+body.fly .mtabs [data-mt=gov],body.fly .mtabs [data-mt=disp],body.fly .mtabs #uiDrawT,body.fly .mtabs .uisep.d{display:none!important}
 body.fly .mtabs button,body.fly .mtabs .uitrig{font-size:15px}
 body.fly #map{height:calc(100dvh - 250px)!important;min-height:460px}
 body.fly #map .msnap:not(.mgpsb):not(.mhdgf):not(.moeib):not(.m3db):not(.mhcb){display:none!important}
@@ -6885,7 +6885,7 @@ if(skin){ const seg=document.createElement('span'); seg.className='uimode'; seg.
   skin.before(seg); seg.querySelectorAll('button').forEach(b=>b.onclick=()=>setMode(b.dataset.uim)); }
 function setMode(m){ UI.fly=m==='fly'; document.body.classList.toggle('fly',UI.fly); LS('sd139uim',m);
   document.querySelectorAll('.uimode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.uim===m));
-  if(UI.fly){ const sel=document.querySelector('.mtabs [data-mt][aria-selected=true]'); if(sel&&/gov|disp|ifr/.test(sel.dataset.mt)) sel.click(); closePops(); }
+  if(UI.fly){ const sel=document.querySelector('.mtabs [data-mt][aria-selected=true]'); if(sel&&/gov|disp/.test(sel.dataset.mt)) sel.click(); closePops(); }
   setTimeout(kick,50); }
 setMode(LS('sd139uim')==='fly'?'fly':'plan');
 // ---------- popovers ----------
@@ -7534,3 +7534,16 @@ let cgRW=0; window.addEventListener('resize',()=>{ clearTimeout(cgRW); cgRW=setT
   if(CGM.on){ cgApply(); try{ fuelLim(); }catch(e){} try{ drawEq(); }catch(e){} update(); } else cgDraw(); })();
 
 </script>
+<script id="aipMerge">
+// 「航空」ボタンを「航空図」に統合：全国（AIP）の飛行場・航法援助施設・レーダーサイトを個別に入・切
+(function(){ const K='sd139aipsub'; try{ const v=JSON.parse(localStorage.getItem(K)||'null'); if(v){ AIPL.ad=v.ad!==false; AIPL.nv=v.nv!==false; AIPL.rs=v.rs!==false; } else { AIPL.ad=AIPL.nv=AIPL.rs=!!AIPL.on; } }catch(e){ AIPL.ad=AIPL.nv=AIPL.rs=!!AIPL.on; }
+  AIPL.on=AIPL.ad||AIPL.nv||AIPL.rs;
+  const save=()=>{ AIPL.on=AIPL.ad||AIPL.nv||AIPL.rs; try{ localStorage.setItem(K,JSON.stringify({ad:AIPL.ad,nv:AIPL.nv,rs:AIPL.rs})); localStorage.setItem('sd139aip',AIPL.on?'1':'0'); }catch(e){} };
+  window.aipTabMark=()=>{ const t=document.querySelector('.mtabs [data-mt="ifr"]'); if(!t) return; const any=AIPL.on||Object.keys(IFR.on||{}).some(k=>IFR.on[k]); t.classList.toggle('ifron',!!any); };
+  const grp=()=>{ const box=$('ifrChips'); if(!box) return; const old=box.querySelector('.ifraip'); if(old) old.remove(); const d=document.createElement('div'); d.className='ifrg ifraip';
+    d.innerHTML='<span>全国（AIP）</span>'+[['ad','飛行場・滑走路','#6a1b9a'],['nv','航法援助施設','#0d47a1'],['rs','レーダーサイト','#bf360c']].map(([k,l,c])=>`<button type="button" data-aipk="${k}" aria-pressed="${!!AIPL[k]}" style="--ic:${c}">${l}</button>`).join('');
+    box.insertBefore(d,box.firstChild); d.querySelectorAll('[data-aipk]').forEach(b=>b.onclick=()=>{ const k=b.dataset.aipk; AIPL[k]=!AIPL[k]; save(); b.setAttribute('aria-pressed',AIPL[k]); hpDraw(); aipTabMark(); try{ qkUI(); }catch(e){} }); };
+  const _p=ifrPanel; ifrPanel=function(){ const r=_p.apply(this,arguments); try{ grp(); aipTabMark(); }catch(e){ console.warn('aip',e); } return r; };
+  try{ ifrPanel(); hpDraw(); }catch(e){} setTimeout(()=>{ try{ aipTabMark(); }catch(e){} },600); })();
+</script>
+<style id="aipMergeCss">.mtabs [data-mt="ifr"].ifron:not([aria-selected=true]){background:#1c6fb8!important;border-color:#1c6fb8!important;color:#fff!important}.mtabs [data-mt="ifr"].ifron:not([aria-selected=true]) svg{color:#fff}</style>
