@@ -6773,7 +6773,7 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
     if(!test){ const c=await get(url); if(c) return c;
       if(Date.now()<downUntil()) return new Response(JSON.stringify({error:true,reason:'no response (timeout) — retry after '+new Date(downUntil()).toISOString()}),{status:503,headers:{'Content-Type':'application/json'}}); }
     const blocked=(+ls.g('om-block',0)||0)>Date.now();
-    let ac=null, to=null, oo=o; if(!(o&&o.signal)){ ac=new AbortController(); to=setTimeout(()=>ac.abort(),TO); oo=Object.assign({},o||{},{signal:ac.signal}); }
+    let ac=null, to=null, oo=Object.assign({referrerPolicy:'no-referrer',credentials:'omit'},o||{}); if(!(o&&o.signal)){ ac=new AbortController(); to=setTimeout(()=>ac.abort(),TO); oo.signal=ac.signal; }
     try{ const r=await F(u,oo); if(!blocked) addUse(weight(url));
       if(r.ok){ ls.s('om-down','0'); try{ const b=await r.clone().text(); if(b&&b[0]==='{'&&!/"error"\s*:\s*true/.test(b.slice(0,40))) put(url,b); }catch(e){} }
       try{ wxModelUI(); }catch(e){}
@@ -6795,7 +6795,25 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
       const U=omUsage(), dn=omDownInfo(); const hm=t=>new Date(t).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
       x.innerHTML=(dn&&!(window.omBlockInfo&&omBlockInfo())?`<b class="warn">オープンメテオから返事がないため、${hm(dn)}まで MET Norway とアメダスで代わりに表示します。</b>`:'')+`この端末の利用 目安：1時間 ${U.h.toLocaleString()}／5,000・今日 ${U.d.toLocaleString()}／10,000 回分<span class="omn">（上限は同じ回線全体の合計。同じ地点・同じモデルは45分間この端末の保存分を使い、回数を使いません）</span>`; }; }
 })();
-</script><style id="omGuardCss">#wxmInfo .omuse{margin-top:4px;font-size:.86em;opacity:.85}#wxmInfo .omuse .omn{opacity:.8}#wxmInfo .omuse .warn{display:block}</style><style id="mqkFix">.mtabs>#mQk{flex:0 0 auto!important;min-width:max-content!important;overflow:visible!important;flex-wrap:nowrap!important}.mtabs>#mQk>*{flex:0 0 auto}</style></body></html>
+</script><style id="omGuardCss">#wxmInfo .omuse{margin-top:4px;font-size:.86em;opacity:.85}#wxmInfo .omuse .omn{opacity:.8}#wxmInfo .omuse .warn{display:block}</style><style id="mqkFix">.mtabs>#mQk{flex:0 0 auto!important;min-width:max-content!important;overflow:visible!important;flex-wrap:nowrap!important}.mtabs>#mQk>*{flex:0 0 auto}</style><script id="omProbe">
+// ---- 通信テストの詳しい調べ：オープンメテオだけ届かないとき、どこで止まっているかを自動で切り分け
+(function(){ const base=window.wxDiag; if(typeof base!=='function'||window.__omProbe) return; window.__omProbe=1;
+  const U='https://api.open-meteo.com/v1/jma?latitude=38.27&longitude=140.87&models=jma_msm&hourly=temperature_2m&forecast_days=1';
+  const tr=async(o,ms)=>{ const ac=new AbortController(), t=setTimeout(()=>ac.abort(),ms), t0=Date.now();
+    try{ const r=await fetch(U+'&_='+Date.now(),Object.assign({cache:'no-store',signal:ac.signal},o)); return {ok:r.type==='opaque'||r.ok,st:r.type==='opaque'?'届いた':'HTTP '+r.status,ms:Date.now()-t0}; }
+    catch(e){ return {ok:false,st:e&&e.name==='AbortError'?'時間切れ':'エラー（'+String(e&&e.message||e)+'）',ms:Date.now()-t0}; } finally{ clearTimeout(t); } };
+  window.wxDiag=wxDiag=async function(){ await base.apply(this,arguments); const box=document.getElementById('wxDiag'); if(!box) return;
+    const rows=[...box.querySelectorAll('tr')].slice(0,2); if(!rows.length||!rows.every(r=>/✕/.test(r.textContent))) return;
+    const d=document.createElement('div'); d.className='hint omprobe'; d.textContent='詳しく調べています…（約10秒）'; box.appendChild(d);
+    const [a,b]=await Promise.all([tr({mode:'no-cors'},9000),tr({mode:'cors',referrerPolicy:'no-referrer',credentials:'omit'},9000)]);
+    const sa=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+    let v;
+    if(b.ok) v='<b>送り元の情報を付けずに送ると届きました。</b>今の版から、アプリはこの送り方で問い合わせます。「MSMの予報を読み込む」を押し直してください。';
+    else if(a.ok) v='<b>オープンメテオのサーバーまでは届いていますが、このアプリ（realbon1-max.github.io）への返事だけが返ってきません。</b>Safariで直接開くと返ってくるので、オープンメテオ側がこのアプリのアドレスからの問い合わせを止めている可能性が高いです（同じアドレスのIFRアプリと合わせた使いすぎで止められた場合など）。数時間〜1日おいて戻らなければ、オープンメテオに問い合わせるか、有料キーを使うのが確実です。';
+    else v='<b>このアプリの中からは、オープンメテオのサーバーに届いていません。</b>Safariで直接開くと届くので、端末の設定（コンテンツブロッカー・広告ブロック・「iCloudプライベートリレー」・「IPアドレスを非公開」・ロックダウンモード）がアプリ内の問い合わせだけを止めている可能性があります。これらを一時的に切って「通信テスト」をもう一度押してください。';
+    d.innerHTML=`詳しい調べ：中身を見ない送り方 ${a.st}（${a.ms} ms）・送り元を付けない送り方 ${b.st}（${b.ms} ms）・${sa?'ホーム画面のアプリ':'ブラウザ'}で表示中<br>${v}`; };
+})();
+</script></body></html>
 <style id="uiv2Css">
 /* ===== UI v2：ツールバー整理・計画/飛行中モード・判定の帯・パネル統一 ===== */
 :root{--fb:46px;--fg:8px;--ftop:186px;--zb:42px;--tgt:44px;--uiOn:#3aa7e0;--uiOnBg:rgba(58,167,224,.16);--uiOk:#2e9d5b;--uiCau:#d99a1e;--uiBad:#d64545}
