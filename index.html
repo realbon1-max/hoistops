@@ -1475,7 +1475,7 @@ async function wxDiag(){ const box=$('wxDiag'); if(!box) return; box.hidden=fals
       return [n,r.ok,r.ok?`OK（${Date.now()-t0} ms）`:`HTTP ${r.status}${r.status===429?'：アクセスが多すぎて一時的に止められています（しばらく待つと戻ります）':r.status===403?'：接続を断られました':''}${why?'・'+why:''}`]; }
     catch(e){ return [n,false,e&&e.name==='AbortError'?'時間切れ（10秒）':`接続できません（${String(e&&e.message||e)}）`]; } finally{ clearTimeout(to); } };
   const R=await Promise.all(T.map(one));
-  box.innerHTML=`<table class="amdt"><tbody>${R.map(([n,ok,t])=>`<tr><td>${ok?'✓':'✕'} <b>${n}</b></td><td>${esc(t)}</td></tr>`).join('')}</tbody></table>${!R[0][1]&&!R[1][1]&&(R[2][1]||R[3][1])?'<div class="hint"><b>オープンメテオだけにつながりません。</b>同じ回線からの使いすぎによる一時的な制限（1日・1時間ごとの上限）か、オープンメテオ側の停止の可能性があります。しばらく待つか、別の回線（モバイル通信など）で試してください。その間は MET Norway の地上予報とアメダスで代わりに表示します</div>':''}${R.every(r=>!r[1])?'<div class="hint"><b>どこにもつながりません。</b>電波・機内モード・フィルタリング（職場のネットワーク制限など）を確認してください</div>':''}<div class="hint">ネット：${navigator.onLine===false?'オフライン':'オンライン'}・このページ：${esc(location.origin||'')}・${new Date().toLocaleTimeString('ja-JP')}</div>`; }
+  box.innerHTML=`<table class="amdt"><tbody>${R.map(([n,ok,t])=>`<tr><td>${ok?'✓':'✕'} <b>${n}</b></td><td>${esc(t)}</td></tr>`).join('')}</tbody></table>${!R[0][1]&&!R[1][1]&&(R[2][1]||R[3][1])?(window.omDiagHint?omDiagHint(R):''):''}${R.every(r=>!r[1])?'<div class="hint"><b>どこにもつながりません。</b>電波・機内モード・フィルタリング（職場のネットワーク制限など）を確認してください</div>':''}<div class="hint">ネット：${navigator.onLine===false?'オフライン':'オンライン'}・このページ：${esc(location.origin||'')}・${new Date().toLocaleTimeString('ja-JP')}</div>`; }
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#wxDiagB'); if(b){ e.stopPropagation(); wxDiag(); } },true);
 function wxModelUI(){ document.querySelectorAll('[data-wxm]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.wxm===WXMC)); const m=WXM[WXMC];
   const i=$('wxmInfo'); if(i){ const B=window.omBlockInfo&&window.omBlockInfo(); if(B){ const hm=new Date(B.t).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}); i.innerHTML=`<b class="warn">オープンメテオは${B.why==='daily'?'1日の利用上限に達したため、'+hm+'（日本時間）':B.why==='hourly'?'1時間の利用上限に達したため、'+hm:'アクセスが多すぎたため、'+hm}まで使えません。</b>その間は MET Norway（ECMWF・地上の風）とアメダスで代わりに表示します`; } else i.textContent=m.d+(m.ep==='forecast'?'・オープンメテオ経由':'・オープンメテオ経由（気象庁）'); }
@@ -6515,7 +6515,7 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     for(const v of [s1.concat(s2,pl,pc),s1.concat(s2,pl),s1.concat(pl),s1]){ let r; try{ r=await fetch(base+v.join(',')); }catch(_){ break; } if(!r.ok) continue; const j=wxMerge(await r.json()); if(j.hourly&&j.hourly.time){ d=j.hourly; el=j.elevation; break; } }
     if(!d){ try{ d=await metnoHourly(p.lat,p.lon); el=d.__alt; }catch(_){ d=null; } }
     if(!d) throw 0; d.__el=el;
-    try{ const r=await fetch(base.replace('&hourly=','&hourly=')+s2.filter(x=>!d[x]).join(',')); if(s2.some(x=>!d[x])&&r.ok){ const j=wxMerge(await r.json()); if(j.hourly) s2.forEach(x=>{ if(!d[x]&&j.hourly[x]) d[x]=j.hourly[x]; }); } }catch(e){}
+    try{ if(d.__src!=='metno'&&s2.some(x=>!d[x])){ const r=await fetch(base+s2.filter(x=>!d[x]).join(',')); if(r.ok){ const j=wxMerge(await r.json()); if(j.hourly) s2.forEach(x=>{ if(!d[x]&&j.hourly[x]) d[x]=j.hourly[x]; }); } } }catch(e){}
     if(d.__src!=='metno') WXS.c[key]={t:Date.now(),d}; if(MAP.pick&&Math.abs(MAP.pick.lat-p.lat)<1e-9) draw(d); }
   catch(e){ const b=$('wxSite'); if(b) b.innerHTML='<div class="wxt">予報を読み込めません</div>'; }
   finally{ WXS.busy[key]=0; } }
@@ -6747,7 +6747,55 @@ document.documentElement.style.overflowAnchor='none'; document.body.style.overfl
 <script>
 if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.serviceWorker.controller; navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(had&&!window.__swr){ window.__swr=1; location.reload(); } }); window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
 </script>
-</body></html>
+<script id="omGuard">
+// ---- オープンメテオの節約と見える化：同じ問い合わせは45分間この端末に保存して再利用・応答なし（時間切れ）は5分間すぐ代わりへ・利用回数の目安を表示
+(function(){ if(window.__omGuard||!window.fetch) return; window.__omGuard=1; const F=window.fetch.bind(window), TTL=45*60e3, TO=12000, DOWN=5*60e3;
+  const ls={g:(k,d)=>{ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }, s:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} }};
+  const mem=new Map(); const CA=('caches' in window)&&window.isSecureContext;
+  // 重み（オープンメテオの数え方：変数10個まで1回、それ以上は変数数/10。2週間超は日数比で増える。複数モデルはモデル数ぶん）
+  const weight=u=>{ try{ const q=new URL(u).searchParams; const nv=(q.get('hourly')||'').split(',').filter(Boolean).length+(q.get('current')||'').split(',').filter(Boolean).length+(q.get('daily')||'').split(',').filter(Boolean).length;
+      const nm=Math.max(1,(q.get('models')||'').split(',').filter(Boolean).length), nd=+(q.get('forecast_days')||7)+(+(q.get('past_days')||0)), nl=Math.max(1,(q.get('latitude')||'').split(',').length);
+      return Math.max(1,nv*nm/10)*Math.max(1,nd/14)*nl; }catch(e){ return 1; } };
+  const useLog=()=>{ try{ return JSON.parse(ls.g('om-use','[]')).filter(a=>Date.now()-a[0]<26*3600e3); }catch(e){ return []; } };
+  const addUse=w=>{ const L=useLog(); L.push([Date.now(),Math.round(w*10)/10]); ls.s('om-use',JSON.stringify(L.slice(-3000))); };
+  window.omUsage=()=>{ const L=useLog(), n=Date.now(), d0=new Date(); const ut=Date.UTC(d0.getUTCFullYear(),d0.getUTCMonth(),d0.getUTCDate());
+    const s=f=>Math.round(L.filter(f).reduce((a,b)=>a+b[1],0)); return {h:s(a=>n-a[0]<3600e3),d:s(a=>a[0]>=ut),m:s(a=>n-a[0]<60e3)}; };
+  const downUntil=()=>+ls.g('om-down',0)||0;
+  window.omDownInfo=()=>Date.now()<downUntil()?downUntil():0;
+  const get=async k=>{ const m=mem.get(k); if(m&&Date.now()-m.t<TTL) return new Response(m.b,{status:200,headers:{'Content-Type':'application/json','x-om-cache':'1'}});
+    if(CA){ try{ const c=await caches.open('om-data'); const r=await c.match(k); if(r){ const t=+r.headers.get('x-om-t')||0; if(Date.now()-t<TTL){ const b=await r.text(); mem.set(k,{t,b}); return new Response(b,{status:200,headers:{'Content-Type':'application/json','x-om-cache':'1'}}); } c.delete(k); } }catch(e){} }
+    return null; };
+  const put=async(k,b)=>{ const t=Date.now(); mem.set(k,{t,b}); if(mem.size>60) mem.delete(mem.keys().next().value);
+    if(CA){ try{ const c=await caches.open('om-data'); await c.put(k,new Response(b,{headers:{'Content-Type':'application/json','x-om-t':String(t)}})); }catch(e){} } };
+  if(CA) setTimeout(async()=>{ try{ const c=await caches.open('om-data'); for(const q of await c.keys()){ const r=await c.match(q); if(!r||Date.now()-(+r.headers.get('x-om-t')||0)>TTL) await c.delete(q); } }catch(e){} },4000);
+  window.fetch=async(u,o)=>{ const url=typeof u==='string'?u:(u&&u.url)||''; if(!/api\.open-meteo\.com/.test(url)||(o&&o.method&&o.method!=='GET')) return F(u,o);
+    const test=o&&o.cache==='no-store';
+    if(!test){ const c=await get(url); if(c) return c;
+      if(Date.now()<downUntil()) return new Response(JSON.stringify({error:true,reason:'no response (timeout) — retry after '+new Date(downUntil()).toISOString()}),{status:503,headers:{'Content-Type':'application/json'}}); }
+    const blocked=(+ls.g('om-block',0)||0)>Date.now();
+    let ac=null, to=null, oo=o; if(!(o&&o.signal)){ ac=new AbortController(); to=setTimeout(()=>ac.abort(),TO); oo=Object.assign({},o||{},{signal:ac.signal}); }
+    try{ const r=await F(u,oo); if(!blocked) addUse(weight(url));
+      if(r.ok){ ls.s('om-down','0'); try{ const b=await r.clone().text(); if(b&&b[0]==='{'&&!/"error"\s*:\s*true/.test(b.slice(0,40))) put(url,b); }catch(e){} }
+      try{ wxModelUI(); }catch(e){}
+      return r; }
+    catch(e){ if(ac&&e&&e.name==='AbortError'||navigator.onLine!==false){ ls.s('om-down',String(Date.now()+DOWN)); ls.s('om-down-why',ac&&e&&e.name==='AbortError'?'timeout':'neterr'); try{ wxModelUI(); }catch(_){} }
+      if(ac&&e&&e.name==='AbortError') return new Response(JSON.stringify({error:true,reason:'timeout'}),{status:504,headers:{'Content-Type':'application/json'}});
+      throw e; }
+    finally{ if(to) clearTimeout(to); } };
+  // 通信テストの説明：429（回数制限）と時間切れ（応答なし）を分けて案内
+  window.omDiagHint=R=>{ const om=[R[0],R[1]]; if(om.some(r=>r[1])){ ls.s('om-down','0'); return ''; } if(!(R[2][1]||R[3][1])) return '';
+    const lim=om.some(r=>/HTTP 429/.test(r[2])), tmo=om.every(r=>/時間切れ/.test(r[2])), U=omUsage();
+    const use=`<br>この端末からの利用（目安）：直近1時間 約${U.h.toLocaleString()}回分／今日 約${U.d.toLocaleString()}回分（無料の上限は 同じ回線全体で 1時間 5,000・1日 10,000・1分 600）`;
+    if(lim) return `<div class="hint"><b>オープンメテオの回数制限（429）です。</b>同じ回線（同じ職場のネットや、携帯会社の共有アドレス）からの合計が上限を超えました。上限が戻るまで待つか、別の回線で試してください。その間は MET Norway の地上予報とアメダスで代わりに表示します${use}</div>`;
+    if(tmo) return `<div class="hint"><b>オープンメテオから返事がありません（時間切れ）。</b>回数制限なら「429」がすぐ返ってくるので、今回は回数制限ではなく、オープンメテオ側の混雑・停止か、回線の途中（職場のネットのフィルタリング・電波の弱い所など）の問題の可能性が高いです。数分おいてもう一度「通信テスト」するか、別の回線で試してください。その間は MET Norway の地上予報とアメダスで代わりに表示します${use}</div>`;
+    return `<div class="hint"><b>オープンメテオだけにつながりません。</b>オープンメテオ側の停止か、回線の途中で止められている可能性があります。しばらく待つか、別の回線で試してください。その間は MET Norway の地上予報とアメダスで代わりに表示します${use}</div>`; };
+  // モデル説明の下に利用の目安と「応答なし」の状態を出す
+  const base=window.wxModelUI; if(typeof base==='function'){ window.wxModelUI=wxModelUI=function(){ base.apply(this,arguments); const i=document.getElementById('wxmInfo'); if(!i) return;
+      let x=i.querySelector('.omuse'); if(!x){ x=document.createElement('div'); x.className='omuse'; i.appendChild(x); }
+      const U=omUsage(), dn=omDownInfo(); const hm=t=>new Date(t).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+      x.innerHTML=(dn&&!(window.omBlockInfo&&omBlockInfo())?`<b class="warn">オープンメテオから返事がないため、${hm(dn)}まで MET Norway とアメダスで代わりに表示します。</b>`:'')+`この端末の利用 目安：1時間 ${U.h.toLocaleString()}／5,000・今日 ${U.d.toLocaleString()}／10,000 回分<span class="omn">（上限は同じ回線全体の合計。同じ地点・同じモデルは45分間この端末の保存分を使い、回数を使いません）</span>`; }; }
+})();
+</script><style id="omGuardCss">#wxmInfo .omuse{margin-top:4px;font-size:.86em;opacity:.85}#wxmInfo .omuse .omn{opacity:.8}#wxmInfo .omuse .warn{display:block}</style></body></html>
 <style id="uiv2Css">
 /* ===== UI v2：ツールバー整理・計画/飛行中モード・判定の帯・パネル統一 ===== */
 :root{--fb:46px;--fg:8px;--ftop:186px;--zb:42px;--tgt:44px;--uiOn:#3aa7e0;--uiOnBg:rgba(58,167,224,.16);--uiOk:#2e9d5b;--uiCau:#d99a1e;--uiBad:#d64545}
