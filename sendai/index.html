@@ -1134,7 +1134,7 @@ a{color:#7cc4ff}
         </div>
       <div class="mpane dispbox" data-mp="disp" role="tabpanel" hidden>
           <div class="mrow"><span class="mlab">座標形式</span><span class="mseg" id="dCoord"><button type="button" data-v="d">度</button><button type="button" data-v="dms">度分秒</button><button type="button" data-v="utm">UTM</button><button type="button" data-v="mgrs">MGRS</button><button type="button" data-v="dm">度分</button></span></div>
-          <div class="mrow"><label class="chk"><input type="checkbox" id="dMgrs"> MGRSグリッドを表示</label></div>
+          <div class="mrow"><span class="mlab">グリッド</span><span class="mseg" id="dGrid"><button type="button" data-v="none">なし</button><button type="button" data-v="mgrs">MGRS</button><button type="button" data-v="ll">緯度経度</button></span><input type="checkbox" id="dMgrs" hidden></div>
           <div class="mrow"><span class="mlab">距離単位</span><span class="mseg" id="dDist"><button type="button" data-v="m">メートル</button><button type="button" data-v="mi">マイル</button><button type="button" data-v="NM">海里</button></span></div>
           <div class="mrow"><span class="mlab">高度単位</span><span class="mseg" id="dAlt"><button type="button" data-v="m">メートル</button><button type="button" data-v="ft">フィート</button></span></div>
           <div class="mrow"><span class="mlab">レーダー</span>円 <select id="dRdrRing"><option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="1852">1 NM</option><option value="2000">2 km</option></select>　扇（±40°）<select id="dRdrFan"><option value="1000">1 km</option><option value="2000">2 km</option><option value="3000">3 km</option><option value="3704">2 NM</option><option value="5000">5 km</option><option value="9260">5 NM</option></select><span class="hint" style="margin:0 0 0 6px">この中に入ると赤で点滅</span></div>
@@ -6773,6 +6773,33 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
     else if(a.ok) v='<b>オープンメテオのサーバーまでは届いていますが、このアプリ（realbon1-max.github.io）への返事だけが返ってきません。</b>Safariで直接開くと返ってくるので、オープンメテオ側がこのアプリのアドレスからの問い合わせを止めている可能性が高いです（同じアドレスのIFRアプリと合わせた使いすぎで止められた場合など）。数時間〜1日おいて戻らなければ、オープンメテオに問い合わせるか、有料キーを使うのが確実です。';
     else v='<b>このアプリの中からは、オープンメテオのサーバーに届いていません。</b>Safariで直接開くと届くので、端末の設定（コンテンツブロッカー・広告ブロック・「iCloudプライベートリレー」・「IPアドレスを非公開」・ロックダウンモード）がアプリ内の問い合わせだけを止めている可能性があります。これらを一時的に切って「通信テスト」をもう一度押してください。';
     d.innerHTML=`詳しい調べ：中身を見ない送り方 ${a.st}（${a.ms} ms）・送り元を付けない送り方 ${b.st}（${b.ms} ms）・${sa?'ホーム画面のアプリ':'ブラウザ'}で表示中<br>${v}`; };
+})();
+</script><script id="llGrid">
+// ---- 表示のグリッド：なし／MGRS／緯度経度。緯度経度の線はズームに合わせて間隔を変え、ラベルは選んでいる座標形式（度・度分・度分秒）で出す
+(function(){ if(window.__llGrid||typeof mgrsDraw!=='function') return; window.__llGrid=1; const base=mgrsDraw;
+  if(!DISP.grid) DISP.grid=DISP.mgrs?'mgrs':'none';
+  const S=[1/3600,2/3600,5/3600,10/3600,15/3600,30/3600,1/60,2/60,5/60,10/60,15/60,30/60,1,2,5,10,15,30];
+  const SD=[0.0001,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,15,30];
+  const fmt=(v,st,ax)=>{ const h=ax==='la'?(v<0?'S':'N'):(v<0?'W':'E'), a=Math.abs(v), c=DISP.coord;
+    if(c==='d'){ const dp=Math.max(0,Math.min(5,Math.ceil(-Math.log10(st)-1e-9))); return h+a.toFixed(dp)+'°'; }
+    let d=Math.floor(a+1e-9), mf=(a-d)*60;
+    if(c==='dms'){ let m=Math.floor(mf+1e-7), s=Math.round((mf-m)*60); if(s>=60){ s-=60; m++; } if(m>=60){ m-=60; d++; } return st>=1?`${h}${d}°`:st>=1/60?`${h}${d}°${String(m).padStart(2,'0')}′`:`${h}${d}°${String(m).padStart(2,'0')}′${String(s).padStart(2,'0')}″`; }
+    const dp=st>=1/60-1e-9?0:Math.abs(st*600-Math.round(st*600))<1e-6?1:2; let m=+mf.toFixed(dp); if(m>=60){ m-=60; d++; } return st>=1?`${h}${d}°`:`${h}${d}°${m.toFixed(dp).padStart(dp?3+dp:2,'0')}′`; };
+  const fmtStep=st=>DISP.coord==='d'?`${+st.toPrecision(3)}°`:st>=1?`${st}°`:st>=1/60-1e-9?`${Math.round(st*60)}′`:DISP.coord==='dms'?`${Math.round(st*3600)}″`:`${+(st*60).toFixed(2)}′`;
+  function llDraw(){ const sv=$('mGrid'), el=$('map'); if(!sv||!el) return;
+    const W=el.clientWidth, H=el.clientHeight, z=MAP.z, x0=MAP.cx-W/2, y0=MAP.cy-H/2, b=viewBounds();
+    const want=Math.max(b.e-b.w,(b.n-b.s)*1.25)/Math.max(3,W/130); const SM=[0.01/60,0.02/60,0.05/60,0.1/60,0.2/60,0.5/60].concat(S.slice(6)); const L=DISP.coord==='d'?SD:DISP.coord==='dms'?S:SM; let st=L[L.length-1]; for(const s of L){ if(s>=want){ st=s; break; } }
+    const px=(la,lo)=>[lon2x(lo,z)-x0,lat2y(la,z)-y0];
+    const lab=(x,y,t,a)=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${a}" font-size="11" font-weight="700" fill="#7a2e8c" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+    let d='', labs=''; const e=1e-9;
+    for(let lo=Math.ceil(b.w/st-e)*st;lo<=b.e+e;lo+=st){ const x=px(0,lo)[0]; d+=`M${x.toFixed(1)},0V${H}`; if(x>4&&x<W-40) labs+=lab(x+3,13,fmt(lo,st,'lo'),'start'); }
+    for(let la=Math.ceil(b.s/st-e)*st;la<=b.n+e;la+=st){ const y=px(la,0)[1]; d+=`M0,${y.toFixed(1)}H${W}`; if(y>24&&y<H-24) labs+=lab(4,y-3,fmt(la,st,'la'),'start'); }
+    sv.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    sv.innerHTML=`<path d="${d}" fill="none" stroke="#fff" stroke-width="2.6" stroke-opacity=".7"/><path d="${d}" fill="none" stroke="#7a2e8c" stroke-width="1.1" stroke-opacity=".9"/>${labs}${lab(W-62,H-12,`緯度経度 ${fmtStep(st)}ごと`,'end')}`; }
+  window.mgrsDraw=mgrsDraw=function(){ DISP.mgrs=DISP.grid==='mgrs'; if(DISP.grid==='ll') return llDraw(); return base.apply(this,arguments); };
+  const seg=()=>{ const g=$('dGrid'); if(!g) return; g.querySelectorAll('button').forEach(b=>{ b.setAttribute('aria-pressed',String(b.dataset.v===DISP.grid)); b.onclick=()=>{ DISP.grid=b.dataset.v; DISP.mgrs=DISP.grid==='mgrs'; try{ dispSave(); }catch(_){} seg(); mgrsDraw(); }; }); };
+  seg(); setTimeout(()=>{ seg(); mgrsDraw(); },0);
+  const dc=$('dCoord'); if(dc) dc.addEventListener('click',()=>setTimeout(()=>{ if(DISP.grid==='ll') mgrsDraw(); },0));
 })();
 </script></body></html>
 <style id="uiv2Css">
