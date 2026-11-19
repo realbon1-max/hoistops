@@ -844,7 +844,7 @@ tr.lead.tt.sum td{font-size:13.5px}
 .rnpul{margin:6px 0 0;padding-left:20px}.rnpul li{margin:3px 0;line-height:1.55}
 .fsh .atcn{width:auto!important;min-width:24px;padding:0 6px;border-radius:12px!important}
 /* summary END */
-/* === ACE THEME（ファイター・パイロット風／オリジナル） === */
+/* === ACE THEME（コックピット風／オリジナル） === */
 :root[data-theme="ace"]{
   --paper:#070E1A;--card:#0F1C2E;--card2:#132641;--ink:#E9EEF4;--muted:#93A4B8;--line:#22385A;--line2:#2B4469;
   --mag:#FF8A1F;--mag-soft:#3A220C;--go:#3FD17F;--go-soft:#0E3122;--cau:#F2C14E;--cau-soft:#382D10;
@@ -3894,7 +3894,7 @@ function bind(){
     S.route=structuredClone(DEF.route);S.proc={};S.plView={};S._selAw=null;S._selFx=null;S._selDr=null;S.fpl.lvl='';S.chk={};if(typeof MAP!=='undefined')MAP=null;if(typeof SUG!=='undefined')SUG=null;save();
     ['dep','dst','alt','talt'].forEach(k=>{const el=$(k);if(el)el.value='';const s=$(k+'_s');if(s)s.value=''});try{renderVia()}catch(e){}if($('rteIn'))$('rteIn').value='';
     S.tab='route';save();location.reload()}}
-  const THN={ace:'ファイター',simple:'シンプル',light:'クラシック',dark:'ダーク',tac:'タクティカル'};const thLab=()=>{const t=document.documentElement.dataset.theme||'ace';$('themeBtn').textContent='表示：'+(THN[t]||t)};
+  const THN={ace:'コックピット',simple:'シンプル',light:'クラシック',dark:'ダーク',tac:'タクティカル'};const thLab=()=>{const t=document.documentElement.dataset.theme||'ace';$('themeBtn').textContent='表示：'+(THN[t]||t)};
   $('themeBtn').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme||'ace';r.dataset.theme={ace:'simple',simple:'light',light:'dark',dark:'tac',tac:'ace'}[cur]||'ace';try{localStorage.setItem('ifrtheme',r.dataset.theme)}catch(e){}thLab();try{const cd=calcFrame&&calcFrame.contentWindow&&calcFrame.contentWindow.document;if(cd)cd.documentElement.dataset.theme=r.dataset.theme}catch(e){}try{renderAll()}catch(e){}};
   try{let th=localStorage.getItem('ifrtheme');if(!localStorage.getItem('ifrace1')){th='ace';localStorage.setItem('ifrace1','1');localStorage.setItem('ifrtheme','ace')}document.documentElement.dataset.theme=th||'ace'}catch(e){document.documentElement.dataset.theme='ace'}thLab();
   renderVia();
@@ -3907,7 +3907,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261113134451';
+window.APPV='20261119100923';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
