@@ -1,5 +1,7 @@
 name: geocode heliports (one-off)
 on: workflow_dispatch
+permissions:
+  contents: write
 jobs:
   geo:
     runs-on: ubuntu-latest
@@ -7,5 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 tools/geocode_hp.py /tmp/hp_geo.json && cat /tmp/hp_geo.json
-      - uses: actions/upload-artifact@v4
-        with: { name: hp_geo, path: /tmp/hp_geo.json }
+      - run: |
+          mkdir /tmp/pub && cd /tmp/pub && git init -q -b hpgeo && cp /tmp/hp_geo.json . && git config user.name bot && git config user.email actions@users.noreply.github.com
+          git add . && git commit -qm geo && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" hpgeo
