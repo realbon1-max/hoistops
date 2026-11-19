@@ -6831,6 +6831,29 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
     return `<b>${E(q[1])}${q[0]==='F'?'':'ヘリポート'}</b>（${KN[q[0]]}）<br><small>設置管理者 ${E(q[2])}<br>所在地 ${E(q[3])}<br>位置 N${q[4].toFixed(4)}° E${q[5].toFixed(4)}°${q[6]?'（住所が町名までのため概略。数百 m ずれることがあります）':'（住所から求めた位置。屋上ヘリポートは建物の位置）'}</small><br><small style="opacity:.75">国土交通省「公共用・非公共用ヘリポート一覧」（2026年9月1日現在）。${q[0]==='P'?'':'非公共用は設置者の専用で、使うには設置者の許可が必要。'}運航には最新の AIP・NOTAM・設置者の情報で確認</small>`; };
   try{ hpDraw(); }catch(e){}
 })();
+</script><script id="hlFix">
+// ---- 公共用・非公共用ヘリポートの位置を地図で直す（端末に保存・松本版と仙台版で共通）。元の位置にも戻せる
+(function(){ if(window.__hlFix||!window.AIP_HL||typeof btxSave!=='function') return; window.__hlFix=1; const HL=AIP_HL, K='hoistops-hlfix';
+  const key=q=>q[0]+'|'+q[1];
+  HL.forEach(q=>{ q.o=[q[4],q[5]]; });
+  let F={}; try{ F=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
+  const apply=()=>HL.forEach(q=>{ const v=F[key(q)]; if(v&&isFinite(v[0])&&isFinite(v[1])){ q[4]=v[0]; q[5]=v[1]; q.fx=1; } else { q[4]=q.o[0]; q[5]=q.o[1]; q.fx=0; } });
+  const save=()=>{ try{ localStorage.setItem(K,JSON.stringify(F)); }catch(e){} }; apply();
+  let mv=null; // 動かし中：[名前, 緯度, 経度] を BTMV に渡し、地図タップで入った値を受け取る
+  const bS=btxSave; window.btxSave=btxSave=function(){ if(mv&&mv.t&&BTMV!==mv.t){ const t=mv.t, q=mv.q; mv=null;
+      if(isFinite(t[1])&&isFinite(t[2])&&(t[1]!==q[4]||t[2]!==q[5])){ F[key(q)]=[+(+t[1]).toFixed(6),+(+t[2]).toFixed(6)]; save(); apply(); try{ hpDraw(); }catch(e){} setTimeout(()=>{ try{ mapPick(q[4],q[5]); pickSync(q[4],q[5]); mapMsg(aipMsg({hl:q})); }catch(e){} },0); } return; }
+    return bS.apply(this,arguments); };
+  const bM=aipMsg; window.aipMsg=aipMsg=function(o){ let s=bM.apply(this,arguments); if(!o||!o.hl) return s; const q=o.hl, i=HL.indexOf(q);
+    if(q.fx) s=s.replace(/（住所[^）]*）/,`（自分で直した位置。元は N${q.o[0].toFixed(4)}° E${q.o[1].toFixed(4)}°）`);
+    return s+`<br><button type="button" class="small" data-hlmv="${i}">✥ 位置を直す</button>${q.fx?` <button type="button" class="small" data-hlrs="${i}">↺ 元の位置に戻す</button>`:''}`; };
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('[data-hlmv],[data-hlrs]'); if(!a) return; e.stopPropagation();
+    const q=HL[+(a.dataset.hlmv??a.dataset.hlrs)]; if(!q) return;
+    if(a.dataset.hlrs!=null){ delete F[key(q)]; save(); apply(); hpDraw(); mapPick(q[4],q[5]); pickSync(q[4],q[5]); mapMsg(aipMsg({hl:q})+'<br><small>元の位置に戻しました</small>'); return; }
+    const t=[q[1]+(q[0]==='F'?'':'ヘリポート'),q[4],q[5]]; mv={q,t}; BTMV=t; hpDraw();
+    mapMsg(`「${esc(t[0])}」の<b>正しい位置を地図でタップ</b>してください（ズームを上げると正確に置けます） <button type="button" class="small" data-btmvx="1">やめる</button>`); },true);
+  document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('[data-btmvx]')) mv=null; },true);
+  try{ hpDraw(); }catch(e){}
+})();
 </script></body></html>
 <style id="uiv2Css">
 /* ===== UI v2：ツールバー整理・計画/飛行中モード・判定の帯・パネル統一 ===== */
