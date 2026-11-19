@@ -69,14 +69,34 @@ im = imoc_metars(); it = imoc_tafs()
 m = get('metar'); time.sleep(2); t = get('taf')
 if m is None and t is None and not im and not it: sys.exit('no data')
 out = {'t': int(time.time()), 'src': '国際気象海洋 IMOC（第一優先）／NOAA Aviation Weather Center（IMOCに無い飛行場を補完）', 'metar': [], 'taf': []}
-for icao, v in im.items(): out['metar'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc'})
-for icao, v in it.items(): out['taf'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc'})
+# 飛行場の位置・名前・観測時刻（HOIST OPS が現場からの距離で並べるのに使う）。NOAA の値を優先し、無ければ tools/wx_ll.json
+import os, calendar
+try: LL = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wx_ll.json'), encoding='utf-8'))
+except Exception: LL = {}
+NO = {}
+for x in (m or []) + (t or []):
+    if x.get('icaoId') and x['icaoId'] not in NO: NO[x['icaoId']] = x
+def ts2epoch(ts):
+    try:
+        dd, hh, mm = int(ts[:2]), int(ts[2:4]), int(ts[4:6]); g = time.gmtime(); y, mo = g.tm_year, g.tm_mon
+        if dd > g.tm_mday + 1: mo -= 1
+        if mo < 1: mo, y = 12, y - 1
+        return calendar.timegm((y, mo, dd, hh, mm, 0))
+    except Exception: return None
+def meta(icao, ts=None):
+    n = NO.get(icao) or {}; ll = LL.get(icao) or [None, None]
+    r = {'name': n.get('name'), 'lat': n.get('lat') if n.get('lat') is not None else ll[0], 'lon': n.get('lon') if n.get('lon') is not None else ll[1]}
+    if n.get('elev') is not None: r['elev'] = n.get('elev')
+    if ts: r['obs'] = ts2epoch(ts)
+    return r
+for icao, v in im.items(): out['metar'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc', **meta(icao, v['ts'])})
+for icao, v in it.items(): out['taf'].append({'id': icao, 'raw': v['raw'], 'via': 'imoc', **meta(icao)})
 hm = set(im); ht = set(it); n_nm = n_nt = 0
 for x in m or []:
     if x.get('icaoId') in hm or not x.get('rawOb'): continue
-    out['metar'].append({'id': x.get('icaoId'), 'raw': x.get('rawOb'), 'via': 'noaa'}); n_nm += 1
+    out['metar'].append({'id': x.get('icaoId'), 'raw': x.get('rawOb'), 'via': 'noaa', 'name': x.get('name'), 'lat': x.get('lat'), 'lon': x.get('lon'), 'elev': x.get('elev'), 'obs': x.get('obsTime')}); n_nm += 1
 for x in t or []:
     if x.get('icaoId') in ht or not x.get('rawTAF'): continue
-    out['taf'].append({'id': x.get('icaoId'), 'raw': x.get('rawTAF'), 'via': 'noaa'}); n_nt += 1
+    out['taf'].append({'id': x.get('icaoId'), 'raw': x.get('rawTAF'), 'via': 'noaa', 'name': x.get('name'), 'lat': x.get('lat'), 'lon': x.get('lon')}); n_nt += 1
 json.dump(out, open(sys.argv[1] if len(sys.argv) > 1 else 'wx.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print('metar imoc', len(im), 'noaa', n_nm, '/ taf imoc', len(it), 'noaa', n_nt)
