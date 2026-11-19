@@ -2325,6 +2325,69 @@ function sidCalc(tas){const P=procSel(),i=S.route.dep,A=ap(i);if(!A||!P.drw)retu
   const fixD=[...ent.map((f,i)=>[f,climbNm+s1.at[i]]),...trn.map((f,i)=>[f,climbNm+s1.dist+s2.at[i]])];
   return {fixD,dist:climbNm+s1.dist+s2.dist,sidD:climbNm+s1.dist,trnD:s2.dist,ent,trn,label,fixes:[...ent,...trn],climbNm,warn,sidEnd,trnName:trn.length?trn[trn.length-1]:'',track:[A.p,der,...[st,c0,...s1.track,...s2.track].map(pl.from)]};
 }
+
+/* ---------- 進入復行の経路を、チャートの文章（MISSED APPROACH）から組み立てる ---------- */
+function maText(apt,n){try{const e=(PLD[apt]||[]).find(z=>z[0]==='APP'&&z[1]===n);return e&&e[5]||''}catch(e){return ''}}
+function maOps(t){t=' '+String(t||'').replace(/Contact .*$/i,'').replace(/Cross [^.]*\./gi,' ').replace(/Timing .*$/i,'').replace(/[°˚º]/g,'').replace(/\((?:LOC|LLZ|IF|IAF|FAF|IM|OM|RNP ?1|MAPt)\)/gi,' ').replace(/\s+/g,' ')+' ';
+  const R=[[/\b(?:on|via)\s+(?:runway\s+)?(?:HDG|track|course)\s*(\d{3})/iy,m=>({k:'hdg',v:+m[1]})],
+   [/\bHDG\s*(\d{3})\s*to intercept/iy,m=>({k:'hdgi',v:+m[1]})],
+   [/\bHDG\s*(\d{3})/iy,m=>({k:'hdg',v:+m[1]})],
+   [/\bturn\s+(left|right)/iy,m=>({k:'turn',v:m[1][0].toUpperCase()})],
+   [/\b([A-Z]{3})\s*(\d{1,2}(?:\.\d)?)\s*DME\s*(clockwise|counterclockwise|CW|CCW)\s*ARC/iy,m=>({k:'arc',nav:m[1].toUpperCase(),d:+m[2],dir:/^(counter|CCW)/i.test(m[3])?'L':'R'})],
+   [/\b(clockwise|counterclockwise)\s*ARC/iy,m=>({k:'arc',dir:/^counter/i.test(m[1])?'L':'R'})],
+   [/\bvia\s+([A-Z]{3})(?:\s+(?:VOR|TACAN|VORTAC|NDB)(?:\/DME)?)?\s*R\s*(\d{3})/iy,m=>({k:'rad',nav:m[1].toUpperCase(),v:+m[2]})],
+   [/\bR\s?(\d{3})(?=\s+to\s+([A-Z]{3})\s*\d)/y,m=>({k:'rad',nav:m[2],v:+m[1]})],
+   [/,?\s(left|right)(?=\s+HDG)/iy,m=>({k:'turn',v:m[1][0].toUpperCase()})],
+   [/\bvia\s+([A-Z]{3})\s+(?:LOC|LLZ)/iy,m=>({k:'loc'})],
+   [/\b(\d{1,2}(?:\.\d)?)\s*DME\s+prior\s+to\s+([A-Z]{3})\b(?:\s+(?:VOR|TACAN|VORTAC)(?:\/DME)?)?/iy,m=>({k:'dme',nav:m[2].toUpperCase(),d:+m[1],pr:1})],
+   [/\b(?:to|at|after passing)\s+([A-Z]{3})\s*(\d{1,2}(?:\.\d)?)\s*DME/iy,m=>({k:'dme',nav:m[1].toUpperCase(),d:+m[2]})],
+   [/\b(?:to|at)\s+(\d{1,2}(?:\.\d)?)\s*DME/iy,m=>({k:'dme',d:+m[1]})],
+   [/\bat or above\s+(\d{3,5})\s*FT,?\s*(?=turn)/iy,m=>({k:'alt',v:+m[1]})],
+   [/\b(?:climb\s+)?to\s+(\d{3,5})\s*FT/iy,m=>({k:'alt',v:+m[1]})],
+   [/\bdirect\s+to\s+([A-Z0-9]{2,5})\b/iy,m=>({k:'fix',v:m[1].toUpperCase()})],
+   [/\bproceed\s+to\s+([A-Z0-9]{2,5})\b/iy,m=>({k:'fix',v:m[1].toUpperCase()})],
+   [/\bto\s+([A-Z][A-Z0-9]{2,4})\b/y,m=>({k:'fix',v:m[1]})],
+   [/\bhold\b/iy,m=>({k:'hold'})]];
+  const out=[];let i=0;while(i<t.length){let hit=null;for(const [re,f] of R){re.lastIndex=i;const m=re.exec(t);if(m){hit=[m,f];break}}
+    if(hit){const o=hit[1](hit[0]);if(!(o.k==='fix'&&/^(THE|AND|VIA|FT|DME|ARC|ALT|MAP|MAPT|RWY|LOC)$/.test(o.v)))out.push(o);i=hit[0].index+hit[0][0].length}else i++}
+  return out}
+function maBuild(apt,x,start,hdg0,tas,A){A=A||DB[apt];if(!A)return null;const ops=maOps(maText(apt,x.n));if(!ops.length)return null;
+  const mv=A.mv!=null?A.mv:-8;const T=m=>((m+mv)%360+360)%360;const elev=A.e||0;const grad=Math.max(400,(+S.perf.roc||500)*60/(tas||120));const cl=v=>Math.min(6,v);
+  const pos=f=>{const q=fixPos(f)||(typeof plPos==='function'&&plPos(apt,f));return q?[q[0],q[1]]:null};
+  const W=[],TU=[];let P=start.slice(),hd=hdg0,alt=elev+50,turn=null,rad=null,used=0;
+  const push=(q,t)=>{W.push(q);TU.push(t||null);P=q};
+  const radPt=(nav,r,d)=>dest(nav,T(r),d);
+  const projRad=(nav,r,q)=>{const d=gc(nav,q),b=crs(nav,q);return d*Math.cos((b-T(r))*RAD)};
+  for(let k=0;k<ops.length;k++){const o=ops[k],nx=ops[k+1]||{};used++;
+    if(o.k==='turn'){turn=o.v;continue}
+    if(o.k==='hdg'||o.k==='hdgi'){hd=T(o.v);let d=null;
+      if(nx.k==='alt'&&!(ops[k+2]&&ops[k+2].k==='rad')){d=cl(Math.max(1,(nx.v-alt)/grad));alt=nx.v;k++}
+      else if(nx.k==='dme'){const nv=nx.nav?pos(nx.nav):null;const c=nv||A.p;let s=0;while(s<40&&gc(dest(P,hd,s),c)<nx.d)s+=0.1;d=Math.max(0.5,s);k++}
+      else if(o.k==='hdgi'||nx.k==='rad'){continue}
+      else d=2;
+      push(dest(P,hd,d),turn);turn=null;continue}
+    if(o.k==='alt'){if(nx.k==='hdg'||nx.k==='rad'||nx.k==='turn'){const d=cl(Math.max(0.8,(o.v-alt)/grad));if(nx.k!=='rad'&&nx.k!=='hdg'){push(dest(P,hd,d),null)}else if(nx.k==='hdg'){const h2=T(nx.v);hd=h2;const n2=ops[k+2]||{};if(n2.k==='dme'||n2.k==='fix'){k++;alt=o.v;continue}push(dest(P,hd,d),turn);turn=null;k++}alt=o.v}else alt=o.v;continue}
+    if(o.k==='rad'){const nav=pos(o.nav);if(!nav)return null;rad={nav,r:o.v};
+      let end=null;const pj=projRad(nav,o.v,P);const cs=Math.cos((hd-T(o.v))*RAD);const back=ops.slice(k+1).some(z=>z.k==='fix'&&z.v===o.nav);const ob=cs>0.3?true:(cs<-0.3&&!turn)?false:(back?true:cs>=0);const sg=ob?1:-1;
+      if(nx.k==='dme'){end=radPt(nav,o.v,nx.d);k++}
+      else if(nx.k==='alt'){const d=cl(Math.max(1,(nx.v-alt)/grad));alt=nx.v;end=radPt(nav,o.v,Math.max(0.3,Math.max(pj,0)+sg*d));k++;if(ops[k+1]&&ops[k+1].k==='dme'){end=radPt(nav,o.v,ops[k+1].d);k++}}
+      else if(nx.k==='fix'){const q=pos(nx.v);if(!q)return null;end=q;k++;
+        if(ops[k+1]&&ops[k+1].k==='arc'){push(radPt(nav,o.v,Math.max(0.5,Math.min(pj+1,projRad(nav,o.v,q)))),turn);turn=null;push(q,null);continue}}
+      else if(nx.k==='arc'){end=null}
+      else end=radPt(nav,o.v,Math.max(0.3,Math.max(pj,0)+sg*6));
+      const ie=end?projRad(nav,o.v,end):pj+6;const out=ie>=pj;const xt=Math.abs(gc(nav,P)*Math.sin((crs(nav,P)-T(o.v))*RAD));const ia=Math.max(turn?2.5:0.8,Math.min(5,xt*1.2));const ip=radPt(nav,o.v,Math.max(0.3,out?Math.min(pj+ia,ie):Math.max(ie,pj-ia)));
+      if(gc(P,ip)>0.4&&(!end||gc(ip,end)>0.4))push(ip,turn),turn=null;
+      if(end)push(end,turn),turn=null;continue}
+    if(o.k==='dme'&&o.pr){const nv=pos(o.nav);if(nv){let s=0;while(s<30&&gc(dest(P,hd,s),nv)>o.d)s+=0.1;if(s>0.2)push(dest(P,hd,s),null)}continue}
+    if(o.k==='dme'){if(rad){push(radPt(rad.nav,rad.r,o.d),turn);turn=null}continue}
+    if(o.k==='arc'){const navN=o.nav||(rad&&null);const nav=o.nav?pos(o.nav):(rad?rad.nav:null);if(!nav)return null;let tgt=null;for(let j=k+1;j<ops.length;j++){if(ops[j].k==='fix'){tgt=pos(ops[j].v);k=j;break}}if(!tgt)return null;
+      const R=o.d||gc(nav,P);const b0=crs(nav,P),b1=crs(nav,tgt);let sw=o.dir==='R'?((b1-b0)%360+360)%360:-(((b0-b1)%360+360)%360);
+      if(gc(nav,P)<R-0.5){push(dest(nav,b0,R),turn);turn=null}
+      for(let j=1;j<=24;j++)push(dest(nav,(b0+sw*j/24+360)%360,R),null);push(tgt,null);continue}
+    if(o.k==='fix'){const q=pos(o.v);if(!q){if(ops.slice(k+1).some(z=>z.k==='fix'&&pos(z.v)))continue;return null}push(q,turn);turn=null;continue}
+    if(o.k==='hold')break}
+  if(W.length<1)return null;return {W,TU}}
+function maLine(apt,x,start,hdg,tas,A){A=A||DB[apt];if(!A||!x||x.mapl)return null;const G=maBuild(apt,x,start,hdg,tas||120,A);if(!G||!G.W.length)return null;const pl=plane(A.p);const sm=simulate(pl.to(start),hdg,G.W.map(q=>pl.to(q)),tas||120,null,G.TU,null);return sm.track.map(pl.from)}
 function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return null;
   const rp=parseRoute(rteEff()).pts;const last=rp[rp.length-1];let fixes=[];let label='';
   let sT=null,sF=null;if(P.star&&P.arrMode==='star'){const E=entriesFor(A.star,P.star);const all=[...E.rw,...E.tr];const e=all[P.starE]||all[0];if(e){fixes=[...e[1]];label=P.star;sT=e[8]||null;sF=e[9]||null}}
@@ -2382,6 +2445,9 @@ function starAppCalc(tas){const P=procSel(),i=S.route.dst,A=ap(i);if(!A)return n
       const ma=tr.pts.slice(tr.maFrom);if(ma.length>1)maTrack=ma;
       if(appProf){appProf.L=L;appProf.named.forEach(n=>{const q=fixPos(n.f)||plPos(i,n.f);if(!q)return;let bi=0,bd=1e9;chain.forEach((c,k)=>{const d=gc(c,q);if(d<bd){bd=d;bi=k}});n.dt=L-cum[bi]})}
       appBr=[];}}}}catch(e){}
+  try{if(x&&!x.mapl){const pts=appTrack.length?appTrack:[];const st=maTrack.length?pl.to(maTrack[0]):(pts.length?pts[pts.length-1]:pl.to((rw&&rw.t)||A.p));const pv=pts.length>2?pts[pts.length-3]:null;
+    const hd0=(rw&&rw.b!=null)?rw.b:(pv?((Math.atan2(st.x-pv.x,st.y-pv.y)/RAD)+360)%360:0);const L=maLine(i,x,pl.from(st),hd0,tas,A);if(L){maTrack=L;x._mat='text'}}}catch(e){}
+  try{if(x&&x.mapl&&x.mapl.length>1){const M=x.mapl;const hd0=rw&&rw.b!=null?rw.b:crs(M[0],M[1]);const sm=simulate(pl.to(M[0]),hd0,M.slice(1).map(q=>pl.to(q)),tas);maTrack=sm.track.map(pl.from)}}catch(e){}
   try{const M=x&&(x.mapl||(typeof CVD!=='undefined'&&CVD[i]&&CVD[i][x.n]&&CVD[i][x.n][1]));if(x&&!maTrack.length&&M&&M.length>1){const hd0=rw&&rw.b!=null?rw.b:crs(M[0],M[1]);const sm=simulate(pl.to(M[0]),hd0,M.slice(1).map(q=>pl.to(q)),tas);maTrack=sm.track.map(pl.from)}}catch(e){}
   try{if(x&&x.cpl&&x.cpl.length>1&&P.arrMode!=='vec'){const s=simulate(from,h,x.cpl.map(q=>pl.to(q)),tas);appTrack=s.track;appD=s.dist;appStart=x.cpl[0];appFix=Object.entries(x.r||{}).flatMap(([k,L])=>L.map(f=>[f,k]))}}catch(e){}
   let dctD=0;if(pre&&fixD.length>1){dctD=fixD[1][1];starD-=dctD;fixD=fixD.slice(1).map(([f,d])=>[f,d-dctD])}
@@ -2594,6 +2660,7 @@ function thumbApp(o){const apt=S.route.dst,B=ap(apt);if(!B)return '';const name=
       if(tr.maFrom>=0){lines.push({pts:tr.pts.slice(0,tr.maFrom+1),col:FI});lines.push({pts:tr.pts.slice(tr.maFrom),col:FI,w:1.6,dash:'3 3',op:.85})}else lines.push({pts:tr.pts,col:TR,w:2.2});
       const f0=legs[0][1];if(f0&&!seenF.has(f0)&&!/^RW/.test(f0)){seenF.add(f0);const q=plPos(apt,f0);if(q)marks.push({p:q,n:f0,col:tr.maFrom>=0?FI:TR})}
       prevEnd=tr.pts[tr.maFrom>=0?tr.maFrom:tr.pts.length-1]});
+    try{const di=lines.findIndex(l=>l.dash);if(di>=0){const d=lines[di].pts,ap0=lines[di-1]&&lines[di-1].pts;const s0=d[0];const pv=ap0&&ap0.length>1?ap0[ap0.length-2]:null;const rwx=rwyOf(apt,o.x.rw);const hd=rwx&&rwx.b!=null?rwx.b:(pv?crs(pv,s0):crs(s0,d[1]));const M=maLine(apt,o.x,s0,hd,120,B);if(M&&M.length>1){lines.splice(di,1,{pts:M,col:FI,w:1.6,dash:'3 3',op:.85});for(let q=lines.length-1;q>di;q--)if(lines[q].dash)lines.splice(q,1)}}}catch(e){}
     const hasT=lines.some(l=>l.col===TR);const out=thumbLines(lines,marks,[...(hasT?[[TR,'トランジション']]:[]),[FI,'進入'],[FI,'復行',1]]);if(out&&lines.some(l=>l.col===FI))return out;lines.length=0;marks.length=1;seenF.clear()}
   // conventional: compute as "fly the full procedure from the IAF", then keep only the part from the IAF
   return withChoice(P=>{P.app=name;P.star='';P.arrMode='full';const iaf=((o.x.r||{}).IAF||[]).find(f=>fixPos(f))||(o.x.bt&&o.x.bt[0])||((o.x.r||{}).IF||[]).find(f=>fixPos(f))||[...((o.x.r||{}).FAF||[]),...((o.x.r||{}).FAP||[])].find(f=>fixPos(f));if(iaf)S.route.rte=iaf},()=>{const C=routeCalc();const a=C.arr||{};const tr=(a.appTrack||[]).filter(Boolean);if(tr.length<2)return '';
@@ -2940,7 +3007,8 @@ function plDraw(apt,E,ctx){const kind=E[0];let s='',pts=[],lab='';const col=kind
     let start=null;if(kind==='SID'&&/RWY/.test(lb||'')&&legs[0][0]!=='IF'){const id=(lb.match(/RWY\s?(\d{2}[LRC]?)/)||[])[1];const rid=ctx.rw&&lb.includes(ctx.rw)?ctx.rw:id;const r=rwyOf(apt,recip(rid||'')||'');start=r&&r.t?r.t:ap(apt).p}
     else if(legs[0][0]!=='IF'&&!(legs[0][1]&&plPos(apt,legs[0][1])))start=prevEnd;
     const T=plTrack(apt,legs,start,{app:kind==='APP'});if(T.pts.length<2&&!T.fx.length)return;prevEnd=T.pts[T.pts.length-1];
-    const P1=T.maFrom>0?T.pts.slice(0,T.maFrom+1):T.pts,P2=T.maFrom>0?T.pts.slice(T.maFrom):[];
+    const P1=T.maFrom>0?T.pts.slice(0,T.maFrom+1):T.pts;let P2=T.maFrom>0?T.pts.slice(T.maFrom):[];
+    if(kind==='APP'&&P2.length>1){try{const x=(ap(apt).iac||[]).find(q=>String(q.n).replace(/\s+/g,'').toUpperCase()===String(E[1]).replace(/\s+/g,'').toUpperCase());const rwx=x&&rwyOf(apt,x.rw);const hd=rwx&&rwx.b!=null?rwx.b:(P1.length>1?crs(P1[P1.length-2],P1[P1.length-1]):crs(P2[0],P2[1]));const M=x&&maLine(apt,x,P2[0],hd,120);if(M&&M.length>1)P2=M}catch(e){}}
     const pl=(P,dash,w,op)=>P.length>1?`<polyline points="${P.map(p=>PX(p)+','+PY(p)).join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" stroke-opacity="${op}" stroke-linejoin="round" ${dash?'stroke-dasharray="4 4"':''} vector-effect="non-scaling-stroke"/>`:'';
     s+=pl(P1,0,on?3.5:1.6,on?1:.45)+pl(P2,1,on?2.4:1.2,on?1:.45);
     // course/distance labels on straight legs
@@ -3027,7 +3095,8 @@ function arrMini(){const C=routeCalc(),P=procSel(),A=ap(S.route.dst);if(!A)retur
   if(CVx&&(CVx[0].length||CVx[1].length>1)){const xx=A.iac.find(q=>nsp(q.n)===nsp(appNm));
     // published initial approach (IAF, base turn/racetrack) from the procedure model, always drawn even with radar vectors
     try{const ini=initialApp(appNm,CVx);if(ini.s){s+=ini.s;pts.push(...ini.pts)}}catch(e){}
-    const D=cvDraw(S.route.dst,CVx,(xx&&xx.rw)||((appNm.match(/RWY\s?(\d{2}[LRC]?)/)||[])[1]));s+=D.s;pts.push(...D.pts);plA=true}
+    let CVm=CVx;try{const rwx=xx&&rwyOf(S.route.dst,xx.rw);const mp=CVx[0].find(f=>f[0]==='MAPt'||f[1]==='MAPt');const st=(CVx[1]&&CVx[1].length>1&&CVx[1][0])||(mp&&[mp[2],mp[3]])||(rwx&&rwx.t);const hd=rwx&&rwx.b!=null?rwx.b:(CVx[1]&&CVx[1].length>1?crs(CVx[1][0],CVx[1][1]):0);const M=st&&maLine(S.route.dst,xx,st,hd,120);if(M&&M.length>1){CVm=CVx.slice();CVm[1]=M}}catch(e){}
+    const D=cvDraw(S.route.dst,CVm,(xx&&xx.rw)||((appNm.match(/RWY\s?(\d{2}[LRC]?)/)||[])[1]));s+=D.s;pts.push(...D.pts);plA=true}
   if(plS){const D=plDraw(S.route.dst,ES,plCtx('ARR'));s+=D.s;pts.push(...D.pts)}
   if(plA){const D=plDraw(S.route.dst,EA,plCtx('ARR'));s+=D.s;pts.push(...D.pts)}
   if(VE&&!plS&&!plA){}
@@ -3907,7 +3976,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261119101021';
+window.APPV='20261119102750';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
