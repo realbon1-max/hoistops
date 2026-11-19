@@ -1,0 +1,11 @@
+name: geocode heliports (one-off)
+on: workflow_dispatch
+jobs:
+  geo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/geocode_hp.py /tmp/hp_geo.json && cat /tmp/hp_geo.json
+      - uses: actions/upload-artifact@v4
+        with: { name: hp_geo, path: /tmp/hp_geo.json }
