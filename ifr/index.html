@@ -178,7 +178,7 @@ a.lnk{text-decoration:none;display:inline-block;background:var(--ink);color:var(
 .hk2{font-size:12px;color:var(--muted);text-align:right;line-height:1.7}.hk2 b{font-size:18px;color:var(--ink);margin-left:6px}
 .two{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;margin-bottom:12px}
 @media (max-width:560px){.two{grid-template-columns:1fr}.rose{margin:0 auto}}
-.rose{background:var(--card);border:1px solid var(--line);padding:8px;width:210px}.rose svg{display:block;margin:0 auto}.rosel{text-align:center;font-size:15px;font-weight:700;color:var(--sky)}
+.rose{background:var(--card);border:1px solid var(--line);padding:8px;width:210px;box-sizing:border-box}.rose:has(svg[width="230"]){width:250px}.rosebg{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px}.rosebg button{font-size:12px;padding:4px 10px;min-height:32px}.rosebg small{font-size:10px;color:var(--muted)}.rosebg a{color:inherit}.rose svg{display:block;margin:0 auto}.rosel{text-align:center;font-size:15px;font-weight:700;color:var(--sky)}
 .scard{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--muted);padding:10px 12px;margin-bottom:8px}
 .scard .sci{flex:0 0 26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;background:var(--muted)}
 .scard.go{border-left-color:var(--go)}.scard.go .sci{background:var(--go)}.scard.cau{border-left-color:var(--cau)}.scard.cau .sci{background:var(--cau)}.scard.no{border-left-color:var(--no)}.scard.no .sci{background:var(--no)}
@@ -1007,6 +1007,57 @@ html[data-theme="ace"] .leg.add.need{border:1px solid rgba(242,193,78,.55);borde
 }
 /* ACE THEME END */
 
+
+/* ===== わかりやすさの調整：画面ごとの情報量・ヘッダー・タブ ===== */
+.stripnote{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:center}
+.stripnote b{font-family:var(--code);color:var(--ink);font-weight:700}
+.stripnote .sn-l{display:inline-flex;align-items:center;gap:4px}
+.stripnote .sw{display:inline-block;width:10px;height:4px;margin-left:4px}
+.stripnote .sw.go{background:var(--go)}.stripnote .sw.cau{background:var(--cau)}.stripnote .sw.no{background:var(--no)}
+/* 「計画」以外の画面では、ルート帯を要点だけにして本文を上に出す */
+html[data-grp]:not([data-grp="plan"]) .strip{margin-top:10px}
+html[data-grp]:not([data-grp="plan"]) .leg{padding:6px 10px 8px}
+html[data-grp]:not([data-grp="plan"]) .leg .nm,
+html[data-grp]:not([data-grp="plan"]) .leg .wxd,
+html[data-grp]:not([data-grp="plan"]) .stripnote .sn-l{display:none}
+html[data-grp]:not([data-grp="plan"]) .leg .icao{font-size:22px}
+html[data-grp]:not([data-grp="plan"]) .leg .role{font-size:10.5px}
+html[data-grp]:not([data-grp="plan"]) .leg .wx{margin-top:2px}
+html[data-grp]:not([data-grp="plan"]) .leg .wx svg{width:26px;height:26px}
+html[data-grp]:not([data-grp="plan"]) .leg.add .icao{font-size:18px}
+html[data-grp]:not([data-grp="plan"]) .stripnote{margin-bottom:6px}
+html[data-grp]:not([data-grp="plan"]) .leg.add .nm{display:block}
+html[data-grp]:not([data-grp="plan"]) .leg.add{min-width:64px}
+/* ヘッダー：タイトルとボタンを同じ段に */
+header.top{flex-wrap:nowrap}
+header.top>div:first-child{flex:1;min-width:0}
+header.top>.row{flex:0 0 auto}
+/* サブタブ：横にはみ出したときに続きがあることを示す */
+nav.steps.fr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+nav.steps.fl{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px);mask-image:linear-gradient(90deg,transparent,#000 36px)}
+nav.steps.fl.fr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent)}
+/* サブタブ：横幅いっぱいに広げ、アイコンを大きく */
+html[data-theme] nav.steps button{flex:1 1 0;min-width:76px;justify-content:center}
+html[data-theme] nav.steps button svg.ic{width:30px;height:30px}
+html[data-theme="simple"] nav.steps button{font-size:14px;padding:10px 8px 9px;gap:5px}
+html[data-theme] nav.steps:not(.single){gap:6px}
+nav.groups button svg.ic{width:22px;height:22px}nav.groups button{font-size:16px}
+@media (max-width:600px){nav.groups button svg.ic{width:20px;height:20px}nav.groups button{font-size:13px}}
+@media (max-width:600px){html[data-theme] nav.steps button{min-width:62px}html[data-theme] nav.steps button svg.ic{width:26px;height:26px}html[data-theme="simple"] nav.steps button{font-size:12px;padding:8px 4px 7px}}
+@media (max-width:640px){
+  /* ヘッダーを1段に */
+  header.top{flex-wrap:nowrap!important;align-items:center;gap:8px}
+  header.top>div:first-child{min-width:0;flex:1}
+  header.top h1{font-size:19px!important;gap:6px!important}
+  header.top h1::before{width:30px!important;height:15px!important}
+  header.top .airac{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
+  header.top>.row{flex:0 0 auto;flex-direction:column;align-items:stretch;gap:4px!important}
+  html[data-theme="ace"] header.top>.row{margin-right:8px}
+  header.top>.row button{font-size:11.5px!important;padding:5px 8px!important;min-height:32px!important;min-width:0!important}
+  html[data-grp]:not([data-grp="plan"]) .strip{gap:4px}
+  html[data-grp]:not([data-grp="plan"]) .leg .wx2 .wvc{display:none}
+  html[data-grp]:not([data-grp="plan"]) .salt .leg{min-height:38px;padding:4px 10px 6px}
+}
 </style>
 </head>
 <body>
@@ -1527,12 +1578,12 @@ function renderStrip(){
   if(!legs.length){el.innerHTML='<div class="smain">'+addc('dep','出発')+'<div class="arrow"></div>'+addc('dst','目的')+'</div>';$('stripnote').textContent='カードをタップして飛行場を選べます。';return}
   const cell=(role,i,alt,key)=>{const A=ap(i);const w=wxFor(i);const m=w.metar;
     let cls='';if(m){const v=m.vis??10000,c=m.ceil??99999;cls=(v<1600||c<500)?'no':(v<5000||c<1500)?'cau':'go'}
-    return `<div class="leg${alt?' alt':''}${key.startsWith('via:')?' via':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(dispIcao(i))}</div><div class="nm">${esc(A?A.n:(isZ(i)?'位置を入力':'データなし'))}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div>${esc(windText(m.wind))}<br>${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</div></div>${wxDetailHtml(m.raw)}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
+    return `<div class="leg${alt?' alt':''}${key.startsWith('via:')?' via':''}" data-pk="${key}" role="button" tabindex="0" aria-label="${role} ${esc(i)} を変更"><span class="edit">変更</span><div class="role">${role}</div><div class="icao">${esc(dispIcao(i))}</div><div class="nm">${esc(A?A.n:(isZ(i)?'位置を入力':'データなし'))}</div><div class="wx">${m?`<div style="display:flex;gap:6px;align-items:center">${wxIcon(m,38)}<div><div class="wxj" style="font-family:var(--sans,system-ui);font-size:11.5px;font-weight:700;white-space:nowrap">${esc(wxJa(m))}</div><span class="wx2"><span class="wwd">${esc(windText(m.wind))}</span><br><span class="wvc">${m.vis>=10000?'10km+':m.vis+'m'} ${m.ceil!=null?'CIG '+m.ceil:''}</span></span></div></div>${wxDetailHtml(m.raw)}`:'気象なし'}</div><div class="bar ${cls}"></div></div>`};
   const main=[r.dep?cell('出発',r.dep,0,'dep'):addc('dep','出発'),...r.via.map((v,k)=>cell('経由',v,0,'via:'+k)),r.dst?cell('目的',r.dst,0,'dst'):addc('dst','目的')];
   const swb='<button type="button" class="sub swapbtn" data-swap="1" title="出発と目的を入れ替える" aria-label="出発と目的を入れ替える" style="align-self:center;flex:0 0 auto;min-width:40px;font-size:18px;line-height:1;padding:8px 9px;margin:0 2px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="margin:0"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg></button>';
   let N=null;try{N=altNeed()}catch(e){}const need=!r.alt&&N&&N.s!=='go';
   el.innerHTML='<div class="smain">'+main.map((c,k)=>k===0?c:(k===1&&r.dep&&r.dst?swb:'<div class="arrow"></div>')+c).join('')+'</div><div class="salt">'+(r.alt?cell('代替',r.alt,1,'alt'):addc('alt','代替',1,need))+(r.talt?cell('離陸代替',r.talt,1,'talt'):addc('talt','離陸代替',1))+addc('via:+','経由',1)+'</div>';
-  $('stripnote').textContent=`ETD ${fmtZ(utc(r.etd))}　ETA ${fmtZ(utc(r.eta))}　CAT ${S.prof.cat}　色は現況METARの目安（緑 良好／黄 低め／赤 悪い）`;
+  $('stripnote').innerHTML=`<span class="sn-t">ETD <b>${esc(fmtZ(utc(r.etd)))}</b>　ETA <b>${esc(fmtZ(utc(r.eta)))}</b>　CAT <b>${esc(S.prof.cat)}</b></span><span class="sn-l">色は現況METARの目安 <i class="sw go"></i>良好 <i class="sw cau"></i>低め <i class="sw no"></i>悪い</span>`;
 }
 const PK_LAB={dep:'出発飛行場',dst:'目的飛行場',talt:'離陸代替飛行場',alt:'代替飛行場（目的地の代替）'};
 function pkCur(key){if(key.startsWith('via:')){const n=key.slice(4);return n==='+'?'':S.route.via[+n]||''}return S.route[key]||''}
@@ -2186,13 +2237,34 @@ function profile(C,dom,bare){const ph=phases(C).filter(p=>p.k!=='GND');const tot
    ${bands}${fx}</g>${d0>0.5||d1<tot-0.5?`<text x="${W-R}" y="${T}" text-anchor="end" font-size="10" fill="var(--muted)">${Math.round(d0)}–${Math.round(d1)}NM 表示中</text>`:''}</svg>`;
   if(bare)return svgStart;
   return `<div class="map">${svgStart}<div class="plegend" style="padding:4px 10px 8px;margin:0"><span><i style="background:var(--ink)"></i>予定の飛行高度（上昇${S.perf.roc||500}ft/分・降下3°・指定高度を反映）</span><span><i style="background:var(--muted);opacity:.5"></i>MEA</span><span><i style="background:var(--sky)"></i>0℃高度・管制区の切替</span><span><i style="background:var(--no)"></i>10,000ft</span><span><i style="background:#C98A00"></i>SID・STARの指定高度（▲以上／▼以下）</span></div>${AP.warn.length?AP.warn.map(w=>`<div class="msg cau" style="margin:4px 10px 8px">${esc(w)}</div>`).join(''):''}</div>`}
-function windRose(icao,w,sel){const A=ap(icao);if(!A)return '';const S0=190,c=S0/2,r=72;const P=(b,rr)=>[c+rr*Math.sin(b*RAD),c-rr*Math.cos(b*RAD)];
-  let g=`<circle cx="${c}" cy="${c}" r="${r}" fill="var(--paper)" stroke="var(--line)"/>`;
-  for(let b=0;b<360;b+=30){const [x1,y1]=P(b,r),[x2,y2]=P(b,r-(b%90?5:9));g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--muted)"/>`}
+function windRose(icao,w,sel){const A=ap(icao);if(!A)return '';const RF=keepDef('roseF',{ph:1});const S0=RF.ph?230:190,c=S0/2,r=RF.ph?92:72;const P=(b,rr)=>[c+rr*Math.sin(b*RAD),c-rr*Math.cos(b*RAD)];
+  // 滑走路の両端の座標（末端座標・長さ・方位から）。写真の上に実際の位置で重ねるのに使う
+  const ends=[];const seen0=new Set();(A.rw||[]).forEach(rw=>{if(rw.b==null||!rw.t||!rw.l)return;const k=[rw.id,recip(rw.id)].sort().join();if(seen0.has(k))return;seen0.add(k);
+    const o=(A.rw||[]).find(q=>q.id===recip(rw.id)&&q.t);const m=rw.l/1852/60;const e=o?o.t:[rw.t[0]+m*Math.cos(rw.b*RAD),rw.t[1]+m*Math.sin(rw.b*RAD)/Math.cos(rw.t[0]*RAD)];ends.push({rw,a:rw.t,e})});
+  const geo=RF.ph&&ends.length&&ends.length===new Set((A.rw||[]).filter(q=>q.b!=null).map(q=>[q.id,recip(q.id)].sort().join())).size;
+  let g=`<defs><clipPath id="rc-${icao}"><circle cx="${c}" cy="${c}" r="${r}"/></clipPath></defs><circle cx="${c}" cy="${c}" r="${r}" fill="var(--paper)" stroke="var(--line)"/>`;
+  let PT=null,labs='';
+  if(geo){const pts=ends.flatMap(o=>[o.a,o.e]);const la0=(Math.min(...pts.map(q=>q[0]))+Math.max(...pts.map(q=>q[0])))/2,lo0=(Math.min(...pts.map(q=>q[1]))+Math.max(...pts.map(q=>q[1])))/2;
+    const kx=111320*Math.cos(la0*RAD),ky=110574;const M=q=>[(q[1]-lo0)*kx,(la0-q[0])*ky];const ext=Math.max(...pts.map(q=>Math.hypot(...M(q))));const sc=(r-20)/Math.max(ext,600);
+    PT=q=>{const m=M(q);return [c+m[0]*sc,c+m[1]*sc]};
+    // 地理院タイル（写真）：表示1pxあたりのm数からズームを決める
+    const mpp=1/sc/2;let z=Math.round(Math.log2(156543.03*Math.cos(la0*RAD)/mpp));z=Math.max(10,Math.min(18,z));const n=2**z;
+    const half=r/sc;const dLat=half/ky,dLon=half/kx;
+    const tx=lon=>Math.floor((lon+180)/360*n),ty=lat=>{const l=lat*RAD;return Math.floor((1-Math.log(Math.tan(l)+1/Math.cos(l))/Math.PI)/2*n)};
+    const lonOf=x=>x/n*360-180,latOf=y=>Math.atan(Math.sinh(Math.PI*(1-2*y/n)))/RAD;let im='';
+    for(let x=tx(lo0-dLon);x<=tx(lo0+dLon);x++)for(let y=ty(la0+dLat);y<=ty(la0-dLat);y++){const [X0,Y0]=PT([latOf(y),lonOf(x)]),[X1,Y1]=PT([latOf(y+1),lonOf(x+1)]);
+      im+=`<image href="https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/${z}/${x}/${y}.jpg" x="${X0.toFixed(2)}" y="${Y0.toFixed(2)}" width="${(X1-X0+.4).toFixed(2)}" height="${(Y1-Y0+.4).toFixed(2)}" preserveAspectRatio="none" onerror="this.remove()"/>`}
+    g+=`<g clip-path="url(#rc-${icao})">${im}<circle cx="${c}" cy="${c}" r="${r}" fill="#000" opacity=".12"/></g><circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)"/>`}
+  for(let b=0;b<360;b+=30){const [x1,y1]=P(b,r),[x2,y2]=P(b,r-(b%90?5:9));g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${geo?'#fff':'var(--muted)'}"/>`}
   ['N','E','S','W'].forEach((t,i)=>{const [x,y]=P(i*90,r+11);g+=`<text x="${x}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--muted)">${t}</text>`});
-  const seen=new Set();A.rw.forEach(rw=>{if(rw.b==null)return;const k=[rw.id,recip(rw.id)].sort().join();if(seen.has(k))return;seen.add(k);const [x1,y1]=P(rw.b+180,r-14),[x2,y2]=P(rw.b,r-14);const on=sel&&(rw.id===sel||recip(rw.id)===sel);
+  const lbl=(x,y,t,on)=>`<text x="${x}" y="${y+4}" text-anchor="middle" font-size="10" font-weight="700" font-family="B612,sans-serif" fill="${geo?(on?'#FFD23F':'#fff'):'var(--ink)'}" paint-order="stroke" stroke="${geo?'#000':'var(--paper)'}" stroke-width="3">${t}</text>`;
+  if(geo){ends.forEach(o=>{const rw=o.rw;const on=sel&&(rw.id===sel||recip(rw.id)===sel);const [x1,y1]=PT(o.a),[x2,y2]=PT(o.e);
+      g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${on?'#FFD23F':'#fff'}" stroke-width="${on?5:3}" stroke-linecap="butt" opacity="${on?.75:.45}"/>`;
+      const ux=(x2-x1),uy=(y2-y1),L=Math.hypot(ux,uy)||1;const ox=ux/L*10,oy=uy/L*10;labs+=lbl(x1-ox,y1-oy,rw.id,on)+lbl(x2+ox,y2+oy,recip(rw.id),on)})}
+  else{const seen=new Set();A.rw.forEach(rw=>{if(rw.b==null)return;const k=[rw.id,recip(rw.id)].sort().join();if(seen.has(k))return;seen.add(k);const [x1,y1]=P(rw.b+180,r-14),[x2,y2]=P(rw.b,r-14);const on=sel&&(rw.id===sel||recip(rw.id)===sel);
     g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${on?'var(--ink)':'var(--muted)'}" stroke-width="${on?9:6}" stroke-linecap="butt" opacity="${on?1:.55}"/>`;
-    const [a1,b1]=P(rw.b+180,r-26),[a2,b2]=P(rw.b,r-26);g+=`<text x="${a1}" y="${b1+4}" text-anchor="middle" font-size="10" font-weight="700" font-family="B612,sans-serif" fill="var(--ink)" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${rw.id}</text><text x="${a2}" y="${b2+4}" text-anchor="middle" font-size="10" font-weight="700" font-family="B612,sans-serif" fill="var(--ink)" paint-order="stroke" stroke="var(--paper)" stroke-width="3">${recip(rw.id)}</text>`});
+    const [a1,b1]=P(rw.b+180,r-26),[a2,b2]=P(rw.b,r-26);labs+=lbl(a1,b1,rw.id)+lbl(a2,b2,recip(rw.id))})}
+  g+='<g style="filter:drop-shadow(0 0 1.5px #fff)">';
   // wind barb: staff toward where the wind blows FROM, feathers at the outer end (10kt full, 5kt half, 50kt pennant)
   if(w&&w.dir!=null&&w.spd>=3){const col='#1F6FE0';const u=[Math.sin(w.dir*RAD),-Math.cos(w.dir*RAD)],v=[Math.cos(w.dir*RAD),Math.sin(w.dir*RAD)];
     const L=r-6,tip=[c+u[0]*L,c+u[1]*L];g+=`<line x1="${c+u[0]*7}" y1="${c+u[1]*7}" x2="${tip[0]}" y2="${tip[1]}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
@@ -2203,8 +2275,10 @@ function windRose(icao,w,sel){const A=ap(icao);if(!A)return '';const S0=190,c=S0
     if(k>=5){if(pos===0)pos=10;g+=fe(pos,FL*.55)}
     g+=`<circle cx="${c}" cy="${c}" r="7" fill="${col}"/><circle cx="${c}" cy="${c}" r="3" fill="var(--card)"/>`}
   else if(w&&(w.spd||0)<3){g+=`<circle cx="${c}" cy="${c}" r="9" fill="none" stroke="#1F6FE0" stroke-width="3"/><circle cx="${c}" cy="${c}" r="4" fill="none" stroke="#1F6FE0" stroke-width="2"/>`}
+  g+='</g>'+labs;
   const lab=w?((w.spd||0)<3&&w.dir!=null?`静穏に近い ${String(w.dir).padStart(3,'0')}° ${w.spd}kt`:`${w.dir==null?'VRB':String(w.dir).padStart(3,'0')+'°'} ${w.spd}${w.gst?'G'+w.gst:''}kt`):'風の情報なし';
-  return `<div class="rose"><svg viewBox="0 0 ${S0} ${S0}" width="${S0}" height="${S0}" role="img" aria-label="滑走路と風">${g}</svg><div class="code rosel">${lab}</div><div class="note" style="text-align:center;margin:0">風は真方位・矢羽根 長＝10kt／短＝5kt／旗＝50kt</div></div>`}
+  return `<div class="rose"><svg viewBox="0 0 ${S0} ${S0}" width="${S0}" height="${S0}" role="img" aria-label="滑走路と風">${g}</svg><div class="code rosel">${lab}</div><div class="note" style="text-align:center;margin:0">風は真方位・矢羽根 長＝10kt／短＝5kt／旗＝50kt</div>${ends.length?`<div class="rosebg"><button type="button" class="sub" data-rosebg="1">${RF.ph?'図だけにする':'航空写真を表示'}</button>${geo?'<small>写真：<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a></small>':''}</div>`:''}</div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-rosebg]');if(!b)return;const RF=keepDef('roseF',{ph:1});RF.ph=RF.ph?0:1;save();renderAll()});
 function gauge(label,act,min,unit,fmt){if(act==null||min==null)return '';const ok=act>=min;const max=Math.max(min*2.2,Math.min(act,min*4));const pa=Math.min(100,act/max*100),pm=min/max*100;
   return `<div class="gauge"><div class="gl">${label}<b class="code ${ok?'':'bad'}">${fmt?fmt(act):act}${unit}</b><small>最低 ${fmt?fmt(min):min}${unit}</small></div><div class="gb"><div class="gf ${ok?'ok':'ng'}" style="width:${pa}%"></div><div class="gm" style="left:${pm}%"></div></div></div>`}
 function statusCard(kind,title,body){return `<div class="scard ${kind}"><div class="sci">${stIco(kind)}<span class="vh">${STJ[kind]||''}</span></div><div><div class="sct">${title}</div><div class="scb">${body}</div></div></div>`}
@@ -3848,12 +3922,13 @@ function navInit(){
     const mp=ev.target.closest('[data-mappick]');if(mp){mapPickOpen();return}
     const pk=ev.target.closest('[data-pick]');if(pk){const nm=pk.dataset.pick.split('|')[1]||'';setTimeout(()=>toast(nm+' を選びました'),80)}});
   document.querySelectorAll('#groups button').forEach(b=>b.onclick=()=>{const g=GRP.find(x=>x[0]===b.dataset.g);const last=(S.gl||{})[g[0]];show(last&&g[2].includes(last)?last:g[2][0])});
-  const tl=$('tabs');tl.addEventListener('keydown',ev=>{const vis=[...tl.querySelectorAll('button')].filter(b=>!b.hidden);const i=vis.indexOf(document.activeElement);if(i<0)return;let j=null;
+  const tl=$('tabs');tl.addEventListener('scroll',tabsFade,{passive:true});addEventListener('resize',tabsFade);tl.addEventListener('keydown',ev=>{const vis=[...tl.querySelectorAll('button')].filter(b=>!b.hidden);const i=vis.indexOf(document.activeElement);if(i<0)return;let j=null;
     if(ev.key==='ArrowRight')j=(i+1)%vis.length;else if(ev.key==='ArrowLeft')j=(i-1+vis.length)%vis.length;else if(ev.key==='Home')j=0;else if(ev.key==='End')j=vis.length-1;if(j==null)return;ev.preventDefault();show(vis[j].dataset.p);vis[j].focus()});
   document.querySelectorAll('#tabs button').forEach(b=>{const p=b.dataset.p;b.id='tab-'+p;b.setAttribute('aria-controls','p-'+p);const s=$('p-'+p);if(s){s.setAttribute('role','tabpanel');s.setAttribute('aria-labelledby','tab-'+p);s.tabIndex=-1}});
   document.addEventListener('keydown',ev=>{if(ev.key!=='Escape')return;const o=$('mapPick');if(o&&o.style.display!=='none'&&o.innerHTML){ev.preventDefault();mapPickClose()}});
 }
-function navSync(p){const g=grpOf(p);S.gl=S.gl||{};S.gl[g[0]]=p;
+function tabsFade(){const t=$('tabs');if(!t)return;t.classList.toggle('fr',t.scrollLeft+t.clientWidth<t.scrollWidth-4);t.classList.toggle('fl',t.scrollLeft>4)}
+function navSync(p){const g=grpOf(p);S.gl=S.gl||{};S.gl[g[0]]=p;document.documentElement.dataset.grp=g[0];requestAnimationFrame(tabsFade);
   document.querySelectorAll('#groups button').forEach(b=>{const on=b.dataset.g===g[0];b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   const tl=$('tabs');tl.classList.toggle('single',g[2].length<2);tl.setAttribute('aria-label',g[1]+'の項目');
   document.querySelectorAll('#tabs button').forEach(b=>{b.hidden=!g[2].includes(b.dataset.p);b.tabIndex=b.dataset.p===p?0:-1})}
@@ -3978,7 +4053,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261119103633';
+window.APPV='20261121061829';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
