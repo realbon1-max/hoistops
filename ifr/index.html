@@ -1075,7 +1075,7 @@ nav.groups button svg.ic{width:22px;height:22px}nav.groups button{font-size:16px
 <div class="stripnote" id="stripnote"></div>
 
 <div id="live" class="vh" aria-live="polite"></div>
-<nav class="groups" id="groups" aria-label="ブリーフィングの段階"><button type="button" data-g="sum"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h7"/><path d="M15 17l2 2 4-4"/></svg><span>まとめ</span></button><button type="button" data-g="plan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h5a3.5 3.5 0 0 1 0 7h-3a3.5 3.5 0 0 0 0 7h5"/></svg><span>計画</span></button><button type="button" data-g="path"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/></svg><span>経路</span></button><button type="button" data-g="docs"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/></svg><span>書類</span></button><button type="button" data-g="check"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>確認</span></button></nav>
+<nav class="groups" id="groups" aria-label="ブリーフィングの段階"><button type="button" data-g="sum"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h7"/><path d="M15 17l2 2 4-4"/></svg><span>まとめ</span></button><button type="button" data-g="plan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h5a3.5 3.5 0 0 1 0 7h-3a3.5 3.5 0 0 0 0 7h5"/></svg><span>計画</span></button><button type="button" data-g="path"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/></svg><span>経路</span></button><button type="button" data-g="docs"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/></svg><span>飛行準備</span></button><button type="button" data-g="check"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>確認</span></button></nav>
 <nav class="steps" role="tablist" id="tabs">
   <button role="tab" data-p="sum" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h7"/><path d="M15 17l2 2 4-4"/></svg><span class="tlab">まとめ</span></button>
   <button role="tab" data-p="route" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6h5a3.5 3.5 0 0 1 0 7h-3a3.5 3.5 0 0 0 0 7h5"/></svg><span class="tlab">ルート・機体</span></button>
@@ -3902,7 +3902,7 @@ function renderSum(){const box=$('sumOut');if(!box)return;const I=briefItems();
   tabBadges(I);const sig=V.t;if(BRIEF_LAST&&BRIEF_LAST!==sig)announce('まとめ：'+V.t);BRIEF_LAST=sig}
 
 /* ---------- navigation: 5 phases × sub-tabs, with status badges ---------- */
-const GRP=[['sum','まとめ',['sum']],['plan','計画',['route','wx']],['path','経路',['dep','enr','arr','alt']],['docs','書類',['fpl','fms','atc']],['check','確認',['calc','chk']]];
+const GRP=[['sum','まとめ',['sum']],['plan','計画',['route','wx']],['path','経路',['dep','enr','arr','alt']],['docs','飛行準備',['fpl','fms','atc']],['check','確認',['calc','chk']]];
 const grpOf=p=>(GRP.find(g=>g[2].includes(p))||GRP[0]);
 function iceSig(M){try{return [S.route.dep,S.route.dst,S.route.rte,S.fpl.lvl,M?M.hit.length:'none',M&&typeof MSM!=='undefined'&&MSM.at?+MSM.at:0].join('|')}catch(e){return ''}}
 function iceAckBtn(){let M=null;try{M=msmIcing()}catch(e){}if(!M||!M.hit.length)return '';const sig=iceSig(M);return S.ackIce===sig?`<span class="tag t-go">✓ 着氷の恐れを確認済み</span>`:`<div class="msg cau" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>経路上 ${M.hit.length}か所で着氷の恐れ</span><button type="button" class="sub ackice" data-ackice="${esc(sig)}">確認した</button></div>`}
@@ -4053,7 +4053,7 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
 <script>
-window.APPV='20261121061829';
+window.APPV='20261121063948';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
