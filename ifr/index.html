@@ -4052,8 +4052,195 @@ function airacCheck(){const today=new Date().toISOString().slice(0,10);
   if(today>=AIRAC_NEXT)$('airacWarn').innerHTML=`<details class="warnbar airacw"><summary><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.01"/></svg><span>航空データが期限切れ（AIRAC ${AIRAC_EFF}・${AIRAC_NEXT} に更新済み）</span><span class="more">詳しく</span></summary><p>このアプリの手順・ミニマ・航空路は AIRAC ${AIRAC_EFF} 版のままです。最新のデータで更新するまで、手順・ミニマは必ず公式チャートで確認してください。まとめ画面の「航空データ」にも表示しています。</p></details>`}
 load();bind();navInit();airacCheck();show(S.tab||(S.route.dep&&S.route.dst?'sum':'route'));renderAll();try{decoHeadings();let _dh=0;new MutationObserver(()=>{if(_dh)return;_dh=requestAnimationFrame(()=>{_dh=0;decoHeadings()})}).observe(document.body,{childList:true,subtree:true})}catch(e){}if(S.wxPoll)wxPollSet(1);
 </script>
+<script>var ADG={"RJAF":{"clip":[[1809,-338],[20,-616],[-476,2586],[1313,2863]],"img":"AD_ADC_7271-1.webp","m":[-1.15242,-0.17852,-0.17852,1.15242,959.0,-1166.0],"w":1571,"h":2222},"RJAN":{"clip":[[2978,3008],[1933,-1589],[-1580,-790],[-534,3807]],"img":"AD_ADC_86cd-1.webp","m":[-0.12134,-0.53353,-0.53353,0.12134,670.1,249.6],"w":1571,"h":2222},"RJBD":{"clip":[[2533,753],[455,-799],[-1250,1483],[827,3036]],"img":"AD_ADC_c251-1.webp","m":[-0.94396,-0.70521,-0.70521,0.94396,1402.2,-593.0],"w":1571,"h":2222},"RJBK":{"clip":[[1849,3146],[2125,-788],[-351,-962],[-628,2972]],"img":"AD_ADC_d296-1.webp","m":[0.05329,-0.75726,-0.75726,-0.05329,785.5,564.2],"w":1571,"h":2222},"RJBT":{"clip":[[-465,3194],[1964,3171],[1926,-742],[-503,-719]],"img":"AD_ADC_4c9f-1.webp","m":[0.76674,-0.00737,-0.00737,-0.76674,-546.2,953.2],"w":1571,"h":2222},"RJDA":{"clip":[[3344,1600],[933,-1568],[-1930,611],[481,3779]],"img":"AD_ADC_88de-1.webp","m":[-0.39876,-0.52386,-0.52386,0.39876,859.3,-39.4],"w":1571,"h":2222},"RJDC":{"clip":[[1527,2426],[2485,711],[1215,1],[257,1717]],"img":"AD_ADC_1404-1.webp","m":[0.99443,-1.78032,-1.78032,-0.99443,811.7,3638.0],"w":1571,"h":2222},"RJDK":{"clip":[[3131,-751],[-482,-1718],[-1751,3026],[1862,3993]],"img":"AD_ADC_2410-1.webp","m":[-0.5082,-0.13594,-0.13594,0.5082,495.0,-486.1],"w":1571,"h":2222},"RJDO":{"clip":[[-439,4305],[3543,2844],[1748,-2048],[-2235,-586]],"img":"AD_ADC_c82e-1.webp","m":[0.45962,-0.1687,-0.1687,-0.45962,-102.8,631.3],"w":1571,"h":2222},"RJDT":{"clip":[[2616,1077],[671,-649],[-1085,1330],[859,3056]],"img":"AD_ADC_08f1-1.webp","m":[-0.89584,-0.7951,-0.7951,0.89584,1641.3,-481.9],"w":1571,"h":2222},"RJDU":{"clip":[[-667,957],[-831,2972],[2350,3232],[2515,1217]],"img":"AD_ADC_9296-1.webp","m":[-0.07652,0.93594,0.93594,0.07652,-1890.9,-947.0],"w":1571,"h":2222},"RJEB":{"clip":[[2885,1221],[1194,-657],[-599,958],[1092,2836]],"img":"AD_ADC_744f-1.webp","m":[-0.86952,-0.96549,-0.96549,0.86952,2034.3,127.4],"w":1571,"h":2222},"RJEC":{"clip":[[2195,417],[536,-384],[-587,1944],[1072,2745]],"img":"AD_ADC_1e0d-1.webp","m":[-1.41129,-0.68104,-0.68104,1.41129,1944.8,-1131.2],"w":1571,"h":2222},"RJEO":{"clip":[[2168,1713],[769,-517],[-1073,638],[325,2868]],"img":"AD_ADC_d467-1.webp","m":[-0.62394,-0.99531,-0.99531,0.62394,1532.4,-199.2],"w":1571,"h":2222},"RJER":{"clip":[[1577,2766],[2927,576],[1086,-559],[-264,1631]],"img":"AD_ADC_6c39-1.webp","m":[0.67435,-1.09398,-1.09398,-0.67435,317.8,2208.1],"w":1571,"h":2222},"RJFC":{"clip":[[2915,1214],[709,-1137],[-1611,1040],[595,3391]],"img":"AD_ADC_ee32-1.webp","m":[-0.61115,-0.6513,-0.6513,0.61115,1135.3,-262.8],"w":1571,"h":2222},"RJFE":{"clip":[[359,2221],[1808,1576],[935,-382],[-513,263]],"img":"AD_ADC_0072-1.webp","m":[1.53593,-0.68449,-0.68449,-1.53593,-361.8,1842.2],"w":1571,"h":2222},"RJFG":{"clip":[[2896,1696],[1297,-761],[-746,567],[852,3025]],"img":"AD_ADC_2729-1.webp","m":[-0.6461,-0.9936,-0.9936,0.6461,1811.0,345.5],"w":1571,"h":2222},"RJFK":{"clip":[[833,-1040],[-606,1486],[2767,3407],[4206,881]],"img":"AD_ADC_1_3195-1.webp","m":[-0.56133,0.9855,0.9855,0.56133,-159.5,-2430.3],"w":3441,"h":2222},"RJFO":{"clip":[[1143,-119],[184,-128],[159,2404],[1119,2413]],"img":"AD_ADC_6897-1.webp","m":[-1.89804,-0.01827,-0.01827,1.89804,1248.5,-2149.4],"w":1571,"h":2222},"RJFR":{"clip":[[1367,98],[77,-118],[-338,2363],[953,2578]],"img":"AD_ADC_e4db-1.webp","m":[-1.67233,-0.27957,-0.27957,1.67233,1204.8,-1914.4],"w":1571,"h":2222},"RJFS":{"clip":[[1476,2062],[1090,-315],[-249,-97],[137,2280]],"img":"AD_ADC_ff8a-1.webp","m":[-0.25078,-1.54452,-1.54452,0.25078,1671.2,700.7],"w":1571,"h":2222},"RJFT":{"clip":[[-585,1648],[2887,3323],[4037,940],[565,-735]],"img":"AD_ADC_1_d465-1.webp","m":[1.05186,0.50756,0.50756,-1.05186,-2493.8,495.8],"w":3291,"h":2222},"RJFU":{"clip":[[2382,965],[828,-396],[-615,1253],[939,2613]],"img":"AD_ADC_f22e-1.webp","m":[-1.38513,-1.21271,-1.21271,1.38513,2553.0,-461.2],"w":1571,"h":2222},"RJKA":{"clip":[[1000,2746],[2795,1979],[1761,-442],[-34,325]],"img":"AD_ADC_ebbf-1.webp","m":[1.25869,-0.53763,-0.53763,-1.25869,-1112.8,2173.9],"w":1571,"h":2222},"RJKB":{"clip":[[342,3648],[3060,1736],[875,-1368],[-1842,544]],"img":"AD_ADC_acd4-1.webp","m":[0.62907,-0.4428,-0.4428,-0.62907,119.4,981.1],"w":1571,"h":2222},"RJNO":{"clip":[[995,2890],[2159,147],[238,-669],[-926,2075]],"img":"AD_ADC_eeed-1.webp","m":[0.4782,-1.12672,-1.12672,-0.4782,975.6,1234.0],"w":1571,"h":2222},"RJOA":{"clip":[[1056,2434],[1134,21],[227,-8],[149,2405]],"img":"AD_ADC_2cc8-1.webp","m":[0.06414,-1.98315,-1.98315,-0.06414,2364.4,1340.6],"w":1571,"h":2222},"RJOB":{"clip":[[813,2688],[2143,576],[531,-440],[-800,1671]],"img":"AD_ADC_ced7-1.webp","m":[0.93362,-1.48152,-1.48152,-0.93362,1051.9,2044.7],"w":1571,"h":2222},"RJOM":{"clip":[[2228,1320],[752,-453],[-894,916],[582,2689]],"img":"AD_ADC_6a1f-1.webp","m":[-1.02407,-1.23088,-1.23088,1.02407,2050.9,-320.2],"w":1571,"h":2222},"RJOR":{"clip":[[2139,2193],[1412,42],[316,412],[1042,2563]],"img":"AD_ADC_dd24-1.webp","m":[-0.53421,-1.58129,-1.58129,0.53421,2530.3,1575.6],"w":1571,"h":2222},"RJOS":{"clip":[[1366,2048],[897,-281],[-393,-21],[76,2308]],"img":"AD_ADC_876e-1.webp","m":[-0.35178,-1.74642,-1.74642,0.35178,1950.2,498.6],"w":1571,"h":2222},"RJOW":{"clip":[[1635,2043],[915,-307],[-541,139],[178,2489]],"img":"AD_ADC_4f10-1.webp","m":[-0.44411,-1.45052,-1.45052,0.44411,1826.7,308.7],"w":1571,"h":2222},"RJSF":{"clip":[[-66,2406],[1064,2360],[959,-205],[-171,-159]],"img":"AD_ADC_d4ec-1.webp","m":[1.67449,-0.06841,-0.06841,-1.67449,-680.6,1864.9],"w":1571,"h":2222},"RJSK":{"clip":[[1347,2379],[1084,-214],[-183,-86],[80,2508]],"img":"AD_ADC_bec4-1.webp","m":[-0.16545,-1.63183,-1.63183,0.16545,1972.7,769.6],"w":1571,"h":2222},"RJSR":{"clip":[[1449,2196],[1007,-231],[-378,21],[63,2448]],"img":"AD_ADC_8b8d-1.webp","m":[-0.27291,-1.50091,-1.50091,0.27291,1788.6,493.7],"w":1571,"h":2222},"RJSS":{"clip":[[-264,1914],[3201,2385],[3465,443],[0,-28]],"img":"AD_ADC_1_3518-1.webp","m":[1.35033,0.18353,0.18353,-1.35033,-2486.9,1145.7],"w":3143,"h":2222},"RJSY":{"clip":[[1098,2689],[1614,-122],[-5,-420],[-522,2391]],"img":"AD_ADC_8590-1.webp","m":[0.23762,-1.29395,-1.29395,-0.23762,1335.1,993.3],"w":1571,"h":2222},"RJTO":{"clip":[[127,3040],[2178,2288],[1091,-676],[-960,76]],"img":"AD_ADC_9527-1.webp","m":[1.03918,-0.38094,-0.38094,-1.03918,-181.1,1473.5],"w":1571,"h":2222},"RJTQ":{"clip":[[-53,3612],[2872,2729],[1659,-1291],[-1266,-409]],"img":"AD_ADC_1268-1.webp","m":[0.67274,-0.20301,-0.20301,-0.67274,-345.5,776.8],"w":1571,"h":2222},"ROIG":{"clip":[[332,2963],[2288,1482],[579,-774],[-1377,707]],"img":"AD_ADC_8f6b-1.webp","m":[0.96497,-0.73083,-0.73083,-0.96497,372.4,1396.5],"w":1571,"h":2222},"ROKJ":{"clip":[[195,2897],[2147,2196],[1127,-646],[-826,54]],"img":"AD_ADC_140a-1.webp","m":[1.14378,-0.41051,-0.41051,-1.14378,-301.8,1546.7],"w":1571,"h":2222},"ROMD":{"clip":[[-17,3111],[2232,2483],[1306,-833],[-943,-205]],"img":"AD_ADC_012c-1.webp","m":[0.90899,-0.25387,-0.25387,-0.90899,-310.0,1180.1],"w":1571,"h":2222},"ROMY":{"clip":[[544,2676],[2175,1397],[755,-414],[-876,864]],"img":"AD_ADC_17b4-1.webp","m":[1.15349,-0.90446,-0.90446,-1.15349,287.5,1896.7],"w":1571,"h":2222},"RORK":{"clip":[[77,3238],[2450,2139],[1030,-926],[-1343,173]],"img":"AD_ADC_6dca-1.webp","m":[0.84822,-0.39295,-0.39295,-0.84822,-34.8,1193.6],"w":1571,"h":2222},"RORS":{"clip":[[-337,2073],[881,2359],[1415,82],[196,-204]],"img":"AD_ADC_a6b6-1.webp","m":[1.96527,0.46024,0.46024,-1.96527,-1532.3,1895.3],"w":1571,"h":2222},"RORY":{"clip":[[3387,927],[617,-1545],[-1944,1324],[825,3796]],"img":"AD_ADC_7955-1.webp","m":[-0.52262,-0.4665,-0.4665,0.52262,901.5,-252.4],"w":1571,"h":2222},"ROYN":{"clip":[[1262,2963],[2100,-140],[178,-659],[-659,2444]],"img":"AD_ADC_21ca-1.webp","m":[0.30263,-1.1205,-1.1205,-0.30263,1078.9,1144.0],"w":1571,"h":2222}};</script>
+<style>
+/* ===== 飛行モード（ムービングマップ） ===== */
+#fm{position:fixed;inset:0;z-index:200;background:#0B1420;color:#fff;display:none;touch-action:none;user-select:none;-webkit-user-select:none;font-family:inherit}
+#fm.on{display:block}
+#fmMap{position:absolute;inset:0;overflow:hidden;background:#24384C}
+#fmRot{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:0 0}
+#fmRot img.t{position:absolute;max-width:none;pointer-events:none;image-rendering:auto}
+#fmRot img.adc{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;pointer-events:none}
+#fmRot img.adc.white{filter:invert(1) brightness(1.15);mix-blend-mode:screen}
+#fmRot img.adc.dark{mix-blend-mode:multiply}
+#fmSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#fmSvg text{paint-order:stroke;stroke:rgba(0,0,0,.75);stroke-width:3px;stroke-linejoin:round;font-family:inherit}
+#fmTop{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 6px) 10px 6px;display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;background:linear-gradient(180deg,rgba(6,12,20,.92),rgba(6,12,20,.78));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#fmTop .cell{flex:1 1 0;min-width:74px;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.07)}
+#fmTop .cell b{display:block;font-family:var(--code,monospace);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+#fmTop .cell span{font-size:11px;color:#A9BCD0}
+#fmTop .cell.wp{flex:2 1 0}
+#fmTop .cell.warn b{color:#FFB547}
+#fmBtns{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 86px);display:flex;flex-direction:column;gap:8px}
+#fmBtns button,#fmBot button,#fmBot select{min-width:52px;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(10,20,34,.82);color:#fff;font:inherit;font-size:14px;font-weight:700;padding:6px 10px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#fmBtns button.on,#fmBot button.on{background:#2F6FB2;border-color:#7FB2E8}
+#fmBot{position:absolute;left:0;right:0;bottom:0;padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 8px);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:linear-gradient(0deg,rgba(6,12,20,.92),rgba(6,12,20,.7))}
+#fmBot .sp{flex:1}
+#fmBot label{font-size:12px;color:#A9BCD0;display:flex;align-items:center;gap:6px}
+#fmBot input[type=range]{width:110px}
+#fmTaxi{position:absolute;left:10px;top:calc(env(safe-area-inset-top,0px) + 86px);max-width:min(62%,420px);padding:8px 12px;border-radius:12px;background:rgba(10,20,34,.86);border:1px solid rgba(255,214,102,.6);font-size:14px;line-height:1.5;display:none}
+#fmTaxi b{color:#FFD666}
+#fmMsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:80%;padding:14px 18px;border-radius:14px;background:rgba(10,20,34,.9);text-align:center;font-size:15px;line-height:1.6;display:none}
+#fmNote{position:absolute;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font-size:10.5px;color:#C9D6E3;text-shadow:0 0 3px #000;pointer-events:none}
+#fmBtn{white-space:nowrap}
+</style>
+<div id="fm" aria-hidden="true">
+  <div id="fmMap"><div id="fmRot"></div><svg id="fmSvg"></svg></div>
+  <div id="fmTop">
+    <div class="cell"><span>対地速度</span><b id="fmGs">---</b></div>
+    <div class="cell"><span>航跡 °M</span><b id="fmTrk">---</b></div>
+    <div class="cell"><span>GPS高度 ft</span><b id="fmAlt">---</b></div>
+    <div class="cell wp"><span id="fmWpN">次の地点</span><b id="fmWp">---</b></div>
+  </div>
+  <div id="fmTaxi"></div>
+  <div id="fmBtns">
+    <button type="button" id="fmFollow" class="on" title="自機を中心に">自機</button>
+    <button type="button" id="fmUp" title="地図の向き">北上</button>
+    <button type="button" id="fmZin" aria-label="拡大">＋</button>
+    <button type="button" id="fmZout" aria-label="縮小">－</button>
+  </div>
+  <div id="fmMsg"></div>
+  <div id="fmNote"></div>
+  <div id="fmBot">
+    <button type="button" id="fmClose">閉じる</button>
+    <select id="fmBase" aria-label="背景"><option value="photo">写真</option><option value="std">地図</option><option value="pale">淡色地図</option></select>
+    <button type="button" id="fmAd" class="on">ADチャート</button>
+    <label id="fmAdOpW">濃さ<input type="range" id="fmAdOp" min="20" max="100" step="5" value="85"></label>
+    <span class="sp"></span>
+  </div>
+</div>
 <script>
-window.APPV='20261121090301';
+(function(){
+const FMB={photo:['seamlessphoto','jpg',18],std:['std','png',18],pale:['pale','png',18]};
+const FM={on:false,z:13,c:null,rot:0,up:'north',follow:true,base:'photo',ad:true,adOp:.85,trail:[],pos:null,wl:null,watch:null,tiles:new Map(),adc:new Map(),dirty:true,route:null,autoZ:false};
+try{const s=JSON.parse(localStorage.getItem('ifr-fm')||'{}');['up','base','ad','adOp','z'].forEach(k=>{if(s[k]!=null)FM[k]=s[k]})}catch(e){}
+const saveP=()=>{try{localStorage.setItem('ifr-fm',JSON.stringify({up:FM.up,base:FM.base,ad:FM.ad,adOp:FM.adOp,z:FM.z}))}catch(e){}};
+const $=id=>document.getElementById(id);const R=Math.PI/180;
+const wx=(lon,z)=>(lon+180)/360*256*Math.pow(2,z);
+const wy=(lat,z)=>{const s=Math.sin(lat*R);return (0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*256*Math.pow(2,z)};
+const ilon=(x,z)=>x/(256*Math.pow(2,z))*360-180;
+const ilat=(y,z)=>{const n=Math.PI-2*Math.PI*y/(256*Math.pow(2,z));return Math.atan(Math.sinh(n))/R};
+function size(){const m=$('fmMap');return [m.clientWidth,m.clientHeight]}
+// 緯度経度 → 回転前の中心からのずれ（px）
+function off(p){return [wx(p[1],FM.z)-wx(FM.c[1],FM.z),wy(p[0],FM.z)-wy(FM.c[0],FM.z)]}
+// 緯度経度 → 画面座標
+function scr(p){const [dx,dy]=off(p);const c=Math.cos(-FM.rot*R),s=Math.sin(-FM.rot*R);const [W,H]=size();return [W/2+dx*c-dy*s,H/2+dx*s+dy*c]}
+function unscr(x,y){const [W,H]=size();let dx=x-W/2,dy=y-H/2;const c=Math.cos(FM.rot*R),s=Math.sin(FM.rot*R);const ux=dx*c-dy*s,uy=dx*s+dy*c;return [ilat(wy(FM.c[0],FM.z)+uy,FM.z),ilon(wx(FM.c[1],FM.z)+ux,FM.z)]}
+function mvar(){try{let best=null,bd=1e9;for(const k of Object.keys(DB)){const A=DB[k];if(!A.p||A.mv==null)continue;const d=gc(FM.c,A.p);if(d<bd){bd=d;best=A}}return best?best.mv:-8}catch(e){return -8}}
+function near(p,maxNm){let best=null,bd=maxNm;for(const k of Object.keys(DB)){const A=DB[k];if(!A||!A.p)continue;const d=gc(p,A.p);if(d<bd){bd=d;best=k}}return best?[best,bd]:null}
+/* ---- 計画ルート ---- */
+function buildRoute(){try{const C=routeCalc();if(!C||!C.path||C.path.length<2){FM.route=null;return}
+  const fx=[];const seen=new Set();(C.rows||[]).forEach(l=>{const n=String(l.b||'').split(' ')[0];const p=fixPos(n);if(p&&!seen.has(n)){seen.add(n);fx.push([n,p])}});
+  FM.route={path:C.path.filter(Boolean),ma:(C.arr&&C.arr.maTrack)||[],fx}}catch(e){FM.route=null}}
+/* ---- タイル ---- */
+function drawTiles(){const B=FMB[FM.base]||FMB.photo;const zi=Math.max(5,Math.min(B[2],Math.floor(FM.z+0.15)));const f=Math.pow(2,FM.z-zi);const ts=256*f;
+  const [W,H]=size();const r=Math.hypot(W,H)/2+ts;const cx=wx(FM.c[1],zi),cy=wy(FM.c[0],zi);
+  const x0=Math.floor((cx-r/f)/256),x1=Math.floor((cx+r/f)/256),y0=Math.floor((cy-r/f)/256),y1=Math.floor((cy+r/f)/256);
+  const want=new Set();const rot=$('fmRot');
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){if(y<0||y>=Math.pow(2,zi))continue;const k=FM.base+'/'+zi+'/'+x+'/'+y;want.add(k);let im=FM.tiles.get(k);
+    if(!im){im=document.createElement('img');im.className='t';im.alt='';im.decoding='async';im.onerror=()=>{im.style.visibility='hidden'};im.src='https://cyberjapandata.gsi.go.jp/xyz/'+B[0]+'/'+zi+'/'+x+'/'+y+'.'+B[1];FM.tiles.set(k,im);rot.insertBefore(im,rot.querySelector('img.adc'))}
+    im.style.left=((x*256-cx)*f).toFixed(1)+'px';im.style.top=((y*256-cy)*f).toFixed(1)+'px';im.style.width=im.style.height=(ts+0.6).toFixed(1)+'px'}
+  for(const [k,im] of FM.tiles)if(!want.has(k)){im.remove();FM.tiles.delete(k)}
+  rot.style.transform='rotate('+(-FM.rot)+'deg)'}
+/* ---- ADチャートの重ね合わせ ---- */
+function drawAdc(){const rot=$('fmRot');const want=new Set();
+  if(FM.ad&&FM.z>=12.5&&typeof ADG!=='undefined'){for(const a of Object.keys(ADG)){const A=DB[a];if(!A||!A.p||gc(FM.c,A.p)>12)continue;const g=ADG[a];want.add(a);let im=FM.adc.get(a);
+    if(!im){im=document.createElement('img');im.className='adc white';im.alt='';im.onerror=()=>{im.style.display='none'};im.src=chartBase()+a+'/'+g.img;if(g.clip){const cp='polygon('+g.clip.map(q=>q[0]+'px '+q[1]+'px').join(',')+')';im.style.clipPath=cp;im.style.webkitClipPath=cp}FM.adc.set(a,im);rot.appendChild(im)}
+    // 画像px → ENU(m) → 緯度経度 → 回転前px
+    const ll=(x,y)=>{const E=g.m[0]*x+g.m[1]*y+g.m[4],N=g.m[2]*x+g.m[3]*y+g.m[5];return [A.p[0]+N/(1852*60),A.p[1]+E/(1852*60*Math.cos(A.p[0]*R))]};
+    const o=off(ll(0,0)),ax=off(ll(1000,0)),ay=off(ll(0,1000));
+    const m=[(ax[0]-o[0])/1000,(ax[1]-o[1])/1000,(ay[0]-o[0])/1000,(ay[1]-o[1])/1000,o[0],o[1]];
+    im.style.transform='matrix('+m.map(v=>v.toFixed(6)).join(',')+')';im.style.opacity=FM.adOp}}
+  for(const [k,im] of FM.adc)if(!want.has(k)){im.remove();FM.adc.delete(k)}}
+/* ---- ベクター（ルート・飛行場・自機） ---- */
+function drawVec(){const [W,H]=size();const s=[];const P=a=>a.map(q=>scr(q).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const inV=q=>{const [x,y]=scr(q);return x>-60&&y>-60&&x<W+60&&y<H+60};
+  if(FM.route){s.push('<polyline points="'+P(FM.route.path)+'" fill="none" stroke="#000" stroke-opacity=".55" stroke-width="7" stroke-linejoin="round"/><polyline points="'+P(FM.route.path)+'" fill="none" stroke="#FF4FD8" stroke-width="3.5" stroke-linejoin="round"/>');
+    if(FM.route.ma.length>1)s.push('<polyline points="'+P(FM.route.ma)+'" fill="none" stroke="#FF8C8C" stroke-width="2.5" stroke-dasharray="7 5"/>');
+    if(FM.z>=7)FM.route.fx.forEach(([n,p])=>{if(!inV(p))return;const [x,y]=scr(p);s.push('<path d="M'+x+','+(y-7)+'L'+(x+6)+','+(y+5)+'L'+(x-6)+','+(y+5)+'Z" fill="#fff" stroke="#FF4FD8" stroke-width="2"/><text x="'+(x+9)+'" y="'+(y+4)+'" font-size="12" fill="#fff" font-weight="700">'+n+'</text>')})}
+  if(FM.z>=7.5)for(const k of Object.keys(DB)){const A=DB[k];if(!A||!A.p||!inV(A.p))continue;const [x,y]=scr(A.p);if(FM.z<13.5)s.push('<circle cx="'+x+'" cy="'+y+'" r="6" fill="none" stroke="#7FD4FF" stroke-width="2.2"/><text x="'+(x+9)+'" y="'+(y-7)+'" font-size="12" fill="#7FD4FF" font-weight="700">'+k+'</text>');
+    else s.push('<text x="'+(x)+'" y="'+(y-14)+'" font-size="13" fill="#7FD4FF" font-weight="700" text-anchor="middle">'+k+'</text>')}
+  if(FM.trail.length>1)s.push('<polyline points="'+P(FM.trail)+'" fill="none" stroke="#FFD666" stroke-width="2.5" stroke-opacity=".85"/>');
+  const p=FM.pos;if(p){const q=[p.lat,p.lon];const [x,y]=scr(q);
+    if(p.acc&&p.acc>15){const rpx=p.acc/(156543.03*Math.cos(p.lat*R)/Math.pow(2,FM.z));if(rpx>8)s.push('<circle cx="'+x+'" cy="'+y+'" r="'+Math.min(rpx,400).toFixed(1)+'" fill="#3FA9FF" fill-opacity=".15" stroke="#3FA9FF" stroke-opacity=".6"/>')}
+    if(p.trk!=null&&p.gs>20){const v=gcDest(q,p.trk,p.gs/60);const [vx,vy]=scr(v);s.push('<line x1="'+x+'" y1="'+y+'" x2="'+vx.toFixed(1)+'" y2="'+vy.toFixed(1)+'" stroke="#fff" stroke-width="2.5" stroke-dasharray="2 3"/><text x="'+(vx+6).toFixed(1)+'" y="'+(vy+4).toFixed(1)+'" font-size="11" fill="#fff">1分</text>')}
+    const a=(p.trk!=null?p.trk:0)-FM.rot;
+    s.push('<g transform="translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+a.toFixed(1)+')"><path d="M0,-17 L11,13 L0,7 L-11,13 Z" fill="#FFE14D" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/></g>')}
+  // 方位の目印
+  if(FM.rot!==0){s.push('<g transform="translate('+(W-34)+','+(H-130)+') rotate('+(-FM.rot)+')"><circle r="16" fill="rgba(10,20,34,.8)" stroke="#fff" stroke-opacity=".5"/><path d="M0,-12 L5,2 L-5,2Z" fill="#FF5A5A"/><text y="12" font-size="10" fill="#fff" text-anchor="middle">N</text></g>')}
+  // 縮尺
+  const mpp=156543.03*Math.cos(FM.c[0]*R)/Math.pow(2,FM.z);const nm=[0.05,0.1,0.25,0.5,1,2,5,10,20,50].find(v=>v*1852/mpp>70)||50;const L=nm*1852/mpp;
+  s.push('<g transform="translate(12,'+(H-96)+')"><line x1="0" y1="0" x2="'+L.toFixed(1)+'" y2="0" stroke="#fff" stroke-width="3"/><line x1="0" y1="-5" x2="0" y2="5" stroke="#fff" stroke-width="2"/><line x1="'+L.toFixed(1)+'" y1="-5" x2="'+L.toFixed(1)+'" y2="5" stroke="#fff" stroke-width="2"/><text x="'+(L/2).toFixed(1)+'" y="-7" font-size="11" fill="#fff" text-anchor="middle">'+(nm<1?Math.round(nm*1852)+'m':nm+'NM')+'</text></g>');
+  $('fmSvg').innerHTML=s.join('')}
+function gcDest(p,brg,nm){const d=nm/3440.065,b=brg*R,la=p[0]*R,lo=p[1]*R;const la2=Math.asin(Math.sin(la)*Math.cos(d)+Math.cos(la)*Math.sin(d)*Math.cos(b));return [la2/R,(lo+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la),Math.cos(d)-Math.sin(la)*Math.sin(la2)))/R]}
+/* ---- 表示（数値・地上走行） ---- */
+function readouts(){const p=FM.pos;const mv=mvar();
+  $('fmGs').textContent=p&&p.gs!=null?Math.round(p.gs)+'kt':'---';
+  $('fmTrk').textContent=p&&p.trk!=null&&p.gs>3?String(Math.round(((p.trk-mv)%360+360)%360)||360).padStart(3,'0'):'---';
+  $('fmAlt').textContent=p&&p.alt!=null?Math.round(p.alt/0.3048).toLocaleString():'---';
+  // 次の地点
+  let wp='---',wn='次の地点';if(p&&FM.route&&FM.route.fx.length){const q=[p.lat,p.lon];let bi=-1,bd=1e9;FM.route.fx.forEach(([n,f],i)=>{const d=gc(q,f);if(d<bd){bd=d;bi=i}});
+    let i=bi;if(i<FM.route.fx.length-1){const a=FM.route.fx[i][1],b=FM.route.fx[i+1][1];if(gc(q,b)<gc(a,b))i++}
+    const [n,f]=FM.route.fx[i];const d=gc(q,f);const br=((crs(q,f)-mv)%360+360)%360;wn='次 '+n;wp=String(Math.round(br)||360).padStart(3,'0')+'° '+d.toFixed(d<10?1:0)+'NM'+(p.gs>30?' '+Math.round(d/p.gs*60)+'分':'')}
+  $('fmWpN').textContent=wn;$('fmWp').textContent=wp;
+  // 地上走行
+  const box=$('fmTaxi');let h='';const ref=p?[p.lat,p.lon]:FM.c;const nr=near(ref,3);
+  if(nr&&(!p||p.gs==null||p.gs<45)){const a=nr[0];const T=(S&&S.taxi)||{};const r=S.route||{};
+    if(a===r.dep&&(T.dSpot||T.dRoute))h='<b>'+a+' 出発の地上走行</b><br>スポット '+esc(T.dSpot||'—')+' → '+esc((T.dRoute||'—').toUpperCase())+' → 滑走路';
+    else if(a===r.dst&&(T.aExit||T.aRoute||T.aSpot))h='<b>'+a+' 到着の地上走行</b><br>'+esc((T.aExit||'—').toUpperCase())+'で離脱 → '+esc((T.aRoute||'—').toUpperCase())+' → スポット '+esc(T.aSpot||'—');
+    else if(typeof ADG!=='undefined'&&ADG[a])h='<b>'+a+'</b>　ADチャートを重ねています';
+    if(h&&!(typeof ADG!=='undefined'&&ADG[a]))h+='<br><span style="font-size:12px;color:#C9D6E3">この飛行場はADチャートの重ね合わせがありません（写真で確認）</span>';}
+  box.innerHTML=h;box.style.display=h?'block':'none'}
+function render(){if(!FM.on)return;if(!FM.c){FM.c=(FM.pos?[FM.pos.lat,FM.pos.lon]:null)||((ap(S.route.dep)||{}).p)||[36,138]}
+  FM.rot=FM.up==='track'&&FM.pos&&FM.pos.trk!=null&&FM.pos.gs>3?FM.pos.trk:0;
+  // 進行方向が上のときは、自機を画面の下寄りにして前方を広く見せる
+  if(FM.follow&&FM.pos){FM.c=[FM.pos.lat,FM.pos.lon];if(FM.rot){const [W,H]=size();const mpp=156543.03*Math.cos(FM.pos.lat*R)/Math.pow(2,FM.z);FM.c=gcDest(FM.c,FM.rot,H*0.22*mpp/1852)}}
+  drawTiles();drawAdc();drawVec();readouts();
+  $('fmUp').textContent=FM.up==='track'?'進行方向':'北上';$('fmFollow').classList.toggle('on',FM.follow);$('fmAd').classList.toggle('on',FM.ad);$('fmAdOpW').style.display=FM.ad?'':'none';
+  $('fmNote').textContent='参考表示（GPS）。航法・地上走行は承認された計器とチャート・管制の指示に従ってください。背景：地理院タイル'}
+let raf=0;function req(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;render()})}
+/* ---- GPS ---- */
+function onPos(e){const c=e.coords;const now=e.timestamp||Date.now();const prev=FM.pos;let trk=c.heading!=null&&!isNaN(c.heading)?c.heading:null;let gs=c.speed!=null&&!isNaN(c.speed)?c.speed*1.943844:null;
+  if(prev&&(trk==null||gs==null)){const d=gc([prev.lat,prev.lon],[c.latitude,c.longitude]);const dt=(now-prev.t)/3600e3;if(dt>0&&d>0.002){if(gs==null)gs=d/dt;if(trk==null)trk=crs([prev.lat,prev.lon],[c.latitude,c.longitude])}else{if(trk==null)trk=prev.trk;if(gs==null)gs=prev.gs}}
+  FM.pos={lat:c.latitude,lon:c.longitude,alt:c.altitude,acc:c.accuracy,trk,gs,t:now};
+  const L=FM.trail[FM.trail.length-1];if(!L||gc(L,[c.latitude,c.longitude])>0.02){FM.trail.push([c.latitude,c.longitude]);if(FM.trail.length>3000)FM.trail.shift()}
+  if(FM.follow)FM.c=[c.latitude,c.longitude];
+  // 地上で飛行場の近くなら、最初の一回だけ拡大
+  if(!FM.autoZ&&gs!=null&&gs<45&&near([c.latitude,c.longitude],2)){FM.autoZ=true;if(FM.z<15.5)FM.z=16}
+  $('fmMsg').style.display='none';req()}
+function onErr(e){const m=$('fmMsg');m.innerHTML=e&&e.code===1?'位置情報の使用が許可されていません。<br>設定でこのアプリ（ブラウザ）に位置情報を許可してください。<br><span style="font-size:12px">地図とルートは表示できます</span>':'GPSの位置を取得できません。空が見える場所で待ってください。';m.style.display='block';setTimeout(()=>{m.style.display='none'},6000)}
+function startGps(){if(!navigator.geolocation){onErr({code:2});return}try{FM.watch=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:1000,timeout:20000})}catch(e){onErr({code:2})}}
+async function wake(){try{if('wakeLock' in navigator){FM.wl=await navigator.wakeLock.request('screen')}}catch(e){}}
+function open(){FM.on=true;$('fm').classList.add('on');$('fm').setAttribute('aria-hidden','false');document.documentElement.style.overflow='hidden';buildRoute();FM.c=null;FM.follow=true;FM.autoZ=false;$('fmBase').value=FM.base;$('fmAdOp').value=Math.round(FM.adOp*100);startGps();wake();req()}
+function close(){FM.on=false;$('fm').classList.remove('on');$('fm').setAttribute('aria-hidden','true');document.documentElement.style.overflow='';if(FM.watch!=null)try{navigator.geolocation.clearWatch(FM.watch)}catch(e){}FM.watch=null;try{FM.wl&&FM.wl.release()}catch(e){}FM.wl=null;saveP()}
+document.addEventListener('visibilitychange',()=>{if(FM.on&&document.visibilityState==='visible')wake()});
+window.addEventListener('resize',req);
+/* ---- 操作 ---- */
+function zoomAt(nz,sx,sy){nz=Math.max(6,Math.min(20,nz));if(sx!=null&&!FM.follow){const before=unscr(sx,sy);FM.z=nz;const after=unscr(sx,sy);FM.c=[FM.c[0]+(before[0]-after[0]),FM.c[1]+(before[1]-after[1])]}else FM.z=nz;saveP();req()}
+const ptr=new Map();let pinch=null,lastTap=0;
+const map=$('fmMap');
+map.addEventListener('pointerdown',e=>{map.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);if(ptr.size===2){const [a,b]=[...ptr.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),z:FM.z}}
+  const t=Date.now();if(ptr.size===1&&t-lastTap<300){zoomAt(FM.z+1,e.clientX,e.clientY)}lastTap=t});
+map.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const pr=ptr.get(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptr.size===2&&pinch){const [a,b]=[...ptr.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);zoomAt(pinch.z+Math.log2(d/pinch.d),(a[0]+b[0])/2,(a[1]+b[1])/2);return}
+  if(ptr.size===1){const dx=e.clientX-pr[0],dy=e.clientY-pr[1];if(Math.abs(dx)+Math.abs(dy)<1)return;FM.follow=false;const [W,H]=size();const c=unscr(W/2-dx,H/2-dy);FM.c=c;req()}});
+const up=e=>{ptr.delete(e.pointerId);if(ptr.size<2)pinch=null};map.addEventListener('pointerup',up);map.addEventListener('pointercancel',up);
+map.addEventListener('wheel',e=>{e.preventDefault();zoomAt(FM.z-e.deltaY/300,e.clientX,e.clientY)},{passive:false});
+$('fmZin').onclick=()=>zoomAt(Math.round(FM.z)+1);$('fmZout').onclick=()=>zoomAt(Math.round(FM.z)-1);
+$('fmFollow').onclick=()=>{FM.follow=true;if(FM.pos)FM.c=[FM.pos.lat,FM.pos.lon];req()};
+$('fmUp').onclick=()=>{FM.up=FM.up==='track'?'north':'track';saveP();req()};
+$('fmBase').onchange=e=>{FM.base=e.target.value;saveP();req()};
+$('fmAd').onclick=()=>{FM.ad=!FM.ad;saveP();req()};
+$('fmAdOp').oninput=e=>{FM.adOp=+e.target.value/100;saveP();req()};
+$('fmClose').onclick=close;
+window.fmOpen=open;window.FM=FM;
+// ヘッダーに「飛行モード」ボタン
+const tb=document.getElementById('themeBtn');if(tb&&!document.getElementById('fmBtn')){const b=document.createElement('button');b.className='sub';b.id='fmBtn';b.type='button';b.textContent='飛行モード';b.title='写真・地図に自機の位置を出します（GPS）';b.onclick=open;tb.parentNode.insertBefore(b,tb)}
+})();
+</script>
+
+<script>
+window.APPV='20261121093737';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
