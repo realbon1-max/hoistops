@@ -1069,6 +1069,146 @@ nav.groups button svg.ic{width:22px;height:22px}nav.groups button{font-size:16px
 #trView #trSvg{position:absolute;inset:0;width:100%;height:100%}
 #trView .trfoot{padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 8px);border-top:1px solid var(--line,#ccc);background:var(--card,#fff);display:flex;flex-direction:column;gap:6px}
 </style>
+<style id="uitok">
+/* =====================================================================
+   デザイントークン（見た目の調整用・機能は変えない）
+   色はモードごとの既存の値を使い、ここでは形・余白・文字・注釈色だけを足す
+   ===================================================================== */
+:root{--r:4px;--sp:12px;--btn-h:44px;--fs-note:12.5px;--lh-note:1.6;--note:var(--muted);--field-bg:var(--paper);--chev:var(--muted);--hh:0px;--gh:0px;color-scheme:light}
+:root[data-theme="simple"]{--r:8px;--note:#4F5D6B;--chev:#5F6E7C}
+:root[data-theme="light"]{--r:3px;--note:#43586A;--chev:#566B7D}
+:root[data-theme="dark"]{--r:4px;--note:#B2C2CF;--chev:#94A8B8;color-scheme:dark}
+:root[data-theme="tac"]{--r:0px;--note:#4FD24F;--chev:#4afe00;color-scheme:dark}
+:root[data-theme="ace"]{--r:2px;--note:#B4C3D3;--chev:#FF8A1F;color-scheme:dark}
+
+/* ---------- 注釈の読みやすさ ---------- */
+.note,.stripnote,.pnote,.airac,small.calc,.disc{font-size:max(var(--fs-note),12px);line-height:var(--lh-note);color:var(--note)}
+p.hint,.empty{font-size:13px;line-height:var(--lh-note);color:var(--note)}
+label.f{color:var(--note)}
+html[data-theme="tac"] .note,html[data-theme="tac"] .hint,html[data-theme="tac"] .stripnote,html[data-theme="tac"] .airac,html[data-theme="tac"] label.f,html[data-theme="tac"] .f,html[data-theme="tac"] .disc,html[data-theme="tac"] .pnote{color:var(--note)!important;font-size:12px!important;line-height:1.55}
+html[data-theme="tac"] p.hint{font-size:12.5px!important}
+
+/* ---------- ボタン：主（.act）・副（.sub）・テキスト（.txt）。形は共通、色はモードの既存の色 ---------- */
+button.act,a.act,button.sub,a.sub{min-height:var(--btn-h);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;line-height:1.3;padding:8px 14px;border-radius:var(--r);box-sizing:border-box;text-align:center;white-space:normal}
+button.txt,a.txt{min-height:var(--btn-h);display:inline-flex;align-items:center;gap:4px;font:inherit;font-size:14px;color:var(--sky);background:none;border:none;padding:8px 4px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+:root[data-theme="tac"] button.txt,:root[data-theme="tac"] a.txt{color:var(--sky)}
+:root[data-theme="ace"] button.txt,:root[data-theme="ace"] a.txt{color:var(--hud)}
+button.act:focus-visible,button.sub:focus-visible,button.txt:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+/* 長い文字のチップ：省略せずに2列以上で折り返す */
+.caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 14px}
+.caps label{min-height:40px;line-height:1.35}
+
+/* ---------- 入力欄：プルダウン・日時をモードの入力欄と同じトーンに ---------- */
+select:not([multiple]):not([size]){-webkit-appearance:none;appearance:none;padding-right:30px;min-height:var(--btn-h);border-radius:var(--r);
+  background-image:linear-gradient(45deg,transparent 50%,var(--chev) 50%),linear-gradient(135deg,var(--chev) 50%,transparent 50%);
+  background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+select::-ms-expand{display:none}
+input[type="datetime-local"],input[type="date"],input[type="time"]{min-height:var(--btn-h);border-radius:var(--r);font-family:var(--code);letter-spacing:.02em}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator{opacity:.85;cursor:pointer}
+:root[data-theme="tac"] input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(64%) sepia(100%) saturate(1200%) hue-rotate(60deg)}
+:root[data-theme="ace"] input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(62%) sepia(90%) saturate(1500%) hue-rotate(350deg)}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),textarea{border-radius:var(--r)}
+
+/* 飛行場の選択：検索できる一覧 */
+.apsel select.appk-src{display:none!important}
+button.appk{font:inherit;font-size:14px;text-align:left;min-height:var(--btn-h);flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:8px 30px 8px 10px;color:var(--ink);background-color:var(--field-bg);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background-image:linear-gradient(45deg,transparent 50%,var(--chev) 50%),linear-gradient(135deg,var(--chev) 50%,transparent 50%);background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+button.appk .appk-t{overflow:hidden;text-overflow:ellipsis}
+button.appk.ph{color:var(--note)}
+:root[data-theme="tac"] button.appk{background-color:#000;border-color:var(--line);color:var(--ink)}
+#appkSheet{position:fixed;inset:0;z-index:300;display:none;background:rgba(0,0,0,.45)}
+#appkSheet.on{display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 6vh) 12px 12px}
+#appkSheet .pane2{width:min(560px,100%);max-height:80vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.35)}
+#appkSheet .hd{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--line)}
+#appkSheet .hd input{flex:1;min-width:0;min-height:var(--btn-h);font-size:16px}
+#appkSheet .hd button{white-space:nowrap;flex:0 0 auto}
+#appkSheet .ls{overflow:auto;-webkit-overflow-scrolling:touch;padding:4px 0 10px}
+#appkSheet .grp{position:sticky;top:0;background:var(--card);padding:8px 14px 4px;font-size:12px;font-weight:700;color:var(--note);border-bottom:1px solid var(--line)}
+#appkSheet .opt{display:flex;gap:10px;align-items:center;width:100%;min-height:44px;padding:6px 14px;font:inherit;font-size:14px;text-align:left;color:var(--ink);background:none;border:none;border-bottom:1px solid var(--line);cursor:pointer}
+#appkSheet .opt:hover,#appkSheet .opt:focus-visible{background:var(--paper)}
+#appkSheet .opt.sel{box-shadow:inset 3px 0 0 var(--mag)}
+#appkSheet .opt .ic4{font-family:var(--code);font-weight:700;min-width:44px}
+#appkSheet .none{padding:16px;color:var(--note)}
+
+/* ---------- ヘッダーと段階ナビを固定 ---------- */
+header.top{position:sticky!important;top:0;z-index:40;background:var(--paper);padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:8px;margin-top:-8px}
+:root[data-theme="ace"] header.top{background:linear-gradient(100deg,var(--card) 0%,rgba(15,28,46,.95) 70%,rgba(40,30,22,.95) 100%),var(--paper);padding-top:12px}
+header.top .hbtns{display:flex!important;flex-direction:row!important;gap:6px!important;flex-wrap:nowrap!important;align-items:center!important;flex:0 0 auto}
+header.top .hbtns button{white-space:nowrap}
+header.top .hbtns button .hic{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media (min-width:641px){nav.groups{position:sticky;top:var(--hh);z-index:35;background:var(--paper);padding:6px 0;margin-top:4px}
+  nav.steps{top:calc(var(--hh) + var(--gh))!important}}
+@media (max-width:640px){
+  nav.steps{top:var(--hh)!important}
+  header.top{flex-wrap:nowrap!important;align-items:center!important;gap:8px!important}
+  header.top>div:first-child{min-width:0;flex:1}
+  header.top h1{font-size:17px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  :root[data-theme="ace"] header.top h1{font-size:16px!important;gap:6px!important}
+  :root[data-theme="ace"] header.top h1::before{width:30px!important;height:15px!important}
+  header.top .airac{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+  header.top .hbtns{gap:4px}
+  header.top .hbtns button{flex-direction:column;gap:1px;min-width:48px;min-height:44px;padding:4px 6px!important;font-size:10.5px!important;line-height:1.1}
+  header.top .hbtns button .bl2{display:none}
+  :root[data-theme="tac"] header.top .hbtns button::before,:root[data-theme="tac"] header.top .hbtns button::after{display:none!important;content:none!important}
+}
+
+/* ---------- 表示モードのメニュー ---------- */
+#thMenu{position:fixed;z-index:320;display:none;min-width:230px;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+#thMenu.on{display:block}
+#thMenu .tt{font-size:12px;color:var(--note);padding:6px 10px 4px}
+#thMenu button{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:6px 10px;font:inherit;font-size:14px;color:var(--ink);background:none;border:none;border-radius:var(--r);cursor:pointer;text-align:left}
+#thMenu button:hover,#thMenu button:focus-visible{background:var(--paper)}
+#thMenu button[aria-checked="true"]{font-weight:700;box-shadow:inset 3px 0 0 var(--mag)}
+#thMenu .sw{display:inline-flex;width:34px;height:22px;border:1px solid rgba(128,128,128,.6);overflow:hidden;flex:0 0 auto;border-radius:3px}
+#thMenu .sw i{flex:1}
+#thMenu .ck{margin-left:auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4}
+#thMenu .ds{display:block;font-size:11.5px;font-weight:400;color:var(--note)}
+
+/* ---------- 空き状態 ---------- */
+.empty.es{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px dashed var(--line);background:var(--card);border-radius:var(--r);color:var(--ink);font-size:14px;line-height:1.6}
+.empty.es .esic{width:34px;height:34px;flex:0 0 auto;fill:none;stroke:var(--sky);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;margin-top:2px}
+:root[data-theme="tac"] .empty.es .esic{stroke:var(--ink)}
+:root[data-theme="ace"] .empty.es .esic{stroke:var(--burn)}
+.empty.es .est{flex:1;min-width:0}
+.empty.es .est p{margin:0 0 10px;color:var(--ink)}
+
+/* ---------- 折りたたみ（要約バー付き） ---------- */
+.accbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;min-height:48px;margin:0 0 8px;padding:10px 14px;font:inherit;text-align:left;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+.accbar .at{font-weight:700;font-size:15px}
+.accbar .as{flex:1;min-width:0;font-size:12.5px;color:var(--note);font-family:var(--code);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.accbar .ax{font-size:12.5px;color:var(--sky);white-space:nowrap}
+.accbar .ach{width:12px;height:12px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2.4;transition:transform .15s}
+.accbar[aria-expanded="true"] .ach{transform:rotate(90deg)}
+.accbar[aria-expanded="true"]{margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.acc-body.acc-closed{display:none!important}
+.accbar[aria-expanded="true"]+.acc-body{border-top:none}
+:root[data-theme="ace"] .accbar{background:linear-gradient(180deg,var(--card2),var(--card));border-top:2px solid var(--line2)}
+:root[data-theme="ace"] .accbar .at{font-family:var(--head);letter-spacing:.04em;color:var(--gold)}
+:root[data-theme="tac"] .accbar{background:#000;border-color:var(--line)}
+:root[data-theme="tac"] .accbar .ax{color:var(--sky)}
+
+/* ---------- 計算ツールの枠 ---------- */
+.calcframe{border:1px solid var(--line);background:var(--card);border-radius:var(--r);overflow:hidden;max-width:100%}
+.calcframe .calcbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-weight:700;font-size:14px;color:var(--ink)}
+.calcframe .calcbar::before{content:"//";font-family:var(--code);color:var(--mag)}
+:root[data-theme="tac"] .calcframe .calcbar::before{color:var(--ink)}
+:root[data-theme="ace"] .calcframe .calcbar{font-family:var(--head);letter-spacing:.04em;color:var(--gold);background:linear-gradient(180deg,var(--card2),var(--card))}
+:root[data-theme="ace"] .calcframe .calcbar::before{color:var(--burn)}
+.calcframe #calcHost{border:none!important;background:transparent!important;overflow:hidden;max-width:100%}
+#calcHost iframe{display:block;width:100%!important;max-width:100%;border:0}
+:root[data-theme="tac"] .calcframe{position:relative}
+:root[data-theme="ace"] .calcframe{position:relative;box-shadow:var(--lift)}
+/* 各モードの個別指定より優先して、押しやすい高さをそろえる */
+html[data-theme] button.act,html[data-theme] a.act,html[data-theme] button.sub,html[data-theme] a.sub,html[data-theme] button.txt{min-height:var(--btn-h)}
+label:has(>input[type="checkbox"]),label:has(>input[type="radio"]){min-height:40px;align-items:center}
+/* モバイルの段階内タブ：アイコンを上、文字を下にして、文字の途中で折り返さない */
+@media (max-width:640px){
+  html[data-theme] nav.steps button{flex-direction:column!important;gap:3px!important;padding:7px 4px 6px!important;min-height:52px}
+  html[data-theme] nav.steps button .tlab{white-space:nowrap;font-size:11.5px;line-height:1.15;letter-spacing:0}
+  html[data-theme] nav.steps button svg.ic{width:24px!important;height:24px!important}
+  :root[data-theme="ace"] header.top h1::before{display:none}
+}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -4329,8 +4469,100 @@ const tb=document.getElementById('themeBtn');if(tb&&!document.getElementById('fm
 })();
 </script>
 
+<script id="uijs">
+/* =====================================================================
+   見た目の調整（機能・データは変えない）
+   ===================================================================== */
+(function(){
+const $=id=>document.getElementById(id);
+const SVG=(d,c)=>`<svg class="${c||'hic'}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const THEMES=[['simple','シンプル','ライトグレー × 白 × 青',['#F3F5F8','#FFFFFF','#1F66B2']],['light','クラシック','ブルーグレー × 紺 × ピンク',['#E9EFF3','#13293D','#A3195B']],['dark','ダーク','濃紺 × マゼンタ',['#0E1822','#15222F','#E46A9F']],['tac','タクティカル','黒 × ネオングリーン',['#000000','#051005','#4afe00']],['ace','ナイト','ネイビー × オレンジ',['#070E1A','#0F1C2E','#FF8A1F']]];
+const THN=Object.fromEntries(THEMES.map(t=>[t[0],t[1]]));
+
+/* ---- 1. 表示モード：5つから直接選ぶメニュー ---- */
+function setTheme(t){const r=document.documentElement;r.dataset.theme=t;try{localStorage.setItem('ifrtheme',t)}catch(e){}
+  try{const cd=calcFrame&&calcFrame.contentWindow&&calcFrame.contentWindow.document;if(cd)cd.documentElement.dataset.theme=t}catch(e){}
+  thLabel();try{renderAll()}catch(e){}setTimeout(stick,50)}
+function thLabel(){const b=$('themeBtn');if(!b)return;const t=document.documentElement.dataset.theme||'ace';
+  b.innerHTML=SVG('<circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>')+`<span class="bl">表示<span class="bl2">：${THN[t]||t}</span></span>`;
+  b.setAttribute('aria-label','表示モード：'+(THN[t]||t)+'（選ぶ）');b.setAttribute('aria-haspopup','menu');b.title='表示モードを選ぶ（いま：'+(THN[t]||t)+'）'}
+function thMenu(){let m=$('thMenu');if(!m){m=document.createElement('div');m.id='thMenu';m.setAttribute('role','menu');document.body.appendChild(m);
+    document.addEventListener('click',e=>{if(m.classList.contains('on')&&!m.contains(e.target)&&!e.target.closest('#themeBtn'))m.classList.remove('on')});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')m.classList.remove('on')})}
+  const cur=document.documentElement.dataset.theme||'ace';
+  m.innerHTML='<div class="tt">表示モード</div>'+THEMES.map(([k,n,d,c])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" data-th="${k}"><span class="sw">${c.map(x=>`<i style="background:${x}"></i>`).join('')}</span><span>${n}<span class="ds">${d}</span></span>${k===cur?SVG('<path d="M5 12l5 5 9-10"/>','ck'):''}</button>`).join('');
+  m.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{setTheme(b.dataset.th);m.classList.remove('on')});
+  const r=$('themeBtn').getBoundingClientRect();m.classList.add('on');const w=m.offsetWidth;
+  m.style.top=Math.min(innerHeight-m.offsetHeight-8,r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(innerWidth-w-8,r.right-w))+'px';
+  (m.querySelector('[aria-checked="true"]')||m.querySelector('button')).focus()}
+
+/* ---- 2. ヘッダー：ボタンをまとめ、固定する高さを測る ---- */
+function header(){const tb=$('themeBtn');if(!tb)return;const box=tb.parentNode;box.classList.add('hbtns');box.removeAttribute('style');
+  const rb=$('resetBtn');if(rb&&!rb.querySelector('.hic'))rb.innerHTML=SVG('<path d="M4 4v6h6"/><path d="M5.5 15a7 7 0 1 0 1.6-7.3L4 10"/>')+'<span class="bl">リセット</span>';
+  const fb=$('fmBtn');if(fb&&!fb.querySelector('.hic'))fb.innerHTML=SVG('<path d="M2 16l20-8-8 12-2-6z"/>')+'<span class="bl">飛行<span class="bl2">モード</span></span>';
+  tb.onclick=e=>{e.stopPropagation();const m=$('thMenu');if(m&&m.classList.contains('on'))m.classList.remove('on');else thMenu()};thLabel()}
+function stick(){const h=document.querySelector('header.top'),g=$('groups');const r=document.documentElement.style;
+  if(h)r.setProperty('--hh',h.offsetHeight+'px');if(g)r.setProperty('--gh',(innerWidth>640?g.offsetHeight:0)+'px')}
+
+/* ---- 3. 空き状態：アイコン＋説明＋計画タブへ ---- */
+const ESIC='<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/><circle cx="12" cy="11" r="2.2"/>';
+function empties(root){(root||document).querySelectorAll('.empty:not(.es)').forEach(el=>{const t=el.textContent.trim();if(!/ルートタブ/.test(t)||el.querySelector('button'))return;
+  el.classList.add('es');el.innerHTML=SVG(ESIC,'esic')+`<div class="est"><p>${t.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</p><button type="button" class="act" data-goplan="1">計画タブへ</button></div>`})}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-goplan]');if(!b)return;try{show('route')}catch(x){}scrollTo({top:0,behavior:'smooth'})});
+
+/* ---- 4. 折りたたみ＋要約バー ---- */
+function accState(id,v){try{if(v===undefined)return localStorage.getItem('ifr-acc-'+id);localStorage.setItem('ifr-acc-'+id,v)}catch(e){return null}}
+function acc(id,body,title,sumFn,defOpen){if(!body||body.previousElementSibling&&body.previousElementSibling.dataset.acc===id)return;
+  const b=document.createElement('button');b.type='button';b.className='accbar';b.dataset.acc=id;b.innerHTML=SVG('<path d="M9 5l7 7-7 7"/>','ach')+`<span class="at">${title}</span><span class="as"></span><span class="ax"></span>`;
+  body.parentNode.insertBefore(b,body);body.classList.add('acc-body');const st=accState(id);const open=st==null?!!defOpen:st==='1';
+  const set=o=>{b.setAttribute('aria-expanded',o);body.classList.toggle('acc-closed',!o);b.querySelector('.ax').textContent=o?'閉じる':'開く'};set(open);
+  b.onclick=()=>{const o=b.getAttribute('aria-expanded')!=='true';set(o);accState(id,o?'1':'0')};b.__sum=sumFn;accSum(b)}
+function accSum(b){try{const s=b.__sum&&b.__sum();b.querySelector('.as').textContent=s||'未入力'}catch(e){}}
+function v(id){const e=$(id);if(!e)return '';if(e.tagName==='SELECT'){const o=e.options[e.selectedIndex];return o?o.text:''}return (e.value||'').trim()}
+function fplAcc(){const pane=$('p-fpl');if(!pane)return;const boxes=[...pane.children].filter(x=>x.classList&&x.classList.contains('box'));
+  const ac=boxes.find(x=>x.classList.contains('acbox')),it=boxes.find(x=>!x.classList.contains('acbox'));
+  acc('fplac',ac,'機体データ（記録・呼び出し）',()=>{const s=ac.querySelector('[data-ac="sel"]');const o=s&&s.options[s.selectedIndex];return o&&s.value?'呼び出し中：'+o.text:'記録した機体を呼び出す・記録する'},false);
+  acc('fplit',it,'飛行計画の項目（7〜19）',()=>[['',v('f_id')],['',v('f_ac')],['WTC ',v('f_wake')],['SUR ',v('f_sur')],['E/',v('f_end')],['P/',v('f_pob')]].filter(x=>x[1]).map(x=>x[0]+x[1]).join(' ・ '),true)}
+function routeAcc(){const pane=$('p-route');if(!pane)return;const ac=pane.querySelector(':scope>.acbox');
+  acc('rtac',ac,'機体データ（記録・呼び出し）',()=>{const s=ac.querySelector('[data-ac="sel"]');const o=s&&s.options[s.selectedIndex];return o&&s.value?'呼び出し中：'+o.text:'記録した機体を呼び出す・記録する'},false)}
+function sums(){document.querySelectorAll('.accbar').forEach(accSum)}
+document.addEventListener('input',()=>{clearTimeout(sums.t);sums.t=setTimeout(sums,250)});document.addEventListener('change',()=>setTimeout(sums,50));
+
+/* ---- 5. 飛行場の選択：検索できる一覧（地域の見出しはそのまま） ---- */
+const APS=['dep_s','dst_s','talt_s','alt_s','viaIn_s'];
+function apLabel(s,b){const o=s.options[s.selectedIndex];const ph=!s.value;b.classList.toggle('ph',ph);b.querySelector('.appk-t').textContent=o?o.text:'リストから選ぶ'}
+function apPick(){APS.forEach(id=>{const s=$(id);if(!s||s.classList.contains('appk-src'))return;s.classList.add('appk-src');
+  const b=document.createElement('button');b.type='button';b.className='appk';b.setAttribute('aria-label',s.getAttribute('aria-label')||'飛行場を選ぶ');b.innerHTML='<span class="appk-t"></span>';
+  s.parentNode.insertBefore(b,s.nextSibling);b.onclick=()=>apSheet(s,b);apLabel(s,b);s.addEventListener('change',()=>apLabel(s,b));
+  new MutationObserver(()=>apLabel(s,b)).observe(s,{childList:true,subtree:true});s.__b=b})}
+function apSheet(s,b){let w=$('appkSheet');if(!w){w=document.createElement('div');w.id='appkSheet';w.innerHTML='<div class="pane2" role="dialog" aria-modal="true" aria-label="飛行場を選ぶ"><div class="hd"><input type="search" id="appkQ" placeholder="ICAO・英語名・地域で検索（例 RJSS、SENDAI、東北）" autocomplete="off"><button type="button" class="sub" id="appkX">閉じる</button></div><div class="ls" id="appkL"></div></div>';document.body.appendChild(w);
+    w.addEventListener('click',e=>{if(e.target===w)w.classList.remove('on')});$('appkX').onclick=()=>w.classList.remove('on');
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')w.classList.remove('on')})}
+  const draw=q=>{q=(q||'').trim().toUpperCase();let h='';let n=0;
+    const opt=(o,g)=>{if(!o.value)return '';const t=o.text;if(q&&!(t.toUpperCase().includes(q)||o.value.toUpperCase().includes(q)||(g||'').toUpperCase().includes(q)))return '';n++;
+      const m=t.match(/^([A-Z]{4})\s*(.*)$/);return `<button type="button" class="opt${o.value===s.value?' sel':''}" data-v="${o.value}">${m?`<span class="ic4">${m[1]}</span><span>${m[2]}</span>`:`<span>${t}</span>`}</button>`};
+    [...s.children].forEach(c=>{if(c.tagName==='OPTGROUP'){const inner=[...c.children].map(o=>opt(o,c.label)).join('');if(inner)h+=`<div class="grp">${c.label}</div>`+inner}else h+=opt(c,'')});
+    $('appkL').innerHTML=h||'<div class="none">見つかりません</div>';
+    $('appkL').querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{s.value=x.dataset.v;s.dispatchEvent(new Event('input',{bubbles:true}));s.dispatchEvent(new Event('change',{bubbles:true}));apLabel(s,b);w.classList.remove('on');b.focus()})};
+  const q=$('appkQ');q.value='';q.oninput=()=>draw(q.value);draw('');w.classList.add('on');setTimeout(()=>{const sel=$('appkL').querySelector('.sel');if(sel)sel.scrollIntoView({block:'center'});if(matchMedia('(pointer:fine)').matches)q.focus()},30)}
+
+/* ---- 8. 計算ツールを枠と見出しで包む ---- */
+function calcWrap(){const h=$('calcHost');if(!h||h.parentNode.classList.contains('calcframe'))return;const f=document.createElement('div');f.className='calcframe';
+  h.parentNode.insertBefore(f,h);f.innerHTML='<div class="calcbar">計算ツール</div>';f.appendChild(h);h.removeAttribute('style');
+  const a=document.querySelector('#p-calc a.sub[target="_blank"]');if(a){a.className='txt';a.removeAttribute('style')}}
+
+/* ---- 起動と再描画への追従 ---- */
+function all(){header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
+const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties()});
+function boot(){all();mo.observe(document.body,{childList:true,subtree:true});addEventListener('resize',stick);
+  try{new ResizeObserver(stick).observe(document.querySelector('header.top'))}catch(e){}
+  const ra=window.renderAll;if(typeof ra==='function'&&!ra.__ui){window.renderAll=function(){const r=ra.apply(this,arguments);try{all()}catch(e){}return r};window.renderAll.__ui=1;try{renderAll=window.renderAll}catch(e){}}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+setTimeout(all,600);
+})();
+</script>
 <script>
-window.APPV='20261121115752';
+window.APPV='20261122083523';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
