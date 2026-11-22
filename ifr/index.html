@@ -1226,6 +1226,12 @@ label:has(>input[type="checkbox"]),label:has(>input[type="radio"]){min-height:40
   header.top>div:first-child{min-width:0;flex:1}}
 
 small.utcsub{display:block;margin-top:3px;font-family:var(--code);font-size:12.5px;color:var(--note);letter-spacing:.02em}
+
+.blist .bl{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+.blist .bpic{width:22px;height:22px;flex:0 0 auto;fill:none;stroke:var(--sky);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:root[data-theme="light"] .blist .bpic,:root[data-theme="dark"] .blist .bpic{stroke:var(--mag)}
+:root[data-theme="tac"] .blist .bpic{stroke:var(--ink)}
+:root[data-theme="ace"] .blist .bpic{stroke:var(--burn)}
 </style>
 </head>
 <body>
@@ -4602,9 +4608,26 @@ function jst(){['etd','eta'].forEach(id=>{const u=$(id);if(!u||u.__j)return;cons
   j.addEventListener('input',push);j.addEventListener('change',push);pull();setInterval(pull,700);
   const lab=u.closest('label');if(lab)[...lab.childNodes].forEach(n=>{if(n.nodeType===3&&/UTC/.test(n.textContent))n.textContent=n.textContent.replace('（UTC）','（日本時間）')})});
   document.querySelectorAll('#p-route h3').forEach(h=>{[...h.childNodes].forEach(n=>{if(n.nodeType===3&&/時刻（UTC）/.test(n.textContent))n.textContent=n.textContent.replace('時刻（UTC）','時刻（日本時間・JST）')})})}
+
+/* ---- まとめの各項目にピクトグラム ---- */
+const BPIC=[
+ [/^出発・到着時刻|時刻/,'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'],
+ [/^出発/,'<path d="M3 20h18"/><path d="M4 14l3 .5 10-6a2 2 0 0 1 2.7.8 2 2 0 0 1-.8 2.6L8.5 17.5 4.5 16z"/>'],
+ [/^目的地/,'<path d="M3 20h18"/><path d="M4 9l2.8-.6 9.6 6.4a2 2 0 0 1 .6 2.8 2 2 0 0 1-2.7.7L4.8 11.6 3.5 10z"/>'],
+ [/^代替飛行場の要否/,'<path d="M12 3v6M12 9l-6 6M12 9l6 6"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/>'],
+ [/^代替|^離陸代替/,'<path d="M6 20V9a3 3 0 0 1 3-3h9"/><path d="M15 3l3 3-3 3"/><circle cx="6" cy="20" r="1.5"/>'],
+ [/^燃料/,'<path d="M6 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M5 21h12M8 8h6"/><path d="M16 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0"/>'],
+ [/着氷|0℃|0°C/,'<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5"/>'],
+ [/航空データ|AIRAC/,'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>'],
+ [/登録記号|機体/,'<path d="M2 13l8-2 4-7h2l-2 7 6 1v2l-6 1 2 7h-2l-4-7-8-2z"/>'],
+ [/酸素|O2/,'<circle cx="9" cy="12" r="5"/><path d="M16 15c0-1.5 3-1.5 3 0s-3 2-3 4h3.5"/>'],
+ [/風|横風/,'<path d="M4 8h10a3 3 0 1 0-3-3"/><path d="M3 12h15a3 3 0 1 1-3 3"/><path d="M4 16h6"/>'],
+ [/NOTAM|ノータム/,'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/>'],
+ [/経路|航空路|MEA|高度/,'<circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/>']];
+function bpics(){document.querySelectorAll('.blist .bl').forEach(l=>{if(l.querySelector('.bpic'))return;const t=l.textContent.trim();const m=BPIC.find(x=>x[0].test(t));if(!m)return;l.insertAdjacentHTML('afterbegin',SVG(m[1],'bpic'))})}
 /* ---- 起動と再描画への追従 ---- */
-function all(){jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
-const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties()});
+function all(){bpics();jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
+const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties();bpics()});
 function boot(){all();mo.observe(document.body,{childList:true,subtree:true});addEventListener('resize',stick);
   try{new ResizeObserver(stick).observe(document.querySelector('header.top'))}catch(e){}
   const ra=window.renderAll;if(typeof ra==='function'&&!ra.__ui){window.renderAll=function(){const r=ra.apply(this,arguments);try{all()}catch(e){}return r};window.renderAll.__ui=1;try{renderAll=window.renderAll}catch(e){}}}
@@ -4613,7 +4636,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122085844';
+window.APPV='20261122090335';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
