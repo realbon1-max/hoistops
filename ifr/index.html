@@ -3626,7 +3626,7 @@ function routeMap(C){const path=C.path;let vb;
    <div class="mapbtns"><button type="button" class="sub" id="mapFit">経路全体</button><button type="button" class="sub" id="mapIn">＋</button><button type="button" class="sub" id="mapOut">－</button></div><div id="mapAttr" style="position:absolute;left:6px;bottom:4px;font-size:10px;color:var(--muted);background:var(--card);opacity:.85;padding:1px 5px;pointer-events:auto"></div></div>
    <div class="zhint">ピンチ・スワイプで拡大・移動。航空路の線やfixをタップすると選べます。</div>
    <div id="mapPanel"></div>
-   <div class="plegend" style="padding:6px 10px 8px;margin:0"><span><i style="background:#2E8B57"></i>SID</span><span><i style="background:var(--mag)"></i>航空路（計画）</span><span><i style="background:var(--sky)"></i>直行</span><span><i style="background:#C98A00"></i>STAR</span><span><i style="background:#C0392B"></i>進入</span><span><i style="background:var(--mag);opacity:.35"></i>RNAV経路</span><span><i style="background:var(--muted);opacity:.5"></i>従来型航空路</span><span><i style="border-top:2px dashed #1F8FB5;height:0;width:12px"></i>公示直行経路</span><span><i style="border:2px solid #2E8B57;border-radius:50%;width:9px;height:9px"></i>出発地のSIDの終点</span><span><i style="border:2px solid #C98A00;border-radius:50%;width:9px;height:9px"></i>目的地のSTARの始点</span><span><i style="border:1.5px dashed #2B6A94;width:8px;height:8px"></i>管制区</span>${GEO||WGEO?'':'<span>海岸線は読み込み中または表示できません</span>'}</div></div>`}
+   <div class="plegend" style="padding:6px 10px 8px;margin:0"><span><i style="background:#2E8B57"></i>SID</span><span><i style="background:var(--mag)"></i>航空路（計画）</span><span><i style="background:var(--sky)"></i>直行</span><span><i style="background:#C98A00"></i>STAR</span><span><i style="background:#C0392B"></i>進入</span><span><i style="background:var(--mag);opacity:.35"></i>RNAV経路</span><span><i style="background:var(--muted);opacity:.5"></i>従来型航空路</span><span><i style="border-top:3px dotted #1F8FB5;height:0;width:14px"></i>公示直行経路</span><span><i style="border:2px solid #2E8B57;border-radius:50%;width:9px;height:9px"></i>出発地のSIDの終点</span><span><i style="border:2px solid #C98A00;border-radius:50%;width:9px;height:9px"></i>目的地のSTARの始点</span><span><i style="width:18px;height:2px;vertical-align:3px;background:repeating-linear-gradient(90deg,#6B6F76 0 8px,transparent 8px 10px,#6B6F76 10px 12px,transparent 12px 14px)"></i>管制区（セクター境界）</span>${GEO||WGEO?'':'<span>海岸線は読み込み中または表示できません</span>'}</div></div>`}
 function landLayer(BGon,tiles){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s='';
   const feats0=[...(WGEO?WGEO.features.filter(f=>f.id!=='JP'&&!(f.properties&&f.properties.id==='JP')):[]),...(GEO?GEO.features:[])];
   const feats=feats0;if(BGon&&feats.length){s+='<g fill="var(--land)" stroke="none">';for(const f of feats){const g=f.geometry;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];for(const pg of polys){s+=`<path d="M${pg[0].map(c=>P([c[1],c[0]])).join('L')}Z"/>`}}s+='</g>'}
@@ -3639,8 +3639,8 @@ function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s=''
   const BGon=mapF().bg&&mapF().bg!=='none';
   s+=landLayer(BGon,true);
   s+=wxoLayer();
-  for(const [nm,v] of Object.entries(SECT)){for(const pt of v[2]){if(!(C.lvl>=pt[0]&&C.lvl<pt[1]))continue;const col=v[0]==='Tokyo'?'#2B6A94':v[0]==='Fukuoka'?'#8E3B5E':'#2E7D4F';
-      s+=`<path d="M${pt[2].map(P).join('L')}Z" fill="${col}" fill-opacity=".035" stroke="${col}" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="6 3" vector-effect="non-scaling-stroke"/>`;
+  for(const [nm,v] of Object.entries(SECT)){for(const pt of v[2]){if(!(C.lvl>=pt[0]&&C.lvl<pt[1]))continue;const col='#6B6F76';
+      s+=`<path d="M${pt[2].map(P).join('L')}Z" fill="none" stroke="${col}" stroke-opacity=".6" stroke-width="1.1" stroke-dasharray="12 3 2 3" vector-effect="non-scaling-stroke"/>`;
       const cx=pt[2].reduce((a,p)=>a+p[0],0)/pt[2].length,cy=pt[2].reduce((a,p)=>a+p[1],0)/pt[2].length;s+=`<text class="ml sl" x="${PX([cx,cy])}" y="${PY([cx,cy])}" text-anchor="middle" fill="${col}">${nm} ${v[1][0]||''}</text>`}}
   // all airways
   const sel=S._selAw;let aw='',hit='',awl='';const MF=mapF();const LIM=MF.on?mapLimit():null;
@@ -3652,7 +3652,7 @@ function mapContent(C){const P=p=>PX(p).toFixed(2)+','+PY(p).toFixed(2);let s=''
       hit+=`<polyline data-aw="${id}" points="${pts}" fill="none" stroke="transparent" stroke-width="16" vector-effect="non-scaling-stroke" style="pointer-events:stroke"/>`;
       const m=Math.floor((run.length-1)/2);const a=run[m],b=run[m+1]||run[m];awl+=`<text class="ml al" x="${(PX(a)+PX(b))/2}" y="${(PY(a)+PY(b))/2}" text-anchor="middle" fill="${r.k?'var(--mag)':'var(--muted)'}">${id}</text>`})}
   if(MF.dr){NAV.D.forEach((d,di)=>{const ps=d[0].map(fixPos);for(let i=0;i<ps.length-1;i++){if(!ps[i]||!ps[i+1]||!okSeg(d[2][i]))continue;const pts=P(ps[i])+' '+P(ps[i+1]);const on=S._selDr===di;
-      aw+=`<polyline points="${pts}" fill="none" stroke="${on?'#E8A600':'#1F8FB5'}" stroke-opacity="${on?1:.55}" stroke-width="${on?4:1.4}" stroke-dasharray="${on?'':'5 4'}" vector-effect="non-scaling-stroke"/>`;
+      aw+=`<polyline points="${pts}" fill="none" stroke="${on?'#E8A600':'#1F8FB5'}" stroke-opacity="${on?1:.9}" stroke-width="${on?4:2.2}" stroke-dasharray="${on?'':'0.1 5'}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
       hit+=`<polyline data-dr="${di}" points="${pts}" fill="none" stroke="transparent" stroke-width="14" vector-effect="non-scaling-stroke" style="pointer-events:stroke"/>`}})}
   s+=aw;
   // fixes on airways + navaids
@@ -4657,7 +4657,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122101414';
+window.APPV='20261122104108';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
