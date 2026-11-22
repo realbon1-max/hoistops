@@ -1241,7 +1241,7 @@ small.utcsub{display:block;margin-top:3px;font-family:var(--code);font-size:12.5
 :root{--ercR:#225789;--ercC:#AD4C28;--ercS:#0A91DA}
 :root[data-theme="ace"],:root[data-theme="tac"],:root[data-theme="dark"]{--ercR:#6FA8E0;--ercC:#E0875C;--ercS:#4FC3F7}
 /* 入力欄の高さをそろえる（ラベルが2行でも欄の位置が下でそろう） */
-:is(.grid:has(#depMode),.grid:has(#arrRule))>label.f{display:flex!important;flex-direction:column}
+:is(.grid:has(#depMode),.grid:has(#arrRule))>label.f:not([style*="none"]){display:flex;flex-direction:column}
 :is(.grid:has(#depMode),.grid:has(#arrRule))>label.f>:is(select,input){margin-top:auto}
 .grid>label.f>select{min-width:0;text-overflow:ellipsis}
 /* 説明文の省略（表示メニューで切替・タップで開く） */
@@ -1251,6 +1251,21 @@ html.hidehelp .lh.open{cursor:pointer}
 html.hidehelp .lh.open::after{content:" ▴閉じる";color:var(--acc,#1F66B2);font-size:.9em;white-space:nowrap}
 #thMenu .hlp{border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
 .grid:has(#depMode),.grid:has(#arrRule){grid-template-columns:repeat(auto-fit,minmax(240px,1fr))!important}
+/* 時刻欄：日時入力が列からはみ出さない */
+.grid>*{min-width:0}
+input[type="datetime-local"],input[type="date"],input[type="time"]{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.grid .inp{min-width:0;max-width:100%}.grid .inp>input{min-width:0;width:100%}
+/* 出発・到着の方式（折りたたみ） */
+details.modeacc{margin-top:22px}
+details.modeacc>summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;min-height:44px;padding:4px 0}
+details.modeacc>summary::-webkit-details-marker{display:none}
+details.modeacc>summary .mt{font-size:18px;font-weight:800;color:var(--ink)}
+details.modeacc>summary .mt::before{content:"▸ ";color:var(--muted)}
+details.modeacc[open]>summary .mt::before{content:"▾ "}
+details.modeacc>summary .ms{font-size:13px;color:var(--muted)}
+details.modeacc[open]>summary{margin-bottom:6px}
+input[type="datetime-local"]{display:block;-webkit-appearance:none;appearance:none;text-align:left}
+input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-width:0}
 </style>
 </head>
 <body>
@@ -1318,8 +1333,7 @@ html.hidehelp .lh.open::after{content:" ▴閉じる";color:var(--acc,#1F66B2);f
     <label class="tgl"><input type="checkbox" id="p_etaauto">ETAを飛行時間から自動で計算する（おすすめ）</label>
   </div>
 
-  <h2>出発・到着の方式</h2>
-  <div class="box">
+  <details class="box modeacc" id="modeAcc"><summary><span class="mt">出発・到着の方式</span><span id="modeSum" class="ms"></span></summary>
     <h3 class="bh">出発</h3>
     <div class="grid">
       <label class="f">出発の方式<select id="depMode"><option value="ifr">IFRで出発（地上で承認）</option><option value="vfr">VFRで離陸→途中からIFR</option></select></label>
@@ -1334,7 +1348,7 @@ html.hidehelp .lh.open::after{content:" ▴閉じる";color:var(--acc,#1F66B2);f
       <label class="f" id="vfrFixL">IFRを終える地点（fix）<input class="code" id="vfrFix" list="fixList" placeholder="例 SDE" autocomplete="off"></label>
     </div>
     <p class="hint" id="arrRuleHint"></p>
-  </div>
+  </details>
 
   <h2>機体・許可</h2>
   <div class="box acbox"></div>
@@ -4368,6 +4382,8 @@ function bind(){
   $('depMode').onchange=()=>{S.route.depMode=$('depMode').value;dm();save();renderAll()};
   const am=()=>{const v=S.route.arrRule==='vfr';$('vfrFixL').style.display=v?'':'none';$('arrRuleHint').textContent=v?'選んだfixでIFRを終え（IFRキャンセル）、そこから目的地まではVFRで飛びます。飛行計画は飛行方式「Y」、経路欄の最後が「fix VFR」になります。STAR・計器進入は使いません。'+(isZ(S.route.dst)?'目的地が飛行場ではない（ZZZZ）ので、この方式が基本です。':''):'目的飛行場まで IFR で飛び、STAR・計器進入で着陸します。'};
   $('arrRule').value=S.route.arrRule||'ifr';$('vfrFix').value=S.route.vfrFix||'';am();
+  const ms=()=>{const d=S.route.depMode==='vfr',a=S.route.arrRule==='vfr';$('modeSum').textContent=(d?'VFRで離陸→'+(S.route.ifrFix||'fix未入力')+'からIFR':'IFRで出発')+'／'+(a?(S.route.vfrFix||'fix未入力')+'でIFRを終えVFR':'IFRで到着（計器進入）')+(S.route.clrLimit?'／承認限界点 '+S.route.clrLimit:'');if(d||a)$('modeAcc').open=true};ms();
+  ['depMode','arrRule','ifrFix','vfrFix','clrLimit'].forEach(id=>$(id).addEventListener('change',ms));
   $('arrRule').onchange=()=>{S.route.arrRule=$('arrRule').value;am();save();renderAll()};
   $('vfrFix').onchange=()=>{S.route.vfrFix=$('vfrFix').value.trim().toUpperCase();$('vfrFix').value=S.route.vfrFix;save();renderAll()};
   $('ifrVia').onchange=()=>{S.route.ifrVia=$('ifrVia').value;save();renderAll()};
@@ -4809,7 +4825,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122140934';
+window.APPV='20261122141541';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
