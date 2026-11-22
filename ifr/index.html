@@ -2854,12 +2854,15 @@ function polyLen(ps){let d=0;for(let i=1;i<ps.length;i++)if(ps[i-1]&&ps[i])d+=gc
 function sugKey(){const c=S.prof.caps;return [S.route.dep,S.route.dst,S.route.depMode,S.route.ifrFix,c.rnav1,c.rnav5,S.fpl.lvl,flyLimit(),procSel().drw,AIRAC_EFF].join('|')}
 function heapPush(H,x){H.push(x);let i=H.length-1;while(i>0){const j=(i-1)>>1;if(H[j][0]<=H[i][0])break;[H[i],H[j]]=[H[j],H[i]];i=j}}
 function heapPop(H){const t=H[0],l=H.pop();if(H.length){H[0]=l;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<H.length&&H[a][0]<H[m][0])m=a;if(b<H.length&&H[b][0]<H[m][0])m=b;if(m===i)break;[H[i],H[m]]=[H[m],H[i]];i=m}}return t}
-function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);if(!A||!B||dep===dst)return {opts:[],why:'出発と目的の飛行場を入れてください。'};
+function sugCompute(){const a=sugCompute1(false),b=sugCompute1(true);const seen=new Set(a.opts.map(o=>o.sid+'|'+o.sidT+'|'+o.rte+'|'+o.star));const ex=b.opts.filter(o=>o.unpub&&!seen.has(o.sid+'|'+o.sidT+'|'+o.rte+'|'+o.star)).slice(0,3);const opts=[...a.opts,...ex].sort((x,y)=>x.tot-y.tot);return {dist:a.dist,opts,why:opts.length?'':a.why}}
+const DCTMAX=80;function sugCompute1(UD){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);if(!A||!B||dep===dst)return {opts:[],why:'出発と目的の飛行場を入れてください。'};
   const c=S.prof.caps,rn5=c.rnav5||c.rnav1,rn1=c.rnav1,LV=flyLimit();const ok=m=>{if(LV==null)return true;const v=meaFt(m);return v==null||v<=LV};
   // graph
   const G=new Map();const add=(a,b,d,via)=>{if(!G.has(a))G.set(a,[]);G.get(a).push([b,d,via])};
-  for(const [id,r] of Object.entries(NAV.R)){if(r.k&&!rn5)continue;for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1];const pa=fixPos(a),pb=fixPos(b);if(!pa||!pb||!ok(r.m[i]))continue;const d=gc(pa,pb);add(a,b,d,id);add(b,a,d,id)}}
+  if(!UD)for(const [id,r] of Object.entries(NAV.R)){if(r.k&&!rn5)continue;for(let i=0;i<r.p.length-1;i++){const a=r.p[i],b=r.p[i+1];const pa=fixPos(a),pb=fixPos(b);if(!pa||!pb||!ok(r.m[i]))continue;const d=gc(pa,pb);add(a,b,d,id);add(b,a,d,id)}}
   NAV.D.forEach(dd=>{const ps=dd[0];for(let i=0;i<ps.length-1;i++){const pa=fixPos(ps[i]),pb=fixPos(ps[i+1]);if(!pa||!pb||!ok(dd[2]&&dd[2][i]))continue;const d=gc(pa,pb);add(ps[i],ps[i+1],d,'DCT');add(ps[i+1],ps[i],d,'DCT')}});
+  // 非公示の直行（無線施設どうし・DCTMAX NM以内）。MEAが無いので少し割り増し
+  if(UD){const nv=Object.keys(NAV.F).filter(k=>NAV.F[k][2]===1&&fixPos(k));for(let i=0;i<nv.length;i++)for(let j=i+1;j<nv.length;j++){const pa=fixPos(nv[i]),pb=fixPos(nv[j]);const d=gc(pa,pb);if(d>DCTMAX||d<3)continue;const w=d;add(nv[i],nv[j],w,'DCT*');add(nv[j],nv[i],w,'DCT*')}}
   // STAR entries → sink costs
   const stars=[];(B.star||[]).forEach(s=>{if(s[1]&&!rn1)return;const E=s[2]||[];const all=[...E.filter(e=>!e[5]),...E.filter(e=>e[5])];all.forEach((e,k)=>{const fx=e[1]||[];if(!fx.length)return;if(LV!=null&&reqAlt(dst,'STAR',s[0],fx)>LV)return;let ps=fx.map(fixPos);let tail=ps.filter(Boolean);
       if(e[5]){const main=E.find(m=>!m[5]&&m[1]&&m[1][0]===fx[fx.length-1]);if(main)tail=[...tail,...main[1].map(fixPos).filter(Boolean)]}
@@ -2887,18 +2890,19 @@ function sugCompute(){const dep=S.route.dep,dst=S.route.dst,A=ap(dep),B=ap(dst);
   // build route strings, unique by SID+STAR+route
   const out=[],seen=new Set();
   for(const o of opts){const seq=[];let u=o.exit,guard=0,end=null;const legs=[];while(guard++<400){const n=nxt.get(u);if(!n)break;if(n.end){end=n;break}legs.push([u,n.via,n.to]);u=n.to}
-    if(!end)continue;let str=o.exit;let i=0;while(i<legs.length){const via=legs[i][1];let j=i;while(j+1<legs.length&&legs[j+1][1]===via&&via!=='DCT')j++;str+=' '+via+' '+legs[j][2];i=j+1}
+    if(!end)continue;let str=o.exit;let i=0;const up=[];while(i<legs.length){const via=legs[i][1];let j=i;while(j+1<legs.length&&legs[j+1][1]===via&&via!=='DCT'&&via!=='DCT*')j++;if(via==='DCT*')up.push(legs[i][0]+'→'+legs[j][2]);str+=' '+(via==='DCT*'?'DCT':via)+' '+legs[j][2];i=j+1}
+    o.unpub=up.length?up:null;if(up.length){let t=0;const pp=[o.exit,...legs.map(l=>l[2])].map(fixPos);for(let k=1;k<pp.length;k++)if(pp[k-1]&&pp[k])t+=gc(pp[k-1],pp[k]);o.tot=o.L0+t+(end.x?end.x.L:end.d)}
     const key=o.sid+'|'+o.sidT+'|'+str+'|'+(end.x?end.x.star+end.x.starE:'V');if(seen.has(key))continue;seen.add(key);
     if(!end.x&&(B.star||[]).length)o.tot-=25;
     out.push({...o,rte:str,end:u,star:end.x?end.x.star:'',starE:end.x?end.x.starE:0,starN:end.x?end.x.name:'STARなし（レーダー誘導）',direct:gc(A.p,B.p)});if(out.length>=5)break}
   return {dist,opts:out,why:out.length?'':'航空路と公示直行経路ではつながりませんでした（機体の許可・巡航高度の条件も確認してください）。'}}
 function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.r;
   let h=`<div class="row" style="justify-content:space-between;align-items:center"><b>おすすめルート（最短距離）</b><button class="sub" type="button" id="sugGo">${r?'探し直す':'探す'}</button></div>
-   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化、湖は © OpenStreetMap contributors。</p>`;
+   <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。航空路を使わず、公示直行経路と無線施設どうしの非公示の直行（${DCTMAX}NM以内）だけでつないだ案も、オレンジの印を付けて最大3件まで混ぜて出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化、湖は © OpenStreetMap contributors。</p>`;
   if(r){if(!r.opts.length)h+=`<div class="msg cau">${esc(r.why)}</div>`;
     const P0=procSel();const isCur=o=>o.rte===S.route.rte&&(o.sid||'')===(P0.sid||'')&&(o.star||'')===(P0.star||'');
     h+=r.opts.map((o,i)=>`<div class="sugopt${isCur(o)?' sel':''}" style="border-top:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div style="flex:1 1 240px;min-width:0"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b>${isCur(o)?' <span class="selbadge">✓ 選択中</span>':''}
-      <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}</div>
+      <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}${o.unpub?`<br><span class="tag t-cau">非公示の直行</span> <span class="code">${esc(o.unpub.join('、'))}</span><small>（MEAなし：最低安全高度・電波の届く範囲を自分で確認）</small>`:''}</div>
       <div class="note" style="margin:2px 0 0">直線距離 ${Math.round(o.direct)}NM の ${Math.round(o.tot/o.direct*100)}%</div></div>${thumbRoute(o)}<div style="flex:0 0 auto">${isCur(o)?'<span class="selbtn">✓ このルートを使用中</span>':`<button class="act" type="button" data-sug="${i}">このルートにする</button>`}</div></div>`).join('')}
   return h}
 function sugBind(){const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
@@ -3136,6 +3140,8 @@ function renderEnr(){
       h+=`<p class="hint">${S._aw} の出口のfix</p><div class="pick">${R.p.map((p,k)=>[p,k]).filter(([p,k])=>k!==i).map(([p,k])=>{const sg=awySeg(S._aw,last,p);const d=sg.reduce((s,x)=>s+(fixPos(x.a)&&fixPos(x.b)?gc(fixPos(x.a),fixPos(x.b)):0),0);const mx=Math.max(0,...sg.map(x=>meaFt(x.mea)||0));return `<button type="button" data-awto="${p}">${p}<small>${k<i?'←':'→'}${Math.round(d)}NM${mx?' MEA'+mx:''}</small></button>`}).join('')}</div>`}
     const ds=(DIR[last]||[]).filter((x,i,a)=>a.findIndex(y=>y.to===x.to)===i);
     if(ds.length)h+=`<p class="hint">公示されている直行経路（ENR 3.5）</p><div class="pick">${ds.map(x=>`<button type="button" data-add="${x.to}">${x.to}<small>${x.d[0]??''}NM ${x.m[0]?'MEA '+x.m[0]:''}</small></button>`).join('')}</div>`;
+    {const lp=fixPos(last),dp=dst&&dst.p;if(lp){const L=Object.keys(NAV.F).filter(k=>k!==last&&NAV.F[k][2]===1&&fixPos(k)).map(k=>{const q=fixPos(k);return [k,gc(lp,q),dp?gc(q,dp):0]}).filter(x=>x[1]<=DCTMAX&&x[1]>=3&&(!dp||x[2]<gc(lp,dp)+10)).sort((a,b)=>(a[2]+a[1])-(b[2]+b[1])).slice(0,10);
+      if(L.length)h+=`<p class="hint">無線施設へ直行（非公示・${DCTMAX}NM以内、目的地に近づく順）</p><div class="pick">${L.map(([k,d])=>{const mc=Math.round((brgOf(lp,fixPos(k))-mvNear(lp)+360)%360)||360;return `<button type="button" data-add="${k}">${k}<small>${String(mc).padStart(3,'0')}° ${Math.round(d)}NM</small></button>`}).join('')}</div>`}}
     const starStart=dst&&S.proc.star?entriesFor(dst.star,S.proc.star):null;const ss=starStart?[...new Set([...starStart.rw,...starStart.tr].map(e=>e[1][0]))].filter(n=>NAV.F[n]):[];
     if(ss.length)h+=`<p class="hint">STARの開始fix</p><div class="pick">${ss.map(n=>`<button type="button" data-add="${n}">${n}</button>`).join('')}</div>`;
     if(dst&&dst.p)h+=`<p class="hint">${esc(S.route.dst)}の近くのfix（直行）</p><div class="pick">${near(dst.p,50,10).map(([k,d])=>`<button type="button" data-add="${k}">${k}<small>${Math.round(d)}NM</small></button>`).join('')}</div>`;
@@ -4683,7 +4689,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122114827';
+window.APPV='20261122120259';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
