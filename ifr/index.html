@@ -1240,6 +1240,17 @@ small.utcsub{display:block;margin-top:3px;font-family:var(--code);font-size:12.5
 /* ERC(エンルートチャート)準拠の航空路色 */
 :root{--ercR:#225789;--ercC:#AD4C28;--ercS:#0A91DA}
 :root[data-theme="ace"],:root[data-theme="tac"],:root[data-theme="dark"]{--ercR:#6FA8E0;--ercC:#E0875C;--ercS:#4FC3F7}
+/* 入力欄の高さをそろえる（ラベルが2行でも欄の位置が下でそろう） */
+.grid>label.f{display:flex!important;flex-direction:column}
+.grid>label.f>select,.grid>label.f>input,.grid>label.f>.inp,.grid>label.f>.selwrap,.grid>label.f>.cs{margin-top:auto}
+.grid>label.f>select{min-width:0;text-overflow:ellipsis}
+/* 説明文の省略（表示メニューで切替・タップで開く） */
+html.hidehelp .lh:not(.open){display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+html.hidehelp .lh:not(.open)::before{content:"ⓘ ";color:var(--acc,#1F66B2);font-weight:700}
+html.hidehelp .lh.open{cursor:pointer}
+html.hidehelp .lh.open::after{content:" ▴閉じる";color:var(--acc,#1F66B2);font-size:.9em;white-space:nowrap}
+#thMenu .hlp{border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+.grid:has(#depMode),.grid:has(#arrRule){grid-template-columns:repeat(auto-fit,minmax(240px,1fr))!important}
 </style>
 </head>
 <body>
@@ -1311,15 +1322,15 @@ small.utcsub{display:block;margin-top:3px;font-family:var(--code);font-size:12.5
   <div class="box">
     <h3 class="bh">出発</h3>
     <div class="grid">
-      <label class="f">出発の方式<select id="depMode"><option value="ifr">IFRで出発（地上で管制承認）</option><option value="vfr">VFRで離陸し、途中からIFR（空中で管制承認）</option></select></label>
-      <label class="f" id="ifrFixL">IFRに切り替える地点（fix）<input class="code" id="ifrFix" list="fixList" placeholder="例 SDE" autocomplete="off"></label>
-      <label class="f" id="ifrViaL">その地点までの経路（承認後）<select id="ifrVia"><option value="vec">レーダー誘導（radar vector to ○○）</option><option value="dct">直行（direct ○○）</option></select></label>
-      <label class="f">承認限界点（空欄なら目的飛行場）<input class="code" id="clrLimit" list="fixList" placeholder="例 KAGIS" autocomplete="off"></label>
+      <label class="f">出発の方式<select id="depMode"><option value="ifr">IFRで出発（地上で承認）</option><option value="vfr">VFRで離陸→途中からIFR</option></select></label>
+      <label class="f" id="ifrFixL">IFRに切り替えるfix<input class="code" id="ifrFix" list="fixList" placeholder="例 SDE" autocomplete="off"></label>
+      <label class="f" id="ifrViaL">そこまでの経路<select id="ifrVia"><option value="vec">レーダー誘導</option><option value="dct">直行（direct）</option></select></label>
+      <label class="f">承認限界点（空欄＝目的地）<input class="code" id="clrLimit" list="fixList" placeholder="例 KAGIS" autocomplete="off"></label>
     </div>
     <p class="hint" id="depModeHint"></p>
     <h3 class="bh">到着</h3>
     <div class="grid">
-      <label class="f">到着の方式<select id="arrRule"><option value="ifr">IFRのまま目的飛行場へ（計器進入）</option><option value="vfr">途中のfixでIFRを終え、VFRで目的地へ（Yプラン）</option></select></label>
+      <label class="f">到着の方式<select id="arrRule"><option value="ifr">IFRのまま目的地へ（計器進入）</option><option value="vfr">途中でIFRを終え→VFR（Y）</option></select></label>
       <label class="f" id="vfrFixL">IFRを終える地点（fix）<input class="code" id="vfrFix" list="fixList" placeholder="例 SDE" autocomplete="off"></label>
     </div>
     <p class="hint" id="arrRuleHint"></p>
@@ -4667,6 +4678,9 @@ function thMenu(){let m=$('thMenu');if(!m){m=document.createElement('div');m.id=
     document.addEventListener('keydown',e=>{if(e.key==='Escape')m.classList.remove('on')})}
   const cur=document.documentElement.dataset.theme||'ace';
   m.innerHTML='<div class="tt">表示モード</div>'+THEMES.map(([k,n,d,c])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" data-th="${k}"><span class="sw">${c.map(x=>`<i style="background:${x}"></i>`).join('')}</span><span>${n}<span class="ds">${d}</span></span>${k===cur?SVG('<path d="M5 12l5 5 9-10"/>','ck'):''}</button>`).join('');
+  const hh=document.documentElement.classList.contains('hidehelp');
+  m.insertAdjacentHTML('beforeend',`<div class="hlp"><div class="tt">説明文</div><button type="button" role="menuitemcheckbox" aria-checked="${hh}" id="hlpBtn"><span>長い説明を1行に省略<span class="ds">ⓘの付いた行を押すと開きます</span></span>${hh?SVG('<path d="M5 12l5 5 9-10"/>','ck'):''}</button></div>`);
+  $('hlpBtn').onclick=()=>{setHelp(!document.documentElement.classList.contains('hidehelp'));m.classList.remove('on')};
   m.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{setTheme(b.dataset.th);m.classList.remove('on')});
   const r=$('themeBtn').getBoundingClientRect();m.classList.add('on');const w=m.offsetWidth;
   m.style.top=Math.min(innerHeight-m.offsetHeight-8,r.bottom+6)+'px';m.style.left=Math.max(8,Math.min(innerWidth-w-8,r.right-w))+'px';
@@ -4776,10 +4790,18 @@ const BPIC=[
  [/NOTAM|ノータム/,'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.01"/>'],
  [/経路|航空路|MEA|高度/,'<circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/>']];
 function bpics(){document.querySelectorAll('.blist .bl').forEach(l=>{if(l.querySelector('.bpic'))return;const t=l.textContent.trim();const m=BPIC.find(x=>x[0].test(t));if(!m)return;l.insertAdjacentHTML('afterbegin',SVG(m[1],'bpic'))})}
+/* ---- 説明文の省略 ---- */
+function setHelp(on){document.documentElement.classList.toggle('hidehelp',on);try{localStorage.setItem('ifrhelp',on?'hide':'show')}catch(e){}}
+function helps(){document.querySelectorAll('p.hint,p.note,div.note,.box>.note').forEach(el=>{
+  const ok=!el.closest('#thMenu,.sugopt,.empty,header')&&!el.querySelector('button,input,select,a,table')&&(el.textContent||'').trim().length>=44;
+  if(ok!==el.classList.contains('lh'))el.classList.toggle('lh',ok)})}
+document.addEventListener('click',e=>{if(!document.documentElement.classList.contains('hidehelp'))return;const l=e.target.closest('.lh');if(!l||e.target.closest('a,button,input,select'))return;l.classList.toggle('open')});
+try{setHelp((localStorage.getItem('ifrhelp')||'hide')==='hide')}catch(e){setHelp(true)}
 /* ---- 起動と再描画への追従 ---- */
-function all(){bpics();jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
-const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties();bpics()});
-function boot(){all();mo.observe(document.body,{childList:true,subtree:true});addEventListener('resize',stick);
+function all(){helps();bpics();jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
+const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties();bpics();helps()});
+const mo2=new MutationObserver(()=>{clearTimeout(mo2.t);mo2.t=setTimeout(helps,80)});
+function boot(){all();mo.observe(document.body,{childList:true,subtree:true});mo2.observe(document.body,{childList:true,subtree:true,characterData:true});addEventListener('resize',stick);
   try{new ResizeObserver(stick).observe(document.querySelector('header.top'))}catch(e){}
   const ra=window.renderAll;if(typeof ra==='function'&&!ra.__ui){window.renderAll=function(){const r=ra.apply(this,arguments);try{all()}catch(e){}return r};window.renderAll.__ui=1;try{renderAll=window.renderAll}catch(e){}}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
@@ -4787,7 +4809,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122123840';
+window.APPV='20261122140728';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
