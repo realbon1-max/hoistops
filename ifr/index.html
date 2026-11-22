@@ -1208,6 +1208,22 @@ label:has(>input[type="checkbox"]),label:has(>input[type="radio"]){min-height:40
   html[data-theme] nav.steps button svg.ic{width:24px!important;height:24px!important}
   :root[data-theme="ace"] header.top h1::before{display:none}
 }
+
+/* ---------- ルート・機体の見出し：大きさと太さをそろえ、アイコンを付ける ---------- */
+#p-route .fh{display:flex!important;align-items:center;gap:7px;font-size:14.5px!important;font-weight:700!important;color:var(--ink)!important;letter-spacing:.01em;line-height:1.3;margin:14px 0 6px}
+#p-route div.f>.fh{margin:0 0 6px}
+#p-route h3.fh{border:none;padding:0}
+#p-route .fhic{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:var(--sky);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:root[data-theme="light"] #p-route .fhic{stroke:var(--mag)}
+:root[data-theme="dark"] #p-route .fhic{stroke:var(--mag)}
+:root[data-theme="tac"] #p-route .fhic{stroke:var(--ink)}
+:root[data-theme="tac"] #p-route .fh{color:var(--ink)!important;font-size:13.5px!important}
+:root[data-theme="ace"] #p-route .fhic{stroke:var(--burn)}
+:root[data-theme="ace"] #p-route .fh{color:var(--gold)!important;font-family:var(--head)}
+/* 中くらいの幅（iPad縦など）でも、ヘッダーの題名がつぶれないように */
+@media (max-width:900px){header.top .hbtns button .bl2{display:none}
+  :root[data-theme="tac"] header.top .hbtns button::before,:root[data-theme="tac"] header.top .hbtns button::after{display:none!important;content:none!important}
+  header.top>div:first-child{min-width:0;flex:1}}
 </style>
 </head>
 <body>
@@ -4551,8 +4567,28 @@ function calcWrap(){const h=$('calcHost');if(!h||h.parentNode.classList.contains
   h.parentNode.insertBefore(f,h);f.innerHTML='<div class="calcbar">計算ツール</div>';f.appendChild(h);h.removeAttribute('style');
   const a=document.querySelector('#p-calc a.sub[target="_blank"]');if(a){a.className='txt';a.removeAttribute('style')}}
 
+
+/* ---- 見出しをそろえ、小さなアイコンを付ける（ルート・機体） ---- */
+const HIC={
+ '出発飛行場':'<path d="M3 20h18"/><path d="M4 14l3 .5 10-6a2 2 0 0 1 2.7.8 2 2 0 0 1-.8 2.6L8.5 17.5 4.5 16z"/>',
+ '目的飛行場':'<path d="M3 20h18"/><path d="M4 9l2.8-.6 9.6 6.4a2 2 0 0 1 .6 2.8 2 2 0 0 1-2.7.7L4.8 11.6 3.5 10z"/>',
+ '離陸代替飛行場':'<path d="M3 20h18"/><path d="M5 15l9-6a2 2 0 0 1 2.6 2.8L9 17"/><path d="M14 4h6v6"/>',
+ '代替飛行場':'<path d="M6 20V9a3 3 0 0 1 3-3h9"/><path d="M15 3l3 3-3 3"/><circle cx="6" cy="20" r="1.5"/>',
+ '経由地':'<circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/>',
+ '時刻':'<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
+ '出発':'<path d="M3 20h18"/><path d="M4 14l3 .5 10-6a2 2 0 0 1 2.7.8 2 2 0 0 1-.8 2.6L8.5 17.5 4.5 16z"/>',
+ '到着':'<path d="M3 20h18"/><path d="M4 9l2.8-.6 9.6 6.4a2 2 0 0 1 .6 2.8 2 2 0 0 1-2.7.7L4.8 11.6 3.5 10z"/>',
+ '着陸・風の制限':'<path d="M4 8h10a3 3 0 1 0-3-3"/><path d="M3 12h15a3 3 0 1 1-3 3"/><path d="M4 16h6"/>',
+ '性能':'<path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/>',
+ '燃料':'<path d="M6 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M5 21h12M8 8h6"/><path d="M16 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0"/>',
+ '使える進入方式':'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>'};
+function hicFor(t){t=t.trim();const k=Object.keys(HIC).sort((a,b)=>b.length-a.length).find(k=>t.startsWith(k));return k?HIC[k]:null}
+function heads(){const pane=$('p-route');if(!pane)return;
+  pane.querySelectorAll('div.f').forEach(d=>{if(d.querySelector('.fh'))return;const tn=[...d.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());if(!tn)return;const ic=hicFor(tn.textContent);if(!ic)return;
+    const s=document.createElement('span');s.className='fh';s.innerHTML=SVG(ic,'fhic')+'<span></span>';s.lastChild.textContent=tn.textContent.trim();d.replaceChild(s,tn)});
+  pane.querySelectorAll('h3').forEach(h=>{if(h.classList.contains('fh'))return;const ic=hicFor(h.textContent);if(!ic)return;h.classList.add('fh');h.insertAdjacentHTML('afterbegin',SVG(ic,'fhic'))})}
 /* ---- 起動と再描画への追従 ---- */
-function all(){header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
+function all(){heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
 const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties()});
 function boot(){all();mo.observe(document.body,{childList:true,subtree:true});addEventListener('resize',stick);
   try{new ResizeObserver(stick).observe(document.querySelector('header.top'))}catch(e){}
@@ -4562,7 +4598,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122083523';
+window.APPV='20261122085446';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
