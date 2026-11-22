@@ -1063,7 +1063,7 @@ nav.groups button svg.ic{width:22px;height:22px}nav.groups button{font-size:16px
 #trView.on{display:flex}
 #trView .trbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:calc(env(safe-area-inset-top,0px) + 6px) 10px 6px;border-bottom:1px solid var(--line,#ccc);background:var(--card,#fff)}
 #trView .trbar .sub.on{background:#1F66B2!important;color:#fff!important;border-color:#1F66B2!important}
-#trView .trsc{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:#fff}
+#trView .trsc{flex:1;overflow:auto;overscroll-behavior:contain;touch-action:none;-webkit-overflow-scrolling:touch;background:#fff}
 #trView .trwrap{position:relative;width:100%}
 #trView .trwrap img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 #trView #trSvg{position:absolute;inset:0;width:100%;height:100%}
@@ -2331,9 +2331,23 @@ function traceOpen(apt,w){const L=traceCharts(apt);if(!L.length){toast&&toast('�
     $('trOk').onclick=traceApply;
     const svg=$('trSvg');let drawing=false;
     const pt=e=>{const r=svg.getBoundingClientRect();const W=+svg.dataset.w,H=+svg.dataset.h;return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H]};
-    svg.addEventListener('pointerdown',e=>{const lab=e.target.closest&&e.target.closest('[data-tl]');if(lab){traceAdd(lab.dataset.tl);e.preventDefault();return}if(TRZ.mode!=='draw')return;drawing=true;svg.setPointerCapture(e.pointerId);TRZ.pts=[pt(e)];traceDraw();e.preventDefault()});
-    svg.addEventListener('pointermove',e=>{if(!drawing)return;TRZ.pts.push(pt(e));traceDraw();e.preventDefault()});
-    const end=()=>{if(!drawing)return;drawing=false;traceMatch();traceDraw()};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end)}
+    // 指1本：なぞる（「地図を動かす」のときは動かす）／指2本：ピンチで拡大縮小・スワイプで移動
+    const sc=$('trSc');const P=new Map();let pinch=null,pan=null,tapLab=null;
+    const zoomAt=(nz,cx,cy)=>{nz=Math.max(1,Math.min(6,nz));const r=sc.getBoundingClientRect();const ox=cx-r.left+sc.scrollLeft,oy=cy-r.top+sc.scrollTop;const k=nz/TRZ.z;TRZ.z=nz;traceZoom();sc.scrollLeft=ox*k-(cx-r.left);sc.scrollTop=oy*k-(cy-r.top)};
+    TRZ.zoomAt=zoomAt;
+    svg.addEventListener('pointerdown',e=>{P.set(e.pointerId,[e.clientX,e.clientY]);svg.setPointerCapture(e.pointerId);e.preventDefault();
+      if(P.size===2){if(drawing){drawing=false;TRZ.pts=[];traceDraw()}tapLab=null;pan=null;const [a,b]=[...P.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,z:TRZ.z,m:[(a[0]+b[0])/2,(a[1]+b[1])/2]};return}
+      if(P.size>2)return;const lab=e.target.closest&&e.target.closest('[data-tl]');if(lab){tapLab=lab.dataset.tl}
+      if(TRZ.mode==='draw'&&e.pointerType!=='mouse'||TRZ.mode==='draw'&&e.button===0&&!e.shiftKey){drawing=true;TRZ.pts=[pt(e)]}else pan=[e.clientX,e.clientY]});
+    svg.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);e.preventDefault();
+      if(pinch&&P.size>=2){const [a,b]=[...P.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];zoomAt(pinch.z*d/pinch.d,m[0],m[1]);sc.scrollLeft-=m[0]-pinch.m[0];sc.scrollTop-=m[1]-pinch.m[1];pinch.m=m;return}
+      if(pan){sc.scrollLeft-=e.clientX-pan[0];sc.scrollTop-=e.clientY-pan[1];pan=[e.clientX,e.clientY];return}
+      if(drawing){TRZ.pts.push(pt(e));if(TRZ.pts.length>3)tapLab=null;traceDraw()}});
+    const end=e=>{P.delete(e.pointerId);if(P.size<2)pinch=null;if(P.size)return;pan=null;
+      if(drawing){drawing=false;if(tapLab&&TRZ.pts.length<=3){TRZ.pts=[];traceAdd(tapLab)}else{traceMatch();traceDraw()}}else if(tapLab&&!pinch)traceAdd(tapLab);tapLab=null};
+    svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+    sc.addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoomAt(TRZ.z*Math.exp(-e.deltaY/300),e.clientX,e.clientY)},{passive:false});
+    $('trIn').onclick=()=>{const r=sc.getBoundingClientRect();zoomAt(TRZ.z*1.4,r.left+r.width/2,r.top+r.height/2)};$('trOut').onclick=()=>{const r=sc.getBoundingClientRect();zoomAt(TRZ.z/1.4,r.left+r.width/2,r.top+r.height/2)}}
   traceShow(L[0][1]);v.classList.add('on');document.body.style.overflow='hidden'}
 function traceShow(short){TRZ.short=short;const apt=TRZ.apt;const c=(CHX[apt]||[]).find(x=>x[0]==='AD'&&x[1]===short);const img=$('trImg');
   img.onload=()=>{const s=$('trSvg');s.dataset.w=img.naturalWidth;s.dataset.h=img.naturalHeight;s.setAttribute('viewBox','0 0 '+img.naturalWidth+' '+img.naturalHeight);traceDraw()};
@@ -2341,10 +2355,10 @@ function traceShow(short){TRZ.short=short;const apt=TRZ.apt;const c=(CHX[apt]||[
   $('trCh').innerHTML=traceCharts(apt).length>1?traceCharts(apt).map(x=>`<button class="sub${x[1]===short?' on':''}" type="button" data-trch="${esc(x[1])}">${esc(x[1])}</button>`).join(''):'';
   $('trCh').querySelectorAll('[data-trch]').forEach(b=>b.onclick=()=>traceShow(b.dataset.trch));traceZoom();traceUi()}
 function traceZoom(){$('trWrap').style.width=(TRZ.z*100)+'%'}
-function traceUi(){const d=TRZ.mode==='draw';$('trMode').textContent=d?'地図を動かす':'なぞる';$('trSvg').style.touchAction=d?'none':'auto';$('trSvg').style.cursor=d?'crosshair':'default';
+function traceUi(){const d=TRZ.mode==='draw';$('trMode').textContent=d?'地図を動かす':'なぞる';$('trSvg').style.touchAction='none';$('trSvg').style.cursor=d?'crosshair':'grab';
   $('trT').textContent=TRZ.apt+'　'+(TRZ.w==='d'?'出発：スポット→滑走路':'到着：滑走路→スポット');
   $('trLab').textContent=TRZ.w==='d'?'滑走路までの誘導路（順に）':'離脱する誘導路 → スポットまでの誘導路（順に）';
-  $('trHint').textContent=d?'走る順に、誘導路の上を指でなぞってください。黄色の名前をタップしても追加できます。':'指で地図を動かせます。なぞるときは「なぞる」を押してください。'}
+  $('trHint').textContent=d?'走る順に、誘導路の上を指でなぞってください。黄色の名前をタップしても追加できます。2本指でピンチ・スワイプすると拡大・移動できます。':'指1本で地図を動かせます（2本指で拡大縮小）。なぞるときは「なぞる」を押してください。'}
 function traceAdd(n){if(TRZ.seq[TRZ.seq.length-1]!==n)TRZ.seq.push(n);traceDraw()}
 // なぞった線の近くにある誘導路名を、通った順に拾う
 function traceMatch(){const L=(TXL[TRZ.apt]||{})[TRZ.short]||[];const P=TRZ.pts;if(P.length<2)return;const img=$('trImg');const th=Math.max(40,img.naturalWidth/60);
@@ -4636,7 +4650,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122090335';
+window.APPV='20261122091325';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
