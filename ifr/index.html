@@ -2230,6 +2230,14 @@ function sidSpoken(n){const f=procFull('sid');return f?f.spoken:(n||'')}
 function starSpoken(n){const f=procFull('star');return f?f.spoken:(n||'')}
 function apprSpoken(n){if(!n)return 'instrument';const ph={W:'Whiskey',X:'X-ray',Y:'Yankee',Z:'Zulu',A:'Alfa',B:'Bravo',C:'Charlie',D:'Delta'};return n.replace(/\s+or\s+/i,' / ').replace(/\b(ILS|LOC|RNP|VOR|NDB|GLS|RNAV|LDA)\s+([W-Z])\b/g,(m,a,b)=>a+' '+ph[b]).replace(/\bRWY\s?/g,'runway ')}
 function fixSpoken(f){if(!f)return '＿＿';return NAV.N&&NAV.N[f]?NAV.N[f]:f}
+function trnMode(){const t=(S.fpl.rmk||'').toUpperCase();const m={};
+  if(/\bTGL\b|TOUCH ?AND ?GO/.test(t))m.tgl=1;if(/STOP ?AND ?GO/.test(t))m.sag=1;if(/LOW ?APCH|LOW ?APPROACH/.test(t))m.low=1;
+  if(/PRACTICE APCH|MISSED APCH|MISSED APPROACH/.test(t))m.ma=1;if(/MULTIPLE APCH/.test(t))m.multi=1;
+  const h=t.match(/HOLDING TRNG(?: OVER)? ([A-Z0-9]{2,5})/);if(h)m.hold=h[1];const rt=t.match(/RTN TO ([A-Z]{4})/);if(rt)m.rtn=rt[1];
+  m.any=!!(m.tgl||m.sag||m.low||m.ma||m.hold||m.multi||m.rtn);
+  m.opt=m.tgl?'touch and go':m.sag?'stop and go':m.low?'low approach':m.ma?'low approach':'';
+  m.optJ=m.tgl?'タッチアンドゴー':m.sag?'ストップアンドゴー':m.low?'ローアプローチ':m.ma?'進入復行の訓練（ローアプローチのあと復行方式）':'';
+  m.full=!(m.tgl||m.low||m.ma)||(m.multi&&!m.rtn);return m}
 function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id||'').toUpperCase()||'JA＿＿＿';const lv=lvlFt(S.fpl.lvl)||C.lvl;
   const dep=ap(r.dep),dst=ap(r.dst);if(!dep||!dst)return [];
   const B='＿＿';const steps=[];const w=wxFor(r.dep).metar;const wa=wxFor(r.dst).metar;
@@ -2277,6 +2285,7 @@ function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id
   const app=fq(r.dst,['APP','APP/ASR','ASR','ARR','RADAR','TCA']),atA=fq(r.dst,['ATIS']),twA=fq(r.dst,['TWR']),rdA=fq(r.dst,['AFIS','RDO','A/G']),gnA=fq(r.dst,['GND']);
   const x=dst.iac.find(q=>q.n===P.app);const aps=x?apprSpoken(x.n):`${B}`;const isLoc=x&&/ILS|LOC|LDA/.test(x.n);const isRnav=x&&/RNP|RNAV|GLS/.test(x.n);
   const useStar=P.star&&P.arrMode==='star';const starN=useStar?starSpoken(P.star):'';
+  const TM=trnMode();const intent=TM.opt?`, request ${TM.ma?'practice ':''}${x?aps+' ':''}approach, ${TM.ma?'missed approach':TM.opt}${TM.rtn?', then return to '+apName(TM.rtn).replace(/ airport$/,''):TM.multi?', then another approach':''}`:'';
   accs.forEach((k,i)=>{const nx=accs[i+1];const last=i===accs.length-1;
     const msgs=[['PIL',`${accName(k)}, ${cs}, ${i===0&&!depc&&!vrow?'airborne '+r.dep+', ':''}${alt}.`],['ATC',`${cs}, ${accName(k)}${i===0&&!depc&&!vrow?', radar contact':''}, roger.`]];
     if(last){msgs.push(['ATC',`${cs}, descend and maintain ${B}${x?`, expect ${aps} approach`:''}.`],['PIL',`Descend and maintain ${B}, ${cs}.`]);
@@ -2286,14 +2295,29 @@ function buildAtc(){const r=S.route,C=routeCalc(),P=procSel();const cs=(S.fpl.id
     steps.push({ph:'ENR',st:{cs:`${accName(k)}（${k}）`,f:ff(k)},title:i===0?'管制部（航空路）':'管制区の切替',ref:last?'規程(Ⅱ)7(4)b：進入方式が判断できないときは EXPECT〔type〕APPROACH を通報':'',msgs})});
   const vfrArrA=S.route.arrRule==='vfr'&&S.route.vfrFix;
   if(vfrArrA){steps.push({ph:'ENR',st:{cs:'管制部（航空路）',f:''},title:`IFRのキャンセル（${S.route.vfrFix}でVFRへ）`,ref:'IFRで始まり途中からVFRに変える飛行（飛行計画「Y」）。VMCを維持できることを確かめてから、管制機関にIFRの終了を通報します。',msgs:[['PIL',`${'Control'}, ${cs}, approaching ${S.route.vfrFix}, request cancel IFR.`],['ATC',`${cs}, IFR cancellation received at ${B}. Squawk ${B}${''}.`],['PIL',`IFR cancellation received, squawk ${B}, ${cs}.`],['info',`以後はVFRで目的地（${dispIcao(S.route.dst)}${isZ(S.route.dst)?'・'+((S.route.dstZ||{}).n||'場外'):''}）へ。管制圏・情報圏に入る場合は、その機関へ通報してください。`]]})}
+  if(TM.hold&&!vfrArrA){const hu=app||{cs:accs.length?accName(accs[accs.length-1]):'管制部',f:accs.length?ff(accs[accs.length-1]):''};const hf=fixSpoken(TM.hold)||TM.hold;
+    steps.push({ph:'STAR',st:hu,title:`ホールディングの訓練（${TM.hold}）`,ref:'待機の指示は、待機fix・待機する方向（fixからの方位）・径路（ラジアル等）・旋回方向（右旋回なら省略可）・高度・待機時間または周回数・EFC（予定承認時刻）の順で伝えられます。',
+      msgs:[['PIL',`${hu.cs}, ${cs}, request holding over ${hf} for training, ${B} turns, then ${x?aps+' ':''}approach.`],['ATC',`${cs}, cleared to ${hf}, hold ${B} of ${hf} on the ${B} radial, ${B} turns, maintain ${B}, expect further clearance at ${B}.`],['PIL',`Cleared to ${hf}, hold ${B} of ${hf} on the ${B} radial, ${B} turns, maintain ${B}, expect further clearance at ${B}, ${cs}.`],
+        ['PIL',`${hu.cs}, ${cs}, entering holding over ${hf}, maintaining ${B}.`],['info','公示の待機経路があれば、指示が「hold as published」になることもあります。予定の周回数を終えたら、進入を要求します。'],['PIL',`${hu.cs}, ${cs}, holding training complete, request ${x?aps+' ':''}approach.`],['ATC',`${cs}, ${B}.`]]})}
   if(atA&&!vfrArrA)steps.push({ph:'STAR',st:atA,title:'目的地のATIS',ref:'',msgs:[['info',`到着前に目的地のATIS（information ${B}）を聞き、使用滑走路・風・QNHを確認します。受信を伝えると、管制官はこれらの通報を省けます（規程(Ⅱ)7(4)）。`]]});
-  if(vfrArrA){}else if(app&&useStar)steps.push({ph:'STAR',st:app,title:'STAR経由の進入許可',ref:'規程(Ⅱ)7(7)b(a)：進入許可と同時に接続するSTARを承認（CLEARED FOR〔type〕APPROACH VIA〔STAR name〕）。できない場合は(b)「Descend via STAR to ○○. Cleared for approach.」',msgs:[['PIL',`${app.cs}, ${cs}, ${B}, information ${B}.`],['ATC',`${cs}, ${app.cs}, radar contact, cleared for ${x?aps+' ':''}approach via ${starN}.`],['PIL',`Cleared for ${x?aps+' ':''}approach via ${starN}, ${cs}.`],['info','航空機は最低経路高度とSTARの高度・速度の制限に従って降下し、そのまま進入します（規程(Ⅱ)7(7)b 注）。'],['ATC',`${cs}, contact Tower ${twA?twA.f:B}.`],['PIL',`${twA?twA.f:B}, ${cs}.`]]});
+  if(vfrArrA){}else if(app&&useStar)steps.push({ph:'STAR',st:app,title:'STAR経由の進入許可',ref:'規程(Ⅱ)7(7)b(a)：進入許可と同時に接続するSTARを承認（CLEARED FOR〔type〕APPROACH VIA〔STAR name〕）。できない場合は(b)「Descend via STAR to ○○. Cleared for approach.」',msgs:[['PIL',`${app.cs}, ${cs}, ${B}, information ${B}${intent}.`],['ATC',`${cs}, ${app.cs}, radar contact, cleared for ${x?aps+' ':''}approach via ${starN}.`],['PIL',`Cleared for ${x?aps+' ':''}approach via ${starN}, ${cs}.`],['info','航空機は最低経路高度とSTARの高度・速度の制限に従って降下し、そのまま進入します（規程(Ⅱ)7(7)b 注）。'],['ATC',`${cs}, contact Tower ${twA?twA.f:B}.`],['PIL',`${twA?twA.f:B}, ${cs}.`]]});
   else if(app){const gate=isRnav?`${B} miles ${B} of ${B}, cleared for ${aps} approach`:`${B} miles from ${B}, turn ${B} heading ${B}, cleared for ${aps} approach`;
     steps.push({ph:'APP',st:app,title:'進入（レーダー誘導）',ref:'規程(Ⅳ)4(5)：誘導の目的を明示（vector to〔approach〕final approach course）。(Ⅳ)8(5)：アプローチゲートまでに、フィックスとの位置関係・会合する針路・通信の移管を伝えて進入許可。'+(isRnav?'(Ⅳ)8-5(3)：RNAV進入はフィックスからの位置を通報して許可、または IAF/IF への直行（proceed direct）で誘導を終了':''),
-      msgs:[['PIL',`${app.cs}, ${cs}, leaving ${B} descending ${B}, information ${B}.`],['ATC',`${cs}, ${app.cs}, radar contact, fly heading ${B} vector to ${x?aps+' ':''}final approach course, descend and maintain ${B}.`],['PIL',`Fly heading ${B}, descend and maintain ${B}, ${cs}.`],['ATC',`${cs}, reduce speed to ${B}.`],['PIL',`Reduce ${B}, ${cs}.`],['ATC',`${cs}, turn ${B} heading ${B}, descend and maintain ${B}.`],['PIL',`${B} heading ${B}, descend and maintain ${B}, ${cs}.`],
-        ['ATC',`${cs}, ${gate}, contact Tower ${twA?twA.f:B}.`],['PIL',`${isRnav?'':`${B} heading ${B}, `}cleared for ${aps} approach, ${twA?twA.f:B}, ${cs}.`],['info','誘導は進入許可で終わります。針路・高度・速度の指示は交通状況で回数が変わります。管制官によっては「Monitor ○○. Report ○○ to tower.」の指示になります（規程(Ⅳ)8(5)(c)）。進入許可のあとは速度調整は原則として指示されません（規程(Ⅳ)9(1)a）。']]})}
+      msgs:[['PIL',`${app.cs}, ${cs}, leaving ${B} descending ${B}, information ${B}${intent}.`]].concat(TM.opt?[['info',`訓練の内容（${TM.optJ}${TM.rtn?'のあと'+TM.rtn+'へ戻る':TM.multi?'のあともう一度進入':''}）を最初の通報で伝えておくと、管制官が順序づけ・復行後の指示を準備できます。飛行計画のRMKにも書いてあれば、確認だけで済むこともあります。`]]:[]).concat([['ATC',`${cs}, ${app.cs}, radar contact, fly heading ${B} vector to ${x?aps+' ':''}final approach course, descend and maintain ${B}.`],['PIL',`Fly heading ${B}, descend and maintain ${B}, ${cs}.`],['ATC',`${cs}, reduce speed to ${B}.`],['PIL',`Reduce ${B}, ${cs}.`],['ATC',`${cs}, turn ${B} heading ${B}, descend and maintain ${B}.`],['PIL',`${B} heading ${B}, descend and maintain ${B}, ${cs}.`],
+        ['ATC',`${cs}, ${gate}, contact Tower ${twA?twA.f:B}.`],['PIL',`${isRnav?'':`${B} heading ${B}, `}cleared for ${aps} approach, ${twA?twA.f:B}, ${cs}.`],['info','誘導は進入許可で終わります。針路・高度・速度の指示は交通状況で回数が変わります。管制官によっては「Monitor ○○. Report ○○ to tower.」の指示になります（規程(Ⅳ)8(5)(c)）。進入許可のあとは速度調整は原則として指示されません（規程(Ⅳ)9(1)a）。']])})}
   const twU=twA||rdA;
-  if(twU)steps.push({ph:'APP',st:twU,title:twA?'着陸':'着陸（レディオ）',ref:twA?'規程(Ⅲ)2(9)：滑走路→CLEARED TO LAND→風 の順':'',msgs:[['PIL',twA?`${twU.cs}, ${cs}, ${B} miles on final, ${x?apprSpoken(x.n)+' approach':'runway '+B}.`:`${twU.cs}, ${cs}, ${B} miles on final, ${x?apprSpoken(x.n)+' approach':'runway '+B}, full stop landing.`],['info',twA?'位置（最終進入の何マイルか、またはFAFなどのfix）と、行っている進入方式・滑走路を伝えます。タッチアンドゴーや低空進入などの要求があればここで付けます。アプローチから「Report ○○ to tower」と言われていれば、その地点で通報します（規程(Ⅳ)8(5)(c)）。':'レディオは許可ではなく情報を提供する機関なので、位置・進入方式・着陸の意図を伝えて、滑走路の情報（runway is clear と風）を受けます。'],['ATC',twA?`${cs}, runway ${x&&x.rw||B}, cleared to land, ${wtxt(wa)}.`:`${cs}, runway ${x&&x.rw||B}, runway is clear, ${wtxt(wa)}.`],['PIL',twA?`Runway ${x&&x.rw||B}, cleared to land, ${cs}.`:`Runway ${x&&x.rw||B}, runway is clear, ${cs}.`]].concat(twA?[]:[['info','レディオの「runway is clear」は情報の提供で、着陸許可ではありません。応答は滑走路番号と runway is clear を読み返します。']]).concat(gnA?[['ATC',`${cs}, contact Ground ${gnA.f}.`],['PIL',`${gnA.f}, ${cs}.`]]:[])});
+  const rwA=x&&x.rw||B;
+  if(twU&&TM.opt&&!vfrArrA){const optC=TM.ma?`cleared for low approach, after low approach, fly published missed approach procedure`:`cleared for ${TM.opt}`;const dpA=app||fq(r.dst,['DEP']);
+    steps.push({ph:'APP',st:twU,title:(/訓練/.test(TM.optJ)?TM.optJ:TM.optJ+'（訓練）')+(twA?'':'・レディオ'),ref:'訓練の進入は着陸許可の代わりに、要求した内容（low approach／touch and go／stop and go）の許可を受けます。復行後の上昇・針路・周波数は、許可と一緒か直後に指示されます。',
+      msgs:[['PIL',`${twU.cs}, ${cs}, ${B} miles on final, ${x?apprSpoken(x.n)+' approach':'runway '+B}, request ${TM.opt}${TM.ma?', then missed approach':''}.`],
+        ['ATC',twA?`${cs}, runway ${rwA}, ${optC}, ${wtxt(wa)}.`:`${cs}, runway ${rwA}, runway is clear, ${wtxt(wa)}.`],['PIL',twA?`Runway ${rwA}, ${optC}, ${cs}.`:`Runway ${rwA}, runway is clear, ${TM.opt}, ${cs}.`]]
+        .concat(TM.ma||TM.low?[['info',TM.ma?'DA／MDA（またはMAPt）で復行し、公示の進入復行方式に従います。訓練なので最低気象条件より良くても復行します。':'滑走路に接地せず、許可された高さ以上で滑走路上を通過して上昇します。高度制限があれば許可と一緒に指示されます（例：not below ○○ feet）。']]:[])
+        .concat(TM.ma||!twA?[]:[['ATC',`${cs}, after ${TM.opt}, climb and maintain ${B}, fly heading ${B}.`],['PIL',`After ${TM.opt}, climb and maintain ${B}, heading ${B}, ${cs}.`]])
+        .concat([['PIL',`${twU.cs}, ${cs}, ${TM.ma?'missed approach':TM.low?'low approach complete':'airborne'}, climbing ${B}.`],['ATC',`${cs}, contact ${dpA?dpA.cs.split(' ').slice(-1)[0]+' '+dpA.f:'Departure '+B}.`],['PIL',`${dpA?dpA.f:B}, ${cs}.`]])});
+    if(TM.multi&&!TM.rtn)steps.push({ph:'APP',st:dpA||{cs:'アプローチ',f:''},title:'もう一度の進入（複数回の進入）',ref:'',msgs:[['PIL',`${dpA?dpA.cs:B}, ${cs}, ${B}, request ${x?aps+' ':''}approach${TM.opt?', '+TM.opt:''}.`],['ATC',`${cs}, radar contact, fly heading ${B} vector to ${x?aps+' ':''}final approach course, maintain ${B}.`],['PIL',`Fly heading ${B}, maintain ${B}, ${cs}.`],['info','最後の回で着陸する場合は、タワーへの通報で「full stop」を伝え、着陸許可を受けます。']]});
+    if(TM.rtn){const D=ap(TM.rtn);steps.push({ph:'APP',st:dpA||{cs:'アプローチ',f:''},title:`${TM.rtn}へ戻る（新しい管制承認）`,ref:'規程(Ⅱ)1：承認限界点を過ぎて飛行を続けるには、新しい管制承認が必要です。',msgs:[['PIL',`${dpA?dpA.cs:B}, ${cs}, ${TM.ma||TM.low?'missed approach complete':'airborne'}, request clearance to ${apName(TM.rtn).replace(/ airport$/,'')}.`],['ATC',`${cs}, cleared to ${apName(TM.rtn)} via ${B}, maintain ${B}.`],['PIL',`Cleared to ${apName(TM.rtn)} via ${B}, maintain ${B}, ${cs}.`],['info',`飛行計画の目的地は ${dispIcao(r.dst)} で、RMKに「RTN TO ${TM.rtn} AFTER APCH」と書いておくと、管制側で戻りの経路を準備できます。戻りの経路は別の飛行計画にする運用もあるので、管制機関と調整してください。`]]})}}
+  else if(twU)steps.push({ph:'APP',st:twU,title:twA?'着陸':'着陸（レディオ）',ref:twA?'規程(Ⅲ)2(9)：滑走路→CLEARED TO LAND→風 の順':'',msgs:[['PIL',twA?`${twU.cs}, ${cs}, ${B} miles on final, ${x?apprSpoken(x.n)+' approach':'runway '+B}.`:`${twU.cs}, ${cs}, ${B} miles on final, ${x?apprSpoken(x.n)+' approach':'runway '+B}, full stop landing.`],['info',twA?'位置（最終進入の何マイルか、またはFAFなどのfix）と、行っている進入方式・滑走路を伝えます。タッチアンドゴーや低空進入などの要求があればここで付けます。アプローチから「Report ○○ to tower」と言われていれば、その地点で通報します（規程(Ⅳ)8(5)(c)）。':'レディオは許可ではなく情報を提供する機関なので、位置・進入方式・着陸の意図を伝えて、滑走路の情報（runway is clear と風）を受けます。'],['ATC',twA?`${cs}, runway ${x&&x.rw||B}, cleared to land, ${wtxt(wa)}.`:`${cs}, runway ${x&&x.rw||B}, runway is clear, ${wtxt(wa)}.`],['PIL',twA?`Runway ${x&&x.rw||B}, cleared to land, ${cs}.`:`Runway ${x&&x.rw||B}, runway is clear, ${cs}.`]].concat(twA?[]:[['info','レディオの「runway is clear」は情報の提供で、着陸許可ではありません。応答は滑走路番号と runway is clear を読み返します。']]).concat(gnA?[['ATC',`${cs}, contact Ground ${gnA.f}.`],['PIL',`${gnA.f}, ${cs}.`]]:[])});
+  if(!TM.opt||(TM.multi&&!TM.rtn))
   {const T=taxS();const ex=tv(T.aExit,B),rt=tvia(T.aRoute,B),sp=tv(T.aSpot,B),spP=spotP('a',B);const gu=(typeof gnA!=='undefined'&&gnA)||null;const tu=(typeof twU!=='undefined'&&twU)||null;
     if(gu)steps.push({ph:'APP',st:gu,title:'着陸後の地上走行',ref:'規程(Ⅲ)4(1)：地上走行の指示は経路（誘導路）と、滑走路を横断する場合はその許可を含む',msgs:[['PIL',`${gu.cs}, ${cs}, runway vacated via ${ex}, request taxi to ${spP}.`],['ATC',`${cs}, taxi to ${spP} via ${rt}.`],['PIL',`Taxi to ${spP} via ${rt}, ${cs}.`]]});
     else if(tu)steps.push({ph:'APP',st:tu,title:'着陸後の地上走行',ref:'',msgs:[['PIL',`${tu.cs}, ${cs}, runway vacated via ${ex}, taxiing to ${spP} via ${rt}.`],['info','グランドがない飛行場では、タワー（またはレディオ）に滑走路を出たことと、スポットまでの経路を伝えます。']]})}
@@ -3873,6 +3897,7 @@ const RMK_T=[
  ['計器進入の訓練（進入後に復行）',v=>`PRACTICE APCH ${v.APP?v.APP+' ':''}${v.D} THEN MISSED APCH`],
  ['ローアプローチ',v=>`LOW APCH ${v.D}`],
  ['タッチアンドゴー',v=>`TGL ${v.D}`],
+ ['ストップアンドゴー',v=>`STOP AND GO ${v.D}`],
  ['複数回の進入',v=>`MULTIPLE APCH ${v.D}`],
  ['ホールディングの訓練',v=>`HOLDING TRNG OVER ${v.FIX}${v.ALT?' '+v.ALT:''}`],
  ['模擬計器飛行（安全監視操縦者あり）',v=>'SIMULATED IFR FLT WITH SAFETY PILOT'],
@@ -4762,7 +4787,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122122500';
+window.APPV='20261122123332';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
