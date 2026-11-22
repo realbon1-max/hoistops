@@ -1241,8 +1241,8 @@ small.utcsub{display:block;margin-top:3px;font-family:var(--code);font-size:12.5
 :root{--ercR:#225789;--ercC:#AD4C28;--ercS:#0A91DA}
 :root[data-theme="ace"],:root[data-theme="tac"],:root[data-theme="dark"]{--ercR:#6FA8E0;--ercC:#E0875C;--ercS:#4FC3F7}
 /* 入力欄の高さをそろえる（ラベルが2行でも欄の位置が下でそろう） */
-.grid>label.f{display:flex!important;flex-direction:column}
-.grid>label.f>select,.grid>label.f>input,.grid>label.f>.inp,.grid>label.f>.selwrap,.grid>label.f>.cs{margin-top:auto}
+:is(.grid:has(#depMode),.grid:has(#arrRule))>label.f{display:flex!important;flex-direction:column}
+:is(.grid:has(#depMode),.grid:has(#arrRule))>label.f>:is(select,input){margin-top:auto}
 .grid>label.f>select{min-width:0;text-overflow:ellipsis}
 /* 説明文の省略（表示メニューで切替・タップで開く） */
 html.hidehelp .lh:not(.open){display:-webkit-box!important;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
@@ -4809,7 +4809,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122140728';
+window.APPV='20261122140934';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
