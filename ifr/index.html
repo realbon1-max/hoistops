@@ -222,6 +222,7 @@ a.lnk{text-decoration:none;display:inline-block;background:var(--ink);color:var(
 #mapSvg .ml{font-family:B612,sans-serif;font-size:calc(11px*var(--k));paint-order:stroke;stroke:var(--card);stroke-width:calc(3px*var(--k));pointer-events:none}
 #mapSvg .fl{display:none;font-size:calc(9.5px*var(--k));transform:translate(calc(5px*var(--k)),calc(-4px*var(--k)))}#mapSvg.z2 .fl{display:inline}
 .approf .aptb{border-collapse:collapse;margin:8px 10px 4px;font-family:B612,sans-serif;font-size:12px}.approf .aptb th,.approf .aptb td{border:1px solid var(--ink);padding:2px 7px;text-align:center;font-weight:400}.approf .apma{float:right;max-width:46%;font-size:12px;line-height:1.45;margin:6px 10px;color:var(--ink)}@media(max-width:600px){.approf .apma{float:none;max-width:none}}.approf svg{clear:both}
+.unhint{color:var(--muted);font-size:11px}.sugopt.sel[data-unrec]:active,.sugopt.sel[data-unsug]:active{filter:brightness(.96)}
 #mapSvg .sgls{display:none}#mapSvg.z1 .sgls{display:inline}#mapSvg .sgl{font-size:calc(8.5px*var(--k));font-weight:700;stroke-width:calc(2.5px*var(--k))}#mapSvg .sgc{font-weight:400}#mapSvg .sgx{font-style:italic;opacity:.75}#mapSvg .copk{transform:scale(var(--k))}#mapSvg .nvm{font-size:calc(8px*var(--k));font-weight:400;letter-spacing:.05em}
 .lbrow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:6px 0}.lbrow b{font-size:13px}
 #mapSvg .al{display:none;font-weight:700;font-size:calc(10px*var(--k))}#mapSvg.z1 .al{display:inline}
@@ -2902,11 +2903,12 @@ function sugUI(){const k=sugKey();if(!SUG||SUG.k!==k)SUG={k,r:null};const r=SUG.
    <p class="note" style="margin:4px 0">航空路・公示直行経路・SID/トランジション・STARをつないで、飛行距離が短い順に出します。航空路を使わず、公示直行経路と無線施設どうしの非公示の直行（${DCTMAX}NM以内）だけでつないだ案も、オレンジの印を付けて最大3件まで混ぜて出します。探したあと、下の経路図に案1〜3が点線で出るので、線をタップして選べます。機体の許可（RNAV1/RNAV5）と、飛べる上限（経路図の「上限」設定、ふだんは巡航高度）より高いMEA・SID/STARの高度制限は外します。管制の指定や運用方向は考えに入れていないので、使う前にAIP・NOTAMで確かめてください。概略図の地図：地球地図日本（国土地理院）を簡略化、湖は © OpenStreetMap contributors。</p>`;
   if(r){if(!r.opts.length)h+=`<div class="msg cau">${esc(r.why)}</div>`;
     const P0=procSel();const isCur=o=>o.rte===S.route.rte&&(o.sid||'')===(P0.sid||'')&&(o.star||'')===(P0.star||'');
-    h+=r.opts.map((o,i)=>`<div class="sugopt${isCur(o)?' sel':''}" style="border-top:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div style="flex:1 1 240px;min-width:0"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b>${isCur(o)?' <span class="selbadge">✓ 選択中</span>':''}
+    h+=r.opts.map((o,i)=>`<div class="sugopt${isCur(o)?' sel':''}"${isCur(o)?' data-unsug="1" role="button" tabindex="0" title="もう一度押すと外れます" style="cursor:pointer;border-top':' style="border-top'}:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><div style="flex:1 1 240px;min-width:0"><b class="code">${i+1}. 約${Math.round(o.tot)}NM　${hhmm(o.tot/(S.fpl.tas||120)*60)}</b>${isCur(o)?' <span class="selbadge">✓ 選択中</span>':''}
       <div style="font-size:13px;margin-top:4px"><span class="tag t-ok" style="background:#2E8B5722;color:#2E8B57">SID</span> ${esc(o.sidN)}${o.sid?'':''}<br><span class="tag" style="background:#C2185B22;color:var(--mag)">経路</span> <span class="code">${esc(o.rte)}</span><br><span class="tag" style="background:#C98A0022;color:#9A6508">STAR</span> ${esc(o.starN)}${o.unpub?`<br><span class="tag t-cau">非公示の直行</span> <span class="code">${esc(o.unpub.join('、'))}</span><small>（MEAなし：最低安全高度・電波の届く範囲を自分で確認）</small>`:''}</div>
-      <div class="note" style="margin:2px 0 0">直線距離 ${Math.round(o.direct)}NM の ${Math.round(o.tot/o.direct*100)}%</div></div>${thumbRoute(o)}<div style="flex:0 0 auto">${isCur(o)?'<span class="selbtn">✓ このルートを使用中</span>':`<button class="act" type="button" data-sug="${i}">このルートにする</button>`}</div></div>`).join('')}
+      <div class="note" style="margin:2px 0 0">直線距離 ${Math.round(o.direct)}NM の ${Math.round(o.tot/o.direct*100)}%</div></div>${thumbRoute(o)}<div style="flex:0 0 auto">${isCur(o)?'<span class="selbtn">✓ このルートを使用中</span><br><small class="unhint">もう一度押すと外す</small>':`<button class="act" type="button" data-sug="${i}">このルートにする</button>`}</div></div>`).join('')}
   return h}
-function sugBind(){const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
+function sugBind(){document.querySelectorAll('[data-unsug]').forEach(c=>{const f=()=>{S.route.rte='';S._aw=null;S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll();toast('ルートの選択を外しました')};c.onclick=e=>{if(e.target.closest('button,a,input,select'))return;f()};c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f()}}});
+  const b=$('sugGo');if(b)b.onclick=()=>{b.textContent='探しています…';setTimeout(()=>{SUG={k:sugKey(),r:sugCompute()};renderEnr()},10)};
   document.querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{const n=+x.dataset.sug;const o=SUG.r.opts[n];const P=procSel();S.route.rte=o.rte;P.sid=o.sid;P.sidE=0;P.sidT=o.sidT;P.star=o.star;P.starE=o.starE;P.arrMode=o.star?'star':'vec';S.plView={};S._selAw=null;if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll();toast(`案${n+1}のルート（約${Math.round(o.tot)}NM）を設定しました`)})}
 /* ---------- recommendations: SID / transition / STAR / approach ---------- */
 function flyLimit(){try{return mapLimit()}catch(e){return null}}
@@ -3008,10 +3010,13 @@ function recBox(kind){if(kind==='sid'&&S.route.depMode==='vfr'&&S.route.ifrFix)r
   const P=procSel();const cur=o=>kind==='sid'?(o.sid===P.sid&&o.sidT===P.sidT):kind==='star'?(o.star===P.star&&o.starE===(P.starE||0)):(o.x.n===P.app);
   const ttl={sid:'おすすめのSID・トランジション',star:'おすすめのSTAR',app:'おすすめの進入方式'}[kind];
   h=`<div class="box"><b>${ttl}</b><p class="note" style="margin:2px 0 0"><b>${esc(limText())}</b>。上限より高い高度制限のある手順は出しません。${kind!=='app'?'下の図の線をタップしても選べます。':''}</p><p class="note" style="margin:2px 0 6px">${kind==='app'?'到着時刻の風・天気予報、機体の装備、ミニマの低さ、STARからのつながりで順位をつけています。':kind==='sid'?'風に合う滑走路、航空路とのつながり、目的地までの距離で順位をつけています。':'航空路の最後のfixとのつながりと、着陸までの距離で順位をつけています。'}</p>`+
-   L.map((o,i)=>{const nm=kind==='app'?o.x.n:o.name;const th=thumbRec(kind,o);return `<div class="sugopt${cur(o)?' sel':''}" style="border-top:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center"><div style="flex:1 1 220px;min-width:0"><b class="code">${i+1}. ${esc(nm)}</b>${cur(o)?' <span class="selbadge">✓ 選択中</span>':''}<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${o.why.map(esc).join('・')}</div></div>${th}<div style="flex:0 0 auto;min-width:96px;text-align:right">${cur(o)?'<span class="selbtn">✓ 使用中</span>':`<button class="act" type="button" data-rec="${kind}|${i}">これにする</button>`}</div></div>`}).join('')+'</div>';
+   L.map((o,i)=>{const nm=kind==='app'?o.x.n:o.name;const th=thumbRec(kind,o);return `<div class="sugopt${cur(o)?' sel':''}"${cur(o)?` data-unrec="${kind}" role="button" tabindex="0" title="もう一度押すと外れます" style="cursor:pointer;border-top`:' style="border-top'}:1px solid var(--line);padding:8px 0;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center"><div style="flex:1 1 220px;min-width:0"><b class="code">${i+1}. ${esc(nm)}</b>${cur(o)?' <span class="selbadge">✓ 選択中</span>':''}<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${o.why.map(esc).join('・')}</div></div>${th}<div style="flex:0 0 auto;min-width:96px;text-align:right">${cur(o)?'<span class="selbtn">✓ 使用中</span><br><small class="unhint">もう一度押すと外す</small>':`<button class="act" type="button" data-rec="${kind}|${i}">これにする</button>`}</div></div>`}).join('')+'</div>';
   REC[kind]=L;return h}
 const REC={};
-function recBind(root){root.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>{const [k,i]=b.dataset.rec.split('|');const o=REC[k][+i];const P=procSel();
+function recUnset(k){const P=procSel();if(k==='sid'){P.sid='';P.sidT=-1;P.sidE=0}else if(k==='star'){P.star='';P.starE=0}else{P.app=''}
+  if(typeof MAP!=='undefined'&&MAP)MAP.key='';save();renderAll();toast(({sid:'SID',star:'STAR',app:'進入方式'})[k]+'の選択を外しました')}
+function recBind(root){root.querySelectorAll('[data-unrec]').forEach(c=>{const f=e=>{if(e.target.closest('button,a,input,select'))return;recUnset(c.dataset.unrec)};c.onclick=f;c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();recUnset(c.dataset.unrec)}}});
+  root.querySelectorAll('[data-rec]').forEach(b=>b.onclick=()=>{const [k,i]=b.dataset.rec.split('|');const o=REC[k][+i];const P=procSel();
   if(k==='sid'){P.sid=o.sid;P.sidT=o.sidT;P.sidE=0;if(o.rw){P.drw=o.rw}const C=routeCalc();if(!(C.r.pts||[]).length&&o.end){S.route.rte=o.end}}
   else if(k==='star'){P.star=o.star;P.starE=o.starE;P.arrMode='star'}
   else{P.app=o.x.n}
@@ -4757,7 +4762,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122122049';
+window.APPV='20261122122500';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
