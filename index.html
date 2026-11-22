@@ -6894,7 +6894,90 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
   document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('[data-btmvx]')) mv=null; },true);
   try{ hpDraw(); }catch(e){}
 })();
-</script></body></html>
+</script><script id="tawsJs">
+// ---- 地形警報（EGPWS／HTAWS 風）：GPS現在地モードのとき、GPS高度と地形の差で地図を塗り分け、進行方向30秒先までの地形を見て注意・警報を出す（訓練・計画用の目安）
+(function(){ if(window.__taws||typeof gtFix!=='function'||typeof demGrid!=='function') return; window.__taws=1;
+  const TW={mode:2,busy:false,hist:[],prev:null,lvl:0,lastSay:0,info:null}; // mode 2=表示＋音声 1=表示のみ 0=切
+  try{ const v=localStorage.getItem('hoistops-taws'); if(v!=null) TW.mode=+v; }catch(e){}
+  const save=()=>{ try{ localStorage.setItem('hoistops-taws',String(TW.mode)); }catch(e){} };
+  const F2M=0.3048, B_RED=-100*F2M, B_YEL=-250*F2M, B_GRN=-500*F2M, MINKT=30;
+  const altM=()=>{ try{ return gtAltM(); }catch(e){ return null; } };
+  const active=()=>TW.mode>0&&GT.on&&GT.got&&altM()!=null;
+  const sig=()=>active()?String(Math.round(altM()/F2M/25)):'off';
+  // 塗り分け：赤＝自機の100 ft下より高い地形（このままでは越えられない）、黄＝100〜250 ft下、緑＝250〜500 ft下、それより低い地形は塗らない
+  async function calc(cv,z,tx,ty,A){ const g=cv.getContext('2d'); const Z=await demGrid(z,tx,ty,0); const im=g.createImageData(256,256), d=im.data;
+    for(let j=0;j<256;j++) for(let i=0;i<256;i++){ const o=j*256+i, h=Z[o], p=o*4; if(isNaN(h)){ d[p+3]=0; continue; } const dh=h-A; let c=null, a=0;
+      if(dh>=B_RED){ c=[230,30,30]; a=dh>=0?0.62:0.48; }
+      else if(dh>=B_YEL){ if((i+j)%2===0){ c=[255,214,0]; a=0.85; } }
+      else if(dh>=B_GRN){ if(i%3===0&&j%3===0||(i+1)%3===0&&(j+2)%3===0){ c=[30,170,60]; a=0.9; } }
+      if(!c){ d[p+3]=0; continue; } d[p]=c[0]; d[p+1]=c[1]; d[p+2]=c[2]; d[p+3]=Math.round(255*a); }
+    g.putImageData(im,0,0); }
+  function render(){ const el=$('map'); if(!el) return; let box=$('mTaws'); if(!box){ box=document.createElement('div'); box.className='mlayer'; box.id='mTaws'; const ref=$('mGOv'); if(ref) ref.after(box); else el.prepend(box); }
+    const s=sig(); if(s==='off'||MAP.z<9){ box.innerHTML=''; return; } const A=altM();
+    const W=el.clientWidth, H=el.clientHeight, z=MAP.z, n=Math.pow(2,z), x0=MAP.cx-W/2, y0=MAP.cy-H/2;
+    const tx0=Math.floor(x0/256), tx1=Math.floor((x0+W)/256), ty0=Math.max(0,Math.floor(y0/256)), ty1=Math.min(n-1,Math.floor((y0+H)/256)); const want=new Set();
+    for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ if(tx<0||tx>=n) continue; const k=z+'/'+tx+'/'+ty+'/'+s; want.add(k);
+      let t=box.querySelector(`[data-k="${k}"]`); if(!t){ t=document.createElement('canvas'); t.width=t.height=256; t.dataset.k=k; box.appendChild(t);
+        calc(t,z,tx,ty,A).then(()=>{ box.querySelectorAll(`canvas[data-k^="${z}/${tx}/${ty}/"]`).forEach(o=>{ if(o!==t&&!want.has(o.dataset.k)) o.remove(); }); }).catch(()=>{}); }
+      t.style.left=(tx*256-x0)+'px'; t.style.top=(ty*256-y0)+'px'; }
+    // 新しい高度の絵ができるまで古い絵を残して、ちらつきを防ぐ
+    box.querySelectorAll('canvas[data-k]').forEach(t=>{ const p=t.dataset.k.split('/'); if(want.has(t.dataset.k)) return; const nk=p.slice(0,3).join('/')+'/'+s; if(+p[0]!==z||!want.has(nk)) t.remove(); else { const tx=+p[1], ty=+p[2]; t.style.left=(tx*256-x0)+'px'; t.style.top=(ty*256-y0)+'px'; } }); }
+  window.tawsRender=render;
+  const bG=govRender; window.govRender=govRender=function(){ const r=bG.apply(this,arguments); try{ render(); }catch(e){} return r; };
+  // ---- 前方監視：対地速度30 kt以上のとき、進行方向（左右に少し広げた3本）30秒先までの地形と、上昇・降下率から予測した高度を比べる
+  const dest=(la,lo,brg,m)=>{ const R=6371000, d=m/R, b=brg*Math.PI/180, f1=la*Math.PI/180, l1=lo*Math.PI/180;
+    const f2=Math.asin(Math.sin(f1)*Math.cos(d)+Math.cos(f1)*Math.sin(d)*Math.cos(b)), l2=l1+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(f1),Math.cos(d)-Math.sin(f1)*Math.sin(f2)); return [f2*180/Math.PI,l2*180/Math.PI]; };
+  const brgOf=(a,b,c,d)=>{ const f1=a*Math.PI/180,f2=c*Math.PI/180,dl=(d-b)*Math.PI/180; return (Math.atan2(Math.sin(dl)*Math.cos(f2),Math.cos(f1)*Math.sin(f2)-Math.sin(f1)*Math.cos(f2)*Math.cos(dl))*180/Math.PI+360)%360; };
+  function vsOf(){ const H=TW.hist; if(H.length<3) return 0; const t0=H[0][0]; let n=0,sx=0,sy=0,sxx=0,sxy=0; H.forEach(([t,a])=>{ const x=(t-t0)/1000; n++; sx+=x; sy+=a; sxx+=x*x; sxy+=x*a; }); const den=n*sxx-sx*sx; if(den<=0) return 0; return Math.max(-12,Math.min(12,(n*sxy-sx*sy)/den)); }
+  async function check(p){ if(TW.busy) return; const c=p.coords, la=c.latitude, lo=c.longitude, t=p.timestamp||Date.now(), A=altM();
+    if(A!=null){ TW.hist.push([t,A]); TW.hist=TW.hist.filter(h=>t-h[0]<=8000); }
+    let trk=(c.heading!=null&&isFinite(c.heading)&&c.speed>3)?c.heading:null; if(trk==null&&TW.prev&&t-TW.prev.t>=1000){ const dm=gc(TW.prev.la,TW.prev.lo,la,lo).nm*1852; if(dm>=5) trk=brgOf(TW.prev.la,TW.prev.lo,la,lo); }
+    if(!TW.prev||t-TW.prev.t>=1000) TW.prev={la,lo,t}; if(trk!=null) TW.trk=trk;
+    const v=GT.v, kt=v!=null?v*3600/1852:0;
+    if(TW.mode===0||A==null||kt<MINKT||TW.trk==null){ TW.info={idle:A==null?'noalt':kt<MINKT?'slow':'trk'}; setLvl(0); return; }
+    TW.busy=true; try{ const vs=vsOf(), L=[]; for(let s=2;s<=30;s+=2) for(const off of [0,-1,1]){ const dm=v*s, q=dest(la,lo,TW.trk,dm), qq=off?dest(q[0],q[1],(TW.trk+90*off+360)%360,Math.min(150,dm*0.12)+30):q; L.push([s,qq]); }
+      const H=await Promise.all(L.map(([s,q])=>elevAt(q[0],q[1]).then(h=>[s,h]).catch(()=>[s,NaN])));
+      let lvl=0, first=null, cl=Infinity; H.forEach(([s,h])=>{ if(h==null||isNaN(h)) return; const Ap=A+vs*s, m=Ap-h; if(m<cl) cl=m;
+        const w=s<=20&&m<=50*F2M, cc=s<=30&&m<=100*F2M; const l=w?2:cc?1:0; if(l>lvl||(l===lvl&&l&&first&&s<first.s)){ lvl=Math.max(lvl,l); if(l===lvl) first={s,m}; } });
+      TW.info={vs,kt,first,cl}; setLvl(lvl); } finally{ TW.busy=false; } }
+  // ---- 表示と音声
+  function say(lvl){ if(TW.mode!==2||!window.speechSynthesis) return; const now=Date.now(); if(now-TW.lastSay<(lvl===2?3500:7000)) return; TW.lastSay=now;
+    try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(lvl===2?'Warning terrain. Warning terrain.':'Caution terrain'); u.lang='en-US'; u.rate=lvl===2?1.15:1; speechSynthesis.speak(u); }catch(e){}
+    try{ navigator.vibrate&&navigator.vibrate(lvl===2?[300,120,300]:[200]); }catch(e){} }
+  function setLvl(l){ const was=TW.lvl; TW.lvl=l; let b=$('mTawsA'); if(!b){ b=document.createElement('div'); b.id='mTawsA'; b.setAttribute('role','alert'); $('map').appendChild(b); }
+    if(!l||TW.mode===0){ b.hidden=true; } else { const f=TW.info&&TW.info.first; b.hidden=false; b.className='twa '+(l===2?'w':'c');
+      b.innerHTML=(l===2?'<b>WARNING TERRAIN</b>地形警報　上昇・旋回':'<b>CAUTION TERRAIN</b>地形注意')+(f?`<small>約${f.s}秒先　${f.m<0?`地形が自機より ${Math.round(-f.m/F2M)} ft 高い`:`地形との余裕 ${Math.round(f.m/F2M)} ft`}</small>`:''); if(l>=was||l===2) say(l); }
+    chip(); }
+  function chip(){ let c=$('mTawsC'); if(!c){ c=document.createElement('button'); c.type='button'; c.id='mTawsC'; c.className='twc'; $('map').appendChild(c);
+      c.addEventListener('click',e=>{ e.stopPropagation(); TW.mode=(TW.mode+2)%3; save(); if(TW.mode===2) prime(); if(TW.mode===0) setLvl(0); render(); chip();
+        mapMsg(TW.mode===2?'地形警報：<b>表示＋音声</b>':TW.mode===1?'地形警報：<b>表示のみ</b>（音声なし）':'地形警報：<b>切</b>'); }); }
+    c.hidden=!GT.on; if(!GT.on) return; const A=altM(), I=TW.info||{};
+    const st=TW.mode===0?'切':A==null?'GPS高度なし':I.idle==='slow'?`${MINKT} kt未満は警報休止`:I.idle==='trk'?'進行方向を待っています':(TW.mode===2?'監視中・音声':'監視中');
+    c.dataset.m=TW.mode; c.innerHTML=`<b>TAWS</b> ${st}${TW.mode&&A!=null?`<span class="lg"><i class="r"></i>100 ft下より上<i class="y"></i>100–250<i class="g"></i>250–500 ft下</span>`:''}${GT.altAcc>25?`<span class="lw">高度の誤差 ±${Math.round(GT.altAcc)} m</span>`:''}`; }
+  function prime(){ try{ if(window.speechSynthesis){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); } }catch(e){} }
+  document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('#mGpsB')&&TW.mode===2) prime(); },true);
+  const bF=gtFix; window.gtFix=gtFix=function(p){ const r=bF.apply(this,arguments); if(GT.on){ try{ render(); }catch(e){} check(p).catch(()=>{}); } chip(); return r; };
+  const bS=gtStop; window.gtStop=gtStop=function(){ const r=bS.apply(this,arguments); TW.hist=[]; TW.prev=null; TW.trk=null; TW.info=null; setLvl(0); render(); chip(); return r; };
+  window.TAWS=TW; window.tawsCheck=check;
+})();
+</script><style id="tawsCss">
+#mTaws{z-index:1}
+.twa{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;border-radius:6px;padding:6px 14px;font-weight:800;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);white-space:nowrap}
+.twa b{display:block;font-size:19px;letter-spacing:.04em}
+.twa small{display:block;font-size:11.5px;font-weight:700}
+.twa.c{background:#ffd600;color:#1b1b1b}
+.twa.w{background:#d50000;color:#fff;animation:twBl .8s steps(2,start) infinite}
+@keyframes twBl{50%{background:#7f0000}}
+.twc{position:absolute;right:56px;top:366px;z-index:7;font-size:11px;font-weight:700;background:rgba(20,28,38,.86);color:#fff;border:0;border-radius:4px;padding:3px 7px;text-align:left;line-height:1.4;cursor:pointer;max-width:210px}
+.twc[data-m="0"]{opacity:.7}
+.twc b{color:#ffd600;margin-right:3px}
+.twc .lg{display:block;font-weight:600;white-space:nowrap}
+.twc .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 2px 0 5px;vertical-align:-1px}
+.twc .lg i:first-child{margin-left:0}
+.twc .r{background:#e61e1e}.twc .y{background:#ffd600}.twc .g{background:#1eaa3c}
+.twc .lw{display:block;color:#ffb74d}
+@media (prefers-reduced-motion:reduce){.twa.w{animation:none}}
+</style></body></html>
 <style id="uiv2Css">
 /* ===== UI v2：ツールバー整理・計画/飛行中モード・判定の帯・パネル統一 ===== */
 :root{--fb:46px;--fg:8px;--ftop:186px;--zb:42px;--tgt:44px;--uiOn:#3aa7e0;--uiOnBg:rgba(58,167,224,.16);--uiOk:#2e9d5b;--uiCau:#d99a1e;--uiBad:#d64545}
