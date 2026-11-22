@@ -6909,12 +6909,21 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
     if(!l||TW.mode===0){ b.hidden=true; } else { const f=TW.info&&TW.info.first; b.hidden=false; b.className='twa '+(l===2?'w':'c');
       b.innerHTML=(l===2?'<b>WARNING TERRAIN</b>地形警報　上昇・旋回':'<b>CAUTION TERRAIN</b>地形注意')+(f?`<small>約${f.s}秒先　${f.m<0?`地形が自機より ${Math.round(-f.m/F2M)} ft 高い`:`地形との余裕 ${Math.round(f.m/F2M)} ft`}</small>`:''); if(l>=was||l===2) say(l); }
     chip(); }
-  function chip(){ let c=$('mTawsC'); if(!c){ c=document.createElement('button'); c.type='button'; c.id='mTawsC'; c.className='twc'; $('map').appendChild(c);
-      c.addEventListener('click',e=>{ e.stopPropagation(); TW.mode=(TW.mode+2)%3; save(); if(TW.mode===2) prime(); if(TW.mode===0) setLvl(0); render(); chip();
-        mapMsg(TW.mode===2?'地形警報：<b>表示＋音声</b>':TW.mode===1?'地形警報：<b>表示のみ</b>（音声なし）':'地形警報：<b>切</b>'); }); }
-    c.hidden=!GT.on; if(!GT.on) return; const A=altM(), I=TW.info||{};
-    const st=TW.mode===0?'切':A==null?'GPS高度なし':I.idle==='slow'?`${MINKT} kt未満は警報休止`:I.idle==='trk'?'進行方向を待っています':(TW.mode===2?'監視中・音声':'監視中');
-    c.dataset.m=TW.mode; c.innerHTML=`<b>TAWS</b> ${st}${TW.mode&&A!=null?`<span class="lg"><i class="r"></i>100 ft下より上<i class="y"></i>100–250<i class="g"></i>250–500 ft下</span>`:''}${GT.altAcc>25?`<span class="lw">高度の誤差 ±${Math.round(GT.altAcc)} m</span>`:''}`; }
+  function place(){ const c=$('mTawsC'), l=$('mTawsL'), el=$('map'); if(!c||!el) return; const o=$('mOeiB')||document.querySelector('.moeib'), g=$('mGpsB');
+    const ref=o&&o.offsetParent?o:g; if(!ref) return; const fg=8, w=ref.offsetWidth||46; c.style.width=w+'px'; c.style.height=(ref.offsetHeight||w)+'px';
+    const top=ref===o?ref.offsetTop:ref.offsetTop+(ref.offsetHeight||w)+fg, right=el.clientWidth-(ref.offsetLeft)+fg;
+    c.style.top=top+'px'; c.style.right=right+'px'; if(l){ l.style.top=top+'px'; l.style.right=(right+w+6)+'px'; } }
+  function chip(){ let c=$('mTawsC'); if(!c){ c=document.createElement('button'); c.type='button'; c.id='mTawsC'; c.className='twb'; c.setAttribute('aria-label','地形警報 TAWS の切り替え'); $('map').appendChild(c);
+      const l=document.createElement('div'); l.id='mTawsL'; l.className='twl'; $('map').appendChild(l);
+      c.addEventListener('pointerdown',e=>e.stopPropagation()); c.addEventListener('click',e=>{ e.stopPropagation(); TW.mode=(TW.mode+2)%3; save(); if(TW.mode===2) prime(); if(TW.mode===0) setLvl(0); render(); chip();
+        mapMsg(TW.mode===2?'地形警報：<b>表示＋音声</b>':TW.mode===1?'地形警報：<b>表示のみ</b>（音声なし）':'地形警報：<b>切</b>'); });
+      addEventListener('resize',()=>setTimeout(place,50)); }
+    const l=$('mTawsL'); c.hidden=!GT.on; if(l) l.hidden=!GT.on; if(!GT.on) return; const A=altM(), I=TW.info||{};
+    const st=TW.mode===0?'切':A==null?'GPS高度なし':I.idle==='slow'?`${MINKT} kt未満は警報休止`:I.idle==='trk'?'進行方向を待っています':(TW.mode===2?'監視中・音声あり':'監視中・音声なし');
+    c.dataset.m=TW.mode; c.setAttribute('aria-pressed',String(TW.mode>0)); c.title='押すたびに 表示＋音声 → 表示のみ → 切';
+    c.innerHTML=`<b>TAWS</b><small>${TW.mode===2?'音声':TW.mode===1?'表示':'切'}</small>`;
+    if(l) l.innerHTML=`<span>${st}</span>${TW.mode&&A!=null?`<span><i class="r"></i>100 ft下より上</span><span><i class="y"></i>100〜250 ft下</span><span><i class="g"></i>250〜500 ft下</span>`:''}${GT.altAcc>25?`<span class="lw">高度誤差 ±${Math.round(GT.altAcc)} m</span>`:''}`;
+    place(); }
   function prime(){ try{ if(window.speechSynthesis){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); } }catch(e){} }
   document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('#mGpsB')&&TW.mode===2) prime(); },true);
   const bF=gtFix; window.gtFix=gtFix=function(p){ const r=bF.apply(this,arguments); if(GT.on){ try{ render(); }catch(e){} check(p).catch(()=>{}); } chip(); return r; };
@@ -6929,14 +6938,17 @@ if('serviceWorker' in navigator&&window.isSecureContext){ const had=!!navigator.
 .twa.c{background:#ffd600;color:#1b1b1b}
 .twa.w{background:#d50000;color:#fff;animation:twBl .8s steps(2,start) infinite}
 @keyframes twBl{50%{background:#7f0000}}
-.twc{position:absolute;right:56px;top:366px;z-index:7;font-size:11px;font-weight:700;background:rgba(20,28,38,.86);color:#fff;border:0;border-radius:4px;padding:3px 7px;text-align:left;line-height:1.4;cursor:pointer;max-width:210px}
-.twc[data-m="0"]{opacity:.7}
-.twc b{color:#ffd600;margin-right:3px}
-.twc .lg{display:block;font-weight:600;white-space:nowrap}
-.twc .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 2px 0 5px;vertical-align:-1px}
-.twc .lg i:first-child{margin-left:0}
-.twc .r{background:#e61e1e}.twc .y{background:#ffd600}.twc .g{background:#1eaa3c}
-.twc .lw{display:block;color:#ffb74d}
+.twb{position:absolute;z-index:7;border-radius:10px;border:1px solid #9aa7b4;background:#fff;color:#1d3b5c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:manipulation;padding:0;line-height:1}
+.twb b{font-size:12px;font-weight:900;letter-spacing:-.3px}
+.twb small{font-size:9.5px;font-weight:800}
+.twb[data-m="2"]{background:#b45309;border-color:#b45309;color:#fff}
+.twb[data-m="1"]{background:#fff7e6;border-color:#b45309;color:#8a3f06}
+.twb[data-m="0"]{color:#7a8794}
+.twl{position:absolute;z-index:7;pointer-events:none;font-size:10.5px;text-align:left!important;font-weight:700;line-height:1.4;background:rgba(255,255,255,.88);color:#1b2733;border-radius:5px;padding:3px 7px;text-align:right;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.twl span{display:block}
+.twl i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
+.twl .r{background:#e61e1e}.twl .y{background:#ffd600}.twl .g{background:#1eaa3c}
+.twl .lw{color:#b45309}
 @media (prefers-reduced-motion:reduce){.twa.w{animation:none}}
 </style></body></html>
 <style id="uiv2Css">
