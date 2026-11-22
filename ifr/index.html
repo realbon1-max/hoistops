@@ -2320,7 +2320,7 @@ const TRZ={z:1,mode:'draw',pts:[],apt:'',w:'d',short:'',seq:[]};
 function spotP(w,B){const T=taxS();const ap=(w==='d'?T.dApr:T.aApr)||'',s=(w==='d'?T.dSpot:T.aSpot)||'';if(ap&&s)return ap+' spot '+s;if(ap)return ap;return 'spot '+tv(s,B)}
 function traceCharts(apt){return (CHX[apt]||[]).filter(c=>c[0]==='AD'&&((TXL[apt]&&TXL[apt][c[1]])||(TXS[apt]&&TXS[apt][c[1]])))}
 function traceOpen(apt,w){const L=traceCharts(apt);if(!L.length){toast&&toast('この飛行場は、なぞり入力に対応していません');return}
-  TRZ.apt=apt;TRZ.w=w;TRZ.pts=[];TRZ.seq=[];{const T=taxS();TRZ.spot=(w==='d'?T.dSpot:T.aSpot)||'';TRZ.apr=(w==='d'?T.dApr:T.aApr)||''}TRZ.z=1;TRZ.mode='draw';
+  TRZ.apt=apt;TRZ.w=w;TRZ.pts=[];TRZ.seq=[];{const T=taxS();TRZ.spot=(w==='d'?T.dSpot:T.aSpot)||'';TRZ.apr=(w==='d'?T.dApr:T.aApr)||'';TRZ.si=(w==='d'?T.dSpotI:T.aSpotI);TRZ.ai=(w==='d'?T.dAprI:T.aAprI)}TRZ.z=1;TRZ.mode='draw';
   let v=$('trView');if(!v){v=document.createElement('div');v.id='trView';document.body.appendChild(v);
     v.innerHTML='<div class="trbar"><b id="trT"></b><span id="trCh"></span><span style="flex:1"></span><button class="sub" type="button" id="trMode"></button><button class="sub" type="button" id="trOut">－</button><button class="sub" type="button" id="trIn">＋</button><button class="act" type="button" id="trX">閉じる</button></div>'+
     '<div class="trsc" id="trSc"><div class="trwrap" id="trWrap"><img id="trImg" alt="ADチャート"><svg id="trSvg"></svg></div></div>'+
@@ -2340,7 +2340,7 @@ function traceOpen(apt,w){const L=traceCharts(apt);if(!L.length){toast&&toast('�
     TRZ.zoomAt=zoomAt;
     svg.addEventListener('pointerdown',e=>{P.set(e.pointerId,[e.clientX,e.clientY]);svg.setPointerCapture(e.pointerId);e.preventDefault();
       if(P.size===2){if(drawing){drawing=false;TRZ.pts=[];traceDraw()}tapLab=null;pan=null;const [a,b]=[...P.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,z:TRZ.z,m:[(a[0]+b[0])/2,(a[1]+b[1])/2]};return}
-      if(P.size>2)return;const lab=e.target.closest&&e.target.closest('[data-tl],[data-ts],[data-ta]');if(lab){tapLab=lab.dataset.tl?['t',lab.dataset.tl]:lab.dataset.ts?['s',lab.dataset.ts]:['a',lab.dataset.ta]}
+      if(P.size>2)return;const lab=e.target.closest&&e.target.closest('[data-tl],[data-ts],[data-ta]');if(lab){tapLab=lab.dataset.tl?['t',lab.dataset.tl]:lab.dataset.ts?['s',lab.dataset.ts,+lab.dataset.i]:['a',lab.dataset.ta,+lab.dataset.i]}
       if(TRZ.mode==='draw'&&e.pointerType!=='mouse'||TRZ.mode==='draw'&&e.button===0&&!e.shiftKey){drawing=true;TRZ.pts=[pt(e)]}else pan=[e.clientX,e.clientY]});
     svg.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);e.preventDefault();
       if(pinch&&P.size>=2){const [a,b]=[...P.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);const m=[(a[0]+b[0])/2,(a[1]+b[1])/2];zoomAt(pinch.z*d/pinch.d,m[0],m[1]);sc.scrollLeft-=m[0]-pinch.m[0];sc.scrollTop-=m[1]-pinch.m[1];pinch.m=m;return}
@@ -2362,7 +2362,8 @@ function traceUi(){const d=TRZ.mode==='draw';$('trMode').textContent=d?'地図�
   $('trT').textContent=TRZ.apt+'　'+(TRZ.w==='d'?'出発：スポット→滑走路':'到着：滑走路→スポット');
   $('trLab').textContent=TRZ.w==='d'?'滑走路までの誘導路（順に）':'離脱する誘導路 → スポットまでの誘導路（順に）';
   $('trHint').textContent=d?'走る順に、誘導路の上を指でなぞってください。黄色の名前をタップしても追加できます。2本指でピンチ・スワイプすると拡大・移動できます。':'指1本で地図を動かせます（2本指で拡大縮小）。なぞるときは「なぞる」を押してください。'}
-function traceTap(L){if(L[0]==='t')traceAdd(L[1]);else if(L[0]==='s'){TRZ.spot=TRZ.spot===L[1]?'':L[1];traceDraw(true)}else{TRZ.apr=TRZ.apr===L[1]?'':L[1];traceDraw(true)}}
+function trSel(k){const L=(TXS[TRZ.apt]||{})[TRZ.short]||[],nm=k==='s'?TRZ.spot:TRZ.apr,ix=k==='s'?TRZ.si:TRZ.ai;if(!nm)return -1;if(ix!=null&&L[ix]&&L[ix][0]===nm&&L[ix][1]===k)return ix;return L.findIndex(e=>e[0]===nm&&e[1]===k)}
+function traceTap(L){if(L[0]==='t')traceAdd(L[1]);else if(L[0]==='s'){const off=TRZ.spot===L[1]&&trSel('s')===L[2];TRZ.spot=off?'':L[1];TRZ.si=off?null:L[2];traceDraw(true)}else{const off=TRZ.apr===L[1]&&trSel('a')===L[2];TRZ.apr=off?'':L[1];TRZ.ai=off?null:L[2];traceDraw(true)}}
 function traceAdd(n){if(TRZ.seq[TRZ.seq.length-1]!==n)TRZ.seq.push(n);traceDraw()}
 // なぞった線の近くにある誘導路名を、通った順に拾う
 function traceMatch(){const L=(TXL[TRZ.apt]||{})[TRZ.short]||[];const P=TRZ.pts;if(P.length<2)return;const img=$('trImg');const th=Math.max(40,img.naturalWidth/60);
@@ -2374,12 +2375,12 @@ function traceMatch(){const L=(TXL[TRZ.apt]||{})[TRZ.short]||[];const P=TRZ.pts;
 function traceDraw(keepInput){const s=$('trSvg');const L=(TXL[TRZ.apt]||{})[TRZ.short]||[];const img=$('trImg');const k=Math.max(1,(img.naturalWidth||3000)/1500);
   const used=new Set(TRZ.seq);let h='';
   L.forEach(([n,x,y])=>{const on=used.has(n);h+=`<g data-tl="${esc(n)}" style="cursor:pointer"><rect x="${x-14*k}" y="${y-9*k}" width="${28*k}" height="${18*k}" rx="${3*k}" fill="${on?'#FF4FD8':'#FFD21A'}" fill-opacity="${on?.35:.22}" stroke="${on?'#C0009A':'#B08A00'}" stroke-width="${2*k}"/></g>`});
-  ((TXS[TRZ.apt]||{})[TRZ.short]||[]).forEach(([n,kd,x,y,bw,bh])=>{if(kd==='s'){const on=TRZ.spot===n;h+=`<g data-ts="${esc(n)}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${13*k}" fill="${on?'#1F66B2':'#5EC8FF'}" fill-opacity="${on?.55:.16}" stroke="${on?'#0B3F7A':'#1F66B2'}" stroke-width="${(on?3:1.5)*k}"/></g>`}else{const on=TRZ.apr===n;const ww=bw||60,hh=bh||20;h+=`<g data-ta="${esc(n)}" style="cursor:pointer"><rect x="${x-ww/2}" y="${y-hh/2}" width="${ww}" height="${hh}" rx="${4*k}" fill="${on?'#1F66B2':'#5EC8FF'}" fill-opacity="${on?.3:.12}" stroke="#1F66B2" stroke-width="${(on?3:1.4)*k}" stroke-dasharray="${on?'':5*k+' '+3*k}"/></g>`}});
+  const sSel=trSel('s'),aSel=trSel('a');((TXS[TRZ.apt]||{})[TRZ.short]||[]).forEach(([n,kd,x,y,bw,bh],i)=>{if(kd==='s'){const on=sSel===i;h+=`<g data-ts="${esc(n)}" data-i="${i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${13*k}" fill="${on?'#1F66B2':'#5EC8FF'}" fill-opacity="${on?.55:.16}" stroke="${on?'#0B3F7A':'#1F66B2'}" stroke-width="${(on?3:1.5)*k}"/></g>`}else{const on=aSel===i;const ww=bw||60,hh=bh||20;h+=`<g data-ta="${esc(n)}" data-i="${i}" style="cursor:pointer"><rect x="${x-ww/2}" y="${y-hh/2}" width="${ww}" height="${hh}" rx="${4*k}" fill="${on?'#1F66B2':'#5EC8FF'}" fill-opacity="${on?.3:.12}" stroke="#1F66B2" stroke-width="${(on?3:1.4)*k}" stroke-dasharray="${on?'':5*k+' '+3*k}"/></g>`}});
   if(TRZ.pts.length>1)h+=`<polyline points="${TRZ.pts.map(p=>p.map(v=>v.toFixed(0)).join(',')).join(' ')}" fill="none" stroke="#FF4FD8" stroke-width="${9*k}" stroke-opacity=".55" stroke-linecap="round" stroke-linejoin="round"/>`;
   s.innerHTML=h;if(!keepInput)$('trSeq').value=traceText();const sp=$('trSp');if(sp)sp.innerHTML=`<span>エプロン：<b>${esc(TRZ.apr||'—')}</b></span><span>スポット：<b>${esc(TRZ.spot||'—')}</b></span><span class="note" style="margin:0">青い丸（スポット）・青い枠（エプロン）をタップで選択</span>`}
 function traceText(){const q=TRZ.seq;if(TRZ.w==='a'&&q.length)return q[0]+' → '+q.slice(1).join(' ');return q.join(' ')}
 function traceApply(){const T=taxS();const q=TRZ.seq;if(!q.length&&!TRZ.spot&&!TRZ.apr){toast&&toast('誘導路・スポットが入っていません');return}
-  if(TRZ.w==='d'){if(q.length)T.dRoute=q.join(' ');T.dSpot=TRZ.spot;T.dApr=TRZ.apr}else{if(q.length){T.aExit=q[0];T.aRoute=q.slice(1).join(' ')}T.aSpot=TRZ.spot;T.aApr=TRZ.apr}
+  if(TRZ.w==='d'){if(q.length)T.dRoute=q.join(' ');T.dSpot=TRZ.spot;T.dApr=TRZ.apr;T.dSpotI=TRZ.spot?trSel('s'):null;T.dAprI=TRZ.apr?trSel('a'):null}else{if(q.length){T.aExit=q[0];T.aRoute=q.slice(1).join(' ')}T.aSpot=TRZ.spot;T.aApr=TRZ.apr;T.aSpotI=TRZ.spot?trSel('s'):null;T.aAprI=TRZ.apr?trSel('a'):null}
   save();$('trView').classList.remove('on');document.body.style.overflow='';try{renderAtc()}catch(e){}toast&&toast('交信例に反映しました：'+[traceText(),TRZ.apr,TRZ.spot&&('spot '+TRZ.spot)].filter(Boolean).join(' / '))}
 ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>{const v=document.getElementById('trView');if(v&&v.classList.contains('on'))e.preventDefault()},{passive:false}));
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-trace]');if(!b)return;e.preventDefault();const [a,w]=b.dataset.trace.split('|');traceOpen(a,w)});
@@ -4656,7 +4657,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122100916';
+window.APPV='20261122101414';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
