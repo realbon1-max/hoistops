@@ -223,6 +223,7 @@ a.lnk{text-decoration:none;display:inline-block;background:var(--ink);color:var(
 #mapSvg .fl{display:none;font-size:calc(9.5px*var(--k));transform:translate(calc(5px*var(--k)),calc(-4px*var(--k)))}#mapSvg.z2 .fl{display:inline}
 .approf .aptb{border-collapse:collapse;margin:8px 10px 4px;font-family:B612,sans-serif;font-size:12px}.approf .aptb th,.approf .aptb td{border:1px solid var(--ink);padding:2px 7px;text-align:center;font-weight:400}.approf .apma{float:right;max-width:46%;font-size:12px;line-height:1.45;margin:6px 10px;color:var(--ink)}@media(max-width:600px){.approf .apma{float:none;max-width:none}}.approf svg{clear:both}
 .unhint{color:var(--muted);font-size:11px}.sugopt.sel[data-unrec]:active,.sugopt.sel[data-unsug]:active{filter:brightness(.96)}
+.fplpages{display:flex;flex-wrap:wrap;gap:10px}.fplpages .mcdu{flex:1 1 300px;max-width:420px}
 #mapSvg .sgls{display:none}#mapSvg.z1 .sgls{display:inline}#mapSvg .sgl{font-size:calc(8.5px*var(--k));font-weight:700;stroke-width:calc(2.5px*var(--k))}#mapSvg .sgc{font-weight:400}#mapSvg .sgx{font-style:italic;opacity:.75}#mapSvg .copk{transform:scale(var(--k))}#mapSvg .nvm{font-size:calc(8px*var(--k));font-weight:400;letter-spacing:.05em}
 .lbrow{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:6px 0}.lbrow b{font-size:13px}
 #mapSvg .al{display:none;font-weight:700;font-size:calc(10px*var(--k))}#mapSvg.z1 .al{display:inline}
@@ -2184,6 +2185,64 @@ function rnpSteps(n0,step){const r=S.route,P=procSel();const A=ap(r.dst);if(!A||
     `FMS は進入復行の経路を順に飛ぶ（ACTIVE FLT PLAN の MISSED APRCH）。RNP の既定値は <b>1.0NM</b>`,
     `GA 中の AFCS の上昇率・速度は機体の飛行規程で確認`]));
   return o}
+/* ---- FMS：経路どおりの ACTIVE FLT PLAN（全ページ） ---- */
+function fmsCons(a){if(a==null||a==='')return '';a=String(a).trim();const m=a.match(/^([+\-]?)(FL)?(\d+)(?:([+\-])(FL)?(\d+))?$/);if(!m)return a;
+  const v=(fl,n)=>fl?'FL'+String(n).padStart(3,'0'):String(+n);const s=m[1]==='+'?'A':m[1]==='-'?'B':'';return v(m[2],m[3])+s+(m[4]?' '+v(m[5],m[6])+(m[4]==='+'?'A':'B'):'')}
+function fmsDictCons(d){if(!d)return '';const [t,a1,a2]=d;const f=n=>n>=14000?'FL'+String(Math.round(n/100)).padStart(3,'0'):String(n);if(t==='+')return f(a1)+'A';if(t==='-')return f(a1)+'B';if(a2)return f(a1)+'A '+f(a2)+'B';return a1?f(a1):''}
+function fmsLegList(){const r=S.route,P=procSel(),C=routeCalc();const dep=ap(r.dep),dst=ap(r.dst);if(!dep||!dst)return [];
+  const L=[];let prev=dep.p||null;
+  const crsTxt=c=>c==null||isNaN(c)?'':String(Math.round((+c+360)%360)||360).padStart(3,'0')+'°';
+  const add=(o)=>{const p=o.pos!==undefined?o.pos:(o.wp?(plPos(o.apt||r.dst,o.wp)||fixPos(o.wp)):null);
+    if(o.crs==null&&p&&prev&&!o.noCrs&&!o.dir&&o.rf==null){o.crs=(brgOf(prev,p)-(mvNear?mvNear(prev):-8)+360)%360}
+    if(o.dist==null&&p&&prev&&!o.noCrs)o.dist=gc(prev,p);
+    if(p)prev=p;L.push(o)};
+  // 出発
+  L.push({wp:r.dep+(P.drw?'':''),lab:'ORIGIN',sec:'DEP',noCrs:1});
+  if(P.drw)L.push({wp:'RW'+P.drw,sec:'DEP',noCrs:1}),prev=(rwyOf(r.dep,P.drw)||{}).t||prev;
+  // SID
+  const sidA=P.sid&&(dep.sid||[]).find(s=>s[0]===P.sid);let lastFix=null;
+  if(sidA&&r.depMode!=='vfr'){let coded=null;try{const E=plFind(r.dep,'SID',P.sid);if(E){const ents=E[2];const rw=ents.find(e=>nsp(e[1])===nsp('RWY'+P.drw))||ents.find(e=>!e[1]);if(rw){coded=rw[2].slice();const tr=C.sid&&C.sid.trn&&C.sid.trn.length?C.sid.trn[C.sid.trn.length-1]:null;
+      const lf=coded[coded.length-1][1];const te=tr&&ents.find(e=>e!==rw&&e[2][0][1]===lf&&e[2][e[2].length-1][1]===tr);if(te)coded=coded.concat(te[2].slice(1))}}}catch(e){}
+    if(coded){coded.forEach(g=>{const [pt,fix,fo,crs,dist,turn,alt,spd]=g;
+        if(pt==='VA'||pt==='CA'||pt==='FA')add({wp:'('+(String(alt||'').replace(/[+\-]/g,'')||'----')+')',sec:'SID',crs:crs?+crs:null,dist:null,pos:null,cons:'',noteL:pt});
+        else if(fix)add({wp:fix,apt:r.dep,sec:'SID',crs:pt==='DF'?null:(crs?+crs:undefined),dist:dist?+dist:undefined,cons:fmsCons(alt),spd:spd?String(spd).replace('-',''):'',dir:pt==='DF',fo});
+        lastFix=fix||lastFix})}
+    else{(C.sid&&C.sid.fixes||[]).forEach(f=>{add({wp:f,apt:r.dep,sec:'SID',cons:fmsDictCons((sidA[4]||{})[f])});lastFix=f})}}
+  // 航空路（経路の各fix）
+  const aip=(via,a,b)=>{const R=NAV.R[via];if(!R||typeof ENRT==='undefined')return {};const i=R.p.indexOf(a);if(i<0)return {};
+    if(R.p[i+1]===b){const t=(ENRT.t[via]||[])[i],d=(ENRT.s[via]||{})[i];return {crs:t?t[0]:undefined,dist:d!=null?+d:undefined}}
+    if(R.p[i-1]===b){const t=(ENRT.t[via]||[])[i-1],d=(ENRT.s[via]||{})[i-1];return {crs:t?t[1]:undefined,dist:d!=null?+d:undefined}}return {}};
+  (C.rows||[]).filter(x=>x.kind==='ENR').forEach(x=>{if(x.a&&x.a!==lastFix&&fixPos(x.a)){add({wp:x.a,sec:'ENR',via:'DIRECT'});lastFix=x.a}if(x.b===lastFix)return;const nm=x.via==='DCT'?'DIRECT':x.via;const ai=nm==='DIRECT'?{}:aip(x.via,x.a,x.b);add({wp:x.b,sec:'ENR',via:nm,crs:ai.crs,dist:ai.dist,cons:''});lastFix=x.b});
+  // STAR
+  const vec=P.arrMode==='vec';const starA=P.star&&!vec&&(dst.star||[]).find(s=>s[0]===P.star);
+  if(starA&&r.arrRule!=='vfr'){const fx=(C.arr&&C.arr.fixes)||[];let coded=null;
+    try{const E=plFind(r.dst,'STAR',P.star);const pf=procFull('star');if(E&&pf){const e=E[2].find(q=>nsp(q[0])===nsp(pf.full||''));if(e)coded=e[2]}}catch(e){}
+    if(coded)coded.forEach(g=>{const [pt,fix,fo,crs,dist,turn,alt,spd]=g;if(!fix||fix===lastFix)return;add({wp:fix,apt:r.dst,sec:'STAR',crs:pt==='IF'?undefined:(crs?+crs:undefined),dist:pt==='IF'?undefined:(dist?+dist:undefined),cons:fmsCons(alt),spd:spd?String(spd).replace('-',''):''});lastFix=fix});
+    else fx.forEach(f=>{if(f===lastFix)return;add({wp:f,apt:r.dst,sec:'STAR',cons:fmsDictCons((starA[4]||{})[f])});lastFix=f})}
+  if(r.arrRule==='vfr'){if(r.vfrFix&&r.vfrFix!==lastFix)add({wp:r.vfrFix,sec:'ENR',via:'DIRECT'});L.push({wp:r.dst,sec:'DEST',lab:'DEST（VFR）',noCrs:1});return L}
+  // 進入
+  const x=P.app&&(dst.iac||[]).find(q=>q.n===P.app);let ma=[];
+  if(x){let legs=null;try{legs=plAppChain(r.dst,P.app,lastFix)}catch(e){}
+    if(legs){let first=legs[0]&&legs[0][1];if(vec||first!==lastFix)L.push({disc:1});let inMA=false;
+      legs.forEach(g=>{const [pt,fix,fo,crs,dist,turn,alt,spd,vpa]=g;if(inMA&&!ma.length)L.push({ma:1});
+        if(pt==='VA'||pt==='CA'||pt==='FA'){add({wp:'('+(String(alt||'').replace(/[+\-]/g,'')||'----')+')',sec:inMA?'MA':'APP',crs:crs?+crs:null,pos:null,noCrs:0,dist:null});if(inMA)ma.push(1);return}
+        if(!fix)return;if(fix===lastFix&&pt==='IF'){lastFix=null;return}
+        add({wp:fix,apt:r.dst,sec:inMA?'MA':'APP',rf:pt==='RF'?(turn||'')+'':null,crs:pt==='IF'||pt==='DF'||pt==='RF'?undefined:(crs?+crs:undefined),dist:pt==='IF'?undefined:(dist?+dist:undefined),cons:fmsCons(String(alt||'').split('/')[0]),spd:spd?String(spd).replace('-',''):'',vpa:vpa?String(vpa).replace('-','').split('/')[0]:'',dir:pt==='DF',hold:/^H[AFM]$/.test(pt)});
+        if(inMA)ma.push(1);if(/^RW\d/.test(fix)){inMA=true}})}
+    else{const af=(C.arr&&C.arr.appFix)||[];const pre=af.filter(a=>a[1]!=='MA');const mas=af.filter(a=>a[1]==='MA');
+      if(vec||!pre.length||pre[0][0]!==lastFix)L.push({disc:1});
+      pre.forEach(([f,role])=>{if(f===lastFix)return;add({wp:f,apt:r.dst,sec:'APP',role,cons:x.alts&&x.alts[f]?String(x.alts[f]):''})});
+      if(x.rw)add({wp:'RW'+x.rw,apt:r.dst,sec:'APP',cons:''});
+      if(mas.length||x.maalt){L.push({ma:1});if(x.maalt&&!mas.length)L.push({wp:'('+x.maalt+')',sec:'MA',noCrs:1});mas.forEach(([f])=>add({wp:f,apt:r.dst,sec:'MA',cons:x.maalt?String(x.maalt):''}))}}}
+  else{L.push({disc:1});}
+  L.push({wp:r.dst,sec:'DEST',lab:'DEST',noCrs:1});
+  return L.map(o=>{if(o.disc||o.ma)return o;o.crsS=o.rf!=null?('RF '+(o.rf==='L'?'L':o.rf==='R'?'R':'')).trim():o.dir&&o.crs==null?'DIR':(o.crs!=null&&!o.noCrs?String(Math.round((+o.crs+360)%360)||360).padStart(3,'0')+'°':'');o.distS=o.dist!=null&&!o.noCrs?(o.dist<10?o.dist.toFixed(1):String(Math.round(o.dist)))+'NM':'';return o})}
+function fmsFplPages(){const L=fmsLegList();if(!L.length)return '';const per=5;const pages=[];for(let i=0;i<L.length;i+=per)pages.push(L.slice(i,i+per));
+  const row=o=>{if(o.disc)return ['','□□□□ DISCONTINUITY □□□□',0,'','',0];if(o.ma)return ['','– – MISSED APRCH – –',0,'','',0];
+    const lab=[o.via&&o.via!=='DIRECT'?o.via:(o.via==='DIRECT'?'DIRECT':''),o.crsS,o.distS].filter(Boolean).join(' ')||(o.lab||'');
+    const rt=[o.spd||'',o.cons||''].filter((v,i)=>v||i).join('/').replace(/^\//,'');const rl=o.vpa?o.vpa+'°':(o.role||'');
+    return [lab,o.wp+(o.hold?' HOLD':''),1,rl,rt||'',!!rt]};
+  return pages.map((pg,k)=>{const rows=pg.map(row);while(rows.length<5)rows.push(['','',0,'','',0]);rows.push(k===0?['DEPARTURE','',0,'','ARRIVAL',0]:['','',0,'',k===pages.length-1?'PERF INIT >':'NEXT PAGE',0]);return mcdu('ACTIVE FLT PLAN',`${k+1}/${pages.length}`,rows)}).join('')}
 function renderFms(){const F=fmsSet(),r=S.route,P=procSel(),C=routeCalc();const dep=ap(r.dep),dst=ap(r.dst);
   if(!dep||!dst){$('fmsOut').innerHTML='<div class="empty">ルートタブで出発・目的飛行場を選ぶと、FMSに入れる内容を作ります。</div>';return}
   const etd=utc(r.etd);const etdS=etd?String(etd.getUTCHours()).padStart(2,'0')+String(etd.getUTCMinutes()).padStart(2,'0'):'';
@@ -2228,6 +2287,7 @@ function renderFms(){const F=fmsSet(),r=S.route,P=procSel(),C=routeCalc();const 
   h+=step(n0+4,'離陸データ：TAKEOFF','PERF INDEX → TAKEOFF',mcdu('TAKEOFF','1/2',[['RWY',P.drw?`${r.dep}.${P.drw}`:'',0,'LENGTH','',0],['TEMP',tmp(w),!!tmp(w),'SFC WIND',wstr(w)||'---/--',!!wstr(w)],['BARO',qnh(w),!!qnh(w),'ELEV',dep.e!=null?String(Math.round(dep.e)):'',0],['','',0,'','',0],['','',0,'','',0],['','',0,'','NEXT PAGE',0]])+keyList([{e:wstr(w)||'（風）',k:'2R  SFC WIND',n:'地上風は必須の入力（METARから）'},...(qnh(w)?[{e:qnh(w),k:'3L  BARO',n:'QNH（hPa）'}]:[])])+`<p class="note">離陸位置で ACTIVE FLT PLAN の 6R「RW POS」を押すと、滑走路端の位置で更新できます（GPSがあれば不要）。</p>`);
   h+=step(n0+5,'到着・進入：ARRIVAL','目的地まで200NM以内で ACTIVE FLT PLAN の 6R ARRIVAL（または NAV INDEX）',mcdu('ARRIVAL',r.dst,[['APPROACH',P.app||'--',!!P.app,'',r.dst,0],['APP TRANS','（管制の指示）',0,'','',0],['STAR',(procFull('star')||{}).full||P.star||'NONE',!!P.star,'','',0],['STAR TRANS',starTr?starTr[0]:'NONE',!!starTr,'','',0],['','',0,'','',0],['','',0,'','ACTIVATE',1]])+
     keyList([{e:P.app||'（進入方式）',k:'APPROACH',n:'進入方式を選ぶと滑走路と進入復行も一緒に入る'},{e:'（IAFなど）',k:'APPROACH TRANS',n:'レーダー誘導なら VECTORS。1L に最終進入コースの既定値'},{e:(procFull('star')||{}).full||'（STARなし）',k:'STAR',n:'FMSでは短い略称で表示される。チャートの名称と照合する'},...(starTr?[{e:starTr[0],k:'STAR TRANS',n:'STARの入口'}]:[]),{e:'（押すだけ）',k:'6R  ACTIVATE',n:'飛行計画に入る'}]));
+  try{const fp=fmsFplPages();if(fp)h+=`<div class="fstep"><div class="fsh"><span class="atcn">✓</span><div><b>飛行計画の確認：ACTIVE FLT PLAN（全体）</b><div class="note" style="margin:0">DEPARTURE・ARRIVAL を ACTIVATE したあと、FPL キーで最初から NEXT で確認</div></div></div><p class="hint">この計画（${esc(S.route.dep)}→${esc(S.route.dst)}、${esc(rteEff()||'経路なし')}）をFMSに入れたときの、ACTIVE FLT PLAN の並びの目安です。小さい文字は「航空路・磁方位・距離」、右は「速度/高度制限」（A＝以上、B＝以下、数字だけ＝その高度）、右上の角度は降下角です。SID・STAR・進入はコーディング表があればその値、無ければ座標からの計算値です。</p><div class="fplpages">${fp}</div><p class="note">FMSのデータベースの表示と食い違うfix・制限があれば、チャートで確認してFMS側（データベース）を優先します。□□□□ DISCONTINUITY は、レーダー誘導などで次のfixにつながらない所です。管制の指示に合わせて消すか、fixを入れてつなぎます。</p></div>`}catch(e){console.warn(e)}
   try{h+=rnpSteps(n0+5,step)}catch(e){}
   h+=step(n0+6,'着陸データ：LANDING','PERF INDEX → 2R LANDING',mcdu('LANDING','1/2',[['RWY',P.app&&(dst.iac.find(q=>q.n===P.app)||{}).rw?`${r.dst}.${dst.iac.find(q=>q.n===P.app).rw}`:'',0,'LENGTH','',0],['TEMP',tmp(wa),!!tmp(wa),'SFC WIND',wstr(wa)||'---/--',!!wstr(wa)],['BARO',qnh(wa),!!qnh(wa),'ELEV',dst.e!=null?String(Math.round(dst.e)):'',0],['','',0,'','',0],['','',0,'','',0],['','',0,'','NEXT PAGE',0]])+keyList([{e:tmp(wa)||'（気温）',k:'2L  TEMP',n:'着陸では気温と風が必須'},{e:wstr(wa)||'（風）',k:'2R  SFC WIND',n:'目的地のATIS・METARで更新する'}])+`<p class="note">進入復行の経路は MISSED APRCH のページで確認できます（ACTIVE FLT PLAN の後ろに続く）。</p>`);
   h+=`<p class="note">参考：Honeywell「Flight Management System for the Agusta AW139/AB139 Helicopter, Software NZ 7.3 Pilot's Guide」（2012年11月）の運用例（Section 4）と入力形式（Section 12）。表示や手順は機体の構成で違うことがあるので、機体の飛行規程とガイドを優先してください。重量・速度の既定値（ACDB）は機体ごとの値です。</p>`;
@@ -4825,7 +4885,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261122141541';
+window.APPV='20261124143603';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
