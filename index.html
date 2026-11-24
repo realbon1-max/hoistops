@@ -6412,10 +6412,11 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
     const HW=windAt(i,H), sfcWd=wd, sfcWs=ws, sfcGu=gu; if(HW){ wd=HW.wd; ws=HW.ws; gu=null; }
     // vertical profile (ft MSL)
     const L=LV.map(l=>({p:l,z:g(`geopotential_height_${l}hPa`),t:g(`temperature_${l}hPa`),rh:g(`relative_humidity_${l}hPa`),cc:g(`cloud_cover_${l}hPa`)})).filter(q=>q.z!=null&&q.t!=null).map(q=>({...q,z:q.z*3.28084})).sort((a,b)=>a.z-b.z);
-    const cloudy=q=>(q.cc!=null?q.cc>=60:false)||(q.rh!=null&&q.rh>=95);
+    const rhI=(rh,t)=>t<0?rh*Math.exp(17.67*t/(t+243.5)-22.46*t/(t+272.62)):rh; // 氷点下は氷に対する湿度で見る（雪雲は水に対する湿度が90%前後でもできる）
+    const cloudy=q=>(q.cc!=null?q.cc>=60:false)||(q.rh!=null&&q.rh>=95)||(q.rh!=null&&q.t!=null&&q.t<0&&rhI(q.rh,q.t)>=98);
     const at=k=>{ if(L.length<2) return null; let a=L[0],b2=L[L.length-1]; for(let n=0;n<L.length-1;n++){ if(L[n].z<=H&&L[n+1].z>=H){ a=L[n]; b2=L[n+1]; break; } } const f=b2.z===a.z?0:Math.max(0,Math.min(1,(H-a.z)/(b2.z-a.z))); const va=a[k],vb=b2[k]; return va==null||vb==null?(va!=null?va:vb):va+(vb-va)*f; };
     const tH=at('t'), rhH=at('rh'), ccH=at('cc');
-    const inCloud=(ccH!=null&&ccH>=60)||(rhH!=null&&rhH>=95);
+    const inCloud=(ccH!=null&&ccH>=60)||(rhH!=null&&rhH>=95)||(rhH!=null&&tH!=null&&tH<0&&rhI(rhH,tH)>=98);
     const below=L.filter(q=>q.z>siteFt-200&&q.z<H-100&&cloudy(q));
     const above=L.filter(q=>q.z>H+100&&cloudy(q));
     let fz=null; for(let n=0;n<L.length-1;n++){ const a=L[n],b2=L[n+1]; if((a.t>=0)!==(b2.t>=0)){ fz=a.z+(b2.z-a.z)*a.t/(a.t-b2.t); break; } }
@@ -6468,8 +6469,8 @@ async function wxSite(p,hovFt){ const box=$('wxSite'); if(!box||!p) return;
         g+=`<g transform="translate(24 ${yh})"><path d="M-9 -4h18M0 -4v2" stroke="#15253a" stroke-width="1.6" stroke-linecap="round"/><path d="M-6 -2h7a4 3 0 0 1 0 6h-7a3 3 0 0 1 0-6z" fill="${inC?'#d62828':'#15253a'}"/><path d="M-6 1h-7l-1-3" fill="none" stroke="${inC?'#d62828':'#15253a'}" stroke-width="1.6" stroke-linecap="round"/></g>`;
         const nx=bands.find(b=>b[0]>hA+50);
         if(nx&&nx[0]<=Vm){ const yb=Y(nx[0]); if(yh-yb>16) g+=`<path d="M48 ${yh-2}V${yb+3}M45.5 ${yb+6}l2.5-3 2.5 3M45.5 ${yh-5}l2.5 3 2.5-3" stroke="#455a64" stroke-width="1.1" fill="none"/><text x="44" y="${(yh+yb)/2+3}" font-size="7.5" text-anchor="end" font-weight="800" fill="#455a64">${fm(Math.round((nx[0]-hA)/100)*100)}</text>`; }
-        const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=d.__src==='metno'?'雲 不明':inC?'雲中':below&&!nx?'雲上':nx?'雲の下':'雲なし';
-        return `<i class="wxv${inC?' d':below&&!nx?' w':''}" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b>${st}</b>${nx?`<small>雲まで ${fm(Math.round((nx[0]-hA)/100)*100)} ft</small>`:''}</i>`; })()}${(()=>{ // 日の出・日没・薄明のグラフィック（表示中の予報時刻の位置）
+        const below=bands.some(b=>b[1]<hA-50&&b[1]>0), st=d.__src==='metno'?'雲 不明':inC?'雲中':below&&!nx?'雲上':nx?'雲の下':precip?'雲底不明':'雲なし';
+        return `<i class="wxv${inC?' d':below&&!nx?' w':''}" title="現場の地面からの高さの関係：機体（ホバリング）・雲の層・0℃高度。数字は機体から雲の下面までの高さ（ft）"><svg viewBox="0 0 64 84" aria-hidden="true">${g}</svg><b>${st}</b>${nx?`<small>雲まで ${fm(Math.round((nx[0]-hA)/100)*100)} ft</small>`:st==='雲底不明'?'<small>降水あり</small>':''}</i>`; })()}${(()=>{ // 日の出・日没・薄明のグラフィック（表示中の予報時刻の位置）
         try{ const tS=new Date(T[i]+':00+09:00'), st=SUN.times(jstDay(tS),p.lat,p.lon); if(!st.rise||!st.set) return '';
           const hh=d=>{ const j=new Date(d.getTime()+9*3600e3); return j.getUTCHours()+j.getUTCMinutes()/60; }, X=h=>12+Math.max(0,Math.min(24,h))/24*216, hR=hh(st.rise), hS=hh(st.set), hD=st.dawn?hh(st.dawn):hR-0.45, hK=st.dusk?hh(st.dusk):hS+0.45, hT=hh(tS);
           const ph=tS>=st.rise&&tS<st.set?'day':(st.dawn&&tS>=st.dawn&&tS<st.rise)||(st.dusk&&tS>=st.set&&tS<st.dusk)?'tw':'night';
