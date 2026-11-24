@@ -1267,6 +1267,56 @@ details.modeacc>summary .ms{font-size:13px;color:var(--muted)}
 details.modeacc[open]>summary{margin-bottom:6px}
 input[type="datetime-local"]{display:block;-webkit-appearance:none;appearance:none;text-align:left}
 input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-width:0}
+/* ===== 2026-11-25 残り欠陥の修正（機能・配色の個性は変えない） ===== */
+/* 4. ヘッダー副題：折り返しを許可し、モバイルでは題名・ボタンの下に全幅で2行以内 */
+header.top .airac{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;display:block!important;-webkit-line-clamp:unset!important}
+@media (max-width:640px){
+  header.top{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:2px;align-items:center}
+  header.top>div:first-child{display:contents}
+  header.top h1{grid-column:1;grid-row:1;min-width:0;margin:0}
+  header.top>.row,header.top>span.row{grid-column:2;grid-row:1}
+  header.top .airac{grid-column:1/-1;grid-row:2;font-size:12px!important;line-height:1.45!important;margin-top:2px}
+  header.top .airac .ac-l{display:none}
+}
+/* 2. 注釈は省略しない（長文は折り返して全文表示） */
+.hint,.note,p.hint,p.note,div.note,.stripnote{white-space:normal!important;text-overflow:clip!important;overflow:visible!important}
+html:not(.hidehelp) .lh{display:block!important;-webkit-line-clamp:unset!important}
+/* 6. タップ領域（44px目安） */
+header.top button{min-height:44px!important;min-width:44px!important}
+label:has(>input[type="checkbox"]),label:has(>input[type="radio"]){min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer}
+label:has(>input[type="checkbox"])>input,label:has(>input[type="radio"])>input{width:22px;height:22px;flex:0 0 auto;margin:0}
+[data-swap]{min-width:44px!important;min-height:44px!important}
+#appkSheet .opt{min-height:48px!important;padding-top:8px!important;padding-bottom:8px!important;box-sizing:border-box}
+#appkSheet .hd button{min-height:44px}
+.pick button{min-height:44px}
+input[type="datetime-local"],input[type="date"],input[type="time"]{min-height:48px!important;font-size:17px!important;padding-top:8px;padding-bottom:8px}
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{padding:4px 0}
+input[type="datetime-local"]::-webkit-datetime-edit-year-field,input[type="datetime-local"]::-webkit-datetime-edit-month-field,input[type="datetime-local"]::-webkit-datetime-edit-day-field,input[type="datetime-local"]::-webkit-datetime-edit-hour-field,input[type="datetime-local"]::-webkit-datetime-edit-minute-field{padding:6px 3px}
+#tabs button,#groups button{min-height:44px}
+/* 3. タクティカル：小さい文字・ラベル・単位・プレースホルダを読みやすい緑に（AA 4.5:1 以上） */
+:root[data-theme="tac"]{--muted:#3DB83D}
+:root[data-theme="tac"] ::placeholder{color:#3A9F3A!important;opacity:1!important}
+:root[data-theme="tac"] .inp em,:root[data-theme="tac"] label.f,:root[data-theme="tac"] .hint,:root[data-theme="tac"] .note{color:var(--muted)}
+:root[data-theme="tac"] .tag[style*="#9A6508"],:root[data-theme="ace"] .tag[style*="#9A6508"]{color:#E0A63A!important}
+:root[data-theme="tac"] [style*="color:var(--red,#c00)"],:root[data-theme="ace"] [style*="color:var(--red,#c00)"]{color:#FF6B6B!important}
+:root[data-theme="tac"] .phase>div[style*="--mag"],:root[data-theme="ace"] .phase>div[style*="--mag"]{color:#111!important}
+.tlseg[style*="#6B7B88"]{background:#55636E!important}
+/* 3. ナイト：灰青の小さい文字・プレースホルダを明るく（AA 4.5:1 以上） */
+:root[data-theme="ace"]{--muted:#AAB9CA;--note:#C2CFDC}
+html[data-theme="ace"] input::placeholder,html[data-theme="ace"] textarea::placeholder,:root[data-theme="ace"] ::placeholder{color:#97AAC0!important;opacity:1!important}
+html body header.top #resetBtn,html body header.top #fmBtn,html body header.top #themeBtn{min-height:44px!important;min-width:44px!important}
+.accbar .as,.as{white-space:normal!important;text-overflow:clip!important;overflow:visible!important}
+@media (min-width:641px){header.top>div:first-child{flex:1 1 auto;min-width:0}}
+header.top{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:2px;align-items:center}
+header.top>div:first-child{display:contents}
+header.top h1{grid-column:1;grid-row:1;min-width:0;margin:0}
+header.top>.row,header.top>span.row{grid-column:2;grid-row:1}
+header.top .airac{grid-column:1/-1;grid-row:2}
+.bln{min-width:44px!important;min-height:44px!important}
+/* 補足：入力欄の数字が切れない・折りたたみ見出しの要約は見出しの下に全文 */
+#altOff{min-width:5ch!important;flex:1 1 5ch}
+.inp>em{white-space:normal;flex:0 1 auto;min-width:0}
+@media (max-width:640px){.accbar .as{flex:1 1 100%;order:5;white-space:normal}}
 </style>
 </head>
 <body>
@@ -1274,7 +1324,7 @@ input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;min-wi
 <header class="top">
   <div>
     <h1>IFRブリーフィング</h1>
-    <div class="airac">航空路誌データ <b id="airacHdr">AIRAC 2026-10-29</b>（全国127飛行場・航空路374・fix 3,001）</div>
+    <div class="airac"><span class="ac-l">航空路誌データ </span><b id="airacHdr">AIRAC 2026-10-29</b><span id="dbCnt">（全国133飛行場・航空路374・fix 4,120）</span></div>
   </div>
   <span class="row" style="gap:6px;flex-wrap:nowrap"><button class="sub" id="resetBtn" type="button" title="飛行場・出発・経路・到着・進入を消します">リセット</button><button class="sub" id="themeBtn" type="button">表示切替</button></span>
 </header>
@@ -4867,14 +4917,27 @@ const BPIC=[
  [/経路|航空路|MEA|高度/,'<circle cx="5" cy="18" r="2"/><circle cx="12" cy="7" r="2"/><circle cx="19" cy="15" r="2"/><path d="M6.3 16.3l4.4-7.6M13.6 8.3l4 5.4"/>']];
 function bpics(){document.querySelectorAll('.blist .bl').forEach(l=>{if(l.querySelector('.bpic'))return;const t=l.textContent.trim();const m=BPIC.find(x=>x[0].test(t));if(!m)return;l.insertAdjacentHTML('afterbegin',SVG(m[1],'bpic'))})}
 /* ---- 説明文の省略 ---- */
-function setHelp(on){document.documentElement.classList.toggle('hidehelp',on);try{localStorage.setItem('ifrhelp',on?'hide':'show')}catch(e){}}
+function setHelp(on){document.documentElement.classList.toggle('hidehelp',on);try{localStorage.setItem('ifrhelp2',on?'hide':'show')}catch(e){}}
 function helps(){document.querySelectorAll('p.hint,p.note,div.note,.box>.note').forEach(el=>{
   const ok=!el.closest('#thMenu,.sugopt,.empty,header')&&!el.querySelector('button,input,select,a,table')&&(el.textContent||'').trim().length>=44;
   if(ok!==el.classList.contains('lh'))el.classList.toggle('lh',ok)})}
 document.addEventListener('click',e=>{if(!document.documentElement.classList.contains('hidehelp'))return;const l=e.target.closest('.lh');if(!l||e.target.closest('a,button,input,select'))return;l.classList.toggle('open')});
-try{setHelp((localStorage.getItem('ifrhelp')||'hide')==='hide')}catch(e){setHelp(true)}
+try{setHelp(localStorage.getItem('ifrhelp2')==='hide')}catch(e){setHelp(false)}
 /* ---- 起動と再描画への追従 ---- */
-function all(){helps();bpics();jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
+function dbCount(){const e=$('dbCnt');if(!e||e.dataset.n||typeof DB==='undefined')return;const n=Object.keys(DB).length,ni=Object.keys(DB).filter(k=>(DB[k].iac||[]).length).length;
+  const nr=typeof NAV!=='undefined'?Object.keys(NAV.R).length:0,nf=typeof NAV!=='undefined'?Object.keys(NAV.F).length:0;e.dataset.n=n;
+  e.textContent=`（全国${n}飛行場・航空路${nr}・fix ${nf.toLocaleString('en-US')}）`;e.title=`飛行場・ヘリポート ${n}か所（うち計器進入方式あり ${ni}か所）、航空路 ${nr}本、fix・無線施設 ${nf}点`}
+/* 1・5・6. 確認タブの計算ツール（iframe）：タブを折り返して全部見せる・44pxのタップ領域・飛行場リストの件数の説明 */
+function calcFix(){const f=document.querySelector('#calcHost iframe');if(!f)return;let d;try{d=f.contentDocument}catch(e){return}if(!d||!d.head||d.getElementById('hostfix'))return;
+  const st=d.createElement('style');st.id='hostfix';st.textContent=`.tabbar{flex-wrap:wrap!important;overflow:visible!important;overflow-x:visible!important;position:static!important;row-gap:6px}
+.tab-btn{min-height:44px!important;padding:10px 14px!important;flex:0 0 auto!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;max-width:none!important}
+.tabs{flex-wrap:wrap}.tabs button{min-height:44px}
+#adb_airport,#adb_ils,#adb_filter{min-height:44px}
+.hostcnt{font-size:12px;line-height:1.5;margin:6px 0 0;opacity:.85}`;d.head.appendChild(st);
+  const sel=d.getElementById('adb_airport');if(sel&&!d.getElementById('hostcnt')){const n=[...sel.options].filter(o=>o.value).length;const all=typeof DB!=='undefined'?Object.keys(DB).length:0;
+    const p=d.createElement('p');p.id='hostcnt';p.className='hostcnt';p.textContent=`この一覧は、計算ツールが進入データ（ILS・LOC等の数値）を持つ ${n} 飛行場です。アプリ全体の ${all} 飛行場のうち、計器進入方式のない飛行場・ヘリポートや、RNP/VORだけの一部の飛行場は入っていません（その場合は手入力で使えます）。`;sel.insertAdjacentElement('afterend',p)}}
+setInterval(calcFix,1000);
+function all(){dbCount();calcFix();helps();bpics();jst();heads();header();apPick();fplAcc();routeAcc();calcWrap();empties();sums();stick()}
 const mo=new MutationObserver(ms=>{let e=false;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.classList&&n.classList.contains('empty')||n.querySelector&&n.querySelector('.empty:not(.es)')))e=true;if(e)empties();bpics();helps()});
 const mo2=new MutationObserver(()=>{clearTimeout(mo2.t);mo2.t=setTimeout(helps,80)});
 function boot(){all();mo.observe(document.body,{childList:true,subtree:true});mo2.observe(document.body,{childList:true,subtree:true,characterData:true});addEventListener('resize',stick);
@@ -4885,7 +4948,7 @@ setTimeout(all,600);
 })();
 </script>
 <script>
-window.APPV='20261124143603';
+window.APPV='20261124223731';
 (function(){const a=document.querySelector('.airac');if(a){const s=document.createElement('span');s.className='appv';const v=window.APPV;s.textContent=' · アプリ版 '+v.slice(4,6)+'/'+v.slice(6,8)+' '+v.slice(8,10)+':'+v.slice(10,12);a.appendChild(s)}})();
 if('serviceWorker' in navigator&&window.isSecureContext){const had=!!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__swr){window.__swr=1;location.reload()}});
